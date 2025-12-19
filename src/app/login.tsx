@@ -7,7 +7,6 @@ export default function Login() {
     </View>
   )
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
