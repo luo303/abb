@@ -1,0 +1,61 @@
+{
+  // 1. ESLint 配置（仅负责代码质量，不处理格式）
+  "eslint.nodePath": "./node_modules", // 使用项目内 ESLint
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "vue",
+    "javascriptreact",
+    "typescriptreact"
+  ],
+  "eslint.useFlatConfig": true, // 适配 ESLint v9+ 扁平配置
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  // 关闭 ESLint 自动修复格式相关问题（格式交给 Prettier）
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "never",
+    // 关闭 ESLint 对代码质量问题的自动修复
+    "source.fixAll": "never"
+  },
+
+  // Prettier 配置（仅负责格式化，完全接管格式）
+  "prettier.requireConfig": true, // 强制使用项目内 .prettierrc 配置
+  "prettier.path": "./node_modules/prettier", // 锁定项目内 Prettier 版本
+  // 全局开启保存时格式化（由 Prettier 执行）
+  "editor.formatOnSave": true,
+  // 为所有目标语言指定 Prettier 为默认格式化工具
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // 3. 禁用冲突工具（避免 VS Code 内置格式化干扰）
+  "javascript.format.enable": false, // 关闭 VS Code 内置 JS 格式化
+  "typescript.format.enable": false, // 关闭 VS Code 内置 TS 格式化
+  "editor.autoClosingQuotes": "never", // 关闭自动补全引号（由 Prettier 统一控制）
+  "editor.autoIndent": "advanced", // 依赖 Prettier 缩进逻辑
+
+  // 4. 工程化工具配置（保持不变）
+  "git.enableCommitSigning": false,
+  "git.useEditorAsCommitInput": false,
+  "git.terminalAuthentication": true,
+  "commitlint.enable": true,
+  "commitlint.configPath": "./commitlint.config.js",
+  "npm.packageManager": "pnpm"
+}
