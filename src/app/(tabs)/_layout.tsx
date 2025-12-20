@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
 
 export default function TabsLayout() {
-  // 这里是路由鉴权，为了开发方便，功能完善了再加上吧
+  // 这里是路由鉴权，为了开发方便，功能完善了再加上吧。
   // const token = useSelector((state: any) => state.auth.token);
   // useEffect(() => {
   //     if (!token) {
