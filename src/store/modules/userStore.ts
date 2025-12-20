@@ -11,9 +11,13 @@ const userSlice = createSlice({
     setToken: (state, action) => {
       state.token = action.payload
       SecureStore.setItem('token', action.payload)
+    },
+    clearToken: state => {
+      state.token = ''
+      SecureStore.deleteItemAsync('token')
     }
   }
 })
 
-export const { setToken } = userSlice.actions
+export const { setToken, clearToken } = userSlice.actions
 export default userSlice.reducer

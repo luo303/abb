@@ -23,6 +23,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@reduxjs/toolkit": "^2.11.2",
+    "axios": "^1.13.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "expo": "~54.0.30",
