@@ -1,14 +1,23 @@
-import { Tabs } from 'expo-router'
+import { router, Tabs } from 'expo-router'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
+import { useSelector } from 'react-redux'
+import { useEffect, useState } from 'react'
 
 export default function TabsLayout() {
   // 这里是路由鉴权，为了开发方便，功能完善了再加上吧。
-  // const token = useSelector((state: any) => state.auth.token);
-  // useEffect(() => {
-  //     if (!token) {
-  //         router.push('login/login');
-  //     }
-  // }, [token]);
+  const token = useSelector((state: any) => state.user.token)
+  const [isMounted, setIsMounted] = useState(false)
+  //确保Tabs渲染完成
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  //只有挂载完成后，才执行登录鉴权跳转
+  useEffect(() => {
+    if (isMounted && !token) {
+      router.replace('/login') // 改用replace，避免路由栈残留tabs页面
+    }
+  }, [token, isMounted]) // 依赖 isMounted + toke
   return (
     <Tabs
       screenOptions={{
