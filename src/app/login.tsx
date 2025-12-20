@@ -11,13 +11,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { setToken } from '../store/modules/userStore'
+import { apiLogin } from '../api/auth'
+import { resLogin } from '../api/type'
+
 export default function LoginScreen() {
   const dispatch = useDispatch()
   const router = useRouter()
   const token = useSelector((state: any) => state.user.token)
 
   // 表单状态
-  const [username, setUsername] = useState('')
+  const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
 
   useEffect(() => {
@@ -32,16 +35,28 @@ export default function LoginScreen() {
   }, [token, router])
 
   // 登录处理函数
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // 简单的表单验证
-    if (!username || !password) {
-      Alert.alert('提示', '请输入用户名和密码')
+    if (!account || !password) {
+      Alert.alert('提示', '请输入账号和密码')
       return
     }
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-    // 更新 Redux Token
-    dispatch(setToken(mockToken))
-    router.replace('/')
+    try {
+      const res: resLogin = await apiLogin({
+        account,
+        password,
+        login_type: 'account'
+      })
+      if (res.code === 0) {
+        dispatch(setToken(res.data!.token))
+        router.replace('/')
+      } else {
+        Alert.alert('提示', res.message)
+      }
+    } catch (error) {
+      Alert.alert('错误', '登录失败，请稍后重试')
+      console.error('登录失败：', error)
+    }
   }
 
   // 跳转到注册页
@@ -56,9 +71,9 @@ export default function LoginScreen() {
       {/* 用户名输入框 */}
       <TextInput
         style={styles.input}
-        placeholder="请输入用户名"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="请输入账号"
+        value={account}
+        onChangeText={setAccount}
         autoCapitalize="none"
       />
 

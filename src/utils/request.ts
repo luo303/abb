@@ -3,7 +3,7 @@ import store from '../store'
 import { clearToken } from '../store/modules/userStore'
 import { router } from 'expo-router'
 //创建axios实例
-const baseURL = 'http://111.228.15.67:8080' //暂时没有服务器地址
+const baseURL = 'https://m1.apifoxmock.com/m1/7571791-7309471-default' //云端mock地址
 const request = axios.create({
   baseURL,
   timeout: 10000 //10s

@@ -12,3 +12,13 @@ export interface AccountLogin {
   password: string
   login_type: string
 }
+//登录响应数据
+export interface resLogin {
+  code: number
+  message: string
+  data: {
+    token: string
+    username: string
+    avatar: string
+  } | null
+}
