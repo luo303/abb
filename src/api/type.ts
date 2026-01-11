@@ -22,3 +22,19 @@ export interface resLogin {
     avatar: string
   } | null
 }
+//注册
+export interface Register {
+  account: string
+  password: string
+  username: string
+  email: string
+  code: string
+}
+//注册响应数据
+export interface resRegister {
+  code: number
+  message: string
+  data: {
+    message: string
+  } | null
+}
