@@ -5,15 +5,22 @@ import {
   AccountLogin,
   resLogin,
   Register,
-  resRegister
+  resRegister,
+  resLoginCode
 } from './type'
-
+//登录
 export const apiLogin = (
   data: EmailLogin | AccountLogin
 ): Promise<resLogin> => {
   return request.post('/user/login?apifoxApiId=392864290', data) //要测试记得改成自己本地mock接口
 }
-
+//邮箱登录验证码
+export const apiLoginCode = (data: {
+  email: string
+}): Promise<resLoginCode> => {
+  return request.post('/user/code/login', data)
+}
+//注册
 export const apiRegister = (data: Register): Promise<resRegister> => {
   return request.post('/user/register', data)
 }

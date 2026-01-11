@@ -22,6 +22,14 @@ export interface resLogin {
     avatar: string
   } | null
 }
+//邮箱登录验证码响应体
+export interface resLoginCode {
+  code: number
+  message: string
+  data: {
+    [key: string]: any
+  } | null
+}
 //注册
 export interface Register {
   account: string

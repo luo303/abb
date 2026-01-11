@@ -14,8 +14,8 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { AntDesign } from '@expo/vector-icons'
 import { setToken, setRememberMe } from '../store/modules/userStore'
-import { apiLogin } from '../api/auth'
-import { resLogin } from '../api/type'
+import { apiLogin, apiLoginCode } from '../api/auth'
+import { resLogin, resLoginCode } from '../api/type'
 
 export default function LoginScreen() {
   const dispatch = useDispatch()
@@ -91,6 +91,33 @@ export default function LoginScreen() {
         Alert.alert('错误', '登录失败，请稍后重试')
         console.error('登录失败：', error)
       }
+    }
+  }
+  //邮箱验证码
+  const handleGetCode = async () => {
+    if (!email) {
+      Alert.alert('提示', '请输入邮箱')
+      return
+    }
+    if (
+      email &&
+      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+    ) {
+      Alert.alert('提示', '请输入有效邮箱')
+      return
+    }
+    try {
+      const res: resLoginCode = await apiLoginCode({
+        email
+      })
+      if (res.code === 0) {
+        Alert.alert('提示', '验证码发送成功')
+      } else {
+        Alert.alert('提示', res.message)
+      }
+    } catch (error) {
+      Alert.alert('错误', '获取验证码失败，请稍后重试')
+      console.error('获取验证码失败：', error)
     }
   }
 
@@ -214,7 +241,10 @@ export default function LoginScreen() {
                     placeholderTextColor="#999"
                     keyboardType="number-pad"
                   />
-                  <TouchableOpacity style={styles.getCodeBtn}>
+                  <TouchableOpacity
+                    style={styles.getCodeBtn}
+                    onPress={handleGetCode}
+                  >
                     <Text style={styles.getCodeText}>获取验证码</Text>
                   </TouchableOpacity>
                 </View>
