@@ -14,7 +14,7 @@ import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
-import { apiRegister } from '../api/auth'
+import { apiRegister, apiRegisterCode } from '../api/auth'
 
 export default function RegisterScreen() {
   const router = useRouter()
@@ -37,7 +37,7 @@ export default function RegisterScreen() {
   // 加载状态
   const [isLoading, setIsLoading] = useState(false)
   const [agree, setAgree] = useState(false)
-
+  const [countdown, setCountdown] = useState(0)
   // 表单输入变化处理
   const handleInputChange = (key: string, value: string) => {
     setFormData({
@@ -98,7 +98,38 @@ export default function RegisterScreen() {
 
     return true
   }
-
+  //获取验证码
+  const GetCode = async () => {
+    if (countdown > 0) return
+    if (!formData.email) {
+      Alert.alert('提示', '请输入邮箱')
+      return
+    }
+    try {
+      const res = await apiRegisterCode({
+        email: formData.email
+      })
+      if (res.code === 0) {
+        Alert.alert('提示', '验证码已发送')
+        setCountdown(60)
+        const timer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(timer)
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+      } else {
+        Alert.alert('错误', '改邮箱不存在')
+        return
+      }
+    } catch (error) {
+      Alert.alert('错误', '获取验证码失败，请稍后重试')
+      console.log(error)
+    }
+  }
   // 注册处理函数
   const handleRegister = async () => {
     // 表单验证
@@ -108,7 +139,6 @@ export default function RegisterScreen() {
     setIsLoading(true)
 
     try {
-      // 模拟注册请求（实际项目中替换为真实接口）
       const res = await apiRegister(formData)
       if (res.code === 0) {
         // 注册成功提示
@@ -229,10 +259,17 @@ export default function RegisterScreen() {
                   />
                   <TouchableOpacity
                     style={styles.getCodeBtn}
-                    onPress={() => Alert.alert('提示', '验证码已发送')}
-                    disabled={isLoading}
+                    onPress={() => GetCode()}
+                    disabled={countdown > 0}
                   >
-                    <Text style={styles.getCodeText}>获取验证码</Text>
+                    <Text
+                      style={[
+                        styles.getCodeText,
+                        countdown > 0 && styles.getCodeTextDisabled
+                      ]}
+                    >
+                      {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -371,6 +408,9 @@ const styles = StyleSheet.create({
   getCodeText: {
     color: '#1f99b0',
     fontSize: 14
+  },
+  getCodeTextDisabled: {
+    color: '#999'
   },
   loginBtn: {
     height: 50,

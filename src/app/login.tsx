@@ -23,6 +23,7 @@ export default function LoginScreen() {
   const token = useSelector((state: any) => state.user.token)
   const rememberMe = useSelector((state: any) => state.user.rememberMe)
   const [activeTab, setActiveTab] = useState('account')
+  const [countdown, setCountdown] = useState(0)
 
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
@@ -106,14 +107,25 @@ export default function LoginScreen() {
       Alert.alert('提示', '请输入有效邮箱')
       return
     }
+    if (countdown > 0) return
     try {
       const res: resLoginCode = await apiLoginCode({
         email
       })
       if (res.code === 0) {
         Alert.alert('提示', '验证码发送成功')
+        setCountdown(60)
+        const timer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(timer)
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
       } else {
-        Alert.alert('提示', res.message)
+        Alert.alert('提示', '该邮箱未注册')
       }
     } catch (error) {
       Alert.alert('错误', '获取验证码失败，请稍后重试')
@@ -209,9 +221,7 @@ export default function LoginScreen() {
                   </View>
                   <Text style={styles.optionText}>记住我</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => Alert.alert('提示', '请联系管理员重置密码')}
-                >
+                <TouchableOpacity onPress={() => router.push('/password')}>
                   <Text style={styles.forgotText}>忘记密码</Text>
                 </TouchableOpacity>
               </View>
@@ -244,8 +254,18 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     style={styles.getCodeBtn}
                     onPress={handleGetCode}
+                    disabled={countdown > 0}
                   >
-                    <Text style={styles.getCodeText}>获取验证码</Text>
+                    <Text
+                      style={[
+                        styles.getCodeText,
+                        countdown > 0 && styles.getCodeTextDisabled
+                      ]}
+                    >
+                      {countdown > 0
+                        ? `${countdown}秒后重新获取`
+                        : '获取验证码'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -396,6 +416,9 @@ const styles = StyleSheet.create({
   getCodeText: {
     color: '#1f99b0',
     fontSize: 14
+  },
+  getCodeTextDisabled: {
+    color: '#999'
   },
   optionsRow: {
     flexDirection: 'row',

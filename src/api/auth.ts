@@ -24,3 +24,23 @@ export const apiLoginCode = (data: {
 export const apiRegister = (data: Register): Promise<resRegister> => {
   return request.post('/user/register', data)
 }
+//注册验证码
+export const apiRegisterCode = (data: {
+  email: string
+}): Promise<resLoginCode> => {
+  return request.post('/user/code/register', data)
+}
+//重置密码发送验证码
+export const apiResetPasswordCode = (data: {
+  email: string
+}): Promise<resLoginCode> => {
+  return request.post('/user/code/reset', data)
+}
+//重置密码
+export const apiResetPassword = (data: {
+  email: string
+  code: string
+  new_password: string
+}): Promise<resRegister> => {
+  return request.post('/user/resetPassword', data)
+}

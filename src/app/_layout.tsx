@@ -27,6 +27,12 @@ export default function Layout() {
             headerShown: false
           }}
         />
+        <Stack.Screen
+          name="password"
+          options={{
+            headerShown: false
+          }}
+        />
       </Stack>
     </Provider>
   )

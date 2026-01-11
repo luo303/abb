@@ -6,7 +6,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState: {
     token: SecureStore.getItem('token') || '',
-    rememberMe: false
+    rememberMe: true
   },
   reducers: {
     setToken: (state, action) => {
