@@ -1,25 +1,42 @@
-import { router, Tabs } from 'expo-router'
+import React, { useEffect } from 'react'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
 import { useSelector } from 'react-redux'
-import { useEffect, useState } from 'react'
+import { useNavigation, NavigationProp } from '@react-navigation/native'
+
+// 导入页面组件
+import HomeScreen from './home'
+import GrowthRecordScreen from './growthRecord'
+import AIAssistantScreen from './AIAssistant'
+import ProfileScreen from './profile'
+
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+}
+
+type NavigationProps = NavigationProp<RootStackParamList>
+
+const Tab = createBottomTabNavigator()
 
 export default function TabsLayout() {
-  // 这里是路由鉴权，为了开发方便，功能完善了再加上吧。
+  const navigation = useNavigation<NavigationProps>()
   const token = useSelector((state: any) => state.user.token)
-  const [isMounted, setIsMounted] = useState(false)
-  //确保Tabs渲染完成
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
-  //只有挂载完成后，才执行登录鉴权跳转
+  // 路由鉴权：如果没有token，重定向到登录页
   useEffect(() => {
-    if (isMounted && !token) {
-      router.replace('/login') // 改用replace，避免路由栈残留tabs页面
+    if (!token) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }]
+      })
     }
-  }, [token, isMounted]) // 依赖 isMounted + toke
+  }, [token, navigation])
+
   return (
-    <Tabs
+    <Tab.Navigator
       screenOptions={{
         headerTitleAlign: 'center',
         headerTitle: '',
@@ -40,8 +57,9 @@ export default function TabsLayout() {
         }
       }}
     >
-      <Tabs.Screen
-        name="index"
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
         options={{
           title: '首页',
           headerTitle: '首页',
@@ -50,8 +68,9 @@ export default function TabsLayout() {
           )
         }}
       />
-      <Tabs.Screen
-        name="growthRecord"
+      <Tab.Screen
+        name="GrowthRecord"
+        component={GrowthRecordScreen}
         options={{
           title: '成长记录',
           headerTitle: '成长记录',
@@ -60,8 +79,9 @@ export default function TabsLayout() {
           )
         }}
       />
-      <Tabs.Screen
+      <Tab.Screen
         name="AIAssistant"
+        component={AIAssistantScreen}
         options={{
           title: 'AI助手',
           headerTitle: 'AI助手',
@@ -70,8 +90,9 @@ export default function TabsLayout() {
           )
         }}
       />
-      <Tabs.Screen
-        name="profile"
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{
           title: '我的',
           headerTitle: '我的',
@@ -80,6 +101,6 @@ export default function TabsLayout() {
           )
         }}
       />
-    </Tabs>
+    </Tab.Navigator>
   )
 }

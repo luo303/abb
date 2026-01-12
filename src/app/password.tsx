@@ -10,13 +10,22 @@ import {
   KeyboardAvoidingView
 } from 'react-native'
 import { useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
 
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+}
+
+type NavigationProps = NavigationProp<RootStackParamList>
+
 export default function PasswordScreen() {
-  const router = useRouter()
+  const navigation = useNavigation<NavigationProps>()
 
   // 表单状态
   const [formData, setFormData] = useState<{
@@ -124,13 +133,7 @@ export default function PasswordScreen() {
         Alert.alert('成功', '密码重置成功，请重新登录', [
           {
             text: '去登录',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back()
-              } else {
-                router.replace('/login')
-              }
-            }
+            onPress: () => navigation.goBack()
           }
         ])
       } else {
@@ -156,13 +159,7 @@ export default function PasswordScreen() {
             {/* 返回箭头 */}
             <View style={styles.header}>
               <TouchableOpacity
-                onPress={() => {
-                  if (router.canGoBack()) {
-                    router.back()
-                  } else {
-                    router.replace('/login')
-                  }
-                }}
+                onPress={() => navigation.goBack()}
                 style={styles.closeBtn}
               >
                 <AntDesign name="left" size={24} color="#333" />

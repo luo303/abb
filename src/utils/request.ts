@@ -1,7 +1,6 @@
 import axios from 'axios'
 import store from '../store'
 import { clearToken } from '../store/modules/userStore'
-import { router } from 'expo-router'
 //创建axios实例
 const baseURL = 'https://m1.apifoxmock.com/m1/7571791-7309471-default' //云端mock地址
 const request = axios.create({
@@ -34,7 +33,9 @@ request.interceptors.response.use(
         case 401:
           msg = '登录失效'
           store.dispatch(clearToken())
-          router.push('/login')
+          // 登录过期处理：这里应该通过Redux或其他全局状态管理来处理导航
+          // 例如：dispatch(logout()) 然后在组件中监听状态变化进行导航
+          console.log('登录过期，需要跳转到登录页')
           break
         default:
           msg = `${error.response.data.message}`

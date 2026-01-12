@@ -1,14 +1,26 @@
-import { useRouter } from 'expo-router'
 import { clearToken } from '../../store/modules/userStore'
 import { useDispatch } from 'react-redux'
+import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+}
+
+type NavigationProps = NavigationProp<RootStackParamList>
+
 export default function Profile() {
-  const router = useRouter()
   const dispatch = useDispatch()
+  const navigation = useNavigation<NavigationProps>()
   const logout = () => {
     dispatch(clearToken())
-    router.dismissTo('/login')
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }]
+    })
   }
   return (
     <View style={styles.container}>

@@ -10,16 +10,26 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
-import { useRouter } from 'expo-router'
+import { useNavigation, NavigationProp } from '@react-navigation/native'
+
 import { useEffect, useState } from 'react'
 import { AntDesign } from '@expo/vector-icons'
 import { setToken, setRememberMe } from '../store/modules/userStore'
 import { apiLogin, apiLoginCode } from '../api/auth'
 import { resLogin, resLoginCode } from '../api/type'
 
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+}
+
+type NavigationProps = NavigationProp<RootStackParamList>
+
 export default function LoginScreen() {
   const dispatch = useDispatch()
-  const router = useRouter()
+  const navigation = useNavigation<NavigationProps>()
   const token = useSelector((state: any) => state.user.token)
   const rememberMe = useSelector((state: any) => state.user.rememberMe)
   const [activeTab, setActiveTab] = useState('account')
@@ -36,11 +46,14 @@ export default function LoginScreen() {
   useEffect(() => {
     if (token) {
       const timer = setTimeout(() => {
-        router.replace('/(tabs)')
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Tabs' }]
+        })
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [token, router])
+  }, [token, navigation])
 
   // 登录逻辑
   const handleLogin = async () => {
@@ -62,7 +75,10 @@ export default function LoginScreen() {
         })
         if (res.code === 0) {
           dispatch(setToken(res.data!.token))
-          router.replace('/')
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Tabs' }]
+          })
         } else {
           Alert.alert('提示', res.message)
         }
@@ -84,7 +100,10 @@ export default function LoginScreen() {
         })
         if (res.code === 0) {
           dispatch(setToken(res.data!.token))
-          router.replace('/')
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Tabs' }]
+          })
         } else {
           Alert.alert('提示', res.message)
         }
@@ -221,7 +240,9 @@ export default function LoginScreen() {
                   </View>
                   <Text style={styles.optionText}>记住我</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push('/password')}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Password')}
+                >
                   <Text style={styles.forgotText}>忘记密码</Text>
                 </TouchableOpacity>
               </View>
@@ -304,7 +325,7 @@ export default function LoginScreen() {
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.registerLink}
-            onPress={() => router.push('/register')}
+            onPress={() => navigation.navigate('Register')}
           >
             <Text style={styles.registerLinkText}>
               还没有账户？<Text style={styles.registerHighlight}>去注册</Text>

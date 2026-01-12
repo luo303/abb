@@ -11,13 +11,23 @@ import {
   Platform
 } from 'react-native'
 import { useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useNavigation, NavigationProp } from '@react-navigation/native'
+
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import { apiRegister, apiRegisterCode } from '../api/auth'
 
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+}
+
+type NavigationProps = NavigationProp<RootStackParamList>
+
 export default function RegisterScreen() {
-  const router = useRouter()
+  const navigation = useNavigation<NavigationProps>()
 
   // 表单状态
   const [formData, setFormData] = useState<{
@@ -145,14 +155,7 @@ export default function RegisterScreen() {
         Alert.alert('成功', '注册成功！请登录', [
           {
             text: '去登录',
-            onPress: () => {
-              // 关闭注册模态，返回登录页
-              if (router.canGoBack()) {
-                router.back()
-              } else {
-                router.replace('/login')
-              }
-            }
+            onPress: () => navigation.goBack()
           }
         ])
       } else {
@@ -311,13 +314,7 @@ export default function RegisterScreen() {
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={styles.registerLink}
-                  onPress={() => {
-                    if (router.canGoBack()) {
-                      router.back()
-                    } else {
-                      router.replace('/login')
-                    }
-                  }}
+                  onPress={() => navigation.goBack()}
                 >
                   <Text style={styles.registerLinkText}>
                     已有账户？
