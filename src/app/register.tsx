@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
   Image,
   KeyboardAvoidingView,
@@ -16,6 +15,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import { apiRegister, apiRegisterCode } from '../api/auth'
+import { useMessage } from '../components/Message'
 
 type RootStackParamList = {
   Login: undefined
@@ -28,6 +28,7 @@ type NavigationProps = NavigationProp<RootStackParamList>
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProps>()
+  const { showMessage } = useMessage()
 
   // 表单状态
   const [formData, setFormData] = useState<{
@@ -61,29 +62,29 @@ export default function RegisterScreen() {
     const { account, email, password, username, code } = formData
 
     if (!agree) {
-      Alert.alert('提示', '请先阅读并同意用户协议和隐私授权')
+      showMessage('请先阅读并同意用户协议和隐私授权')
       return false
     }
 
     // 用户名验证
     if (!username) {
-      Alert.alert('提示', '请输入用户名')
+      showMessage('请输入用户名')
       return false
     }
     if (username.length < 3 || username.length > 20) {
-      Alert.alert('提示', '用户名长度需在3-20个字符之间')
+      showMessage('用户名长度需在3-20个字符之间')
       return false
     }
 
     // 账号验证
     if (!account) {
-      Alert.alert('提示', '请输入账号')
+      showMessage('请输入账号')
       return false
     }
 
     // 验证码验证
     if (!code) {
-      Alert.alert('提示', '请输入验证码')
+      showMessage('请输入验证码')
       return false
     }
 
@@ -92,17 +93,17 @@ export default function RegisterScreen() {
       email &&
       !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
     ) {
-      Alert.alert('提示', '请输入有效的邮箱地址')
+      showMessage('请输入有效的邮箱地址')
       return false
     }
 
     // 密码验证
     if (!password) {
-      Alert.alert('提示', '请输入密码')
+      showMessage('请输入密码')
       return false
     }
     if (password.length < 6) {
-      Alert.alert('提示', '密码长度至少6位')
+      showMessage('密码长度至少6位')
       return false
     }
 
@@ -112,7 +113,7 @@ export default function RegisterScreen() {
   const GetCode = async () => {
     if (countdown > 0) return
     if (!formData.email) {
-      Alert.alert('提示', '请输入邮箱')
+      showMessage('请输入邮箱')
       return
     }
     try {
@@ -120,7 +121,7 @@ export default function RegisterScreen() {
         email: formData.email
       })
       if (res.code === 0) {
-        Alert.alert('提示', '验证码已发送')
+        showMessage('验证码已发送')
         setCountdown(60)
         const timer = setInterval(() => {
           setCountdown(prev => {
@@ -132,11 +133,11 @@ export default function RegisterScreen() {
           })
         }, 1000)
       } else {
-        Alert.alert('错误', '改邮箱不存在')
+        showMessage('改邮箱不存在')
         return
       }
     } catch (error) {
-      Alert.alert('错误', '获取验证码失败，请稍后重试')
+      showMessage('获取验证码失败，请稍后重试')
       console.log(error)
     }
   }
@@ -151,19 +152,13 @@ export default function RegisterScreen() {
     try {
       const res = await apiRegister(formData)
       if (res.code === 0) {
-        // 注册成功提示
-        Alert.alert('成功', '注册成功！请登录', [
-          {
-            text: '去登录',
-            onPress: () => navigation.goBack()
-          }
-        ])
+        showMessage('注册成功！请登录')
+        navigation.goBack()
       } else {
-        Alert.alert('错误', res.message || '注册失败')
+        showMessage(res.message || '注册失败')
         return
       }
 
-      // 重置表单
       setFormData({
         username: '',
         email: '',
@@ -172,10 +167,9 @@ export default function RegisterScreen() {
         code: ''
       })
     } catch (error) {
-      Alert.alert('错误', '注册失败，请稍后重试')
+      showMessage('注册失败，请稍后重试')
       console.error('注册失败：', error)
     } finally {
-      // 取消加载状态
       setIsLoading(false)
     }
   }

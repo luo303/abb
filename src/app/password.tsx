@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
   Image,
   KeyboardAvoidingView
@@ -14,6 +13,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
+import { useMessage } from '../components/Message'
 
 type RootStackParamList = {
   Login: undefined
@@ -26,6 +26,7 @@ type NavigationProps = NavigationProp<RootStackParamList>
 
 export default function PasswordScreen() {
   const navigation = useNavigation<NavigationProps>()
+  const { showMessage } = useMessage()
 
   // 表单状态
   const [formData, setFormData] = useState<{
@@ -53,14 +54,14 @@ export default function PasswordScreen() {
   // 获取验证码
   const handleGetCode = async () => {
     if (!formData.email) {
-      Alert.alert('提示', '请输入邮箱地址')
+      showMessage('请输入邮箱地址')
       return
     }
     // 简单的邮箱格式验证
     if (
       !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)
     ) {
-      Alert.alert('提示', '请输入有效的邮箱地址')
+      showMessage('请输入有效的邮箱地址')
       return
     }
     if (countdown > 0) return
@@ -69,7 +70,7 @@ export default function PasswordScreen() {
         email: formData.email
       })
       if (res.code === 0) {
-        Alert.alert('提示', '验证码已发送')
+        showMessage('验证码已发送')
         setCountdown(60)
         const timer = setInterval(() => {
           setCountdown(prev => {
@@ -81,10 +82,10 @@ export default function PasswordScreen() {
           })
         }, 1000)
       } else {
-        Alert.alert('错误', '该邮箱未注册')
+        showMessage('该邮箱未注册')
       }
     } catch (error) {
-      Alert.alert('错误', '获取验证码失败，请稍后重试')
+      showMessage('获取验证码失败，请稍后重试')
       console.log(error)
     }
   }
@@ -94,25 +95,25 @@ export default function PasswordScreen() {
     const { email, code, password } = formData
 
     if (!email) {
-      Alert.alert('提示', '请输入邮箱')
+      showMessage('请输入邮箱')
       return false
     }
     if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-      Alert.alert('提示', '请输入有效的邮箱地址')
+      showMessage('请输入有效的邮箱地址')
       return false
     }
 
     if (!code) {
-      Alert.alert('提示', '请输入验证码')
+      showMessage('请输入验证码')
       return false
     }
 
     if (!password) {
-      Alert.alert('提示', '请输入新密码')
+      showMessage('请输入新密码')
       return false
     }
     if (password.length < 6) {
-      Alert.alert('提示', '密码长度至少6位')
+      showMessage('密码长度至少6位')
       return false
     }
 
@@ -130,17 +131,13 @@ export default function PasswordScreen() {
         new_password: formData.password
       })
       if (res.code === 0) {
-        Alert.alert('成功', '密码重置成功，请重新登录', [
-          {
-            text: '去登录',
-            onPress: () => navigation.goBack()
-          }
-        ])
+        showMessage('密码重置成功，请重新登录')
+        navigation.goBack()
       } else {
-        Alert.alert('错误', res.message || '重置失败，请稍后重试')
+        showMessage(res.message || '重置失败，请稍后重试')
       }
     } catch (error) {
-      Alert.alert('错误', '重置失败，请稍后重试')
+      showMessage('重置失败，请稍后重试')
       console.log(error)
     } finally {
       setIsLoading(false)

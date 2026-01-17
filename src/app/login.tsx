@@ -4,7 +4,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView,
   Image
 } from 'react-native'
@@ -17,6 +16,8 @@ import { AntDesign } from '@expo/vector-icons'
 import { setToken, setRememberMe } from '../store/modules/userStore'
 import { apiLogin, apiLoginCode } from '../api/auth'
 import { resLogin, resLoginCode } from '../api/type'
+
+import { useMessage } from '../components/Message'
 
 type RootStackParamList = {
   Login: undefined
@@ -42,6 +43,8 @@ export default function LoginScreen() {
 
   const [agree, setAgree] = useState(false)
 
+  const { showMessage } = useMessage()
+
   // 重定向到首页
   useEffect(() => {
     if (token) {
@@ -58,13 +61,13 @@ export default function LoginScreen() {
   // 登录逻辑
   const handleLogin = async () => {
     if (!agree) {
-      Alert.alert('提示', '请先阅读并同意用户协议和隐私授权')
+      showMessage('请先同意用户协议')
       return
     }
 
     if (activeTab === 'account') {
       if (!account || !password) {
-        Alert.alert('提示', '请输入账号和密码')
+        showMessage('请输入账号和密码')
         return
       }
       try {
@@ -80,16 +83,16 @@ export default function LoginScreen() {
             routes: [{ name: 'Tabs' }]
           })
         } else {
-          Alert.alert('提示', res.message)
+          showMessage(res.message)
         }
       } catch (error) {
-        Alert.alert('错误', '登录失败，请稍后重试')
+        showMessage('登录失败，请稍后重试')
         console.error('登录失败：', error)
       }
     } else {
       // 邮箱验证码登录逻辑
       if (!email || !code) {
-        Alert.alert('提示', '请输入邮箱和验证码')
+        showMessage('请输入邮箱和验证码')
         return
       }
       try {
@@ -105,10 +108,10 @@ export default function LoginScreen() {
             routes: [{ name: 'Tabs' }]
           })
         } else {
-          Alert.alert('提示', res.message)
+          showMessage(res.message)
         }
       } catch (error) {
-        Alert.alert('错误', '登录失败，请稍后重试')
+        showMessage('登录失败，请稍后重试')
         console.error('登录失败：', error)
       }
     }
@@ -116,14 +119,14 @@ export default function LoginScreen() {
   //邮箱验证码
   const handleGetCode = async () => {
     if (!email) {
-      Alert.alert('提示', '请输入邮箱')
+      showMessage('请输入邮箱')
       return
     }
     if (
       email &&
       !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
     ) {
-      Alert.alert('提示', '请输入有效邮箱')
+      showMessage('请输入有效邮箱')
       return
     }
     if (countdown > 0) return
@@ -132,7 +135,7 @@ export default function LoginScreen() {
         email
       })
       if (res.code === 0) {
-        Alert.alert('提示', '验证码发送成功')
+        showMessage('验证码发送成功')
         setCountdown(60)
         const timer = setInterval(() => {
           setCountdown(prev => {
@@ -144,10 +147,10 @@ export default function LoginScreen() {
           })
         }, 1000)
       } else {
-        Alert.alert('提示', '该邮箱未注册')
+        showMessage('该邮箱未注册')
       }
     } catch (error) {
-      Alert.alert('错误', '获取验证码失败，请稍后重试')
+      showMessage('获取验证码失败，请稍后重试')
       console.error('获取验证码失败：', error)
     }
   }
