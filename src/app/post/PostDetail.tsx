@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { View, StyleSheet, ScrollView, StatusBar, Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, StyleSheet, ScrollView, Text } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
 import PostHeader from '../../components/post/PostHeader'
@@ -23,7 +22,7 @@ const MOCK_COMMENTS: Comment[] = [
   {
     id: '1',
     avatar: require('../../assets/icon.png'),
-    nickname: '酷飒没头发的陈道6Y5O',
+    nickname: '用户1',
     content: '具体时间发出来不好吧',
     time: '2025-10-28',
     location: '福建',
@@ -33,18 +32,33 @@ const MOCK_COMMENTS: Comment[] = [
       {
         id: '1-1',
         avatar: require('../../assets/icon.png'),
-        nickname: '看星星的仙酱AZ6B',
+        nickname: '用户2',
         content: '为什么',
         time: '2025-12-24',
-        likes: 0
-      },
-      {
-        id: '1-2',
-        avatar: require('../../assets/icon.png'),
-        nickname: '需要仰望的小宝ATR4',
-        content: '回复 看星星的仙酱AZ6B：因为是八字',
-        time: '2025-12-25',
-        likes: 0
+        likes: 0,
+        replies: [
+          {
+            id: '1-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户3',
+            content: '因为是八字',
+            time: '2025-12-25',
+            likes: 0,
+            replies: [
+              {
+                id: '1-1-2',
+                avatar: require('../../assets/icon.png'),
+                nickname: '用户4',
+                content:
+                  '现在好多都会把这个和出生证明发出来，但就看真不包含差值。',
+                time: '2026-01-01',
+                location: '广东',
+                likes: 2,
+                isLiked: false
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -56,7 +70,27 @@ const MOCK_COMMENTS: Comment[] = [
     time: '2025-12-29',
     location: '四川',
     likes: 4,
-    isLiked: false
+    isLiked: false,
+    replies: [
+      {
+        id: '2-1',
+        avatar: require('../../assets/icon.png'),
+        nickname: '用户5',
+        content: '哈哈，确实有点莽',
+        time: '2025-12-30',
+        likes: 3,
+        replies: [
+          {
+            id: '2-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户6',
+            content: '可能新手爸爸太激动了',
+            time: '2025-12-31',
+            likes: 1
+          }
+        ]
+      }
+    ]
   },
   {
     id: '3',
@@ -66,7 +100,38 @@ const MOCK_COMMENTS: Comment[] = [
     time: '2026-01-01',
     location: '广东',
     likes: 2,
-    isLiked: false
+    isLiked: false,
+    replies: [
+      {
+        id: '3-1',
+        avatar: require('../../assets/icon.png'),
+        nickname: '用户7',
+        content: '我觉得还好吧，图个喜庆',
+        time: '2026-01-02',
+        likes: 2,
+        replies: [
+          {
+            id: '3-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户8',
+            content: '主要是怕有心人利用',
+            time: '2026-01-03',
+            likes: 1,
+            replies: [
+              {
+                id: '3-1-2',
+                avatar: require('../../assets/icon.png'),
+                nickname: '用户9',
+                content: '现在信息泄露太严重了',
+                time: '2026-01-04',
+                likes: 1,
+                isLiked: false
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]
 
@@ -89,9 +154,7 @@ export default function PostDetail() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
+    <>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -141,41 +204,14 @@ export default function PostDetail() {
         <View style={{ height: 60 }} />
       </ScrollView>
       <PostFooter />
-    </SafeAreaView>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff'
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 44,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  backBtn: {
-    padding: 8
-  },
-  searchBar: {
-    flex: 1,
-    height: 32,
-    backgroundColor: '#f5f7fa', // Very light grey usually not visible in white header unless customized
-    borderRadius: 16,
-    marginHorizontal: 12,
-    justifyContent: 'center', // Align icon
-    alignItems: 'flex-end',
-    paddingRight: 0
-  },
-  moreBtn: {
-    padding: 8
-  },
   scrollView: {
-    flex: 1
+    flexGrow: 1,
+    backgroundColor: '#fff'
   },
   divider: {
     height: 8,
