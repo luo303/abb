@@ -17,14 +17,46 @@ export interface Comment {
 interface CommentItemProps {
   comment: Comment
   onLike?: (id: string) => void
-  onReply?: (id: string) => void
 }
 
-export default function CommentItem({
+const ReplyItem = ({
   comment,
-  onLike,
-  onReply
-}: CommentItemProps) {
+  parentNickname
+}: {
+  comment: Comment
+  parentNickname?: string
+}) => {
+  return (
+    <>
+      <View style={styles.replyItem}>
+        <Text style={styles.replyText}>
+          {parentNickname ? (
+            <>
+              <Text style={styles.replyNickname}>{comment.nickname}</Text>
+              <Text style={styles.reply}>&nbsp;&nbsp;回复&nbsp;&nbsp;</Text>
+              <Text style={styles.replyNickname}>{parentNickname}</Text>
+              <Text>：{comment.content}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.replyNickname}>{comment.nickname}:</Text>
+              {comment.content}
+            </>
+          )}
+        </Text>
+      </View>
+      {comment.replies?.map(reply => (
+        <ReplyItem
+          key={reply.id}
+          comment={reply}
+          parentNickname={comment.nickname}
+        />
+      ))}
+    </>
+  )
+}
+
+export default function CommentItem({ comment, onLike }: CommentItemProps) {
   return (
     <View style={styles.container}>
       <Image source={comment.avatar} style={styles.avatar} />
@@ -32,13 +64,12 @@ export default function CommentItem({
       <View style={styles.contentContainer}>
         <Text style={styles.nickname}>{comment.nickname}</Text>
 
-        <Text style={styles.content}>
-          {comment.content}
+        <View style={styles.content}>
+          <Text>{comment.content}</Text>
           <Text style={styles.metaText}>
-            {' '}
             {comment.time} {comment.location}
           </Text>
-        </Text>
+        </View>
 
         <View style={styles.actions}>
           {/* Typically reply button is here or handled by tapping the comment */}
@@ -46,12 +77,7 @@ export default function CommentItem({
         {comment.replies && comment.replies.length > 0 && (
           <View style={styles.repliesContainer}>
             {comment.replies.map(reply => (
-              <View key={reply.id} style={styles.replyItem}>
-                <Text style={styles.replyText}>
-                  <Text style={styles.replyNickname}>{reply.nickname}</Text>
-                  {reply.content}
-                </Text>
-              </View>
+              <ReplyItem key={reply.id} comment={reply} />
             ))}
           </View>
         )}
@@ -97,6 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   content: {
+    flexDirection: 'column',
     fontSize: 14,
     color: '#333',
     lineHeight: 20,
@@ -138,5 +165,9 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
     marginRight: 4
+  },
+  reply: {
+    color: 'black',
+    fontWeight: '600'
   }
 })
