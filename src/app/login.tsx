@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigation, NavigationProp } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 
 import { useEffect, useState } from 'react'
 import { AntDesign } from '@expo/vector-icons'
@@ -19,14 +19,7 @@ import { resLogin, resLoginCode } from '../api/type'
 
 import { useMessage } from '../components/Message'
 
-type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  Password: undefined
-  Tabs: undefined
-}
-
-type NavigationProps = NavigationProp<RootStackParamList>
+import { NavigationProps } from '../types/navigation'
 
 export default function LoginScreen() {
   const dispatch = useDispatch()

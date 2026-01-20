@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { AntDesign, FontAwesome } from '@expo/vector-icons'
 import { useSelector } from 'react-redux'
-import { useNavigation, NavigationProp } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 
 // 导入页面组件
 import HomeScreen from './home'
@@ -10,14 +10,7 @@ import GrowthRecordScreen from './growthRecord'
 import AIAssistantScreen from './AIAssistant'
 import ProfileScreen from './profile'
 
-type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  Password: undefined
-  Tabs: undefined
-}
-
-type NavigationProps = NavigationProp<RootStackParamList>
+import { NavigationProps } from '../../types/navigation'
 
 const Tab = createBottomTabNavigator()
 

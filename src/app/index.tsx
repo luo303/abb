@@ -9,6 +9,7 @@ import LoginScreen from './login'
 import RegisterScreen from './register'
 import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
+import PostDetail from './post/PostDetail'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 
@@ -53,6 +54,11 @@ export default function Layout() {
               name="Tabs"
               component={TabsLayout}
               options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PostDetail"
+              component={PostDetail}
+              options={{ title: '帖子详情' }}
             />
           </Stack.Navigator>
         </NavigationContainer>

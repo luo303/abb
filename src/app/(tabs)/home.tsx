@@ -5,8 +5,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  TouchableOpacity,
-  Dimensions
+  TouchableOpacity
 } from 'react-native'
 import {
   MaterialCommunityIcons,
@@ -15,10 +14,11 @@ import {
   Ionicons
 } from '@expo/vector-icons'
 import PagerView from 'react-native-pager-view'
-
-const { width } = Dimensions.get('window')
+import { useNavigation } from '@react-navigation/native'
+import { NavigationProps } from '../../types/navigation'
 
 export default function Home() {
+  const navigation = useNavigation<NavigationProps>()
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* 1. 顶部轮播图 */}
@@ -103,7 +103,11 @@ export default function Home() {
       </View>
 
       {/* 4. 进入社区 */}
-      <TouchableOpacity style={styles.communityContainer} activeOpacity={0.9}>
+      <TouchableOpacity
+        style={styles.communityContainer}
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('PostDetail', { id: 1 })}
+      >
         <View style={styles.communityHeader}>
           <Text style={styles.communityTitle}>进入社区</Text>
         </View>

@@ -9,20 +9,13 @@ import {
   KeyboardAvoidingView
 } from 'react-native'
 import { useState } from 'react'
-import { useNavigation, NavigationProp } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
-type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  Password: undefined
-  Tabs: undefined
-}
-
-type NavigationProps = NavigationProp<RootStackParamList>
+import { NavigationProps } from '../types/navigation'
 
 export default function PasswordScreen() {
   const navigation = useNavigation<NavigationProps>()
