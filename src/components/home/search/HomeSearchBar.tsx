@@ -2,7 +2,11 @@ import React from 'react'
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-export default function HomeSearchBar() {
+interface HomeSearchBarProps {
+  onSearch: (text: string) => void
+}
+
+export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
   return (
     <View style={styles.container}>
       <View style={styles.searchBox}>
@@ -11,6 +15,7 @@ export default function HomeSearchBar() {
           style={styles.input}
           placeholder="搜索您感兴趣的内容..."
           placeholderTextColor="#999"
+          onChangeText={onSearch}
         />
       </View>
       <TouchableOpacity style={styles.messageButton}>
