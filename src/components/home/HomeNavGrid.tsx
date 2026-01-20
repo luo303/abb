@@ -12,7 +12,7 @@ export default function HomeNavGrid() {
       />
       <NavItem
         icon="baby-face-outline"
-        label="宝宝状态"
+        label="宝宝信息"
         library="MaterialCommunityIcons"
       />
       <NavItem
@@ -33,7 +33,7 @@ const NavItem = ({ icon, label, library }: any) => {
       <View style={styles.iconCircle}>
         <IconComponent name={icon} size={28} color="#fff" />
       </View>
-      {/* <Text style={styles.navLabel}>{label}</Text> */}
+      <Text style={styles.navLabel}>{label}</Text>
     </TouchableOpacity>
   )
 }
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginVertical: 20,
-    backgroundColor: '#a8dce7', // 浅蓝绿色背景条
+    backgroundColor: '#1f99b0', // 浅蓝绿色背景条
     borderRadius: 10,
     paddingVertical: 15,
     marginHorizontal: 15
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   },
   navLabel: {
     fontSize: 12,
-    color: '#333',
+    color: '#fff',
     marginTop: 5
   }
 })
