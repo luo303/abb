@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
-
+import { MOCK_POSTS } from '@/data/mock/homePosts'
 export default function PostFooter() {
   return (
     <View style={styles.container}>
@@ -18,7 +18,7 @@ export default function PostFooter() {
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionBtn}>
           <AntDesign name="heart" size={22} color="#333" />
-          <Text style={styles.actionText}>75</Text>
+          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.likes}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>
@@ -32,7 +32,7 @@ export default function PostFooter() {
             size={22}
             color="#333"
           />
-          <Text style={styles.actionText}>23</Text>
+          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.comments}</Text>
         </TouchableOpacity>
       </View>
     </View>

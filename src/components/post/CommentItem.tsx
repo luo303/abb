@@ -2,22 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
-export interface Comment {
-  id: string
-  avatar: any
-  nickname: string
-  content: string
-  time: string
-  location?: string
-  likes: number
-  isLiked?: boolean
-  replies?: Comment[]
-}
-
-interface CommentItemProps {
-  comment: Comment
-  onLike?: (id: string) => void
-}
+import { CommentItemProps, Comment } from '@/types/post'
 
 const ReplyItem = ({
   comment,

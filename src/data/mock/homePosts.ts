@@ -1,3 +1,4 @@
+import { Comment } from '../../types/post'
 // 模拟社区帖子数据
 export const MOCK_POSTS = [
   {
@@ -51,5 +52,122 @@ export const MOCK_POSTS = [
       favorites: 89,
       comments: 45
     }
+  }
+]
+//帖子评论
+export const MOCK_COMMENTS: Comment[] = [
+  {
+    id: '1',
+    avatar: require('../../assets/icon.png'),
+    nickname: '用户1',
+    content: '具体时间发出来不好吧',
+    time: '2025-10-28',
+    location: '福建',
+    likes: 5,
+    isLiked: false,
+    replies: [
+      {
+        id: '1-1',
+        avatar: require('../../assets/icon.png'),
+        nickname: '用户2',
+        content: '为什么',
+        time: '2025-12-24',
+        likes: 0,
+        replies: [
+          {
+            id: '1-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户3',
+            content: '因为是八字',
+            time: '2025-12-25',
+            likes: 0,
+            replies: [
+              {
+                id: '1-1-2',
+                avatar: require('../../assets/icon.png'),
+                nickname: '用户4',
+                content:
+                  '现在好多都会把这个和出生证明发出来，但就看真不包含差值。',
+                time: '2026-01-01',
+                location: '广东',
+                likes: 2,
+                isLiked: false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: '2',
+    avatar: require('../../assets/icon.png'),
+    nickname: '春暖花开的海盗SL72',
+    content: '这个爸爸有点虎，生辰八字都给别人看',
+    time: '2025-12-29',
+    location: '四川',
+    likes: 4,
+    isLiked: false,
+    replies: [
+      {
+        id: '2-1',
+        avatar: require('../../assets/icon.png'),
+        nickname: '用户5',
+        content: '哈哈，确实有点莽',
+        time: '2025-12-30',
+        likes: 3,
+        replies: [
+          {
+            id: '2-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户6',
+            content: '可能新手爸爸太激动了',
+            time: '2025-12-31',
+            likes: 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: '3',
+    avatar: require('../../assets/icon.png'),
+    nickname: '何必彷徨的人类之光0EVC',
+    content: '现在好多都会把这个和出生证明发出来，但就看真不包含差值。',
+    time: '2026-01-01',
+    location: '广东',
+    likes: 2,
+    isLiked: false,
+    replies: [
+      {
+        id: '3-1',
+        avatar: require('../../assets/icon.png'),
+        nickname: '用户7',
+        content: '我觉得还好吧，图个喜庆',
+        time: '2026-01-02',
+        likes: 2,
+        replies: [
+          {
+            id: '3-1-1',
+            avatar: require('../../assets/icon.png'),
+            nickname: '用户8',
+            content: '主要是怕有心人利用',
+            time: '2026-01-03',
+            likes: 1,
+            replies: [
+              {
+                id: '3-1-2',
+                avatar: require('../../assets/icon.png'),
+                nickname: '用户9',
+                content: '现在信息泄露太严重了',
+                time: '2026-01-04',
+                likes: 1,
+                isLiked: false
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]
