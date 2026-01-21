@@ -91,7 +91,8 @@ export const MOCK_COMMENTS: Comment[] = [
                 time: '2026-01-01',
                 location: '广东',
                 likes: 2,
-                isLiked: false
+                isLiked: false,
+                replies: []
               }
             ]
           }
@@ -123,7 +124,9 @@ export const MOCK_COMMENTS: Comment[] = [
             nickname: '用户6',
             content: '可能新手爸爸太激动了',
             time: '2025-12-31',
-            likes: 1
+            likes: 1,
+            isLiked: false,
+            replies: []
           }
         ]
       }
@@ -162,7 +165,8 @@ export const MOCK_COMMENTS: Comment[] = [
                 content: '现在信息泄露太严重了',
                 time: '2026-01-04',
                 likes: 1,
-                isLiked: false
+                isLiked: false,
+                replies: []
               }
             ]
           }
