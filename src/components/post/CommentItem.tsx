@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
   likeContainer: {
     alignItems: 'center',
     paddingTop: 2,
-    width: 30
+    width: 30,
+    height: 30
   },
   likeCount: {
     fontSize: 10,
