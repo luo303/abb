@@ -1,19 +1,60 @@
-import React from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ImageBackground } from 'react-native'
 import PagerView from 'react-native-pager-view'
 
 export default function HomeBanner() {
+  const pagerRef = useRef<PagerView>(null)
+  const [currentPage, setCurrentPage] = useState(0)
+  const totalPages = 3
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // 正常轮播：当前页 + 1
+      let nextPage = currentPage + 1
+
+      // 如果到了最后一页（副本页），则重置为第一页（逻辑上）
+      // 但这里我们让它先滑到副本页，然后在 onPageSelected 中处理重置
+      if (nextPage > totalPages) {
+        nextPage = 0
+        pagerRef.current?.setPageWithoutAnimation(nextPage)
+        setCurrentPage(nextPage)
+      } else {
+        pagerRef.current?.setPage(nextPage)
+        setCurrentPage(nextPage)
+      }
+    }, 3000)
+
+    return () => clearInterval(timer)
+  }, [currentPage])
+
+  const onPageSelected = (e: any) => {
+    const position = e.nativeEvent.position
+    setCurrentPage(position)
+
+    // 如果滚动到了最后一页（副本页），瞬间切回第一页
+    if (position === totalPages) {
+      setTimeout(() => {
+        pagerRef.current?.setPageWithoutAnimation(0)
+        setCurrentPage(0)
+      }, 500) // 等待动画完成
+    }
+  }
+
   return (
     <View style={styles.pagerContainer}>
-      <PagerView style={styles.pagerView} initialPage={0}>
+      <PagerView
+        ref={pagerRef}
+        style={styles.pagerView}
+        initialPage={0}
+        onPageSelected={onPageSelected}
+      >
         {/* 页面1：专家建议 */}
         <View key="1" style={styles.page}>
           <ImageBackground
-            source={require('../../assets/poster_ai.png')}
+            source={require('../../assets/poster_ai 2.0.jpg')}
             style={styles.backgroundImage}
             imageStyle={{ borderRadius: 15 }}
           >
-            {/* 实际项目中这里可以使用真实的图片组件 */}
             <View style={styles.overlay}>
               <Text style={styles.bannerText}></Text>
             </View>
@@ -31,7 +72,7 @@ export default function HomeBanner() {
             </View>
           </ImageBackground>
         </View>
-        {/* 页面3：AI问答 */}
+        {/* 页面3：查忌口 */}
         <View key="3" style={styles.page}>
           <ImageBackground
             source={require('../../assets/poster_cjk.png')}
@@ -43,12 +84,32 @@ export default function HomeBanner() {
             </View>
           </ImageBackground>
         </View>
+        {/* 页面4（副本）：AI助手 */}
+        <View key="4" style={styles.page}>
+          <ImageBackground
+            source={require('../../assets/poster_ai 2.0.jpg')}
+            style={styles.backgroundImage}
+            imageStyle={{ borderRadius: 15 }}
+          >
+            <View style={styles.overlay}>
+              <Text style={styles.bannerText}></Text>
+            </View>
+          </ImageBackground>
+        </View>
       </PagerView>
-      {/* 指示点 (可选) */}
+      {/* 指示点 */}
       <View style={styles.indicatorContainer}>
-        <View style={styles.indicator} />
-        <View style={styles.indicator} />
-        <View style={styles.indicator} />
+        {[0, 1, 2].map(index => (
+          <View
+            key={index}
+            style={[
+              styles.indicator,
+              (currentPage === index ||
+                (currentPage === totalPages && index === 0)) &&
+                styles.activeIndicator
+            ]}
+          />
+        ))}
       </View>
     </View>
   )
@@ -84,7 +145,6 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   overlay: {
-    // backgroundColor: 'rgba(0,0,0,0.1)',
     padding: 10,
     borderRadius: 5
   },
@@ -106,7 +166,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.5)', // 默认半透明白
     marginHorizontal: 4
+  },
+  activeIndicator: {
+    backgroundColor: '#ffffff', // 激活时纯白
+    width: 16 // 激活时变宽
   }
 })
