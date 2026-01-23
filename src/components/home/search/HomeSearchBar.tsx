@@ -18,8 +18,8 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
           onChangeText={onSearch}
         />
       </View>
-      <TouchableOpacity style={styles.messageButton}>
-        <Ionicons name="notifications-outline" size={24} color="#333" />
+      <TouchableOpacity style={styles.addButton}>
+        <Ionicons name="add-circle-outline" size={28} color="#1f99b0" />
       </TouchableOpacity>
     </View>
   )
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     color: '#333',
     height: '100%'
   },
-  messageButton: {
+  addButton: {
     padding: 5
   }
 })

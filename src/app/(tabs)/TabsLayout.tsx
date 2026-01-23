@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { FontAwesome, AntDesign } from '@expo/vector-icons'
 import { useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // 导入页面组件
 import HomeScreen from './home'
@@ -13,9 +15,13 @@ import { NavigationProps } from '../../types/navigation'
 
 const Tab = createBottomTabNavigator()
 
+// 定义一个空的占位组件，避免内联函数导致的重渲染警告
+const NullComponent = () => null
+
 export default function TabsLayout() {
   const navigation = useNavigation<NavigationProps>()
   const token = useSelector((state: any) => state.user.token)
+  const insets = useSafeAreaInsets()
 
   // 路由鉴权：如果没有token，重定向到登录页
   // useEffect(() => {
@@ -39,7 +45,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#1f99b0', //tab选中颜色
         tabBarInactiveTintColor: '#999999', //tab未选中颜色
         tabBarStyle: {
-          height: 56,
+          height: Platform.OS === 'ios' ? 46 + insets.bottom : 46,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
           borderTopColor: '#eeeeee',
           borderTopWidth: 1,
           backgroundColor: '#ffffff'
@@ -74,7 +81,7 @@ export default function TabsLayout() {
       />
       <Tab.Screen
         name="AIAssistantTab"
-        component={() => null}
+        component={NullComponent}
         listeners={{
           tabPress: e => {
             // 阻止默认的跳转行为

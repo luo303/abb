@@ -9,43 +9,37 @@ export default function HomeBanner() {
         {/* 页面1：专家建议 */}
         <View key="1" style={styles.page}>
           <ImageBackground
-            source={{
-              uri: 'https://via.placeholder.com/600x300/e0f7fa/006064?text=专家建议'
-            }}
+            source={require('../../assets/poster_ai.png')}
             style={styles.backgroundImage}
             imageStyle={{ borderRadius: 15 }}
           >
             {/* 实际项目中这里可以使用真实的图片组件 */}
             <View style={styles.overlay}>
-              <Text style={styles.bannerText}>专家建议</Text>
+              <Text style={styles.bannerText}></Text>
             </View>
           </ImageBackground>
         </View>
         {/* 页面2：热门帖子 */}
         <View key="2" style={styles.page}>
           <ImageBackground
-            source={{
-              uri: 'https://via.placeholder.com/600x300/fff9c4/fbc02d?text=热门帖子'
-            }}
+            source={require('../../assets/poster_community.png')}
             style={styles.backgroundImage}
             imageStyle={{ borderRadius: 15 }}
           >
             <View style={styles.overlay}>
-              <Text style={styles.bannerText}>热门帖子</Text>
+              <Text style={styles.bannerText}></Text>
             </View>
           </ImageBackground>
         </View>
         {/* 页面3：AI问答 */}
         <View key="3" style={styles.page}>
           <ImageBackground
-            source={{
-              uri: 'https://via.placeholder.com/600x300/e1bee7/8e24aa?text=AI问答'
-            }}
+            source={require('../../assets/poster_cjk.png')}
             style={styles.backgroundImage}
             imageStyle={{ borderRadius: 15 }}
           >
             <View style={styles.overlay}>
-              <Text style={styles.bannerText}>AI问答</Text>
+              <Text style={styles.bannerText}></Text>
             </View>
           </ImageBackground>
         </View>

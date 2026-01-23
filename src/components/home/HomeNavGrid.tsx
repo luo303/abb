@@ -25,7 +25,11 @@ export default function HomeNavGrid() {
         label="疫苗记录"
         library="MaterialCommunityIcons"
       />
-      <NavItem icon="pill" label="用药记录" library="MaterialCommunityIcons" />
+      <NavItem
+        icon="book-open-page-variant"
+        label="宝宝故事"
+        library="MaterialCommunityIcons"
+      />
     </View>
   )
 }
