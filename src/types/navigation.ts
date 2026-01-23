@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Password: undefined
   Tabs: undefined
   AIAssistant: undefined
+  Taboo: undefined
   PostDetail: { id: number }
 }
 

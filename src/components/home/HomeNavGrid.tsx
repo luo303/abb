@@ -1,14 +1,19 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import { NavigationProps } from '../../types/navigation'
 
 export default function HomeNavGrid() {
+  const navigation = useNavigation<NavigationProps>()
+
   return (
     <View style={styles.navContainer}>
       <NavItem
         icon="food-off"
         label="查忌口"
         library="MaterialCommunityIcons"
+        onPress={() => navigation.navigate('Taboo')}
       />
       <NavItem
         icon="baby-face-outline"
@@ -25,11 +30,15 @@ export default function HomeNavGrid() {
   )
 }
 
-const NavItem = ({ icon, label, library }: any) => {
+const NavItem = ({ icon, label, library, onPress }: any) => {
   const IconComponent =
     library === 'MaterialIcons' ? MaterialIcons : MaterialCommunityIcons
   return (
-    <TouchableOpacity style={styles.navItem}>
+    <TouchableOpacity
+      style={styles.navItem}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <View style={styles.iconCircle}>
         <IconComponent name={icon} size={28} color="#fff" />
       </View>
