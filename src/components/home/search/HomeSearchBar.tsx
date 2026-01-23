@@ -1,12 +1,15 @@
 import React from 'react'
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useNavigation } from '@react-navigation/native'
+import { NavigationProps } from '../../../types/navigation'
 
 interface HomeSearchBarProps {
   onSearch: (text: string) => void
 }
 
 export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
+  const navigation = useNavigation<NavigationProps>()
   return (
     <View style={styles.container}>
       <View style={styles.searchBox}>
@@ -18,7 +21,10 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
           onChangeText={onSearch}
         />
       </View>
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate('AddPost')}
+      >
         <Ionicons name="add-circle-outline" size={28} color="#1f99b0" />
       </TouchableOpacity>
     </View>

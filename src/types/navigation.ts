@@ -8,6 +8,7 @@ export type RootStackParamList = {
   AIAssistant: undefined
   Taboo: undefined
   PostDetail: { id: number }
+  AddPost: undefined
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>

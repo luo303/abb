@@ -10,6 +10,7 @@ import RegisterScreen from './register'
 import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
+import AddPostScreen from './post/AddPost'
 import TabooScreen from './Taboo'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -72,6 +73,11 @@ export default function Layout() {
               name="Taboo"
               component={TabooScreen}
               options={{ title: '查忌口' }}
+            />
+            <Stack.Screen
+              name="AddPost"
+              component={AddPostScreen}
+              options={{ headerShown: false, presentation: 'modal' }}
             />
           </Stack.Navigator>
         </NavigationContainer>
