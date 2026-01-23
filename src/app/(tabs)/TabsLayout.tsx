@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { AntDesign, FontAwesome } from '@expo/vector-icons'
+import { FontAwesome, AntDesign } from '@expo/vector-icons'
 import { useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
 
 // 导入页面组件
 import HomeScreen from './home'
 import GrowthRecordScreen from './growthRecord'
-import AIAssistantScreen from './AIAssistant'
 import ProfileScreen from './profile'
 
 import { NavigationProps } from '../../types/navigation'
@@ -47,7 +46,8 @@ export default function TabsLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 12
-        }
+        },
+        animation: 'shift'
       }}
     >
       <Tab.Screen
@@ -73,11 +73,18 @@ export default function TabsLayout() {
         }}
       />
       <Tab.Screen
-        name="AIAssistant"
-        component={AIAssistantScreen}
+        name="AIAssistantTab"
+        component={() => null}
+        listeners={{
+          tabPress: e => {
+            // 阻止默认的跳转行为
+            e.preventDefault()
+            // 跳转到 Stack 中的 AIAssistant 页面
+            navigation.navigate('AIAssistant')
+          }
+        }}
         options={{
           title: 'AI助手',
-          headerTitle: 'AI助手',
           tabBarIcon: ({ color }) => (
             <AntDesign name="comment" size={24} color={color} />
           )

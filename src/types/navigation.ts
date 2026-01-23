@@ -1,10 +1,11 @@
 import { NavigationProp } from '@react-navigation/native'
 
-type RootStackParamList = {
+export type RootStackParamList = {
   Login: undefined
   Register: undefined
   Password: undefined
   Tabs: undefined
+  AIAssistant: undefined
   PostDetail: { id: number }
 }
 

@@ -1,24 +1,27 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
+import { MOCK_POSTS } from '@/data/mock/homePosts'
 
-export default function PostFooter() {
+interface PostFooterProps {
+  onInputPress: () => void
+}
+
+export default function PostFooter({ onInputPress }: PostFooterProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.inputContainer}>
-        <AntDesign
-          name="edit"
-          size={16}
-          color="#999"
-          style={styles.inputIcon}
-        />
+      <TouchableOpacity
+        style={styles.inputContainer}
+        onPress={onInputPress}
+        activeOpacity={0.9}
+      >
         <Text style={styles.placeholderText}>说点什么...</Text>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionBtn}>
           <AntDesign name="heart" size={22} color="#333" />
-          <Text style={styles.actionText}>75</Text>
+          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.likes}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>
@@ -32,7 +35,7 @@ export default function PostFooter() {
             size={22}
             color="#333"
           />
-          <Text style={styles.actionText}>23</Text>
+          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.comments}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -47,20 +50,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
+    borderTopColor: '#f0f0f0',
+    paddingBottom: 20 // Add some padding for safety on bottom
   },
   inputContainer: {
     flex: 1,
     height: 36,
     backgroundColor: '#f5f7fa',
     borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     marginRight: 16
-  },
-  inputIcon: {
-    marginRight: 6
   },
   placeholderText: {
     fontSize: 13,

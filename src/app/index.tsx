@@ -12,6 +12,7 @@ import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
+import AIAssistant from './(tabs)/AIAssistant'
 
 const Stack = createStackNavigator()
 
@@ -25,6 +26,7 @@ export default function Layout() {
             screenOptions={{
               title: '', //默认标题为空
               headerTitleAlign: 'center', //安卓系统标题居中
+              headerShadowVisible: false, //隐藏标题栏阴影
               animation: 'slide_from_right',
               headerTintColor: '#1f99b0',
               headerTitleStyle: {
@@ -53,6 +55,11 @@ export default function Layout() {
             <Stack.Screen
               name="Tabs"
               component={TabsLayout}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="AIAssistant"
+              component={AIAssistant}
               options={{ headerShown: false }}
             />
             <Stack.Screen

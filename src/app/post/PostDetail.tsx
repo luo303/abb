@@ -1,176 +1,114 @@
 import React, { useState } from 'react'
 import { View, StyleSheet, ScrollView, Text } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import PostHeader from '../../components/post/PostHeader'
 import PostBody from '../../components/post/PostBody'
-import CommentItem, { Comment } from '../../components/post/CommentItem'
+import CommentItem from '../../components/post/CommentItem'
 import PostFooter from '../../components/post/PostFooter'
-
-const MOCK_POST = {
-  id: '1',
-  avatar: require('../../assets/icon.png'), // Using default icon as placeholder
-  nickname: '有青春的猫咪脸JAP8',
-  description: '宝宝1岁8个月',
-  content: '老婆辛苦了❤️\n母女平安，6斤5两\n浓眉大眼双眼皮，随我',
-  images: [require('../../assets/icon.png'), require('../../assets/icon.png')],
-  publishTime: '2024-05-17',
-  location: '周口'
-}
-
-const MOCK_COMMENTS: Comment[] = [
-  {
-    id: '1',
-    avatar: require('../../assets/icon.png'),
-    nickname: '用户1',
-    content: '具体时间发出来不好吧',
-    time: '2025-10-28',
-    location: '福建',
-    likes: 5,
-    isLiked: false,
-    replies: [
-      {
-        id: '1-1',
-        avatar: require('../../assets/icon.png'),
-        nickname: '用户2',
-        content: '为什么',
-        time: '2025-12-24',
-        likes: 0,
-        replies: [
-          {
-            id: '1-1-1',
-            avatar: require('../../assets/icon.png'),
-            nickname: '用户3',
-            content: '因为是八字',
-            time: '2025-12-25',
-            likes: 0,
-            replies: [
-              {
-                id: '1-1-2',
-                avatar: require('../../assets/icon.png'),
-                nickname: '用户4',
-                content:
-                  '现在好多都会把这个和出生证明发出来，但就看真不包含差值。',
-                time: '2026-01-01',
-                location: '广东',
-                likes: 2,
-                isLiked: false
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: '2',
-    avatar: require('../../assets/icon.png'),
-    nickname: '春暖花开的海盗SL72',
-    content: '这个爸爸有点虎，生辰八字都给别人看',
-    time: '2025-12-29',
-    location: '四川',
-    likes: 4,
-    isLiked: false,
-    replies: [
-      {
-        id: '2-1',
-        avatar: require('../../assets/icon.png'),
-        nickname: '用户5',
-        content: '哈哈，确实有点莽',
-        time: '2025-12-30',
-        likes: 3,
-        replies: [
-          {
-            id: '2-1-1',
-            avatar: require('../../assets/icon.png'),
-            nickname: '用户6',
-            content: '可能新手爸爸太激动了',
-            time: '2025-12-31',
-            likes: 1
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: '3',
-    avatar: require('../../assets/icon.png'),
-    nickname: '何必彷徨的人类之光0EVC',
-    content: '现在好多都会把这个和出生证明发出来，但就看真不包含差值。',
-    time: '2026-01-01',
-    location: '广东',
-    likes: 2,
-    isLiked: false,
-    replies: [
-      {
-        id: '3-1',
-        avatar: require('../../assets/icon.png'),
-        nickname: '用户7',
-        content: '我觉得还好吧，图个喜庆',
-        time: '2026-01-02',
-        likes: 2,
-        replies: [
-          {
-            id: '3-1-1',
-            avatar: require('../../assets/icon.png'),
-            nickname: '用户8',
-            content: '主要是怕有心人利用',
-            time: '2026-01-03',
-            likes: 1,
-            replies: [
-              {
-                id: '3-1-2',
-                avatar: require('../../assets/icon.png'),
-                nickname: '用户9',
-                content: '现在信息泄露太严重了',
-                time: '2026-01-04',
-                likes: 1,
-                isLiked: false
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
+import ReplyInput from '../../components/post/ReplyInput'
+import { MOCK_POSTS, MOCK_COMMENTS } from '@/data/mock/homePosts'
+import { Comment } from '@/types/post'
+import { useMessage } from '@/components/Message'
 
 export default function PostDetail() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [comments, setComments] = useState(MOCK_COMMENTS)
+  const [isInputVisible, setInputVisible] = useState(false)
+  const [replyPlaceholder, setReplyPlaceholder] = useState('说点什么...')
+  const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
+
+  const insets = useSafeAreaInsets()
+  const { showMessage } = useMessage()
 
   const handleLikeComment = (id: string) => {
     setComments(prev =>
-      prev.map(c =>
-        c.id === id
+      prev.map(item =>
+        item.id === id
           ? {
-              ...c,
-              isLiked: !c.isLiked,
-              likes: c.isLiked ? c.likes - 1 : c.likes + 1
+              ...item,
+              likes: item.isLiked ? item.likes! - 1 : item.likes! + 1,
+              isLiked: !item.isLiked
             }
-          : c
+          : item
       )
     )
   }
 
+  const handleReply = (comment: Comment) => {
+    setReplyTarget(comment)
+    setReplyPlaceholder(`回复 ${comment.nickname}：`)
+    setInputVisible(true)
+  }
+
+  const handleStartInput = () => {
+    setReplyTarget(null)
+    setReplyPlaceholder('说点什么...')
+    setInputVisible(true)
+  }
+
+  const handleSend = (text: string) => {
+    if (!text.trim()) return
+
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      avatar: require('../../assets/icon.png'), // 默认头像
+      nickname: '我', // 模拟当前用户
+      content: text,
+      time: '刚刚',
+      location: '北京',
+      likes: 0,
+      isLiked: false,
+      replies: []
+    }
+
+    if (replyTarget) {
+      // 如果是回复某个评论，则添加到该评论的 replies 中
+      const addReply = (items: Comment[]): Comment[] => {
+        return items.map(item => {
+          if (item.id === replyTarget.id) {
+            return {
+              ...item,
+              replies: [...(item.replies || []), newComment]
+            }
+          } else if (item.replies && item.replies.length > 0) {
+            return {
+              ...item,
+              replies: addReply(item.replies)
+            }
+          }
+          return item
+        })
+      }
+      setComments(prev => addReply(prev))
+    } else {
+      // 如果是发表新评论，则添加到根列表中
+      setComments(prev => [newComment, ...prev])
+    }
+    showMessage('评论成功')
+    setInputVisible(false)
+  }
+
   return (
-    <>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}
       >
         <PostHeader
-          avatar={MOCK_POST.avatar}
-          nickname={MOCK_POST.nickname}
-          description={MOCK_POST.description}
+          avatar={MOCK_POSTS[0].avatar}
+          nickname={MOCK_POSTS[0].nickname}
+          description={MOCK_POSTS[0].description}
           isFollowing={isFollowing}
           onFollow={() => setIsFollowing(!isFollowing)}
         />
         <PostBody
-          content={MOCK_POST.content}
-          images={MOCK_POST.images}
-          publishTime={MOCK_POST.publishTime}
-          location={MOCK_POST.location}
+          content={MOCK_POSTS[0].content}
+          images={MOCK_POSTS[0].images}
+          publishTime={MOCK_POSTS[0].publishTime}
+          location={MOCK_POSTS[0].location}
         />
         <View style={styles.divider} />
         <View style={styles.sectionHeader}>
@@ -198,20 +136,44 @@ export default function PostDetail() {
               key={comment.id}
               comment={comment}
               onLike={handleLikeComment}
+              onReply={handleReply}
             />
           ))}
         </View>
-        <View style={{ height: 60 }} />
       </ScrollView>
-      <PostFooter />
-    </>
+
+      {/* 底部常驻栏 */}
+      <View style={[styles.footerWrapper, { paddingBottom: insets.bottom }]}>
+        <PostFooter onInputPress={handleStartInput} />
+      </View>
+
+      {/* 真正的输入框 Modal */}
+      <ReplyInput
+        visible={isInputVisible}
+        placeholder={replyPlaceholder}
+        onSend={handleSend}
+        onDismiss={() => setInputVisible(false)}
+      />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flexGrow: 1,
+  container: {
+    flex: 1,
     backgroundColor: '#fff'
+  },
+  scrollView: {
+    flex: 1
+  },
+  footerWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0'
   },
   divider: {
     height: 8,

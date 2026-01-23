@@ -2,33 +2,24 @@ import React from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
-export interface Comment {
-  id: string
-  avatar: any
-  nickname: string
-  content: string
-  time: string
-  location?: string
-  likes: number
-  isLiked?: boolean
-  replies?: Comment[]
-}
-
-interface CommentItemProps {
-  comment: Comment
-  onLike?: (id: string) => void
-}
+import { CommentItemProps, Comment } from '@/types/post'
 
 const ReplyItem = ({
   comment,
-  parentNickname
+  parentNickname,
+  onReply
 }: {
   comment: Comment
   parentNickname?: string
+  onReply?: (comment: Comment) => void
 }) => {
   return (
     <>
-      <View style={styles.replyItem}>
+      <TouchableOpacity
+        style={styles.replyItem}
+        onPress={() => onReply && onReply(comment)}
+        activeOpacity={0.7}
+      >
         <Text style={styles.replyText}>
           {parentNickname ? (
             <>
@@ -44,19 +35,25 @@ const ReplyItem = ({
             </>
           )}
         </Text>
-      </View>
+      </TouchableOpacity>
+
       {comment.replies?.map(reply => (
         <ReplyItem
           key={reply.id}
           comment={reply}
           parentNickname={comment.nickname}
+          onReply={onReply}
         />
       ))}
     </>
   )
 }
 
-export default function CommentItem({ comment, onLike }: CommentItemProps) {
+export default function CommentItem({
+  comment,
+  onLike,
+  onReply
+}: CommentItemProps) {
   return (
     <View style={styles.container}>
       <Image source={comment.avatar} style={styles.avatar} />
@@ -64,20 +61,21 @@ export default function CommentItem({ comment, onLike }: CommentItemProps) {
       <View style={styles.contentContainer}>
         <Text style={styles.nickname}>{comment.nickname}</Text>
 
-        <View style={styles.content}>
+        <TouchableOpacity
+          style={styles.content}
+          onPress={() => onReply && onReply(comment)}
+          activeOpacity={0.7}
+        >
           <Text>{comment.content}</Text>
           <Text style={styles.metaText}>
             {comment.time} {comment.location}
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.actions}>
-          {/* Typically reply button is here or handled by tapping the comment */}
-        </View>
         {comment.replies && comment.replies.length > 0 && (
           <View style={styles.repliesContainer}>
             {comment.replies.map(reply => (
-              <ReplyItem key={reply.id} comment={reply} />
+              <ReplyItem key={reply.id} comment={reply} onReply={onReply} />
             ))}
           </View>
         )}
@@ -93,7 +91,7 @@ export default function CommentItem({ comment, onLike }: CommentItemProps) {
           color={comment.isLiked ? '#ff4d4f' : '#999'}
         />
         <Text style={styles.likeCount}>
-          {comment.likes > 0 ? comment.likes : ''}
+          {comment.likes! > 0 ? comment.likes : ''}
         </Text>
       </TouchableOpacity>
     </View>
@@ -140,7 +138,8 @@ const styles = StyleSheet.create({
   likeContainer: {
     alignItems: 'center',
     paddingTop: 2,
-    width: 30
+    width: 30,
+    height: 30
   },
   likeCount: {
     fontSize: 10,
