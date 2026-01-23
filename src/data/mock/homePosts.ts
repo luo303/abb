@@ -1,3 +1,4 @@
+import { TabooItem } from '@/types/taboo'
 import { Comment } from '../../types/post'
 // 模拟社区帖子数据
 export const MOCK_POSTS = [
@@ -192,4 +193,72 @@ export const historyList = [
   { id: '13', title: '关于宝宝辅食的建议', date: '2024-05-20' },
   { id: '14', title: '如何处理宝宝红屁股', date: '2024-05-18' },
   { id: '15', title: '新生儿疫苗接种时间表', date: '2024-05-15' }
+]
+//查忌口
+export const MOCK_FOODS: TabooItem[] = [
+  {
+    id: '1',
+    name: '螃蟹',
+    description: '优质食物，可适量食用',
+    image: require('../../assets/icon.png'), // Placeholder
+    tags: ['海鲜', '螃蟹'],
+    status: {
+      pregnant: 'ok',
+      baby: 'avoid',
+      breastfeeding: 'avoid',
+      postpartum: 'unknown'
+    }
+  },
+  {
+    id: '2',
+    name: '西兰花',
+    description: '富含维生素C及膳食纤维',
+    image: require('../../assets/icon.png'),
+    tags: ['蔬菜', '西兰花'],
+    status: {
+      pregnant: 'avoid',
+      baby: 'ok',
+      breastfeeding: 'ok',
+      postpartum: 'unknown'
+    }
+  },
+  {
+    id: '3',
+    name: '咖啡',
+    description: '含有咖啡因，需适量',
+    image: require('../../assets/icon.png'),
+    tags: ['咖啡', '饮品'],
+    status: {
+      pregnant: 'avoid',
+      baby: 'caution',
+      breastfeeding: 'unknown',
+      postpartum: 'unknown'
+    }
+  },
+  {
+    id: '4',
+    name: '山药',
+    description: '健脾养胃，老少皆宜',
+    image: require('../../assets/icon.png'),
+    tags: ['蔬菜', '山药'],
+    status: {
+      pregnant: 'ok',
+      baby: 'ok',
+      breastfeeding: 'ok',
+      postpartum: 'ok'
+    }
+  },
+  {
+    id: '5',
+    name: '西瓜',
+    description: '寒性水果，不宜多吃',
+    image: require('../../assets/icon.png'),
+    tags: ['水果', '西瓜'],
+    status: {
+      pregnant: 'caution',
+      baby: 'caution',
+      breastfeeding: 'caution',
+      postpartum: 'avoid'
+    }
+  }
 ]

@@ -45,7 +45,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#1f99b0', //tab选中颜色
         tabBarInactiveTintColor: '#999999', //tab未选中颜色
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 46 + insets.bottom : 46,
+          height: Platform.OS === 'ios' ? 46 + insets.bottom : 56,
           paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
           borderTopColor: '#eeeeee',
           borderTopWidth: 1,
