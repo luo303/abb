@@ -33,6 +33,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "expo": "~54.0.30",
     "expo-constants": "~18.0.12",
+    "expo-image-picker": "~17.0.10",
     "expo-linking": "~8.0.11",
     "expo-router": "^6.0.21",
     "expo-secure-store": "~15.0.8",
