@@ -1,7 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ImageBackground } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import PagerView from 'react-native-pager-view'
+import BannerItem from './BannerItem'
 
+/**
+ * HomeBanner 组件
+ * 实现一个自动轮播的横幅组件，包含多个页面和指示点
+ */
 export default function HomeBanner() {
   const pagerRef = useRef<PagerView>(null)
   const [currentPage, setCurrentPage] = useState(0)
@@ -48,54 +53,26 @@ export default function HomeBanner() {
         initialPage={0}
         onPageSelected={onPageSelected}
       >
-        {/* 页面1：专家建议 */}
-        <View key="1" style={styles.page}>
-          <ImageBackground
-            source={require('../../assets/poster_ai 2.0.jpg')}
-            style={styles.backgroundImage}
-            imageStyle={{ borderRadius: 15 }}
-          >
-            <View style={styles.overlay}>
-              <Text style={styles.bannerText}></Text>
-            </View>
-          </ImageBackground>
-        </View>
-        {/* 页面2：热门帖子 */}
-        <View key="2" style={styles.page}>
-          <ImageBackground
-            source={require('../../assets/poster_community.png')}
-            style={styles.backgroundImage}
-            imageStyle={{ borderRadius: 15 }}
-          >
-            <View style={styles.overlay}>
-              <Text style={styles.bannerText}></Text>
-            </View>
-          </ImageBackground>
-        </View>
-        {/* 页面3：查忌口 */}
-        <View key="3" style={styles.page}>
-          <ImageBackground
-            source={require('../../assets/poster_cjk.png')}
-            style={styles.backgroundImage}
-            imageStyle={{ borderRadius: 15 }}
-          >
-            <View style={styles.overlay}>
-              <Text style={styles.bannerText}></Text>
-            </View>
-          </ImageBackground>
-        </View>
-        {/* 页面4（副本）：AI助手 */}
-        <View key="4" style={styles.page}>
-          <ImageBackground
-            source={require('../../assets/poster_ai 2.0.jpg')}
-            style={styles.backgroundImage}
-            imageStyle={{ borderRadius: 15 }}
-          >
-            <View style={styles.overlay}>
-              <Text style={styles.bannerText}></Text>
-            </View>
-          </ImageBackground>
-        </View>
+        {/* 页面 1 ： AI 助手 */}
+        <BannerItem
+          key="1"
+          imageSource={require('../../../assets/poster_ai 2.0.jpg')}
+          targetPage={'AIAssistant'}
+        ></BannerItem>
+
+        {/* 页面 2 ： 查忌口 */}
+        <BannerItem
+          key="2"
+          imageSource={require('../../../assets/poster_cjk.png')}
+          targetPage={'Taboo'}
+        ></BannerItem>
+
+        {/* 页面 3 ： 社区 */}
+        <BannerItem
+          key="3"
+          imageSource={require('../../../assets/poster_community.png')}
+          targetPage={'HomeCommunityCard'}
+        ></BannerItem>
       </PagerView>
       {/* 指示点 */}
       <View style={styles.indicatorContainer}>
