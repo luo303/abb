@@ -12,7 +12,7 @@ interface PostBodyProps {
 const { width } = Dimensions.get('window')
 const contentPadding = 16
 const imageGap = 8
-// Calculate image size for grid (3 columns)
+// 计算网格中每个图片的大小（3列）
 const imageSize = (width - contentPadding * 2 - imageGap * 2) / 3
 
 export default function PostBody({
@@ -37,8 +37,8 @@ export default function PostBody({
               style={[
                 styles.image,
                 {
-                  width: images.length === 1 ? '100%' : imageSize,
-                  height: images.length === 1 ? 200 : imageSize,
+                  width: imageSize,
+                  height: imageSize,
                   marginBottom: imageGap,
                   marginRight: (index + 1) % 3 === 0 ? 0 : imageGap
                 }
