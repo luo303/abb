@@ -16,8 +16,8 @@ export default function HomeNavGrid() {
         onPress={() => navigation.navigate('Taboo')}
       />
       <NavItem
-        icon="baby-face-outline"
-        label="宝宝信息"
+        icon="pencil"
+        label="日常记录"
         library="MaterialCommunityIcons"
       />
       <NavItem
