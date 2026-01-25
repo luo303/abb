@@ -71,7 +71,7 @@ export default function HomeBanner() {
         <BannerItem
           key="3"
           imageSource={require('../../../assets/poster_community.png')}
-          targetPage={'HomeCommunityCard'}
+          targetPage="scrollToCommunity"
         ></BannerItem>
       </PagerView>
       {/* 指示点 */}

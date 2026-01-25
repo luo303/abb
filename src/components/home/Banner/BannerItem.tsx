@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import { HomeScrollToContext } from '../../../app/(tabs)/home'
 import {
   View,
   TouchableOpacity,
@@ -12,28 +13,32 @@ import { useNavigation } from '@react-navigation/native'
 interface BannerItemProps {
   imageSource: number | string // 图片路径
   // 采用两种类型，string 代表网络图片路径，需使用 uri，number 代表本地图片路径
-  targetPage: string // 跳转页面
+  targetPage?: string // 跳转页面
   onPress?: () => void // 可选点击事件，用于处理同页面滚动效果
+  ScrollToCommunity?: string // 滚动到社区模块
 }
 
 export default function BannerItem({
   imageSource,
-  targetPage,
-  onPress
+  targetPage
 }: BannerItemProps) {
   const navigation = useNavigation<NavigationProps>()
+  const { scrollToCommunity } = useContext(HomeScrollToContext)
+
+  // 封装点击处理逻辑
+  const handlePress = () => {
+    if (targetPage === 'scrollToCommunity') {
+      // 设置一个标志 'scrollToContext' 标记滚动
+      scrollToCommunity()
+    } else {
+      navigation.navigate(targetPage as any)
+    }
+  }
   return (
     <TouchableOpacity
       style={styles.page}
       activeOpacity={0.8}
-      onPress={
-        onPress
-          ? onPress
-          : () => {
-              // 只有传入点击事件参数时再调用路由跳转事件
-              navigation.navigate(targetPage as any) // 此处封装了目标页面的路由地址，使用类型断言，防止 ts 报错
-            }
-      }
+      onPress={handlePress} // 调用封装好的点击逻辑
     >
       <ImageBackground
         source={
