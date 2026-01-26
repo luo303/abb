@@ -8,6 +8,7 @@ import {
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
+import * as ImagePicker from 'expo-image-picker'
 
 // 导入子组件
 import AddPostHeader from '@/components/post/add/AddPostHeader'
@@ -29,9 +30,38 @@ export default function AddPostScreen() {
     navigation.goBack()
   }
 
-  const handleAddImage = () => {
-    // 这里先整张模拟图片，到时候调用 expo-image-picker
-    setImages([...images, 'https://via.placeholder.com/150'])
+  // 从本地相册添加图片
+  const handleAddImage = async () => {
+    // 计算发布帖子剩余的存储量
+    const remainingCount = 9 - images.length
+
+    // 处理发布帖子照片数量已满的情况（即剩余能上传的图片数量小于等于 0 ）
+    if (remainingCount <= 0) {
+      alert('最多只能上传 9 张照片喔！')
+      return
+    }
+    // 请求相册权限
+    const permissonResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync()
+
+    if (permissonResult.granted === false) {
+      alert('需要访问相册权限才能上传图片！')
+      return
+    }
+
+    // 打开相册选择图片
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // 只允许选择图片
+      allowsMultipleSelection: true, // 允许多选
+      selectionLimit: remainingCount, // 最多选择 remainingCount 张图片
+      aspect: [1, 1], // 裁剪比例： 1：1
+      quality: 1 // 图片压缩质量
+    })
+
+    if (!result.canceled) {
+      const newUris = result.assets.map(item => item.uri) // 使用 map 方法将每张图片的 uri 提取出来
+      setImages([...images, ...newUris]) // 合并新图片到图片数组中
+    }
   }
 
   const handleRemoveImage = (index: number) => {
