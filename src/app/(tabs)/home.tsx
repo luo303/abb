@@ -1,16 +1,11 @@
-import React, { useState, useRef, createContext } from 'react' // 添加 createContext 用于处理 TabooContext
+import React, { useState, useRef } from 'react'
 import { View, StyleSheet, ScrollView } from 'react-native'
+import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeSearchManager from '@/components/home/search/HomeSearchManager'
 import { MOCK_POSTS } from '@/data/mock/homePosts'
-
-// 创建一个滚动上下文，用于点击 BannerItem 后滚动到指定区域
-// 此处需要将首页的上下文导出，以便其他组件使用
-export const HomeScrollToContext = createContext({
-  scrollToCommunity: () => {}
-})
 
 /**
  * 首页组件
@@ -26,7 +21,9 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false)
 
   return (
-    <HomeScrollToContext value={{ scrollToCommunity: handleScrollToCommunity }}>
+    <HomeScrollToContext.Provider
+      value={{ scrollToCommunity: handleScrollToCommunity }}
+    >
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={true} // 当为 true 时候，显示滚动条
@@ -58,7 +55,7 @@ export default function Home() {
 
         <View style={{ height: 30 }} />
       </ScrollView>
-    </HomeScrollToContext>
+    </HomeScrollToContext.Provider>
   )
 }
 

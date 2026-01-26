@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { HomeScrollToContext } from '../../../app/(tabs)/home'
+import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import {
   View,
   TouchableOpacity,
