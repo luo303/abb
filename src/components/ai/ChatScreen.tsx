@@ -170,7 +170,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
+        keyboardVerticalOffset={headerHeight}
       >
         <View style={styles.contentContainer}>
           {messages.length === 0 ? (
