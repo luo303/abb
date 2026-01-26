@@ -75,7 +75,7 @@ export default function TabsLayout() {
           title: '成长记录',
           headerTitle: '成长记录',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="folder-view" size={24} color={color} />
+            <AntDesign name="line-chart" size={24} color={color} />
           )
         }}
       />
@@ -93,7 +93,7 @@ export default function TabsLayout() {
         options={{
           title: 'AI助手',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="comment" size={24} color={color} />
+            <AntDesign name="twitch" size={24} color={color} />
           )
         }}
       />

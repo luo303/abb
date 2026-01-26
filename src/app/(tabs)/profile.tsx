@@ -2,13 +2,7 @@ import { clearToken } from '../../store/modules/userStore'
 import { useDispatch } from 'react-redux'
 import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-
-type RootStackParamList = {
-  Login: undefined
-  Register: undefined
-  Password: undefined
-  Tabs: undefined
-}
+import { RootStackParamList } from '../../types/navigation'
 
 type NavigationProps = NavigationProp<RootStackParamList>
 
