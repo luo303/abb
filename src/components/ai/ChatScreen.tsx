@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import ChatMessage, { Message } from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatEmptyState from './ChatEmptyState'
-
+import * as Speech from 'expo-speech'
 // 在 Android 上启用布局动画
 if (
   Platform.OS === 'android' &&
@@ -35,6 +35,54 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null)
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
+
+  // 语音播放状态管理
+  const [speakingId, setSpeakingId] = useState<string | null>(null)
+  const speakingIdRef = useRef<string | null>(null)
+
+  const updateSpeakingId = (id: string | null) => {
+    speakingIdRef.current = id
+    setSpeakingId(id)
+  }
+
+  const handleSpeak = (id: string, text: string) => {
+    if (speakingIdRef.current === id) {
+      // 如果点击的是当前正在播放的，则停止
+      Speech.stop()
+      updateSpeakingId(null)
+    } else {
+      // 停止之前的播放（如果有）
+      Speech.stop()
+      // 立即更新为新的播放ID
+      updateSpeakingId(id)
+
+      Speech.speak(text, {
+        onDone: () => {
+          // 只有当当前播放ID仍然是这个ID时才清除（防止被新的播放打断后错误清除）
+          if (speakingIdRef.current === id) {
+            updateSpeakingId(null)
+          }
+        },
+        onStopped: () => {
+          if (speakingIdRef.current === id) {
+            updateSpeakingId(null)
+          }
+        },
+        onError: () => {
+          if (speakingIdRef.current === id) {
+            updateSpeakingId(null)
+          }
+        }
+      })
+    }
+  }
+
+  // 组件卸载时停止播放
+  useEffect(() => {
+    return () => {
+      Speech.stop()
+    }
+  }, [])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
@@ -131,17 +179,17 @@ export default function ChatScreen() {
             <FlatList
               ref={flatListRef}
               data={messages}
-              renderItem={({ item }) => <ChatMessage message={item} />}
+              renderItem={({ item }) => (
+                <ChatMessage
+                  message={item}
+                  isSpeaking={item.id === speakingId}
+                  onSpeak={() => handleSpeak(item.id, item.text)}
+                />
+              )}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContent}
-              ListFooterComponent={<View style={{ height: 60 }} />}
+              ListFooterComponent={<View style={{ height: 100 }} />}
               showsVerticalScrollIndicator={false}
-              onContentSizeChange={() => {
-                flatListRef.current?.scrollToEnd({ animated: true })
-              }}
-              onLayout={() =>
-                flatListRef.current?.scrollToEnd({ animated: true })
-              }
               onScroll={handleScroll}
               scrollEventThrottle={16}
               style={styles.flatList}
