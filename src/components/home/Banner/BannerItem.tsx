@@ -46,7 +46,7 @@ export default function BannerItem({
           // 一个是本地图片路径，一个是网络图片路径，通过 typeof 判断，可以使用不同的方式处理
         }
         style={styles.backgroundImage}
-        imageStyle={{ borderRadius: 15 }}
+        imageStyle={{ borderRadius: 20 }}
       >
         <View style={styles.overlay}>
           <Text style={styles.bannerText}></Text>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     padding: 10,
-    borderRadius: 5
+    borderRadius: 20
   },
   bannerText: {
     fontSize: 24,

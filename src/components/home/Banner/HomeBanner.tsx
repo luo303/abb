@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { View, StyleSheet } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import BannerItem from './BannerItem'
+import Card from '../../common/Card'
 
 /**
  * HomeBanner 组件
@@ -46,7 +47,7 @@ export default function HomeBanner() {
   }
 
   return (
-    <View style={styles.pagerContainer}>
+    <Card style={styles.pagerContainer}>
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
@@ -88,7 +89,7 @@ export default function HomeBanner() {
           />
         ))}
       </View>
-    </View>
+    </Card>
   )
 }
 
@@ -97,14 +98,9 @@ const styles = StyleSheet.create({
     height: 200,
     marginTop: 10,
     marginHorizontal: 15,
-    borderRadius: 15,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    elevation: 4, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4
+    marginBottom: 0,
+    padding: 0,
+    overflow: 'hidden'
   },
   pagerView: {
     flex: 1

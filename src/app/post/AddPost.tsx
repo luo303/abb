@@ -17,6 +17,7 @@ import ImageUploader from '@/components/post/add/ImageUploader'
 import PostToolbar from '@/components/post/add/PostToolbar'
 import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
+import Card from '@/components/common/Card'
 
 export default function AddPostScreen() {
   const navigation = useNavigation<NavigationProps>()
@@ -84,7 +85,7 @@ export default function AddPostScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 主要内容卡片：包含用户信息、输入框和图片上传 */}
-          <View style={styles.card}>
+          <Card style={styles.cardContent}>
             <PostUserInfo />
             <PostInput value={content} onChangeText={setContent} />
             <ImageUploader
@@ -92,12 +93,12 @@ export default function AddPostScreen() {
               onAddImage={handleAddImage}
               onRemoveImage={handleRemoveImage}
             />
-          </View>
+          </Card>
 
           {/* 工具栏卡片 */}
-          <View style={styles.card}>
+          <Card style={styles.cardContent}>
             <PostToolbar />
-          </View>
+          </Card>
         </ScrollView>
 
         <PostFooter
@@ -121,17 +122,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15 // 给 ScrollView 添加内边距
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 15,
+  cardContent: {
+    padding: 0,
     paddingVertical: 5,
-    // 阴影效果
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2, // Android 阴影
-    overflow: 'hidden' // 确保圆角生效
+    overflow: 'hidden'
   }
 })

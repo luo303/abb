@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import Card from '../common/Card'
 
 // 定义接受的数据格式
 interface BabyAlbumProps {
@@ -17,7 +18,7 @@ export default function BabyAlbum({ images = [] }) {
           require('../../assets/testAvatar.png')
         ]
   return (
-    <View style={styles.card}>
+    <Card>
       <View style={styles.header}>
         <Text style={styles.title}>宝宝相册</Text>
       </View>
@@ -30,22 +31,11 @@ export default function BabyAlbum({ images = [] }) {
           </TouchableOpacity>
         ))}
       </View>
-    </View>
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    padding: 15
-  },
   header: {
     marginBottom: 12
   },

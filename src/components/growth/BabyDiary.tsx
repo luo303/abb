@@ -1,9 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
+import Card from '../common/Card'
 
 export default function BabyDiary() {
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title}>宝宝日记</Text>
       </View>
@@ -20,21 +21,13 @@ export default function BabyDiary() {
           </Text>
         </View>
       </View>
-    </View>
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 15,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0.05, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    padding: 12
   },
   header: {
     marginBottom: 12

@@ -58,9 +58,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginVertical: 20,
     backgroundColor: '#1f99b0', // 浅蓝绿色背景条
-    borderRadius: 10,
+    borderRadius: 20,
     paddingVertical: 15,
-    marginHorizontal: 15
+    marginHorizontal: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
   },
   navItem: {
     alignItems: 'center',
@@ -69,7 +74,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 20,
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: '#fff',

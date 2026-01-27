@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: '#f5f5f5'
   },
   deleteButton: {
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#eee',
     borderStyle: 'dashed'

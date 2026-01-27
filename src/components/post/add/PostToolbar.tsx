@@ -73,7 +73,7 @@ export default function PostToolbar() {
 const styles = StyleSheet.create({
   toolbar: {
     backgroundColor: '#fff',
-    marginTop: 10 // 只保留一点间距，不再使用粗边框
+    marginTop: 0
   },
   toolItem: {
     flexDirection: 'row',
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   iconBg: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: '#e6f7ff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e6f7ff',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 20,
     overflow: 'hidden'
   },
   arrow: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 15,
     backgroundColor: '#fffbe6',
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#ffe58f'
   },

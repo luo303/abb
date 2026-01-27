@@ -1,9 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
+import Card from '../common/Card'
 
 export default function GrowthChart() {
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title}>胎重曲线</Text>
       </View>
@@ -13,21 +14,13 @@ export default function GrowthChart() {
           style={styles.chartImage}
         />
       </View>
-    </View>
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 15,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0.05, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    padding: 12
   },
   header: {
     marginBottom: 12

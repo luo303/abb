@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     backgroundColor: '#fff',
-    borderRadius: 15,
+    borderRadius: 20,
     marginHorizontal: 15,
     padding: 15,
     marginBottom: 20,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   postImage: {
     width: 100,
     height: 100,
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: '#f0f0f0'
   },
   postImagePlaceholder: {
