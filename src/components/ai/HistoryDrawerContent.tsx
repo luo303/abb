@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -10,10 +10,33 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
 import { AntDesign } from '@expo/vector-icons'
 import { historyList } from '../../data/mock/homePosts'
+import HistoryActionModal from './HistoryActionModal'
+
+type HistoryItem = (typeof historyList)[0]
 
 export default function HistoryDrawerContent(
   props: DrawerContentComponentProps
 ) {
+  const [items, setItems] = useState<HistoryItem[]>(historyList)
+  const [menuVisible, setMenuVisible] = useState(false)
+  const [activeItem, setActiveItem] = useState<HistoryItem | null>(null)
+
+  const handleLongPress = (item: HistoryItem) => {
+    setActiveItem(item)
+    setMenuVisible(true)
+  }
+
+  const handleCloseMenu = () => {
+    setMenuVisible(false)
+    setActiveItem(null)
+  }
+
+  const handleDelete = () => {
+    if (!activeItem) return
+    setItems(prev => prev.filter(item => item.id !== activeItem.id))
+    handleCloseMenu()
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -21,8 +44,13 @@ export default function HistoryDrawerContent(
       </View>
 
       <ScrollView style={styles.content}>
-        {historyList.map(item => (
-          <TouchableOpacity key={item.id} style={styles.historyItem}>
+        {items.map(item => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.historyItem}
+            activeOpacity={0.7}
+            onLongPress={() => handleLongPress(item)}
+          >
             <AntDesign
               name="message"
               size={16}
@@ -38,6 +66,11 @@ export default function HistoryDrawerContent(
           </TouchableOpacity>
         ))}
       </ScrollView>
+      <HistoryActionModal
+        visible={menuVisible}
+        onClose={handleCloseMenu}
+        onDelete={handleDelete}
+      />
     </SafeAreaView>
   )
 }
