@@ -1,5 +1,12 @@
 import React from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView
+} from 'react-native'
 import Card from '../common/Card'
 
 // 定义接受的数据格式
@@ -15,6 +22,8 @@ export default function BabyAlbum({ images = [] }) {
       : [
           require('../../assets/testAvatar.png'), // 模拟图片
           require('../../assets/testAvatar.png'),
+          require('../../assets/testAvatar.png'),
+          require('../../assets/testAvatar.png'), // 增加图片数量以测试滚动
           require('../../assets/testAvatar.png')
         ]
   return (
@@ -24,13 +33,18 @@ export default function BabyAlbum({ images = [] }) {
       </View>
 
       {/* 图片展示区域 */}
-      <View style={styles.imageContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false} // 隐藏默认滚动条，使用自定义样式或保持简洁
+        contentContainerStyle={styles.imageContainer}
+        style={styles.scrollView}
+      >
         {displayImages.map((img, index) => (
           <TouchableOpacity key={index} activeOpacity={0.8}>
             <Image style={styles.image} source={img} />
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
     </Card>
   )
 }
@@ -44,9 +58,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333'
   },
+  scrollView: {
+    marginHorizontal: -15 // 抵消 Card 的 padding，让滚动区域占满宽度
+  },
   imageContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    paddingHorizontal: 15, // 在滚动内容内部补回 padding
     gap: 10
   },
   image: {
