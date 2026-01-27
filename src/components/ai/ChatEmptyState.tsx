@@ -6,8 +6,10 @@ export default function ChatEmptyState() {
     <View style={styles.container}>
       <View style={styles.content}>
         <AntDesign name="twitch" size={72} color="#1f99b0" />
-        <Text style={styles.title}>Hi！我是 AI 孕育助手</Text>
-        <Text style={styles.subtitle}>有什么相关问题，尽管问我</Text>
+        <Text style={styles.title}>Hi！我是小稚~</Text>
+        <Text style={styles.subtitle}>
+          专业的育儿知识，贴心的陪伴建议，陪你轻松度过孕育每一天
+        </Text>
       </View>
     </View>
   )
