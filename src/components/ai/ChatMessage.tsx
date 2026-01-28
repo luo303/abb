@@ -4,12 +4,7 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useMessage } from '../Message'
-export interface Message {
-  id: string
-  text: string
-  isUser: boolean
-  timestamp: number
-}
+import { Message } from '../../types/AIchat'
 
 interface ChatMessageProps {
   message: Message
@@ -27,7 +22,7 @@ export default function ChatMessage({
 
   const { showMessage } = useMessage()
   const handleCopy = async () => {
-    await Clipboard.setStringAsync(message.text)
+    await Clipboard.setStringAsync(message.content)
     showMessage('复制成功')
   }
 
@@ -70,7 +65,7 @@ export default function ChatMessage({
               message.isUser ? styles.userText : styles.aiText
             ]}
           >
-            {message.text}
+            {message.content}
           </Text>
         </View>
 

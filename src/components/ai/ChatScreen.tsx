@@ -15,10 +15,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { Ionicons } from '@expo/vector-icons'
-import ChatMessage, { Message } from './ChatMessage'
+import { useSelector, useDispatch } from 'react-redux'
+import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatEmptyState from './ChatEmptyState'
 import * as Speech from 'expo-speech'
+import { RootState } from '../../store'
+import { addMessage, createNewSession } from '../../store/modules/ChatStore'
+import { Message } from '../../types/AIchat'
+
 // 在 Android 上启用布局动画
 if (
   Platform.OS === 'android' &&
@@ -27,10 +32,12 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
-const INITIAL_MESSAGES: Message[] = []
-
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
+  const messages = useSelector((state: RootState) => state.chat.messages)
+  const currentConversationId = useSelector(
+    (state: RootState) => state.chat.currentConversationId
+  )
+  const dispatch = useDispatch()
   const [inputText, setInputText] = useState('')
   const flatListRef = useRef<FlatList>(null)
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
@@ -88,32 +95,42 @@ export default function ChatScreen() {
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
+  const generateId = () => {
+    return Date.now().toString() + Math.random().toString(36).substring(2, 9)
+  }
+
   const sendMessage = () => {
     if (!inputText.trim()) return
 
     Keyboard.dismiss()
 
+    // 如果当前没有会话ID，说明是新会话，需要先创建会话
+    if (!currentConversationId || messages.length === 0) {
+      const newId = generateId()
+      // @ts-ignore - Thunk action type issue
+      dispatch(createNewSession(newId))
+    }
+
     const userMsg: Message = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
-      isUser: true,
-      timestamp: Date.now()
+      message_id: generateId(),
+      content: inputText.trim(),
+      isUser: true
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setMessages(prev => [...prev, userMsg])
+    dispatch(addMessage(userMsg))
     setInputText('')
 
     // 模拟 AI 回复
     setTimeout(() => {
       const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
-        isUser: false,
-        timestamp: Date.now()
+        message_id: generateId(),
+        content:
+          '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
+        isUser: false
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-      setMessages(prev => [...prev, aiMsg])
+      dispatch(addMessage(aiMsg))
     }, 1000)
   }
 
@@ -179,14 +196,14 @@ export default function ChatScreen() {
             <FlatList
               ref={flatListRef}
               data={messages}
+              keyExtractor={item => item.message_id}
               renderItem={({ item }) => (
                 <ChatMessage
                   message={item}
-                  isSpeaking={item.id === speakingId}
-                  onSpeak={() => handleSpeak(item.id, item.text)}
+                  isSpeaking={item.message_id === speakingId}
+                  onSpeak={() => handleSpeak(item.message_id, item.content)}
                 />
               )}
-              keyExtractor={item => item.id}
               contentContainerStyle={styles.listContent}
               ListFooterComponent={<View style={{ height: 100 }} />}
               showsVerticalScrollIndicator={false}

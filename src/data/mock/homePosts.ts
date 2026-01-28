@@ -1,5 +1,6 @@
 import { TabooItem } from '@/types/taboo'
 import { Comment } from '../../types/post'
+import { HistoryItem } from '../../types/AIchat'
 // 模拟社区帖子数据
 export const MOCK_POSTS = [
   {
@@ -176,24 +177,9 @@ export const MOCK_COMMENTS: Comment[] = [
     ]
   }
 ]
+
 // 模拟ai聊天历史数据
-export const historyList = [
-  { id: '1', title: '关于宝宝辅食的建议', date: '2024-05-20' },
-  { id: '2', title: '如何处理宝宝红屁股', date: '2024-05-18' },
-  { id: '3', title: '新生儿疫苗接种时间表', date: '2024-05-15' },
-  { id: '4', title: '关于宝宝辅食的建议', date: '2024-05-20' },
-  { id: '5', title: '如何处理宝宝红屁股', date: '2024-05-18' },
-  { id: '6', title: '新生儿疫苗接种时间表', date: '2024-05-15' },
-  { id: '7', title: '关于宝宝辅食的建议', date: '2024-05-20' },
-  { id: '8', title: '如何处理宝宝红屁股', date: '2024-05-18' },
-  { id: '9', title: '新生儿疫苗接种时间表', date: '2024-05-15' },
-  { id: '10', title: '关于宝宝辅食的建议', date: '2024-05-20' },
-  { id: '11', title: '如何处理宝宝红屁股', date: '2024-05-18' },
-  { id: '12', title: '新生儿疫苗接种时间表', date: '2024-05-15' },
-  { id: '13', title: '关于宝宝辅食的建议', date: '2024-05-20' },
-  { id: '14', title: '如何处理宝宝红屁股', date: '2024-05-18' },
-  { id: '15', title: '新生儿疫苗接种时间表', date: '2024-05-15' }
-]
+export const historyList: HistoryItem[] = []
 //查忌口
 export const MOCK_FOODS: TabooItem[] = [
   {
