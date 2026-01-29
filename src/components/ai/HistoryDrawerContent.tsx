@@ -68,7 +68,6 @@ export default function HistoryDrawerContent(
             if (messages.length === 0) {
               showMessage('已在新对话中')
             }
-            Speech.stop()
             // @ts-ignore - Thunk action type issue
             dispatch(resetSession())
             props.navigation.closeDrawer()

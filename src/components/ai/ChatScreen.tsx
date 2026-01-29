@@ -91,6 +91,12 @@ export default function ChatScreen() {
     }
   }, [])
 
+  // 监听会话ID变化，停止语音播放
+  useEffect(() => {
+    Speech.stop()
+    updateSpeakingId(null)
+  }, [currentConversationId])
+
   // 尝试获取头部高度，如果不可用则回退到安全默认值
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
