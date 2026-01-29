@@ -105,10 +105,13 @@ export default function ChatScreen() {
     return Date.now().toString() + Math.random().toString(36).substring(2, 9)
   }
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return
+  const sendMessage = (text?: string) => {
+    const contentToSend = typeof text === 'string' ? text : inputText.trim()
+    if (!contentToSend) return
 
-    Keyboard.dismiss()
+    if (typeof text !== 'string') {
+      Keyboard.dismiss()
+    }
 
     // 如果当前没有会话ID，说明是新会话，需要先创建会话
     if (!currentConversationId || messages.length === 0) {
@@ -119,13 +122,16 @@ export default function ChatScreen() {
 
     const userMsg: Message = {
       message_id: generateId(),
-      content: inputText.trim(),
+      content: contentToSend,
       isUser: true
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     dispatch(addMessage(userMsg))
-    setInputText('')
+
+    if (typeof text !== 'string') {
+      setInputText('')
+    }
 
     // 模拟 AI 回复
     setTimeout(() => {
@@ -140,6 +146,10 @@ export default function ChatScreen() {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       dispatch(addMessage(aiMsg))
     }, 1000)
+  }
+
+  const handleWonderPress = (text: string) => {
+    sendMessage(text)
   }
 
   // 当消息变化时，如果是AI回复，则平滑滚动到底部
@@ -210,6 +220,7 @@ export default function ChatScreen() {
                   message={item}
                   isSpeaking={item.message_id === speakingId}
                   onSpeak={() => handleSpeak(item.message_id, item.content)}
+                  onWonderPress={handleWonderPress}
                   // inverted 后索引也反转了，所以判断最新消息逻辑要变
                   // 原数组：[msg1, msg2, msg3] (最新的是 msg3，index=2)
                   // 反转后：[msg3, msg2, msg1] (最新的是 msg3，index=0)
