@@ -6,9 +6,12 @@
  * @property {boolean} isUser - 是否为用户发送的消息 (true: 用户, false: AI)
  */
 export interface Message {
-  message_id: string
-  content: string
-  isUser: boolean
+  title?: string //可选，AI根据用户第一次询问的信息返回标题
+  message_id: string //一次信息的唯一标识
+  images?: any[] //用户可能同时附带图片（不知道要不要做这个功能）
+  content: string //消息内容文本
+  isUser: boolean //是否为用户发送的消息 (true: 用户, false: AI)
+  wonder?: string[] //猜你想问的问题列表（只有AI回复的内容有这个字段）
 }
 
 /**

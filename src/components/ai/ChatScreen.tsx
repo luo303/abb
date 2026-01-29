@@ -130,40 +130,41 @@ export default function ChatScreen() {
     // 模拟 AI 回复
     setTimeout(() => {
       const aiMsg: Message = {
+        title: '测试标题',
         message_id: generateId(),
         content:
           '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
-        isUser: false
+        isUser: false,
+        wonder: ['宝宝不睡觉怎么办', '如何给宝宝喂奶']
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       dispatch(addMessage(aiMsg))
     }, 1000)
   }
 
-  // 当消息变化时滚动到底部
+  // 当消息变化时，如果是AI回复，则平滑滚动到底部
   useEffect(() => {
-    // 小延迟确保在滚动前布局已完成
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true })
-    }, 100)
-
-    // AI 回复或渲染缓慢的双重保险
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true })
-    }, 300)
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1]
+      // 只有当最新消息不是用户发送的（即AI回复），或者是用户刚发送时，才触发滚动
+      // 初始化或切换会话时，由于 inverted 属性，自然就在底部，不需要额外滚动
+      if (!lastMessage.isUser || messages.length === 1) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+        }, 100)
+      }
+    }
   }, [messages])
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
-    // 检查是否远离底部
-    // 如果距离底部超过 200，显示按钮
-    const distanceToBottom =
-      contentSize.height - layoutMeasurement.height - contentOffset.y
-    setShowScrollBottom(distanceToBottom > 200)
+    const { contentOffset } = event.nativeEvent
+    // 在 inverted 模式下，offsetY 为 0 表示在底部（列表顶部）
+    // 如果 offset > 200，说明向上滚动查看历史记录了
+    setShowScrollBottom(contentOffset.y > 200)
   }
 
   const scrollToBottom = () => {
-    flatListRef.current?.scrollToEnd({ animated: true })
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
   }
 
   // 由于全面屏模式问题，手动处理 Android 键盘
@@ -201,17 +202,22 @@ export default function ChatScreen() {
           ) : (
             <FlatList
               ref={flatListRef}
-              data={messages}
+              data={[...messages].reverse()} // 反转数据源以适配 inverted
               keyExtractor={item => item.message_id}
-              renderItem={({ item }) => (
+              inverted={true} // 启用倒序模式，默认从底部开始
+              renderItem={({ item, index }) => (
                 <ChatMessage
                   message={item}
                   isSpeaking={item.message_id === speakingId}
                   onSpeak={() => handleSpeak(item.message_id, item.content)}
+                  // inverted 后索引也反转了，所以判断最新消息逻辑要变
+                  // 原数组：[msg1, msg2, msg3] (最新的是 msg3，index=2)
+                  // 反转后：[msg3, msg2, msg1] (最新的是 msg3，index=0)
+                  isLatest={index === 0}
                 />
               )}
               contentContainerStyle={styles.listContent}
-              ListFooterComponent={<View style={{ height: 100 }} />}
+              ListHeaderComponent={<View style={{ height: 80 }} />} // 倒序后 Footer 变成了 Header
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
               scrollEventThrottle={16}
@@ -259,7 +265,9 @@ const styles = StyleSheet.create({
     flex: 1
   },
   listContent: {
-    padding: 16
+    padding: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end'
     // paddingBottom 移至 ListFooterComponent 以确保正确滚动
   },
   inputContainer: {
