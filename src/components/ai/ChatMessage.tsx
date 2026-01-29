@@ -172,7 +172,8 @@ const styles = StyleSheet.create({
     maxWidth: '100%'
   },
   userColumn: {
-    alignItems: 'flex-end'
+    alignItems: 'flex-end',
+    maxWidth: '85%'
   },
   aiColumn: {
     alignItems: 'flex-start',
