@@ -17,7 +17,7 @@ export default function GrowthChart() {
       <View style={styles.header}>
         <View style={styles.titleWrapper}>
           <View style={styles.iconBox}>
-            <Ionicons name="trending-up-outline" size={20} color="#fff" />
+            <Ionicons name="trending-up-outline" size={20} color="#1f99b0" />
           </View>
           <Text style={styles.title}>成长曲线</Text>
         </View>
@@ -76,7 +76,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 12,
-    backgroundColor: '#4299e1',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -87,7 +86,8 @@ const styles = StyleSheet.create({
   },
   moreText: {
     fontSize: 13,
-    color: '#999'
+    color: '#0ea5e9',
+    fontWeight: '600'
   },
   contentContainer: {
     gap: 12

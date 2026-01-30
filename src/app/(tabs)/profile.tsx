@@ -27,16 +27,17 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['#cffafe', '#e0f2fe', '#ffffff']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.background}
+      />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={['#fff', '#f0f4f8']}
-          style={styles.background}
-        />
-
         {/* 顶部个人信息 Banner */}
         <UserInfo />
 

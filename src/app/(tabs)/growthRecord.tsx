@@ -17,7 +17,12 @@ import BabyDiary from '../../components/growth/BabyDiary'
 export default function GrowthRecord() {
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#fff', '#f0f4f8']} style={styles.background} />
+      <LinearGradient
+        colors={['#cffafe', '#e0f2fe', '#ffffff']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.background}
+      />
 
       <ScrollView
         style={styles.scrollView}

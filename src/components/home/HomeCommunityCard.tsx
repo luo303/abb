@@ -1,8 +1,20 @@
 import React from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Dimensions
+} from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
+
+// 计算宽度，与 HomeNavGrid 和 HomeBanner 一致
+const { width } = Dimensions.get('window')
+const NAV_MARGIN_H = 16
+const TARGET_WIDTH = width - NAV_MARGIN_H * 2
 
 interface HomeCommunityCardProps {
   data: any
@@ -74,18 +86,19 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 const styles = StyleSheet.create({
   communityContainer: {
     // 确保点击区域正常
+    alignItems: 'center' // 居中显示
   },
   cardContainer: {
+    width: TARGET_WIDTH, // 统一宽度
     backgroundColor: '#fff',
-    borderRadius: 20,
-    marginHorizontal: 15,
+    borderRadius: 24, // 统一圆角
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 20, // 下边距可以保留在外部或内部，这里是内部
     // Shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 }, // 统一阴影方向
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 8, // 统一阴影半径
     elevation: 3
   },
   header: {

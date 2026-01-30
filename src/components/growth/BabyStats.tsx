@@ -10,7 +10,7 @@ export default function BabyStats() {
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <View style={styles.iconBg}>
-            <Ionicons name="body-outline" size={20} color="#fff" />
+            <Ionicons name="body-outline" size={20} color="#00acc1" />
           </View>
           <Text style={styles.title}>宝宝档案</Text>
         </View>
@@ -26,7 +26,7 @@ export default function BabyStats() {
           style={styles.statBox}
         >
           <View style={styles.statIcon}>
-            <Ionicons name="resize-outline" size={24} color="#0284c7" />
+            <Ionicons name="resize-outline" size={24} color="#1f99b0" />
           </View>
           <View>
             <Text style={styles.statLabel}>身高</Text>
@@ -37,15 +37,15 @@ export default function BabyStats() {
           </View>
         </LinearGradient>
 
-        {/* 体重卡片 */}
+        {/* 体重卡片 - 使用青色渐变，与主题保持一致 */}
         <LinearGradient
-          colors={['#fce7f3', '#fbcfe8']}
+          colors={['#e0f7fa', '#b2ebf2']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.statBox}
         >
           <View style={styles.statIcon}>
-            <Ionicons name="scale-outline" size={24} color="#db2777" />
+            <Ionicons name="scale-outline" size={24} color="#00acc1" />
           </View>
           <View>
             <Text style={styles.statLabel}>体重</Text>
@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 12,
-    backgroundColor: '#4A8B95',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -91,9 +90,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#4A8B95',
+    color: '#0ea5e9',
     fontWeight: '600',
-    backgroundColor: '#e6fffa',
+    backgroundColor: '#e0f2fe',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,

@@ -14,7 +14,7 @@ export default function BabyDiary() {
       <View style={styles.header}>
         <View style={styles.titleWrapper}>
           <View style={styles.iconBox}>
-            <Ionicons name="book-outline" size={20} color="#fff" />
+            <Ionicons name="book-outline" size={20} color="#1f99b0" />
           </View>
           <Text style={styles.title}>宝宝日记</Text>
         </View>
@@ -86,7 +86,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 12,
-    backgroundColor: '#48bb78',
     justifyContent: 'center',
     alignItems: 'center'
   },

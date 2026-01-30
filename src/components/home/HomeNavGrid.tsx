@@ -2,13 +2,19 @@ import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
 
 export default function HomeNavGrid() {
   const navigation = useNavigation<NavigationProps>()
 
   return (
-    <View style={styles.navContainer}>
+    <LinearGradient
+      colors={['#22d3ee', '#0ea5e9', '#3b82f6']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.navContainer}
+    >
       <NavItem
         icon="food-off"
         label="查忌口"
@@ -33,7 +39,7 @@ export default function HomeNavGrid() {
         library="MaterialCommunityIcons"
         onPress={() => navigation.navigate('BabyStories')}
       />
-    </View>
+    </LinearGradient>
   )
 }
 
@@ -47,7 +53,7 @@ const NavItem = ({ icon, label, library, onPress }: any) => {
       activeOpacity={0.8}
     >
       <View style={styles.iconCircle}>
-        <IconComponent name={icon} size={28} color="#fff" />
+        <IconComponent name={icon} size={26} color="#0ea5e9" />
       </View>
       <Text style={styles.navLabel}>{label}</Text>
     </TouchableOpacity>
@@ -59,35 +65,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginVertical: 20,
-    backgroundColor: '#1f99b0', // 浅蓝绿色背景条
-    borderRadius: 20,
-    paddingVertical: 15,
-    marginHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    marginVertical: 10,
+    borderRadius: 24,
+    paddingVertical: 16,
+    marginHorizontal: 16,
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center'
   },
   iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#fff',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 0
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2
   },
   navLabel: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#fff',
-    marginTop: 5
+    marginTop: 2
   }
 })
