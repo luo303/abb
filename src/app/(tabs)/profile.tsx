@@ -1,26 +1,54 @@
-import { clearToken } from '../../store/modules/userStore'
+import React from 'react'
+import { View, StyleSheet, ScrollView } from 'react-native'
 import { useDispatch } from 'react-redux'
 import { useNavigation, NavigationProp } from '@react-navigation/native'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { clearToken } from '../../store/modules/userStore'
 import { RootStackParamList } from '../../types/navigation'
+import { LinearGradient } from 'expo-linear-gradient'
+
+// 导入组件
+import UserInfo from '../../components/profile/UserInfo'
+import InfoCard from '../../components/profile/InfoCard'
+import ActionMenu from '../../components/profile/ActionMenu'
 
 type NavigationProps = NavigationProp<RootStackParamList>
 
 export default function Profile() {
   const dispatch = useDispatch()
   const navigation = useNavigation<NavigationProps>()
-  const logout = () => {
+
+  const handleLogout = () => {
     dispatch(clearToken())
     navigation.reset({
       index: 0,
       routes: [{ name: 'Login' }]
     })
   }
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.card} onPress={() => logout()}>
-        <Text>退出登录</Text>
-      </TouchableOpacity>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <LinearGradient
+          colors={['#fff', '#f0f4f8']}
+          style={styles.background}
+        />
+
+        {/* 顶部个人信息 Banner */}
+        <UserInfo />
+
+        {/* 下方内容区域 */}
+        <View style={styles.contentContainer}>
+          <InfoCard />
+          <ActionMenu onLogout={handleLogout} />
+        </View>
+
+        {/* 底部占位 */}
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   )
 }
@@ -28,18 +56,22 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: '#fff'
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2
+  scrollView: {
+    flex: 1
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '100%'
+  },
+  content: {
+    paddingTop: 0
+  },
+  contentContainer: {
+    paddingTop: 15
   }
 })
