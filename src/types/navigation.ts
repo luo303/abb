@@ -10,6 +10,9 @@ export type RootStackParamList = {
   DailyRecord: undefined
   VaccineRecord: undefined
   BabyStories: undefined
+  Album: undefined
+  GrowthCurve: undefined
+  Diary: undefined
   PostDetail: { id: string }
   AddPost: undefined
 }

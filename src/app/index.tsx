@@ -15,6 +15,9 @@ import TabooScreen from './(HomeNavGrid)/Taboo'
 import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
+import AlbumScreen from './(GrowthSubPages)/Album'
+import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
+import DiaryScreen from './(GrowthSubPages)/Diary'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -92,6 +95,21 @@ export default function Layout() {
               name="VaccineRecord"
               component={VaccineRecordScreen}
               options={{ title: '疫苗记录' }}
+            />
+            <Stack.Screen
+              name="Album"
+              component={AlbumScreen}
+              options={{ title: '宝宝相册' }}
+            />
+            <Stack.Screen
+              name="GrowthCurve"
+              component={GrowthCurveScreen}
+              options={{ title: '成长曲线' }}
+            />
+            <Stack.Screen
+              name="Diary"
+              component={DiaryScreen}
+              options={{ title: '宝宝日记' }}
             />
             <Stack.Screen
               name="AddPost"

@@ -7,14 +7,18 @@ import {
   TouchableOpacity,
   ScrollView
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import Card from '../common/Card'
+import { NavigationProps } from '../../types/navigation'
 
 // 定义接受的数据格式
 interface BabyAlbumProps {
   images?: any[] // 图片数组，可选
 }
 
-export default function BabyAlbum({ images = [] }) {
+export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
+  const navigation = useNavigation<NavigationProps>()
+
   // 展示图片
   const displayImages =
     images.length > 0
@@ -27,7 +31,7 @@ export default function BabyAlbum({ images = [] }) {
           require('../../assets/testAvatar.png')
         ]
   return (
-    <Card>
+    <Card onPress={() => navigation.navigate('Album')}>
       <View style={styles.header}>
         <Text style={styles.title}>宝宝相册</Text>
       </View>
@@ -40,7 +44,11 @@ export default function BabyAlbum({ images = [] }) {
         style={styles.scrollView}
       >
         {displayImages.map((img, index) => (
-          <TouchableOpacity key={index} activeOpacity={0.8}>
+          <TouchableOpacity
+            key={index}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Album')}
+          >
             <Image style={styles.image} source={img} />
           </TouchableOpacity>
         ))}

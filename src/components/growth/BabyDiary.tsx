@@ -1,10 +1,14 @@
 import React from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import Card from '../common/Card'
+import { NavigationProps } from '../../types/navigation'
 
 export default function BabyDiary() {
+  const navigation = useNavigation<NavigationProps>()
+
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} onPress={() => navigation.navigate('Diary')}>
       <View style={styles.header}>
         <Text style={styles.title}>宝宝日记</Text>
       </View>
