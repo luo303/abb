@@ -18,14 +18,18 @@ export default function HomeBanner() {
       // 正常轮播：当前页 + 1
       let nextPage = currentPage + 1
 
-      // 如果到了最后一页（副本页），则重置为第一页（逻辑上）
-      // 但这里我们让它先滑到副本页，然后在 onPageSelected 中处理重置
+      // 如果当前已经是最后一页（副本页），理论上应该已经被重置为 0
+      // 但为了防止边界情况，如果计算出的下一页超过了 totalPages（即 index > 3），则重置
       if (nextPage > totalPages) {
         nextPage = 0
         pagerRef.current?.setPageWithoutAnimation(nextPage)
         setCurrentPage(nextPage)
       } else {
         pagerRef.current?.setPage(nextPage)
+        // 注意：这里不需要手动 setCurrentPage，因为 setPage 会触发 onPageSelected
+        // 但为了保证状态及时更新（防止 onPageSelected 延迟），可以手动设置，
+        // 不过最准确的是依赖 onPageSelected。
+        // 之前的代码手动设置了，这里保持一致，但逻辑上要注意协调。
         setCurrentPage(nextPage)
       }
     }, 3000)
@@ -37,12 +41,13 @@ export default function HomeBanner() {
     const position = e.nativeEvent.position
     setCurrentPage(position)
 
-    // 如果滚动到了最后一页（副本页），瞬间切回第一页
+    // 如果滚动到了最后一页（副本页），瞬间切回第一页（无动画）
+    // 从而实现“无限循环”的视觉效果
     if (position === totalPages) {
-      setTimeout(() => {
-        pagerRef.current?.setPageWithoutAnimation(0)
-        setCurrentPage(0)
-      }, 500) // 等待动画完成
+      // 给一点时间让动画彻底完成（或者立即切换，取决于 PagerView 的表现）
+      // 通常立即切换 setPageWithoutAnimation 是可行的
+      pagerRef.current?.setPageWithoutAnimation(0)
+      setCurrentPage(0)
     }
   }
 
@@ -73,6 +78,13 @@ export default function HomeBanner() {
           key="3"
           imageSource={require('../../../assets/poster_community.png')}
           targetPage="scrollToCommunity"
+        ></BannerItem>
+
+        {/* 页面 4（副本）： AI 助手 - 用于实现无缝循环 */}
+        <BannerItem
+          key="duplicate"
+          imageSource={require('../../../assets/poster_ai 2.0.jpg')}
+          targetPage={'AIAssistant'}
         ></BannerItem>
       </PagerView>
       {/* 指示点 */}
