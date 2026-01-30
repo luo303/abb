@@ -7,6 +7,9 @@ export type RootStackParamList = {
   Tabs: undefined
   AIAssistant: undefined
   Taboo: undefined
+  DailyRecord: undefined
+  VaccineRecord: undefined
+  BabyStories: undefined
   PostDetail: { id: string }
   AddPost: undefined
 }

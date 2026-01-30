@@ -11,7 +11,11 @@ import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
-import TabooScreen from './Taboo'
+import TabooScreen from './(HomeNavGrid)/Taboo'
+import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
+import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
+import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
+
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
@@ -73,6 +77,21 @@ export default function Layout() {
               name="Taboo"
               component={TabooScreen}
               options={{ title: '查忌口' }}
+            />
+            <Stack.Screen
+              name="BabyStories"
+              component={BabyStoriesScreen}
+              options={{ title: '宝宝故事' }}
+            />
+            <Stack.Screen
+              name="DailyRecord"
+              component={DailyRecordScreen}
+              options={{ title: '日常记录' }}
+            />
+            <Stack.Screen
+              name="VaccineRecord"
+              component={VaccineRecordScreen}
+              options={{ title: '疫苗记录' }}
             />
             <Stack.Screen
               name="AddPost"

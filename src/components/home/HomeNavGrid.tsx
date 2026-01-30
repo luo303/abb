@@ -19,16 +19,19 @@ export default function HomeNavGrid() {
         icon="pencil"
         label="日常记录"
         library="MaterialCommunityIcons"
+        onPress={() => navigation.navigate('DailyRecord')}
       />
       <NavItem
         icon="needle"
         label="疫苗记录"
         library="MaterialCommunityIcons"
+        onPress={() => navigation.navigate('VaccineRecord')}
       />
       <NavItem
         icon="book-open-page-variant"
         label="宝宝故事"
         library="MaterialCommunityIcons"
+        onPress={() => navigation.navigate('BabyStories')}
       />
     </View>
   )
