@@ -37,6 +37,8 @@ export interface ChatState {
   historyList: HistoryItem[]
   currentConversationId: string | null
   conversations: Record<string, Message[]>
+  search_private: boolean
+  search_public: boolean
 }
 
 //基本对话请求体

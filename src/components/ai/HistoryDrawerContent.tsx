@@ -4,18 +4,27 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView
+  ScrollView,
+  Switch
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'
+import {
+  AntDesign,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+  SimpleLineIcons
+} from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
 import HistoryActionModal from './HistoryActionModal'
 import { RootState } from '../../store'
 import {
   switchConversation,
   resetSession,
-  removeHistoryItem
+  removeHistoryItem,
+  togglePublicEnabled,
+  togglePrivateEnabled
 } from '../../store/modules/ChatStore'
 import { HistoryItem } from '../../types/AIchat'
 import { useMessage } from '../Message'
@@ -24,6 +33,12 @@ import * as Speech from 'expo-speech'
 export default function HistoryDrawerContent(
   props: DrawerContentComponentProps
 ) {
+  const search_public = useSelector(
+    (state: RootState) => state.chat.search_public
+  )
+  const search_private = useSelector(
+    (state: RootState) => state.chat.search_private
+  )
   const items = useSelector((state: RootState) => state.chat.historyList)
   const currentConversationId = useSelector(
     (state: RootState) => state.chat.currentConversationId
@@ -60,22 +75,69 @@ export default function HistoryDrawerContent(
     props.navigation.closeDrawer()
   }
 
+  const handleNewChat = () => {
+    if (messages.length === 0) {
+      showMessage('已在新对话中')
+    }
+    // @ts-ignore - Thunk action type issue
+    dispatch(resetSession())
+    props.navigation.closeDrawer()
+  }
+  const togglePublic = () => {
+    dispatch(togglePublicEnabled())
+  }
+  const togglePrivate = () => {
+    dispatch(togglePrivateEnabled())
+  }
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>历史对话</Text>
+      <View style={styles.actionContainer}>
+        <View style={styles.knowledgeRow}>
+          <View style={styles.knowledgeLabel}>
+            <FontAwesome5 name="old-republic" size={16} color="black" />
+            <Text style={[styles.actionText, { marginLeft: 12 }]}>
+              公共空间
+            </Text>
+          </View>
+          <Switch
+            value={search_public}
+            onValueChange={togglePublic}
+            trackColor={{ false: '#767577', true: '#1890ff' }}
+          />
+        </View>
+        <View style={styles.knowledgeRow}>
+          <View style={styles.knowledgeLabel}>
+            <MaterialIcons name="privacy-tip" size={16} color="black" />
+            <Text style={[styles.actionText, { marginLeft: 12 }]}>
+              私人空间
+            </Text>
+          </View>
+          <Switch
+            value={search_private}
+            onValueChange={togglePrivate}
+            trackColor={{ false: '#767577', true: '#1890ff' }}
+          />
+        </View>
+
         <TouchableOpacity
+          style={styles.actionButton}
           activeOpacity={0.7}
-          onPress={() => {
-            if (messages.length === 0) {
-              showMessage('已在新对话中')
-            }
-            // @ts-ignore - Thunk action type issue
-            dispatch(resetSession())
-            props.navigation.closeDrawer()
-          }}
+          onPress={handleNewChat}
         >
-          <MaterialIcons name="post-add" size={24} color="black" />
+          <View style={styles.actionIconContainer}>
+            <SimpleLineIcons name="magnifier-add" size={16} color="black" />
+          </View>
+          <Text style={styles.actionText}>新建会话</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          activeOpacity={0.7}
+          onPress={handleNewChat}
+        >
+          <View style={styles.actionIconContainer}>
+            <Ionicons name="cloud-upload-outline" size={16} color="black" />
+          </View>
+          <Text style={styles.actionText}>上传知识库</Text>
         </TouchableOpacity>
       </View>
 
@@ -127,22 +189,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff'
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  actionContainer: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    paddingTop: 8
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333'
+  knowledgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  knowledgeLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 4
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12
+  },
+  actionIconContainer: {
+    width: 24,
+    height: 24,
+    borderColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8
+  },
+  actionText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600'
   },
   content: {
     flex: 1,
-    margin: 16
+    marginHorizontal: 16
   },
   historyItem: {
     flexDirection: 'row',

@@ -9,13 +9,21 @@ const initialState: ChatState = {
   messages: [],
   historyList: historyList,
   currentConversationId: null,
-  conversations: {}
+  conversations: {},
+  search_private: false,
+  search_public: false
 }
 
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    togglePublicEnabled: state => {
+      state.search_public = !state.search_public
+    },
+    togglePrivateEnabled: state => {
+      state.search_private = !state.search_private
+    },
     addMessage: (state, action: PayloadAction<Message>) => {
       state.messages.push(action.payload)
       if (state.currentConversationId) {
@@ -77,7 +85,9 @@ export const {
   deleteHistoryItem,
   setCurrentConversationId,
   updateConversation,
-  selectConversation
+  selectConversation,
+  togglePublicEnabled,
+  togglePrivateEnabled
 } = chatSlice.actions
 
 // Helper: 保存历史列表
@@ -121,14 +131,6 @@ export const loadInitialData =
     } catch (error) {
       console.error('Failed to load initial data:', error)
     }
-  }
-
-// 异步 Action：发送消息（不再保存内容）
-export const saveMessage =
-  (message: Message) => async (dispatch: Dispatch, getState: any) => {
-    dispatch(addMessage(message))
-    // 不再保存消息内容到 storage
-    // TODO: 这里可以添加发送消息到后端的逻辑
   }
 
 // 异步 Action：删除历史项并同步存储

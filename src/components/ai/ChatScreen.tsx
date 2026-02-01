@@ -25,7 +25,7 @@ import * as Speech from 'expo-speech'
 import { RootState } from '../../store'
 import {
   createNewSession,
-  saveMessage,
+  addMessage,
   loadInitialData
 } from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
@@ -144,7 +144,7 @@ export default function ChatScreen() {
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     // @ts-ignore
-    dispatch(saveMessage(userMsg))
+    dispatch(addMessage(userMsg))
 
     if (typeof text !== 'string') {
       setInputText('')
@@ -160,7 +160,7 @@ export default function ChatScreen() {
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       // @ts-ignore
-      dispatch(saveMessage(aiMsg))
+      dispatch(addMessage(aiMsg))
     }, 1000)
   }
 
