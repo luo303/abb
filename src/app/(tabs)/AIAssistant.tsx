@@ -1,16 +1,12 @@
-import React, { useEffect } from 'react'
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import { TouchableOpacity } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useDispatch } from 'react-redux'
 import ChatScreen from '../../components/ai/ChatScreen'
 import HistoryDrawerContent from '../../components/ai/HistoryDrawerContent'
 
 const Drawer = createDrawerNavigator()
 
 export default function AIAssistant() {
-  const dispatch = useDispatch()
-
   return (
     <Drawer.Navigator
       drawerContent={props => <HistoryDrawerContent {...props} />}
