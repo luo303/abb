@@ -40,7 +40,7 @@ const chatSlice = createSlice({
     deleteHistoryItem: (state, action: PayloadAction<string>) => {
       const id = action.payload
       state.historyList = state.historyList.filter(
-        item => item.conversation_id !== id
+        item => item.session_id !== id
       )
       delete state.conversations[id]
       if (state.currentConversationId === id) {
@@ -176,9 +176,9 @@ export const createNewSession =
     // 1. 添加历史记录
     dispatch(
       addHistoryItem({
-        conversation_id: id,
-        conversation_title: '新对话',
-        conversation_date: new Date().toLocaleDateString()
+        session_id: id,
+        session_title: '新对话',
+        session_date: new Date().toLocaleDateString()
       })
     )
     // 保存历史记录

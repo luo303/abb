@@ -30,32 +30,32 @@ export default function ChatMessage({
     <View
       style={[
         styles.container,
-        message.isUser ? styles.userContainer : styles.aiContainer
+        message.role === 'user' ? styles.userContainer : styles.aiContainer
       ]}
     >
       <View
         style={[
           styles.messageColumn,
-          message.isUser ? styles.userColumn : styles.aiColumn
+          message.role === 'user' ? styles.userColumn : styles.aiColumn
         ]}
       >
         <View
           style={[
             styles.contentWrapper,
-            message.isUser ? styles.userBubble : styles.aiContent
+            message.role === 'user' ? styles.userBubble : styles.aiContent
           ]}
         >
           <Text
             style={[
               styles.text,
-              message.isUser ? styles.userText : styles.aiText
+              message.role === 'user' ? styles.userText : styles.aiText
             ]}
           >
             {message.content}
           </Text>
         </View>
 
-        {!message.isUser && (
+        {message.role === 'assistant' && (
           <View style={styles.aiFooter}>
             <TouchableOpacity
               onPress={handleCopy}
@@ -79,7 +79,7 @@ export default function ChatMessage({
         )}
       </View>
 
-      {message.isUser && (
+      {message.role === 'user' && (
         <Ionicons
           name="person-circle"
           size={40}

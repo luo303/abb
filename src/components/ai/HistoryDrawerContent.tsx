@@ -47,7 +47,7 @@ export default function HistoryDrawerContent(
   const handleDelete = () => {
     if (!activeItem) return
     // @ts-ignore
-    dispatch(removeHistoryItem(activeItem.conversation_id))
+    dispatch(removeHistoryItem(activeItem.session_id))
     handleCloseMenu()
   }
 
@@ -55,7 +55,7 @@ export default function HistoryDrawerContent(
     // 先停止当前正在播放的语音
     Speech.stop()
     // @ts-ignore - Thunk action type issue
-    dispatch(switchConversation(item.conversation_id))
+    dispatch(switchConversation(item.session_id))
     props.navigation.closeDrawer()
   }
 
@@ -80,10 +80,10 @@ export default function HistoryDrawerContent(
 
       <ScrollView style={styles.content}>
         {items.map(item => {
-          const isActive = item.conversation_id === currentConversationId
+          const isActive = item.session_id === currentConversationId
           return (
             <TouchableOpacity
-              key={item.conversation_id}
+              key={item.session_id}
               style={[styles.historyItem, isActive && styles.activeHistoryItem]}
               activeOpacity={0.7}
               onLongPress={() => handleLongPress(item)}
@@ -100,12 +100,12 @@ export default function HistoryDrawerContent(
                   style={[styles.itemTitle, isActive && styles.activeItemText]}
                   numberOfLines={1}
                 >
-                  {item.conversation_title}
+                  {item.session_title}
                 </Text>
                 <Text
                   style={[styles.itemDate, isActive && styles.activeItemText]}
                 >
-                  {item.conversation_date}
+                  {item.session_date}
                 </Text>
               </View>
             </TouchableOpacity>

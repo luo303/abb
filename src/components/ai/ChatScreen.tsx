@@ -130,7 +130,8 @@ export default function ChatScreen() {
 
     const userMsg: Message = {
       content: contentToSend,
-      isUser: true
+      role: 'user',
+      timestamp: Date.now()
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -144,10 +145,10 @@ export default function ChatScreen() {
     // 模拟 AI 回复
     setTimeout(() => {
       const aiMsg: Message = {
-        title: '测试标题',
         content:
           '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
-        isUser: false
+        role: 'assistant',
+        timestamp: Date.now()
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       // @ts-ignore
@@ -161,7 +162,7 @@ export default function ChatScreen() {
       const lastMessage = messages[messages.length - 1]
       // 只有当最新消息不是用户发送的（即AI回复），或者是用户刚发送时，才触发滚动
       // 初始化或切换会话时，由于 inverted 属性，自然就在底部，不需要额外滚动
-      if (!lastMessage.isUser || messages.length === 1) {
+      if (lastMessage.role === 'assistant' || messages.length === 1) {
         setTimeout(() => {
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
         }, 100)
