@@ -5,17 +5,11 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useDispatch } from 'react-redux'
 import ChatScreen from '../../components/ai/ChatScreen'
 import HistoryDrawerContent from '../../components/ai/HistoryDrawerContent'
-import { initChatSession } from '../../store/modules/ChatStore'
 
 const Drawer = createDrawerNavigator()
 
 export default function AIAssistant() {
   const dispatch = useDispatch()
-
-  useEffect(() => {
-    // @ts-ignore - Thunk action type issue
-    dispatch(initChatSession())
-  }, [dispatch])
 
   return (
     <Drawer.Navigator

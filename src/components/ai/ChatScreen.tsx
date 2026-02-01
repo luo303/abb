@@ -16,12 +16,18 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { Ionicons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import 'react-native-get-random-values'
+import { v4 as uuidv4 } from 'uuid'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatEmptyState from './ChatEmptyState'
 import * as Speech from 'expo-speech'
 import { RootState } from '../../store'
-import { addMessage, createNewSession } from '../../store/modules/ChatStore'
+import {
+  createNewSession,
+  saveMessage,
+  loadInitialData
+} from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
 
 // 在 Android 上启用布局动画
@@ -42,6 +48,12 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null)
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
+
+  // 加载初始数据
+  useEffect(() => {
+    // @ts-ignore
+    dispatch(loadInitialData())
+  }, [dispatch])
 
   // 语音播放状态管理
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
@@ -101,10 +113,6 @@ export default function ChatScreen() {
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const generateId = () => {
-    return Date.now().toString() + Math.random().toString(36).substring(2, 9)
-  }
-
   const sendMessage = (text?: string) => {
     const contentToSend = typeof text === 'string' ? text : inputText.trim()
     if (!contentToSend) return
@@ -114,8 +122,8 @@ export default function ChatScreen() {
     }
 
     // 如果当前没有会话ID，说明是新会话，需要先创建会话
-    if (!currentConversationId || messages.length === 0) {
-      const newId = generateId()
+    if (!currentConversationId) {
+      const newId = uuidv4()
       // @ts-ignore - Thunk action type issue
       dispatch(createNewSession(newId))
     }
@@ -126,7 +134,8 @@ export default function ChatScreen() {
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    dispatch(addMessage(userMsg))
+    // @ts-ignore
+    dispatch(saveMessage(userMsg))
 
     if (typeof text !== 'string') {
       setInputText('')
@@ -141,7 +150,8 @@ export default function ChatScreen() {
         isUser: false
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-      dispatch(addMessage(aiMsg))
+      // @ts-ignore
+      dispatch(saveMessage(aiMsg))
     }, 1000)
   }
 

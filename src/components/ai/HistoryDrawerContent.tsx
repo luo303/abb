@@ -13,9 +13,9 @@ import { useSelector, useDispatch } from 'react-redux'
 import HistoryActionModal from './HistoryActionModal'
 import { RootState } from '../../store'
 import {
-  deleteHistoryItem,
   switchConversation,
-  resetSession
+  resetSession,
+  removeHistoryItem
 } from '../../store/modules/ChatStore'
 import { HistoryItem } from '../../types/AIchat'
 import { useMessage } from '../Message'
@@ -46,7 +46,8 @@ export default function HistoryDrawerContent(
 
   const handleDelete = () => {
     if (!activeItem) return
-    dispatch(deleteHistoryItem(activeItem.conversation_id))
+    // @ts-ignore
+    dispatch(removeHistoryItem(activeItem.conversation_id))
     handleCloseMenu()
   }
 
