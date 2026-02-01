@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView
+} from 'react-native'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
@@ -44,12 +51,18 @@ export default function ChatMessage({
         ]}
       >
         {message.images && message.images.length > 0 && (
-          <View style={styles.imageContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageContainer}
+            contentContainerStyle={styles.imageContentContainer}
+          >
             {message.images.map((img, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() => setPreviewImage(img)}
                 activeOpacity={0.9}
+                style={styles.imageWrapper}
               >
                 <Image
                   source={{ uri: img }}
@@ -58,7 +71,7 @@ export default function ChatMessage({
                 />
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         )}
         {message.content && (
           <View
@@ -119,8 +132,13 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginBottom: 8,
-    borderRadius: 8,
-    overflow: 'hidden'
+    maxHeight: 200
+  },
+  imageContentContainer: {
+    paddingRight: 4
+  },
+  imageWrapper: {
+    marginRight: 8
   },
   messageImage: {
     width: 200,
