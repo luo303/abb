@@ -44,40 +44,40 @@ export default function ChatScreen() {
   const [showScrollBottom, setShowScrollBottom] = useState(false)
 
   // 语音播放状态管理
-  const [speakingId, setSpeakingId] = useState<string | null>(null)
-  const speakingIdRef = useRef<string | null>(null)
+  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
+  const speakingIndexRef = useRef<number | null>(null)
 
-  const updateSpeakingId = (id: string | null) => {
-    speakingIdRef.current = id
-    setSpeakingId(id)
+  const updateSpeakingIndex = (index: number | null) => {
+    speakingIndexRef.current = index
+    setSpeakingIndex(index)
   }
 
-  const handleSpeak = (id: string, text: string) => {
-    if (speakingIdRef.current === id) {
+  const handleSpeak = (index: number, text: string) => {
+    if (speakingIndexRef.current === index) {
       // 如果点击的是当前正在播放的，则停止
       Speech.stop()
-      updateSpeakingId(null)
+      updateSpeakingIndex(null)
     } else {
       // 停止之前的播放（如果有）
       Speech.stop()
-      // 立即更新为新的播放ID
-      updateSpeakingId(id)
+      // 立即更新为新的播放索引
+      updateSpeakingIndex(index)
 
       Speech.speak(text, {
         onDone: () => {
-          // 只有当当前播放ID仍然是这个ID时才清除（防止被新的播放打断后错误清除）
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          // 只有当当前播放索引仍然是这个索引时才清除（防止被新的播放打断后错误清除）
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         },
         onStopped: () => {
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         },
         onError: () => {
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         }
       })
@@ -94,7 +94,7 @@ export default function ChatScreen() {
   // 监听会话ID变化，停止语音播放
   useEffect(() => {
     Speech.stop()
-    updateSpeakingId(null)
+    updateSpeakingIndex(null)
   }, [currentConversationId])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
@@ -121,7 +121,6 @@ export default function ChatScreen() {
     }
 
     const userMsg: Message = {
-      message_id: generateId(),
       content: contentToSend,
       isUser: true
     }
@@ -137,19 +136,13 @@ export default function ChatScreen() {
     setTimeout(() => {
       const aiMsg: Message = {
         title: '测试标题',
-        message_id: generateId(),
         content:
           '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
-        isUser: false,
-        wonder: ['宝宝不睡觉怎么办', '如何给宝宝喂奶']
+        isUser: false
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       dispatch(addMessage(aiMsg))
     }, 1000)
-  }
-
-  const handleWonderPress = (text: string) => {
-    sendMessage(text)
   }
 
   // 当消息变化时，如果是AI回复，则平滑滚动到底部
@@ -213,20 +206,19 @@ export default function ChatScreen() {
             <FlatList
               ref={flatListRef}
               data={[...messages].reverse()} // 反转数据源以适配 inverted
-              keyExtractor={item => item.message_id}
+              keyExtractor={(_, index) => index.toString()}
               inverted={true} // 启用倒序模式，默认从底部开始
-              renderItem={({ item, index }) => (
-                <ChatMessage
-                  message={item}
-                  isSpeaking={item.message_id === speakingId}
-                  onSpeak={() => handleSpeak(item.message_id, item.content)}
-                  onWonderPress={handleWonderPress}
-                  // inverted 后索引也反转了，所以判断最新消息逻辑要变
-                  // 原数组：[msg1, msg2, msg3] (最新的是 msg3，index=2)
-                  // 反转后：[msg3, msg2, msg1] (最新的是 msg3，index=0)
-                  isLatest={index === 0}
-                />
-              )}
+              renderItem={({ item, index }) => {
+                // 计算原始索引：messages.length - 1 - index
+                const originalIndex = messages.length - 1 - index
+                return (
+                  <ChatMessage
+                    message={item}
+                    isSpeaking={originalIndex === speakingIndex}
+                    onSpeak={() => handleSpeak(originalIndex, item.content)}
+                  />
+                )
+              }}
               contentContainerStyle={styles.listContent}
               ListHeaderComponent={<View style={{ height: 80 }} />} // 倒序后 Footer 变成了 Header
               showsVerticalScrollIndicator={false}
