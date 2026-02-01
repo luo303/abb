@@ -20,6 +20,7 @@ export default function ImagePreviewModal({
       transparent={true}
       onRequestClose={onClose}
       animationType="fade"
+      statusBarTranslucent={true}
     >
       <View style={styles.previewContainer}>
         <TouchableOpacity style={styles.previewClose} onPress={onClose}>
@@ -38,7 +39,7 @@ export default function ImagePreviewModal({
 const styles = StyleSheet.create({
   previewContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.95)',
     justifyContent: 'center',
     alignItems: 'center'
   },

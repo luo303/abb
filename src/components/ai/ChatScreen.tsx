@@ -113,9 +113,11 @@ export default function ChatScreen() {
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const sendMessage = (text?: string) => {
+  const sendMessage = (text?: string, images?: string[]) => {
     const contentToSend = typeof text === 'string' ? text : inputText.trim()
-    if (!contentToSend) return
+    const imagesToSend = images || []
+
+    if (!contentToSend && imagesToSend.length === 0) return
 
     if (typeof text !== 'string') {
       Keyboard.dismiss()
@@ -132,9 +134,12 @@ export default function ChatScreen() {
       content: contentToSend,
       role: 'user',
       timestamp: Date.now(),
-      images: [
-        'http://38.76.197.12:9000/nurture/8fb52ced51f1c222ad7b040d8a9faa25.jpg'
-      ]
+      images: imagesToSend
+    }
+
+    // TODO: 上传图片到后端
+    if (imagesToSend.length > 0) {
+      console.log('Need to upload images:', imagesToSend)
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -256,7 +261,7 @@ export default function ChatScreen() {
             <ChatInput
               value={inputText}
               onChangeText={setInputText}
-              onSend={sendMessage}
+              onSend={images => sendMessage(undefined, images)}
               disabled={!inputText.trim()}
             />
           </View>

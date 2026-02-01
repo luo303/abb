@@ -3,15 +3,21 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Platform
+  Platform,
+  Image,
+  ScrollView,
+  Alert
 } from 'react-native'
+import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
+import ImagePreviewModal from '../common/ImagePreviewModal'
 
 interface ChatInputProps {
   value: string
   onChangeText: (text: string) => void
-  onSend: () => void
+  onSend: (images?: string[]) => void
   disabled?: boolean
 }
 
@@ -22,6 +28,40 @@ export default function ChatInput({
   disabled
 }: ChatInputProps) {
   const insets = useSafeAreaInsets()
+  const [selectedImages, setSelectedImages] = useState<string[]>([])
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
+  const pickImage = async () => {
+    // 请求权限
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('需要权限', '需要访问相册权限以选择图片')
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false, // 允许选择多张时通常不支持编辑
+      quality: 0.8,
+      allowsMultipleSelection: true, // 允许选择多张
+      selectionLimit: 9 - selectedImages.length // 限制总数
+    })
+
+    if (!result.canceled) {
+      const newImages = result.assets.map(asset => asset.uri)
+      setSelectedImages(prev => [...prev, ...newImages])
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSend = () => {
+    onSend(selectedImages)
+    setSelectedImages([])
+  }
+
   return (
     <View
       style={[
@@ -33,55 +73,105 @@ export default function ChatInput({
       ]}
       pointerEvents="box-none"
     >
-      <TouchableOpacity style={styles.plusButton}>
-        <Ionicons name="add" size={28} color="#666" />
-      </TouchableOpacity>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder="问问AI..."
-          placeholderTextColor="#B0BEC5"
-          multiline
-          maxLength={1000}
-        />
-        {value.trim().length > 0 && (
-          <TouchableOpacity
-            style={[styles.sendButton, disabled && styles.sendButtonDisabled]}
-            onPress={onSend}
-            disabled={disabled}
-            activeOpacity={0.8}
+      <View style={styles.inputWrapper}>
+        {selectedImages.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageList}
+            contentContainerStyle={styles.imageListContent}
           >
-            <Ionicons
-              name="arrow-up"
-              size={20}
-              color={disabled ? '#CFD8DC' : '#fff'}
-            />
-          </TouchableOpacity>
+            {selectedImages.map((uri, index) => (
+              <View key={index} style={styles.imagePreview}>
+                <TouchableOpacity onPress={() => setPreviewImage(uri)}>
+                  <Image source={{ uri }} style={styles.image} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => removeImage(index)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color="rgba(0,0,0,0.6)"
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
         )}
+
+        <View style={styles.inputRow}>
+          <TouchableOpacity style={styles.plusButton} onPress={pickImage}>
+            <Ionicons name="add" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={value}
+              onChangeText={onChangeText}
+              placeholder="问问AI..."
+              placeholderTextColor="#B0BEC5"
+              multiline
+              maxLength={1000}
+            />
+            {(value.trim().length > 0 || selectedImages.length > 0) && (
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  disabled &&
+                    selectedImages.length === 0 &&
+                    styles.sendButtonDisabled
+                ]}
+                onPress={handleSend}
+                disabled={disabled && selectedImages.length === 0}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="arrow-up"
+                  size={20}
+                  color={
+                    disabled && selectedImages.length === 0 ? '#CFD8DC' : '#fff'
+                  }
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
+
+      <ImagePreviewModal
+        visible={!!previewImage}
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    padding: 16,
+    backgroundColor: 'transparent'
+  },
+  inputWrapper: {
+    width: '100%'
+  },
+  inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 16
+    alignItems: 'flex-end'
   },
   plusButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fff', // 白色背景
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    marginBottom: 4, // 与输入框底部对齐
-    // 添加阴影以实现悬浮效果
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -92,13 +182,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#fff', // 白色背景
+    backgroundColor: '#fff',
     borderRadius: 24,
     minHeight: 48,
     maxHeight: 120,
     paddingHorizontal: 8,
     paddingBottom: 4,
-    // 添加阴影以实现悬浮效果
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -119,13 +208,42 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#000', // 按照图片显示黑色背景
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8, // 在输入容器内对齐
+    marginBottom: 8,
     marginRight: 4
   },
   sendButtonDisabled: {
     backgroundColor: '#E0E0E0'
+  },
+  imageList: {
+    marginBottom: 8,
+    maxHeight: 100
+  },
+  imageListContent: {
+    paddingHorizontal: 4
+  },
+  imagePreview: {
+    marginRight: 8,
+    position: 'relative',
+    width: 80,
+    height: 80
+  },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 8
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 })

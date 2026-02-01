@@ -60,23 +60,23 @@ export default function ChatMessage({
             ))}
           </View>
         )}
-
-        <View
-          style={[
-            styles.contentWrapper,
-            message.role === 'user' ? styles.userBubble : styles.aiContent
-          ]}
-        >
-          <Text
+        {message.content && (
+          <View
             style={[
-              styles.text,
-              message.role === 'user' ? styles.userText : styles.aiText
+              styles.contentWrapper,
+              message.role === 'user' ? styles.userBubble : styles.aiContent
             ]}
           >
-            {message.content}
-          </Text>
-        </View>
-
+            <Text
+              style={[
+                styles.text,
+                message.role === 'user' ? styles.userText : styles.aiText
+              ]}
+            >
+              {message.content}
+            </Text>
+          </View>
+        )}
         {message.role === 'assistant' && (
           <View style={styles.aiFooter}>
             <TouchableOpacity

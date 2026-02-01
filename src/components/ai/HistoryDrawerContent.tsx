@@ -49,6 +49,7 @@ export default function HistoryDrawerContent(
     // @ts-ignore
     dispatch(removeHistoryItem(activeItem.session_id))
     handleCloseMenu()
+    props.navigation.closeDrawer()
   }
 
   const handleItemPress = (item: HistoryItem) => {
