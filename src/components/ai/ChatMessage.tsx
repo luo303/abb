@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native'
+import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useMessage } from '../Message'
 import { Message } from '../../types/AIchat'
+import ImagePreviewModal from '../common/ImagePreviewModal'
 
 interface ChatMessageProps {
   message: Message
@@ -17,6 +19,8 @@ export default function ChatMessage({
   onSpeak
 }: ChatMessageProps) {
   const { showMessage } = useMessage()
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
   const handleCopy = async () => {
     await Clipboard.setStringAsync(message.content)
     showMessage('复制成功')
@@ -39,6 +43,24 @@ export default function ChatMessage({
           message.role === 'user' ? styles.userColumn : styles.aiColumn
         ]}
       >
+        {message.images && message.images.length > 0 && (
+          <View style={styles.imageContainer}>
+            {message.images.map((img, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setPreviewImage(img)}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={{ uri: img }}
+                  style={styles.messageImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View
           style={[
             styles.contentWrapper,
@@ -79,14 +101,11 @@ export default function ChatMessage({
         )}
       </View>
 
-      {message.role === 'user' && (
-        <Ionicons
-          name="person-circle"
-          size={40}
-          color="#b1aea9ff"
-          style={{ marginLeft: 8 }}
-        />
-      )}
+      <ImagePreviewModal
+        visible={!!previewImage}
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </View>
   )
 }
@@ -97,6 +116,16 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     alignItems: 'flex-start',
     paddingHorizontal: 4
+  },
+  imageContainer: {
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden'
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8
   },
   userContainer: {
     justifyContent: 'flex-end'

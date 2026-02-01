@@ -131,7 +131,10 @@ export default function ChatScreen() {
     const userMsg: Message = {
       content: contentToSend,
       role: 'user',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      images: [
+        'http://38.76.197.12:9000/nurture/8fb52ced51f1c222ad7b040d8a9faa25.jpg'
+      ]
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
