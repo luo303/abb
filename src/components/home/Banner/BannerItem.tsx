@@ -46,7 +46,7 @@ export default function BannerItem({
           // 一个是本地图片路径，一个是网络图片路径，通过 typeof 判断，可以使用不同的方式处理
         }
         style={styles.backgroundImage}
-        imageStyle={{ borderRadius: 20 }}
+        imageStyle={{ borderRadius: 12 }}
       >
         <View style={styles.overlay}>
           <Text style={styles.bannerText}></Text>

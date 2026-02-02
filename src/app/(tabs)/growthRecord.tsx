@@ -5,8 +5,8 @@ import {
   ScrollView,
   ImageBackground
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
 
 // 导入组件
 import BabyStats from '../../components/growth/BabyStats'
@@ -15,13 +15,14 @@ import GrowthChart from '../../components/growth/GrowthChart'
 import BabyDiary from '../../components/growth/BabyDiary'
 
 export default function GrowthRecord() {
+  const insets = useSafeAreaInsets()
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <LinearGradient colors={['#fff', '#f0f4f8']} style={styles.background} />
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent]}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
       >
@@ -52,9 +53,6 @@ export default function GrowthRecord() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>—— 记录宝宝成长的每一天 ——</Text>
         </View>
-
-        {/* 底部安全距离占位 */}
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   )
@@ -76,8 +74,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    padding: 20,
-    paddingTop: 60 // 避开状态栏
+    padding: 20
   },
   headerContainer: {
     flexDirection: 'row',

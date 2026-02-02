@@ -77,16 +77,17 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    marginHorizontal: 15,
-    padding: 15,
-    marginBottom: 20,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3
+    // 移除圆角和外边距，改为通栏风格
+    borderRadius: 0,
+    marginHorizontal: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 0, // 移除底部间距
+    borderBottomWidth: 8, // 使用底部边框作为分隔
+    borderBottomColor: '#F7F8FA', // 浅灰分隔条颜色
+    // 移除阴影
+    elevation: 0,
+    shadowOpacity: 0
   },
   header: {
     marginBottom: 15
@@ -99,22 +100,22 @@ const styles = StyleSheet.create({
   userInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10
+    marginBottom: 12
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#eee'
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f5f5f5'
   },
   userInfo: {
-    marginLeft: 10,
+    marginLeft: 12,
     flex: 1
   },
   userName: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#333',
-    fontWeight: 'bold'
+    fontWeight: '600'
   },
   userDesc: {
     fontSize: 12,
@@ -135,36 +136,38 @@ const styles = StyleSheet.create({
   postContent: {
     fontSize: 15,
     color: '#333',
-    marginBottom: 10,
-    lineHeight: 22
+    marginBottom: 12,
+    lineHeight: 24
   },
   imageGrid: {
     flexDirection: 'row',
-    justifyContent: 'flex-start', // 改为左对齐
-    gap: 10, // 使用 gap 属性控制间距
-    marginBottom: 15
+    justifyContent: 'flex-start',
+    gap: 8,
+    marginBottom: 16
   },
   postImage: {
     width: 100,
     height: 100,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0'
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5'
   },
   postImagePlaceholder: {
     // 空占位，不显示
   },
   actionRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 15
+    justifyContent: 'space-between',
+    paddingTop: 12 // 增加上方间距
+    // 移除边框，更干净
   },
   actionItem: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingVertical: 4
   },
   actionText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
-    marginLeft: 4
+    marginLeft: 6
   }
 })

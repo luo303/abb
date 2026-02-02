@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { View, StyleSheet } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import BannerItem from './BannerItem'
-import Card from '../../common/Card'
+import { Card } from '../../common/Card'
 
 /**
  * HomeBanner 组件
@@ -107,12 +107,15 @@ export default function HomeBanner() {
 
 const styles = StyleSheet.create({
   pagerContainer: {
-    height: 200,
+    height: 160,
     marginTop: 10,
-    marginHorizontal: 15,
+    marginHorizontal: 20, // 保持一定边距但更宽
     marginBottom: 0,
     padding: 0,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    borderRadius: 12, // 减小圆角
+    // 移除强烈阴影
+    elevation: 0
   },
   pagerView: {
     flex: 1

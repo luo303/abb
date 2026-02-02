@@ -2,6 +2,7 @@ import React from 'react'
 import { View, StyleSheet, ScrollView } from 'react-native'
 import { useDispatch } from 'react-redux'
 import { useNavigation, NavigationProp } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { clearToken } from '../../store/modules/userStore'
 import { RootStackParamList } from '../../types/navigation'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -14,6 +15,7 @@ import ActionMenu from '../../components/profile/ActionMenu'
 type NavigationProps = NavigationProp<RootStackParamList>
 
 export default function Profile() {
+  const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const navigation = useNavigation<NavigationProps>()
 
@@ -26,7 +28,7 @@ export default function Profile() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
@@ -45,9 +47,6 @@ export default function Profile() {
           <InfoCard />
           <ActionMenu onLogout={handleLogout} />
         </View>
-
-        {/* 底部占位 */}
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   )
