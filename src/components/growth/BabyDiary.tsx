@@ -2,185 +2,187 @@ import React from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
-import Card from '../common/Card'
 import { NavigationProps } from '../../types/navigation'
 
 export default function BabyDiary() {
   const navigation = useNavigation<NavigationProps>()
 
   return (
-    <Card style={styles.card} onPress={() => navigation.navigate('Diary')}>
-      <View style={styles.header}>
-        <View style={styles.titleWrapper}>
-          <View style={styles.iconBox}>
-            <Ionicons name="book-outline" size={20} color="#fff" />
-          </View>
-          <Text style={styles.title}>宝宝日记</Text>
+    <View>
+      <View style={styles.sectionHeader}>
+        <View style={styles.titleRow}>
+          <Text style={styles.sectionTitle}>宝宝日记</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Diary')}>
-          <Text style={styles.moreText}>全部 &gt;</Text>
+          <View style={styles.moreBtn}>
+            <Text style={styles.moreText}>全部</Text>
+            <Ionicons name="chevron-forward" size={14} color="#9ca3af" />
+          </View>
         </TouchableOpacity>
       </View>
 
-      <LinearGradient
-        colors={['#fcfdfd', '#f0fdf4']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.content}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('Diary')}
+        style={styles.diaryCard}
       >
-        <View style={styles.imageContainer}>
-          <Image
-            source={require('../../assets/testAvatar.png')}
-            style={styles.diaryImage}
-          />
-          <View style={styles.dateBadge}>
-            <Text style={styles.dateDay}>01</Text>
-            <Text style={styles.dateMonth}>1月</Text>
+        <View style={styles.cardContent}>
+          {/* 左侧图片 */}
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require('../../assets/testAvatar.png')}
+              style={styles.diaryImage}
+            />
+            <View style={styles.dateOverlay}>
+              <Text style={styles.dayText}>01</Text>
+              <Text style={styles.monthText}>1月</Text>
+            </View>
+          </View>
+
+          {/* 右侧内容 */}
+          <View style={styles.infoWrapper}>
+            <View style={styles.infoHeader}>
+              <Text style={styles.timeText}>12:01</Text>
+              <View style={styles.moodBadge}>
+                <Text style={styles.moodText}>开心 😊</Text>
+              </View>
+            </View>
+
+            <Text style={styles.diaryText} numberOfLines={2}>
+              宝宝今天第一次翻身啦！ 看起来非常开心，一直在笑，我也好开心呀...
+            </Text>
+
+            <View style={styles.tagsRow}>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}># 第一次</Text>
+              </View>
+              <View style={[styles.tag, styles.tagBlue]}>
+                <Text style={[styles.tagText, styles.tagTextBlue]}># 翻身</Text>
+              </View>
+            </View>
           </View>
         </View>
-
-        <View style={styles.info}>
-          <View style={styles.topRow}>
-            <Text style={styles.time}>12:01</Text>
-            <View style={styles.moodContainer}>
-              <Text style={styles.moodText}>开心 😊</Text>
-            </View>
-          </View>
-
-          <Text style={styles.desc} numberOfLines={2}>
-            宝宝今天第一次翻身啦！ 看起来非常开心，一直在笑，我也好开心呀...
-          </Text>
-
-          <View style={styles.tagContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}># 第一次</Text>
-            </View>
-            <View style={[styles.tag, styles.tagBlue]}>
-              <Text style={[styles.tagText, styles.tagTextBlue]}># 翻身</Text>
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
-    </Card>
+      </TouchableOpacity>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
-    borderRadius: 24
-  },
-  header: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 16,
+    paddingHorizontal: 4
   },
-  titleWrapper: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10
   },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    backgroundColor: '#48bb78',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  title: {
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333'
+    fontWeight: '700',
+    color: '#111827'
+  },
+  moreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2
   },
   moreText: {
     fontSize: 13,
-    color: '#999'
+    color: '#9ca3af',
+    fontWeight: '500'
   },
-  content: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 20,
+  diaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 12,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#f0fdf4'
+    borderColor: '#f3f4f6'
   },
-  imageContainer: {
-    position: 'relative',
-    marginRight: 12
+  cardContent: {
+    flexDirection: 'row',
+    gap: 16
+  },
+  imageWrapper: {
+    position: 'relative'
   },
   diaryImage: {
-    width: 90,
-    height: 90,
+    width: 88,
+    height: 88,
     borderRadius: 16,
-    backgroundColor: '#e2e8f0'
+    backgroundColor: '#f3f4f6'
   },
-  dateBadge: {
+  dateOverlay: {
     position: 'absolute',
     top: 6,
     left: 6,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2
+    shadowRadius: 4
   },
-  dateDay: {
+  dayText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '800',
+    color: '#1f2937',
     lineHeight: 16
   },
-  dateMonth: {
+  monthText: {
     fontSize: 10,
-    color: '#666',
-    lineHeight: 12
+    fontWeight: '600',
+    color: '#6b7280'
   },
-  info: {
+  infoWrapper: {
     flex: 1,
     justifyContent: 'space-between',
     paddingVertical: 2
   },
-  topRow: {
+  infoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4
+    alignItems: 'center'
   },
-  time: {
+  timeText: {
     fontSize: 12,
-    color: '#94a3b8'
+    color: '#9ca3af',
+    fontWeight: '500'
   },
-  moodContainer: {
-    backgroundColor: '#fff',
+  moodBadge: {
+    backgroundColor: '#fef3c7',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0'
+    borderRadius: 8
   },
   moodText: {
     fontSize: 11,
-    color: '#64748b'
+    fontWeight: '600',
+    color: '#d97706'
   },
-  desc: {
+  diaryText: {
     fontSize: 14,
-    color: '#334155',
+    color: '#374151',
     lineHeight: 20,
-    marginBottom: 8
+    fontWeight: '500'
   },
-  tagContainer: {
+  tagsRow: {
     flexDirection: 'row',
     gap: 8
   },
   tag: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f3f4f6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6
@@ -190,7 +192,8 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 11,
-    color: '#64748b'
+    color: '#6b7280',
+    fontWeight: '500'
   },
   tagTextBlue: {
     color: '#3b82f6'

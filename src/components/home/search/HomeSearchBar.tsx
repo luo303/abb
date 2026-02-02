@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent', // 透明背景以显示底部渐变
     // 移除外层容器的圆角和阴影，使其融合
     marginHorizontal: 0,
     elevation: 0
