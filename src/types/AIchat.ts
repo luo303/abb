@@ -1,17 +1,14 @@
 /**
  * 聊天消息接口
  * @interface Message
- * @property {string} id - 消息唯一标识符
- * @property {string} text - 消息内容文本
- * @property {boolean} isUser - 是否为用户发送的消息 (true: 用户, false: AI)
+ * @property {string} message - 消息内容文本
+ * @property {'user' | 'assistant'} role - 消息发送者角色
  */
 export interface Message {
-  title?: string //可选，AI根据用户第一次询问的信息返回标题
-  message_id: string //一次信息的唯一标识
-  images?: any[] //用户可能同时附带图片（不知道要不要做这个功能）
   content: string //消息内容文本
-  isUser: boolean //是否为用户发送的消息 (true: 用户, false: AI)
-  wonder?: string[] //猜你想问的问题列表（只有AI回复的内容有这个字段）
+  role: 'user' | 'assistant' //消息发送者角色
+  images?: string[]
+  timestamp: number
 }
 
 /**
@@ -22,9 +19,9 @@ export interface Message {
  * @property {string} date - 对话日期字符串 (例如: "2024-05-20")
  */
 export interface HistoryItem {
-  conversation_id: string
-  conversation_title: string
-  conversation_date: string
+  session_id: string
+  session_title: string
+  session_date: string
 }
 
 /**
@@ -40,4 +37,18 @@ export interface ChatState {
   historyList: HistoryItem[]
   currentConversationId: string | null
   conversations: Record<string, Message[]>
+  search_private: boolean
+  search_public: boolean
+}
+
+//基本对话请求体
+export interface aiReuset {
+  session_id: string //前端生成的uuid，不可重复
+  message: string
+  images?: string[] //图片链接集合
+  kb_config?: {
+    enable: boolean //是否启用知识库，默认不开启
+    search_private: boolean //是否查询私人空间，默认不开启
+    search_public: boolean //是否查询公开空间，默认不开启
+  }
 }

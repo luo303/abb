@@ -1,6 +1,14 @@
 import React, { useState, useRef } from 'react'
-import { View, StyleSheet, ScrollView, Text, Animated } from 'react-native'
+import { View, StyleSheet, Text } from 'react-native'
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation
+} from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
@@ -14,89 +22,120 @@ import { MOCK_POSTS } from '@/data/mock/homePosts'
  * 包含搜索管理、轮播图、功能导航和社区模块列表
  */
 export default function Home() {
-  const scrollViewRef = useRef<ScrollView>(null)
+  const insets = useSafeAreaInsets()
+  const scrollY = useSharedValue(0)
+  const scrollViewRef = useRef<Animated.ScrollView>(null)
   const [communityY, setCommunityY] = useState(0)
-  const scrollY = useRef(new Animated.Value(0)).current
+  const [isSearching, setIsSearching] = useState(false)
 
   // 定义滚动动作
   const handleScrollToCommunity = () => {
     scrollViewRef.current?.scrollTo({ y: communityY, animated: true })
   }
-  const [isSearching, setIsSearching] = useState(false)
+
+  const scrollHandler = useAnimatedScrollHandler(event => {
+    scrollY.value = event.contentOffset.y
+  })
+
+  // 顶部背景动画样式
+  const headerBackgroundStyle = useAnimatedStyle(() => {
+    // 当滚动到社区部分时，背景变为白色
+    // 阈值设定为社区部分接近顶部时
+    const triggerPoint = communityY > 0 ? communityY - insets.top - 50 : 300
+
+    const opacity = interpolate(
+      scrollY.value,
+      [triggerPoint - 100, triggerPoint],
+      [0, 1],
+      Extrapolation.CLAMP
+    )
+
+    return {
+      opacity
+    }
+  })
 
   return (
     <HomeScrollToContext.Provider
       value={{ scrollToCommunity: handleScrollToCommunity }}
     >
       <View style={styles.mainContainer}>
-        {/* 全局背景渐变 */}
-        <LinearGradient
-          colors={['#cffafe', '#e0f2fe', '#ffffff']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.background}
-        />
+        {/* 顶部背景装饰 */}
+        <View style={styles.headerBackgroundContainer}>
+          <LinearGradient
+            colors={['#cffafe', '#e0f2fe']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={[styles.headerGradient, { height: 280 + insets.top }]}
+          />
+          <View style={styles.headerCurve} />
+          {/* 白色遮罩层，用于滚动时渐变到白色 */}
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: '#fff' },
+              headerBackgroundStyle
+            ]}
+          />
+        </View>
 
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          ref={scrollViewRef}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-        >
-          {/* 1. 搜索管理组件 (包含搜索栏和搜索结果) */}
-          <View style={styles.searchSection}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <Animated.ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            ref={scrollViewRef}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
+            {/* 1. 搜索管理组件 (包含搜索栏和搜索结果) */}
             <HomeSearchManager
               posts={MOCK_POSTS}
               onSearchStateChange={setIsSearching}
             />
-          </View>
 
-          {/* 只有在没有搜索内容时，才显示轮播图和导航网格以及默认帖子列表 */}
-          {!isSearching && (
-            <>
-              {/* 2. 顶部轮播图组件 */}
-              <View style={styles.bannerSection}>
-                <HomeBanner />
-              </View>
-
-              {/* 3. 中间功能导航组件 */}
-              <HomeNavGrid />
-
-              {/* 4. 底部默认社区模块组件列表 */}
-              <View
-                style={styles.communitySection}
-                onLayout={e => setCommunityY(e.nativeEvent.layout.y)}
-              >
-                {/* 社区标题头 */}
-                <View style={styles.sectionHeader}>
-                  <View style={styles.sectionTitleWrapper}>
-                    <LinearGradient
-                      colors={['#22d3ee', '#3b82f6']}
-                      style={styles.iconBox}
-                    >
-                      <Ionicons name="people" size={16} color="#fff" />
-                    </LinearGradient>
-                    <Text style={styles.sectionTitle}>宝妈社区</Text>
-                  </View>
-                  <View style={styles.sectionBadge}>
-                    <Text style={styles.badgeText}>最新动态</Text>
-                  </View>
+            {/* 只有在没有搜索内容时，才显示轮播图和导航网格以及默认帖子列表 */}
+            {!isSearching && (
+              <>
+                {/* 2. 顶部轮播图组件 */}
+                <View style={styles.bannerSection}>
+                  <HomeBanner />
                 </View>
 
-                {MOCK_POSTS.map((post, index) => (
-                  <View key={post.id} style={{ marginBottom: 12 }}>
-                    <HomeCommunityCard data={post} />
+                {/* 3. 中间功能导航组件 */}
+                <HomeNavGrid />
+
+                {/* 4. 底部默认社区模块组件列表 */}
+                <View
+                  style={styles.communitySection}
+                  onLayout={e => setCommunityY(e.nativeEvent.layout.y)}
+                >
+                  {/* 社区标题头 */}
+                  <View style={styles.sectionHeader}>
+                    <View style={styles.sectionTitleWrapper}>
+                      <LinearGradient
+                        colors={['#22d3ee', '#3b82f6']}
+                        style={styles.iconBox}
+                      >
+                        <Ionicons name="people" size={16} color="#fff" />
+                      </LinearGradient>
+                      <Text style={styles.sectionTitle}>宝妈社区</Text>
+                    </View>
+                    <View style={styles.sectionBadge}>
+                      <Text style={styles.badgeText}>最新动态</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
-            </>
-          )}
-        </ScrollView>
+
+                  {MOCK_POSTS.map(post => (
+                    <View key={post.id} style={{ marginBottom: 12 }}>
+                      <HomeCommunityCard data={post} />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+          </Animated.ScrollView>
+        </SafeAreaView>
       </View>
     </HomeScrollToContext.Provider>
   )
@@ -107,21 +146,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff'
   },
-  background: {
+  headerBackgroundContainer: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    top: 0,
-    bottom: 0
+    zIndex: 0
+  },
+  headerGradient: {
+    width: '100%'
+  },
+  headerCurve: {
+    height: 40,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    marginTop: -40
+  },
+  safeArea: {
+    flex: 1
   },
   container: {
-    flex: 1,
-    paddingTop: 10
-  },
-  searchSection: {
-    paddingHorizontal: 0,
-    marginBottom: 10,
-    zIndex: 10
+    flex: 1
   },
   bannerSection: {
     marginBottom: 10

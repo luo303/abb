@@ -1,43 +1,37 @@
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { Ionicons, FontAwesome } from '@expo/vector-icons'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView
+} from 'react-native'
+import { useState } from 'react'
+import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import Markdown from 'react-native-markdown-display'
 
 import { useMessage } from '../Message'
 import { Message } from '../../types/AIchat'
+import ImagePreviewModal from '../common/ImagePreviewModal'
 
 interface ChatMessageProps {
   message: Message
   isSpeaking: boolean
   onSpeak: () => void
-  onWonderPress?: (text: string) => void
-  isLatest?: boolean
 }
 
 export default function ChatMessage({
   message,
   isSpeaking,
-  onSpeak,
-  onWonderPress,
-  isLatest = false
+  onSpeak
 }: ChatMessageProps) {
-  const [liked, setLiked] = useState(false)
-  const [disliked, setDisliked] = useState(false)
-
   const { showMessage } = useMessage()
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
   const handleCopy = async () => {
     await Clipboard.setStringAsync(message.content)
     showMessage('复制成功')
-  }
-
-  const handleLike = () => {
-    setLiked(!liked)
-    if (disliked) setDisliked(false)
-  }
-
-  const handleDislike = () => {
-    setDisliked(!disliked)
-    if (liked) setLiked(false)
   }
 
   const handleSpeak = () => {
@@ -48,32 +42,67 @@ export default function ChatMessage({
     <View
       style={[
         styles.container,
-        message.isUser ? styles.userContainer : styles.aiContainer
+        message.role === 'user' ? styles.userContainer : styles.aiContainer
       ]}
     >
       <View
         style={[
           styles.messageColumn,
-          message.isUser ? styles.userColumn : styles.aiColumn
+          message.role === 'user' ? styles.userColumn : styles.aiColumn
         ]}
       >
-        <View
-          style={[
-            styles.contentWrapper,
-            message.isUser ? styles.userBubble : styles.aiContent
-          ]}
-        >
-          <Text
+        {message.images && message.images.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageContainer}
+            contentContainerStyle={styles.imageContentContainer}
+          >
+            {message.images.map((img, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setPreviewImage(img)}
+                activeOpacity={0.9}
+                style={styles.imageWrapper}
+              >
+                <Image
+                  source={{ uri: img }}
+                  style={styles.messageImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        {message.content && (
+          <View
             style={[
-              styles.text,
-              message.isUser ? styles.userText : styles.aiText
+              styles.contentWrapper,
+              message.role === 'user' ? styles.userBubble : styles.aiContent
             ]}
           >
-            {message.content}
-          </Text>
-        </View>
-
-        {!message.isUser && (
+            {message.role === 'user' ? (
+              <Text style={[styles.text, styles.userText]}>
+                {message.content}
+              </Text>
+            ) : (
+              <Markdown
+                style={{
+                  body: {
+                    fontSize: 16,
+                    color: '#333'
+                  },
+                  paragraph: {
+                    marginVertical: 0
+                  }
+                }}
+              >
+                {message.content}
+              </Markdown>
+            )}
+          </View>
+        )}
+        {message.role === 'assistant' && (
           <View style={styles.aiFooter}>
             <TouchableOpacity
               onPress={handleCopy}
@@ -81,28 +110,6 @@ export default function ChatMessage({
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="copy-outline" size={16} color="#999" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleLike}
-              style={styles.actionButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <FontAwesome
-                name={liked ? 'thumbs-up' : 'thumbs-o-up'}
-                size={16}
-                color={liked ? '#ff4d4f' : '#999'}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDislike}
-              style={styles.actionButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <FontAwesome
-                name={disliked ? 'thumbs-down' : 'thumbs-o-down'}
-                size={16}
-                color={disliked ? '#ff4d4f' : '#999'}
-              />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSpeak}
@@ -117,40 +124,13 @@ export default function ChatMessage({
             </TouchableOpacity>
           </View>
         )}
-
-        {/* 猜你想问列表 - 仅在最新一条消息显示 */}
-        {!message.isUser &&
-          isLatest &&
-          message.wonder &&
-          message.wonder.length > 0 && (
-            <View style={styles.wonderContainer}>
-              <View style={styles.wonderHeader}>
-                <Ionicons name="sparkles-outline" size={14} color="#1f99b0" />
-                <Text style={styles.wonderTitle}>猜你想问</Text>
-              </View>
-              {message.wonder.map((content, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.wonderItem}
-                  onPress={() => onWonderPress?.(content)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.wonderText}>{content}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#ccc" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
       </View>
 
-      {message.isUser && (
-        <Ionicons
-          name="person-circle"
-          size={40}
-          color="#b1aea9ff"
-          style={{ marginLeft: 8 }}
-        />
-      )}
+      <ImagePreviewModal
+        visible={!!previewImage}
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </View>
   )
 }
@@ -161,6 +141,21 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     alignItems: 'flex-start',
     paddingHorizontal: 4
+  },
+  imageContainer: {
+    marginBottom: 8,
+    maxHeight: 200
+  },
+  imageContentContainer: {
+    paddingRight: 4
+  },
+  imageWrapper: {
+    marginRight: 8
+  },
+  messageImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 8
   },
   userContainer: {
     justifyContent: 'flex-end'
@@ -213,39 +208,5 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 4
-  },
-  wonderContainer: {
-    marginTop: 16,
-    width: '100%'
-  },
-  wonderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10
-  },
-  wonderTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1f99b0',
-    marginLeft: 6
-  },
-  wonderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f0fcfd',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e1f5f8'
-  },
-  wonderText: {
-    fontSize: 14,
-    color: '#2c3e50',
-    flex: 1,
-    marginRight: 8,
-    lineHeight: 20
   }
 })

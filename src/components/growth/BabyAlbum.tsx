@@ -16,18 +16,17 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
-import Card from '../common/Card'
 import { NavigationProps } from '../../types/navigation'
+import { Card } from '../common/Card'
 
 // 计算布局尺寸
 const { width } = Dimensions.get('window')
 const PAGE_PADDING = 20 // 页面左右间距
-const CARD_PADDING = 16 // 卡片内部padding
 const GAP = 12 // 图片间距
 // 滚动容器的实际宽度 (屏幕宽 - 页面间距)
 const CONTAINER_WIDTH = width - PAGE_PADDING * 2
-// 实际可视内容宽度 (容器宽 - 卡片内边距)
-const CONTENT_WIDTH = CONTAINER_WIDTH - CARD_PADDING * 2
+// 实际可视内容宽度
+const CONTENT_WIDTH = CONTAINER_WIDTH
 // 计算每个项目的宽度，使得正好放下3个
 const ITEM_SIZE = (CONTENT_WIDTH - 2 * GAP) / 3
 
@@ -64,9 +63,7 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
           </View>
           <Text style={styles.title}>宝宝相册</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Album')}>
-          <Text style={styles.moreText}>全部 &gt;</Text>
-        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
       </View>
 
       {/* 图片展示区域 - 使用 Reanimated 实现果冻效果 */}
@@ -99,22 +96,6 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
 // 独立的动画组件
 const AlbumItem = ({ index, img, scrollX, navigation }: any) => {
   const animatedStyle = useAnimatedStyle(() => {
-    // 计算当前项的输入范围
-    // 考虑到 paddingHorizontal: 16，第一个项的偏移是 0 (相对于内容区域)
-    // 但是 scrollX 是从 0 开始的
-    const itemOffset = index * (ITEM_SIZE + GAP)
-
-    // 视口中心点 (相对于 contentOffset)
-    // 我们希望当 item 在视口中间时放大
-    // 视口宽度约为 CONTENT_WIDTH (因为我们 padding 掉了两边)
-    // 但实际上 ScrollView 是全宽的 (marginHorizontal: -16)
-    // 所以视口宽度是 CONTAINER_WIDTH
-
-    // 简单起见，我们以 item 自身位置为基准
-    // 当 scrollX 接近 itemOffset 时，该 item 处于左侧
-    // 我们希望显示 3 个，中间那个最大
-    // 中间那个的位置大约是 scrollX + ITEM_SIZE + GAP
-
     const inputRange = [
       (index - 1) * (ITEM_SIZE + GAP),
       index * (ITEM_SIZE + GAP),
@@ -124,14 +105,14 @@ const AlbumItem = ({ index, img, scrollX, navigation }: any) => {
     const scale = interpolate(
       scrollX.value,
       inputRange,
-      [0.9, 1.05, 0.9], // 左右缩小，中间放大
+      [0.9, 1, 0.9], // 左右缩小，中间放大
       Extrapolation.CLAMP
     )
 
     const opacity = interpolate(
       scrollX.value,
       inputRange,
-      [0.8, 1, 0.8],
+      [0.6, 1, 0.6],
       Extrapolation.CLAMP
     )
 
@@ -149,6 +130,7 @@ const AlbumItem = ({ index, img, scrollX, navigation }: any) => {
         style={styles.touchableArea}
       >
         <Image style={styles.image} source={img} />
+        <View style={styles.imageOverlay} />
       </TouchableOpacity>
     </Animated.View>
   )
@@ -157,7 +139,14 @@ const AlbumItem = ({ index, img, scrollX, navigation }: any) => {
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 24
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3
   },
   header: {
     flexDirection: 'row',
@@ -168,50 +157,52 @@ const styles = StyleSheet.create({
   titleWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 8
   },
   iconBox: {
     width: 32,
     height: 32,
     borderRadius: 12,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#e0f2fe'
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333'
   },
-  moreText: {
-    fontSize: 13,
-    color: '#999'
-  },
   scrollView: {
-    marginHorizontal: -16 // 抵消 Card 的 padding
+    marginHorizontal: -20, // 抵消页面的 padding
+    paddingLeft: 20 // 恢复左侧 padding
   },
   imageContainer: {
-    paddingHorizontal: 16, // 恢复内容内边距
+    paddingRight: 40, // 右侧多留点空间
     gap: GAP,
     paddingBottom: 10
   },
   itemWrapper: {
     width: ITEM_SIZE,
-    height: ITEM_SIZE,
-    borderRadius: 20,
+    height: ITEM_SIZE * 1.2, // 长方形更像照片
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5
+    elevation: 4,
+    backgroundColor: '#fff'
   },
   touchableArea: {
-    width: '100%',
-    height: '100%'
+    flex: 1
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0'
+    resizeMode: 'cover'
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.02)' // 极淡的遮罩增加质感
   }
 })

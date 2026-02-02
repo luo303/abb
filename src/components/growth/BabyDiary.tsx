@@ -2,9 +2,8 @@ import React from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
-import Card from '../common/Card'
 import { NavigationProps } from '../../types/navigation'
+import { Card } from '../common/Card'
 
 export default function BabyDiary() {
   const navigation = useNavigation<NavigationProps>()
@@ -18,50 +17,43 @@ export default function BabyDiary() {
           </View>
           <Text style={styles.title}>宝宝日记</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Diary')}>
-          <Text style={styles.moreText}>全部 &gt;</Text>
-        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
       </View>
 
-      <LinearGradient
-        colors={['#fcfdfd', '#f0fdf4']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.content}
-      >
+      <View style={styles.contentRow}>
         <View style={styles.imageContainer}>
           <Image
             source={require('../../assets/testAvatar.png')}
             style={styles.diaryImage}
           />
           <View style={styles.dateBadge}>
-            <Text style={styles.dateDay}>01</Text>
-            <Text style={styles.dateMonth}>1月</Text>
+            <Text style={styles.dayText}>01</Text>
+            <Text style={styles.monthText}>1月</Text>
           </View>
         </View>
 
-        <View style={styles.info}>
-          <View style={styles.topRow}>
-            <Text style={styles.time}>12:01</Text>
-            <View style={styles.moodContainer}>
+        <View style={styles.infoContainer}>
+          <View style={styles.infoHeader}>
+            <Text style={styles.timeText}>12:01</Text>
+            <View style={styles.moodBadge}>
               <Text style={styles.moodText}>开心 😊</Text>
             </View>
           </View>
 
-          <Text style={styles.desc} numberOfLines={2}>
+          <Text style={styles.diaryText} numberOfLines={2}>
             宝宝今天第一次翻身啦！ 看起来非常开心，一直在笑，我也好开心呀...
           </Text>
 
-          <View style={styles.tagContainer}>
+          <View style={styles.tagsContainer}>
             <View style={styles.tag}>
               <Text style={styles.tagText}># 第一次</Text>
             </View>
-            <View style={[styles.tag, styles.tagBlue]}>
-              <Text style={[styles.tagText, styles.tagTextBlue]}># 翻身</Text>
+            <View style={[styles.tag, styles.blueTag]}>
+              <Text style={[styles.tagText, styles.blueTagText]}># 翻身</Text>
             </View>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </Card>
   )
 }
@@ -69,7 +61,14 @@ export default function BabyDiary() {
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 24
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3
   },
   header: {
     flexDirection: 'row',
@@ -80,118 +79,103 @@ const styles = StyleSheet.create({
   titleWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 8
   },
   iconBox: {
     width: 32,
     height: 32,
     borderRadius: 12,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#e0f2fe'
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333'
   },
-  moreText: {
-    fontSize: 13,
-    color: '#999'
-  },
-  content: {
+  contentRow: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#f0fdf4'
+    gap: 16
   },
   imageContainer: {
-    position: 'relative',
-    marginRight: 12
+    position: 'relative'
   },
   diaryImage: {
-    width: 90,
-    height: 90,
+    width: 88,
+    height: 88,
     borderRadius: 16,
-    backgroundColor: '#e2e8f0'
+    backgroundColor: '#f5f5f5'
   },
   dateBadge: {
     position: 'absolute',
     top: 6,
     left: 6,
     backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 8,
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2
+    minWidth: 32
   },
-  dateDay: {
+  dayText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
-    lineHeight: 16
+    lineHeight: 14
   },
-  dateMonth: {
+  monthText: {
     fontSize: 10,
     color: '#666',
-    lineHeight: 12
+    marginTop: 2
   },
-  info: {
+  infoContainer: {
     flex: 1,
     justifyContent: 'space-between',
     paddingVertical: 2
   },
-  topRow: {
+  infoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4
+    alignItems: 'center'
   },
-  time: {
+  timeText: {
     fontSize: 12,
-    color: '#94a3b8'
+    color: '#999'
   },
-  moodContainer: {
-    backgroundColor: '#fff',
+  moodBadge: {
+    backgroundColor: '#fff7ed',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0'
+    borderRadius: 8
   },
   moodText: {
     fontSize: 11,
-    color: '#64748b'
+    color: '#f97316'
   },
-  desc: {
+  diaryText: {
     fontSize: 14,
-    color: '#334155',
-    lineHeight: 20,
-    marginBottom: 8
+    color: '#4b5563',
+    lineHeight: 20
   },
-  tagContainer: {
+  tagsContainer: {
     flexDirection: 'row',
     gap: 8
   },
   tag: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f3f4f6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6
   },
-  tagBlue: {
-    backgroundColor: '#eff6ff'
-  },
   tagText: {
     fontSize: 11,
-    color: '#64748b'
+    color: '#6b7280'
   },
-  tagTextBlue: {
+  blueTag: {
+    backgroundColor: '#eff6ff'
+  },
+  blueTagText: {
     color: '#3b82f6'
   }
 })

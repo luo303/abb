@@ -40,8 +40,8 @@ const RAW_DATA = [
   }
 ]
 
-// 构造循环数据：在首尾添加副本
-// [3, 1, 2, 3, 1]
+// 构造循环数据：在首尾添加副本，实现双向无限循环
+// [3(副本), 1, 2, 3, 1(副本)]
 // 实际显示的第一个元素是索引 1 (id: '1')
 const DATA = [
   { ...RAW_DATA[RAW_DATA.length - 1], id: 'duplicate-last' },
@@ -52,36 +52,24 @@ const DATA = [
 export default function HomeBanner() {
   const scrollX = useSharedValue(0)
   const animatedRef = useAnimatedRef<Animated.ScrollView>()
-  const [currentIndex, setCurrentIndex] = useState(1)
+  const currentIndexRef = useRef(1) // 使用 Ref 存储当前索引，避免闭包陷阱
   const [isAutoScrolling, setIsAutoScrolling] = useState(true)
-
-  // 初始滚动到第一个真实元素
-  // 注意：由于 contentContainerStyle 的 paddingHorizontal 存在，
-  // 第 0 个元素 (duplicate-last) 的偏移是 0 (相对于 content 内部)，
-  // 但 ScrollView 会因为 padding 而显示第一个元素居中? 不，ScrollView 的 0 位置是第一个元素的左边。
-  // 为了让第 1 个元素居中，我们需要滚动到： 1 * CARD_WIDTH
-  // 因为我们的 snapToInterval 是 CARD_WIDTH
-  // 并且我们设置了 paddingHorizontal = SPACING
-  // 当 scrollOffset = 0 时，ScrollView 显示的是第 0 个元素 (duplicate-last) 居中 (因为有左 padding)
-  // 所以我们要显示索引 1 (真实第一个)，需要滚动到 CARD_WIDTH
-
-  // 初始化滚动位置
   const [isReady, setIsReady] = useState(false)
 
-  // 处理滚动结束，实现无限循环
+  // 处理滚动结束，实现无限循环逻辑
   const handleScrollEnd = (offset: number) => {
     const pageIndex = Math.round(offset / CARD_WIDTH)
-    setCurrentIndex(pageIndex)
+    currentIndexRef.current = pageIndex
 
     // 如果滚动到了最后一个副本 (索引 DATA.length - 1)，瞬间跳回第一个真实元素 (索引 1)
     if (pageIndex === DATA.length - 1) {
       scrollTo(animatedRef, CARD_WIDTH * 1, 0, false)
-      setCurrentIndex(1)
+      currentIndexRef.current = 1
     }
     // 如果滚动到了第一个副本 (索引 0)，瞬间跳回最后一个真实元素 (索引 DATA.length - 2)
     else if (pageIndex === 0) {
       scrollTo(animatedRef, CARD_WIDTH * (DATA.length - 2), 0, false)
-      setCurrentIndex(DATA.length - 2)
+      currentIndexRef.current = DATA.length - 2
     }
   }
 
@@ -90,32 +78,48 @@ export default function HomeBanner() {
     if (!isReady || !isAutoScrolling) return
 
     const timer = setInterval(() => {
-      const nextIndex = currentIndex + 1
-      // 使用 scrollTo 进行平滑滚动
-      scrollTo(animatedRef, nextIndex * CARD_WIDTH, 0, true)
+      const nextIndex = currentIndexRef.current + 1
 
-      // 注意：这里我们不直接 setCurrentIndex，而是依赖 onMomentumScrollEnd 触发 handleScrollEnd 更新状态
-      // 但 scrollTo 可能不会触发 onMomentumScrollEnd (在某些 RN 版本/平台)
-      // 所以我们手动更新 currentIndex 引用，但在 handleScrollEnd 里做边界检查
-      setCurrentIndex(nextIndex)
+      // 边界保护：如果索引异常超出，重置
+      if (nextIndex >= DATA.length) {
+        scrollTo(animatedRef, CARD_WIDTH * 1, 0, false)
+        currentIndexRef.current = 1
+        return
+      }
+
+      // 执行平滑滚动动画
+      scrollTo(animatedRef, nextIndex * CARD_WIDTH, 0, true)
+      currentIndexRef.current = nextIndex
+
+      // 如果目标是最后一个副本（实现向右无限循环的关键）
+      // 等待动画结束后，悄悄重置回索引 1
+      if (nextIndex === DATA.length - 1) {
+        setTimeout(() => {
+          // 再次检查确认当前确实在最后一张（防止用户中途干预）
+          if (currentIndexRef.current === DATA.length - 1) {
+            scrollTo(animatedRef, CARD_WIDTH * 1, 0, false)
+            currentIndexRef.current = 1
+          }
+        }, 500) // 动画持续时间通常在 300-500ms
+      }
     }, 3000)
 
     return () => clearInterval(timer)
-  }, [isReady, isAutoScrolling, currentIndex])
+  }, [isReady, isAutoScrolling])
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: event => {
       scrollX.value = event.contentOffset.x
     },
+    // 处理惯性滚动结束（用户手动滑动）
     onMomentumEnd: event => {
       runOnJS(handleScrollEnd)(event.contentOffset.x)
     },
     // 处理拖拽结束，恢复自动轮播
     onEndDrag: event => {
-      // 拖拽结束后，可能需要校准位置
-      runOnJS(handleScrollEnd)(event.contentOffset.x)
       runOnJS(setIsAutoScrolling)(true)
     },
+    // 开始拖拽时暂停自动轮播
     onBeginDrag: () => {
       runOnJS(setIsAutoScrolling)(false)
     }
@@ -135,12 +139,13 @@ export default function HomeBanner() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         onLayout={() => {
-          // 布局完成后，初始化滚动位置到索引 1
+          // 布局完成后，初始化滚动位置到索引 1（第一张真实图片）
           if (!isReady) {
-            // 使用 setTimeout 确保在下一帧执行，避免布局未完全就绪
             setTimeout(() => {
               scrollTo(animatedRef, CARD_WIDTH * 1, 0, false)
               setIsReady(true)
+              // 初始化 scrollX，避免初始动画跳变
+              scrollX.value = CARD_WIDTH * 1
             }, 100)
           }
         }}
@@ -160,7 +165,7 @@ export default function HomeBanner() {
   )
 }
 
-// 独立的动画容器组件
+// 独立的动画容器组件，实现 3D 悬浮效果
 const BannerItemContainer = ({ index, item, scrollX }: any) => {
   const animatedStyle = useAnimatedStyle(() => {
     const inputRange = [
@@ -169,13 +174,15 @@ const BannerItemContainer = ({ index, item, scrollX }: any) => {
       (index + 1) * CARD_WIDTH
     ]
 
+    // 缩放效果：中间大，两边小
     const scale = interpolate(
       scrollX.value,
       inputRange,
-      [0.85, 1, 0.85], // 调整两边缩放比例，不要太小，避免留白过多
+      [0.85, 1, 0.85],
       Extrapolation.CLAMP
     )
 
+    // 透明度效果：中间不透明，两边半透明
     const opacity = interpolate(
       scrollX.value,
       inputRange,
@@ -183,15 +190,15 @@ const BannerItemContainer = ({ index, item, scrollX }: any) => {
       Extrapolation.CLAMP
     )
 
-    // 位移效果：左右卡片向中间靠拢
-    // 这里的位移需要根据宽度调整
+    // 位移效果：左右卡片向中间靠拢，产生覆盖感
     const translateX = interpolate(
       scrollX.value,
       inputRange,
-      [40, 0, -40],
+      [40, 0, -40], // 这里的数值控制重叠程度
       Extrapolation.CLAMP
     )
 
+    // 层级效果：中间层级最高，覆盖两边
     const zIndex = interpolate(
       scrollX.value,
       inputRange,
@@ -234,7 +241,7 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: '100%',
     height: '100%',
-    borderRadius: 24, // 增加圆角与 NavGrid 一致
+    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#fff',
     shadowColor: '#000',

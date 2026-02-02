@@ -19,31 +19,35 @@ export default function HomeNavGrid() {
         icon="food-off"
         label="查忌口"
         library="MaterialCommunityIcons"
+        color="#FF8A65" // 暖橙色
         onPress={() => navigation.navigate('Taboo')}
       />
       <NavItem
         icon="pencil"
         label="日常记录"
         library="MaterialCommunityIcons"
+        color="#4FC3F7" // 浅蓝色
         onPress={() => navigation.navigate('DailyRecord')}
       />
       <NavItem
         icon="needle"
         label="疫苗记录"
         library="MaterialCommunityIcons"
+        color="#81C784" // 浅绿色
         onPress={() => navigation.navigate('VaccineRecord')}
       />
       <NavItem
         icon="book-open-page-variant"
         label="宝宝故事"
         library="MaterialCommunityIcons"
+        color="#BA68C8" // 浅紫色
         onPress={() => navigation.navigate('BabyStories')}
       />
     </LinearGradient>
   )
 }
 
-const NavItem = ({ icon, label, library, onPress }: any) => {
+const NavItem = ({ icon, label, library, color, onPress }: any) => {
   const IconComponent =
     library === 'MaterialIcons' ? MaterialIcons : MaterialCommunityIcons
   return (
@@ -77,7 +81,8 @@ const styles = StyleSheet.create({
   },
   navItem: {
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    flex: 1
   },
   iconCircle: {
     width: 48,

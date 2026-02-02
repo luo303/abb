@@ -36,6 +36,7 @@ export default function TabsLayout() {
   return (
     <Tab.Navigator
       screenOptions={{
+        headerShown: false,
         headerTitleAlign: 'center',
         headerTitle: '',
         headerStyle: {

@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import Card from '../common/Card'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Card } from '../common/Card'
 
 export default function BabyStats() {
   return (
@@ -12,13 +12,16 @@ export default function BabyStats() {
           <View style={styles.iconBg}>
             <Ionicons name="body-outline" size={20} color="#00acc1" />
           </View>
-          <Text style={styles.title}>宝宝档案</Text>
+          <View>
+            <Text style={styles.title}>宝宝档案</Text>
+            <Text style={styles.subtitle}>出生 100 天</Text>
+          </View>
         </View>
-        <Text style={styles.subtitle}>已出生 100 天</Text>
+        <Ionicons name="ellipsis-horizontal" size={20} color="#9ca3af" />
       </View>
 
       <View style={styles.statsContainer}>
-        {/* 身高卡片 */}
+        {/* 身高卡片 - 使用青色渐变，与主题保持一致 */}
         <LinearGradient
           colors={['#e0f2fe', '#bae6fd']}
           start={{ x: 0, y: 0 }}
@@ -63,40 +66,44 @@ export default function BabyStats() {
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 24
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 16
   },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 12
   },
   iconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: '#e0f7fa',
     justifyContent: 'center',
     alignItems: 'center'
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333'
   },
   subtitle: {
-    fontSize: 14,
-    color: '#0ea5e9',
+    fontSize: 12,
+    color: '#00acc1',
     fontWeight: '600',
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    overflow: 'hidden'
+    marginTop: 2
   },
   statsContainer: {
     flexDirection: 'row',
@@ -128,14 +135,13 @@ const styles = StyleSheet.create({
     alignItems: 'baseline'
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#333',
-    marginRight: 4
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333'
   },
   statUnit: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600'
+    fontSize: 12,
+    color: 'rgba(0,0,0,0.5)',
+    marginLeft: 2
   }
 })

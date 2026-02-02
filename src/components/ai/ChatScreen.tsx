@@ -16,12 +16,18 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { Ionicons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import 'react-native-get-random-values'
+import { v4 as uuidv4 } from 'uuid'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import ChatEmptyState from './ChatEmptyState'
 import * as Speech from 'expo-speech'
 import { RootState } from '../../store'
-import { addMessage, createNewSession } from '../../store/modules/ChatStore'
+import {
+  createNewSession,
+  addMessage,
+  loadInitialData
+} from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
 
 // 在 Android 上启用布局动画
@@ -43,41 +49,47 @@ export default function ChatScreen() {
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
 
-  // 语音播放状态管理
-  const [speakingId, setSpeakingId] = useState<string | null>(null)
-  const speakingIdRef = useRef<string | null>(null)
+  // 加载初始数据
+  useEffect(() => {
+    // @ts-ignore
+    dispatch(loadInitialData())
+  }, [dispatch])
 
-  const updateSpeakingId = (id: string | null) => {
-    speakingIdRef.current = id
-    setSpeakingId(id)
+  // 语音播放状态管理
+  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
+  const speakingIndexRef = useRef<number | null>(null)
+
+  const updateSpeakingIndex = (index: number | null) => {
+    speakingIndexRef.current = index
+    setSpeakingIndex(index)
   }
 
-  const handleSpeak = (id: string, text: string) => {
-    if (speakingIdRef.current === id) {
+  const handleSpeak = (index: number, text: string) => {
+    if (speakingIndexRef.current === index) {
       // 如果点击的是当前正在播放的，则停止
       Speech.stop()
-      updateSpeakingId(null)
+      updateSpeakingIndex(null)
     } else {
       // 停止之前的播放（如果有）
       Speech.stop()
-      // 立即更新为新的播放ID
-      updateSpeakingId(id)
+      // 立即更新为新的播放索引
+      updateSpeakingIndex(index)
 
       Speech.speak(text, {
         onDone: () => {
-          // 只有当当前播放ID仍然是这个ID时才清除（防止被新的播放打断后错误清除）
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          // 只有当当前播放索引仍然是这个索引时才清除（防止被新的播放打断后错误清除）
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         },
         onStopped: () => {
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         },
         onError: () => {
-          if (speakingIdRef.current === id) {
-            updateSpeakingId(null)
+          if (speakingIndexRef.current === index) {
+            updateSpeakingIndex(null)
           }
         }
       })
@@ -94,39 +106,44 @@ export default function ChatScreen() {
   // 监听会话ID变化，停止语音播放
   useEffect(() => {
     Speech.stop()
-    updateSpeakingId(null)
+    updateSpeakingIndex(null)
   }, [currentConversationId])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const generateId = () => {
-    return Date.now().toString() + Math.random().toString(36).substring(2, 9)
-  }
-
-  const sendMessage = (text?: string) => {
+  const sendMessage = (text?: string, images?: string[]) => {
     const contentToSend = typeof text === 'string' ? text : inputText.trim()
-    if (!contentToSend) return
+    const imagesToSend = images || []
+
+    if (!contentToSend && imagesToSend.length === 0) return
 
     if (typeof text !== 'string') {
       Keyboard.dismiss()
     }
 
     // 如果当前没有会话ID，说明是新会话，需要先创建会话
-    if (!currentConversationId || messages.length === 0) {
-      const newId = generateId()
+    if (!currentConversationId) {
+      const newId = uuidv4()
       // @ts-ignore - Thunk action type issue
       dispatch(createNewSession(newId))
     }
 
     const userMsg: Message = {
-      message_id: generateId(),
       content: contentToSend,
-      isUser: true
+      role: 'user',
+      timestamp: Date.now(),
+      images: imagesToSend
+    }
+
+    // TODO: 上传图片到后端
+    if (imagesToSend.length > 0) {
+      console.log('Need to upload images:', imagesToSend)
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    // @ts-ignore
     dispatch(addMessage(userMsg))
 
     if (typeof text !== 'string') {
@@ -136,20 +153,15 @@ export default function ChatScreen() {
     // 模拟 AI 回复
     setTimeout(() => {
       const aiMsg: Message = {
-        title: '测试标题',
-        message_id: generateId(),
         content:
-          '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
-        isUser: false,
-        wonder: ['宝宝不睡觉怎么办', '如何给宝宝喂奶']
+          '作为一个**AI助手**，我可以帮你解答育儿方面的问题，比如：\n\n- 宝宝辅食\n- 疫苗接种提醒\n- 生长发育评估\n\n> 随时欢迎向我提问哦！',
+        role: 'assistant',
+        timestamp: Date.now()
       }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+      // @ts-ignore
       dispatch(addMessage(aiMsg))
     }, 1000)
-  }
-
-  const handleWonderPress = (text: string) => {
-    sendMessage(text)
   }
 
   // 当消息变化时，如果是AI回复，则平滑滚动到底部
@@ -158,7 +170,7 @@ export default function ChatScreen() {
       const lastMessage = messages[messages.length - 1]
       // 只有当最新消息不是用户发送的（即AI回复），或者是用户刚发送时，才触发滚动
       // 初始化或切换会话时，由于 inverted 属性，自然就在底部，不需要额外滚动
-      if (!lastMessage.isUser || messages.length === 1) {
+      if (lastMessage.role === 'assistant' || messages.length === 1) {
         setTimeout(() => {
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
         }, 100)
@@ -213,20 +225,19 @@ export default function ChatScreen() {
             <FlatList
               ref={flatListRef}
               data={[...messages].reverse()} // 反转数据源以适配 inverted
-              keyExtractor={item => item.message_id}
+              keyExtractor={(_, index) => index.toString()}
               inverted={true} // 启用倒序模式，默认从底部开始
-              renderItem={({ item, index }) => (
-                <ChatMessage
-                  message={item}
-                  isSpeaking={item.message_id === speakingId}
-                  onSpeak={() => handleSpeak(item.message_id, item.content)}
-                  onWonderPress={handleWonderPress}
-                  // inverted 后索引也反转了，所以判断最新消息逻辑要变
-                  // 原数组：[msg1, msg2, msg3] (最新的是 msg3，index=2)
-                  // 反转后：[msg3, msg2, msg1] (最新的是 msg3，index=0)
-                  isLatest={index === 0}
-                />
-              )}
+              renderItem={({ item, index }) => {
+                // 计算原始索引：messages.length - 1 - index
+                const originalIndex = messages.length - 1 - index
+                return (
+                  <ChatMessage
+                    message={item}
+                    isSpeaking={originalIndex === speakingIndex}
+                    onSpeak={() => handleSpeak(originalIndex, item.content)}
+                  />
+                )
+              }}
               contentContainerStyle={styles.listContent}
               ListHeaderComponent={<View style={{ height: 80 }} />} // 倒序后 Footer 变成了 Header
               showsVerticalScrollIndicator={false}
@@ -250,7 +261,7 @@ export default function ChatScreen() {
             <ChatInput
               value={inputText}
               onChangeText={setInputText}
-              onSend={sendMessage}
+              onSend={images => sendMessage(undefined, images)}
               disabled={!inputText.trim()}
             />
           </View>

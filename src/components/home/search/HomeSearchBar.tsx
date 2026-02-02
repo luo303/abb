@@ -35,26 +35,22 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: 'transparent', // 透明背景以显示底部渐变
+    // 移除外层容器的圆角和阴影，使其融合
+    marginHorizontal: 0,
+    elevation: 0
   },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    height: 40,
-    marginRight: 10
+    backgroundColor: '#F2F3F5', // 更淡的灰背景
+    borderRadius: 22, // 更圆润
+    paddingHorizontal: 16,
+    height: 40, // 增加高度提升触感
+    marginRight: 12
   },
   icon: {
     marginRight: 5
