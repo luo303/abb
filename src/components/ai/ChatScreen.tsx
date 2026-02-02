@@ -154,7 +154,7 @@ export default function ChatScreen() {
     setTimeout(() => {
       const aiMsg: Message = {
         content:
-          '我收到你的消息了。作为一个AI助手，我可以帮你解答育儿方面的问题，比如宝宝辅食、疫苗接种提醒等。',
+          '作为一个**AI助手**，我可以帮你解答育儿方面的问题，比如：\n\n- 宝宝辅食\n- 疫苗接种提醒\n- 生长发育评估\n\n> 随时欢迎向我提问哦！',
         role: 'assistant',
         timestamp: Date.now()
       }

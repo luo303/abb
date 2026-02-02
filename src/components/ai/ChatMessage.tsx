@@ -9,6 +9,7 @@ import {
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import Markdown from 'react-native-markdown-display'
 
 import { useMessage } from '../Message'
 import { Message } from '../../types/AIchat'
@@ -80,14 +81,25 @@ export default function ChatMessage({
               message.role === 'user' ? styles.userBubble : styles.aiContent
             ]}
           >
-            <Text
-              style={[
-                styles.text,
-                message.role === 'user' ? styles.userText : styles.aiText
-              ]}
-            >
-              {message.content}
-            </Text>
+            {message.role === 'user' ? (
+              <Text style={[styles.text, styles.userText]}>
+                {message.content}
+              </Text>
+            ) : (
+              <Markdown
+                style={{
+                  body: {
+                    fontSize: 16,
+                    color: '#333'
+                  },
+                  paragraph: {
+                    marginVertical: 0
+                  }
+                }}
+              >
+                {message.content}
+              </Markdown>
+            )}
           </View>
         )}
         {message.role === 'assistant' && (
@@ -141,8 +153,8 @@ const styles = StyleSheet.create({
     marginRight: 8
   },
   messageImage: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     borderRadius: 8
   },
   userContainer: {
