@@ -10,7 +10,7 @@ export default function HomeNavGrid() {
 
   return (
     <LinearGradient
-      colors={['#22d3ee', '#0ea5e9', '#3b82f6']}
+      colors={['#fb7185', '#f43f5e', '#e11d48']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
       style={styles.navContainer}
@@ -57,7 +57,7 @@ const NavItem = ({ icon, label, library, color, onPress }: any) => {
       activeOpacity={0.8}
     >
       <View style={styles.iconCircle}>
-        <IconComponent name={icon} size={26} color="#0ea5e9" />
+        <IconComponent name={icon} size={26} color="#f43f5e" />
       </View>
       <Text style={styles.navLabel}>{label}</Text>
     </TouchableOpacity>
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 16,
     marginHorizontal: 16,
-    shadowColor: '#0ea5e9',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

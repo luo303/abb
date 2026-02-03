@@ -30,7 +30,7 @@ export default function Profile() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <LinearGradient
-        colors={['#cffafe', '#e0f2fe', '#ffffff']}
+        colors={['#fff1f2', '#ffe4e6', '#ffffff']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.background}

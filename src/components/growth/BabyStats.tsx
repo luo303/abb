@@ -10,7 +10,7 @@ export default function BabyStats() {
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <View style={styles.iconBg}>
-            <Ionicons name="body-outline" size={20} color="#00acc1" />
+            <Ionicons name="body-outline" size={20} color="#f43f5e" />
           </View>
           <View>
             <Text style={styles.title}>宝宝档案</Text>
@@ -21,15 +21,15 @@ export default function BabyStats() {
       </View>
 
       <View style={styles.statsContainer}>
-        {/* 身高卡片 - 使用青色渐变，与主题保持一致 */}
+        {/* 身高卡片 - 使用暖色渐变，与主题保持一致 */}
         <LinearGradient
-          colors={['#e0f2fe', '#bae6fd']}
+          colors={['#fff1f2', '#ffe4e6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.statBox}
         >
           <View style={styles.statIcon}>
-            <Ionicons name="resize-outline" size={24} color="#1f99b0" />
+            <Ionicons name="resize-outline" size={24} color="#f43f5e" />
           </View>
           <View>
             <Text style={styles.statLabel}>身高</Text>
@@ -40,15 +40,15 @@ export default function BabyStats() {
           </View>
         </LinearGradient>
 
-        {/* 体重卡片 - 使用青色渐变，与主题保持一致 */}
+        {/* 体重卡片 - 使用暖色渐变，与主题保持一致 */}
         <LinearGradient
-          colors={['#e0f7fa', '#b2ebf2']}
+          colors={['#fff7ed', '#ffedd5']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.statBox}
         >
           <View style={styles.statIcon}>
-            <Ionicons name="scale-outline" size={24} color="#00acc1" />
+            <Ionicons name="scale-outline" size={24} color="#f97316" />
           </View>
           <View>
             <Text style={styles.statLabel}>体重</Text>
@@ -87,10 +87,10 @@ const styles = StyleSheet.create({
     gap: 12
   },
   iconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#e0f7fa',
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: '#fff1f2',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: '#00acc1',
+    color: '#f43f5e',
     fontWeight: '600',
     marginTop: 2
   },

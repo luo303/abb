@@ -108,7 +108,7 @@ const PaginationDot = ({
     return {
       opacity,
       width,
-      backgroundColor: '#0ea5e9' // 首页主题色 (Sky Blue 500)
+      backgroundColor: '#f43f5e' // 首页主题色 (Warm Red)
     }
   })
 

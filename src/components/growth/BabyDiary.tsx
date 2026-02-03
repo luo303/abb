@@ -13,7 +13,7 @@ export default function BabyDiary() {
       <View style={styles.header}>
         <View style={styles.titleWrapper}>
           <View style={styles.iconBox}>
-            <Ionicons name="book-outline" size={20} color="#1f99b0" />
+            <Ionicons name="book-outline" size={20} color="#f43f5e" />
           </View>
           <Text style={styles.title}>宝宝日记</Text>
         </View>
@@ -48,8 +48,8 @@ export default function BabyDiary() {
             <View style={styles.tag}>
               <Text style={styles.tagText}># 第一次</Text>
             </View>
-            <View style={[styles.tag, styles.blueTag]}>
-              <Text style={[styles.tagText, styles.blueTagText]}># 翻身</Text>
+            <View style={[styles.tag, styles.redTag]}>
+              <Text style={[styles.tagText, styles.redTagText]}># 翻身</Text>
             </View>
           </View>
         </View>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e0f2fe'
+    backgroundColor: '#fff1f2'
   },
   title: {
     fontSize: 16,
@@ -172,10 +172,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6b7280'
   },
-  blueTag: {
-    backgroundColor: '#eff6ff'
+  redTag: {
+    backgroundColor: '#fff1f2'
   },
-  blueTagText: {
-    color: '#3b82f6'
+  redTagText: {
+    color: '#f43f5e'
   }
 })

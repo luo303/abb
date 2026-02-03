@@ -43,7 +43,7 @@ export default function TabsLayout() {
           backgroundColor: '#ffffff'
         },
         headerShadowVisible: false,
-        tabBarActiveTintColor: '#1f99b0', //tab选中颜色
+        tabBarActiveTintColor: '#f43f5e', //tab选中颜色 (Warm Red)
         tabBarInactiveTintColor: '#999999', //tab未选中颜色
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 46 + insets.bottom : 56,

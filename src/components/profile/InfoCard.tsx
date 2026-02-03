@@ -7,7 +7,7 @@ export default function InfoCard() {
   return (
     <View style={styles.wrapper}>
       <LinearGradient
-        colors={['#ffffff', '#f8fbff']}
+        colors={['#ffffff', '#fff1f2']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.card}
@@ -57,7 +57,7 @@ const InfoItem = ({
 }) => (
   <View style={[styles.itemContainer, isLast && styles.lastItem]}>
     <View style={styles.iconContainer}>
-      <Ionicons name={icon} size={18} color="#4A8B95" />
+      <Ionicons name={icon} size={18} color="#f43f5e" />
     </View>
     <View style={styles.textContainer}>
       <Text style={styles.label}>{label}</Text>
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   titleLine: {
     width: 4,
     height: 18,
-    backgroundColor: '#4A8B95',
+    backgroundColor: '#f43f5e',
     borderRadius: 2,
     marginRight: 10
   },
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#e6fffa',
+    backgroundColor: '#fff1f2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12

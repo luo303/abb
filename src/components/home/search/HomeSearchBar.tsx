@@ -27,7 +27,7 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
     <View style={styles.container}>
       <View style={styles.searchBox}>
         <LinearGradient
-          colors={['#22d3ee', '#3b82f6']}
+          colors={['#ff9a9e', '#f43f5e']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.searchIconContainer}
@@ -45,7 +45,7 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
         />
         <TouchableOpacity onPress={handleSearch} activeOpacity={0.8}>
           <LinearGradient
-            colors={['#22d3ee', '#3b82f6']}
+            colors={['#ff9a9e', '#f43f5e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.searchButton}
@@ -59,7 +59,7 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
         onPress={() => navigation.navigate('AddPost')}
       >
         <LinearGradient
-          colors={['#22d3ee', '#3b82f6']}
+          colors={['#ff9a9e', '#f43f5e']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.addButton}
@@ -91,13 +91,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     height: 44,
     // 阴影效果
-    shadowColor: '#22d3ee',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#f0f9ff',
+    borderColor: '#fff1f2',
     paddingRight: 0,
     overflow: 'hidden'
   },
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#3b82f6',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

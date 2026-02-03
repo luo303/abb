@@ -22,7 +22,7 @@ export default function GrowthRecord() {
       {/* 顶部背景装饰 */}
       <View style={styles.headerBackgroundContainer}>
         <LinearGradient
-          colors={['#cffafe', '#e0f2fe']}
+          colors={['#fff1f2', '#ffe4e6']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={[styles.headerGradient, { height: 280 + insets.top }]}
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
-    shadowColor: '#1f99b0',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -150,12 +150,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#1f99b0'
+    backgroundColor: '#f43f5e'
   },
   activeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#1f99b0'
+    color: '#f43f5e'
   },
   headerSubtitle: {
     fontSize: 14,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#1f99b0',
+    backgroundColor: '#f43f5e',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

@@ -54,7 +54,7 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
       <View style={styles.header}>
         <View style={styles.titleWrapper}>
           <View style={styles.iconBox}>
-            <Ionicons name="images-outline" size={20} color="#1f99b0" />
+            <Ionicons name="images-outline" size={20} color="#f43f5e" />
           </View>
           <Text style={styles.title}>宝宝相册</Text>
         </View>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e0f2fe'
+    backgroundColor: '#ffe4e6'
   },
   title: {
     fontSize: 16,

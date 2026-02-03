@@ -14,23 +14,23 @@ export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
   return (
     <View style={styles.wrapper}>
       <LinearGradient
-        colors={['#ffffff', '#f8fbff']}
+        colors={['#ffffff', '#fff1f2']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.container}
       >
         <View style={styles.grid}>
-          <ActionItem icon="clock-outline" label="浏览历史" color="#4299e1" />
-          <ActionItem icon="heart-outline" label="收藏" color="#ed64a6" />
+          <ActionItem icon="clock-outline" label="浏览历史" color="#f43f5e" />
+          <ActionItem icon="heart-outline" label="收藏" color="#ec4899" />
           <ActionItem
             icon="comment-text-outline"
             label="我的帖子"
-            color="#48bb78"
+            color="#f97316"
           />
           <ActionItem
             icon="cog-outline"
             label="设置"
-            color="#a0aec0"
+            color="#94a3b8"
             onPress={onLogout}
           />
         </View>

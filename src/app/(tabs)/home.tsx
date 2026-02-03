@@ -63,7 +63,7 @@ export default function Home() {
         {/* 顶部背景装饰 */}
         <View style={styles.headerBackgroundContainer}>
           <LinearGradient
-            colors={['#cffafe', '#e0f2fe']}
+            colors={['#fff1f2', '#ffe4e6']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={[styles.headerGradient, { height: 280 + insets.top }]}
@@ -114,7 +114,7 @@ export default function Home() {
                   <View style={styles.sectionHeader}>
                     <View style={styles.sectionTitleWrapper}>
                       <LinearGradient
-                        colors={['#22d3ee', '#3b82f6']}
+                        colors={['#ff9a9e', '#f43f5e']}
                         style={styles.iconBox}
                       >
                         <Ionicons name="people" size={16} color="#fff" />
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#22d3ee',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -206,16 +206,16 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   sectionBadge: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: '#ffe4e6',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#bae6fd'
+    borderColor: '#fecdd3'
   },
   badgeText: {
     fontSize: 11,
-    color: '#0ea5e9',
+    color: '#e11d48',
     fontWeight: '600'
   }
 })

@@ -17,7 +17,7 @@ export default function UserInfo() {
   return (
     <View style={styles.wrapper}>
       <ImageBackground
-        source={require('../../assets/bg.png')}
+        source={require('../../assets/poster_cjk.png')}
         style={styles.container}
         resizeMode="cover"
         imageStyle={{ borderRadius: 24 }}
@@ -25,8 +25,8 @@ export default function UserInfo() {
         <LinearGradient
           colors={[
             'transparent',
-            'rgba(107, 106, 106, 0.3)',
-            'rgba(63, 62, 62, 0.8)'
+            'rgba(107, 106, 106, 0.2)',
+            'rgba(63, 62, 62, 0.4)'
           ]}
           style={styles.gradient}
         >
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   wrapper: {
     marginHorizontal: 16,
     marginTop: 10,
-    shadowColor: '#4A8B95',
+    shadowColor: '#954a72ff',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     marginTop: 10
   },
   iconButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.34)',
     padding: 8,
     borderRadius: 20,
     borderWidth: 1,
