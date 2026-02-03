@@ -15,7 +15,7 @@ export default function PostInput({ value, onChangeText }: PostInputProps) {
         multiline
         value={value}
         onChangeText={onChangeText}
-        placeholderTextColor="#999"
+        placeholderTextColor="#fda4af"
         autoFocus
         textAlignVertical="top"
       />

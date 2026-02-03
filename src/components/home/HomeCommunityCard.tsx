@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
+import { LinearGradient } from 'expo-linear-gradient'
 
 // 计算宽度，与 HomeNavGrid 和 HomeBanner 一致
 const { width } = Dimensions.get('window')
@@ -28,7 +29,12 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
       activeOpacity={0.9}
       onPress={() => navigation.navigate('PostDetail', { id: data.id })}
     >
-      <View style={styles.cardContainer}>
+      <LinearGradient
+        colors={['#ffffff', '#fff1f2']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardContainer}
+      >
         {/* 用户信息行 */}
         <View style={styles.userInfoRow}>
           <Image source={data.avatar} style={styles.avatar} />
@@ -62,23 +68,23 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         {/* 底部交互栏 */}
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
-            <Ionicons name="heart-outline" size={20} color="#666" />
+            <Ionicons name="heart-outline" size={20} color="#f43f5e" />
             <Text style={styles.actionText}>{data.stats.likes}</Text>
           </View>
           <View style={styles.actionItem}>
-            <Ionicons name="heart-dislike-outline" size={20} color="#666" />
+            <Ionicons name="heart-dislike-outline" size={20} color="#94a3b8" />
             <Text style={styles.actionText}>{data.stats.dislikes}</Text>
           </View>
           <View style={styles.actionItem}>
-            <Ionicons name="star-outline" size={20} color="#666" />
+            <Ionicons name="star-outline" size={20} color="#f59e0b" />
             <Text style={styles.actionText}>{data.stats.favorites}</Text>
           </View>
           <View style={styles.actionItem}>
-            <Ionicons name="chatbubble-outline" size={20} color="#666" />
+            <Ionicons name="chatbubble-outline" size={20} color="#3b82f6" />
             <Text style={styles.actionText}>{data.stats.comments}</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
     </TouchableOpacity>
   )
 }
@@ -90,16 +96,18 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: TARGET_WIDTH, // 统一宽度
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff', // Removed for gradient
     borderRadius: 24, // 统一圆角
     padding: 15,
     marginBottom: 20, // 下边距可以保留在外部或内部，这里是内部
     // Shadow
-    shadowColor: '#000',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 }, // 统一阴影方向
     shadowOpacity: 0.1,
-    shadowRadius: 8, // 统一阴影半径
-    elevation: 3
+    shadowRadius: 12, // 统一阴影半径
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#fff'
   },
   header: {
     marginBottom: 15

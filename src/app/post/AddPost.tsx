@@ -9,6 +9,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import * as ImagePicker from 'expo-image-picker'
+import { LinearGradient } from 'expo-linear-gradient'
 
 // 导入子组件
 import AddPostHeader from '@/components/post/add/AddPostHeader'
@@ -85,20 +86,34 @@ export default function AddPostScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 主要内容卡片：包含用户信息、输入框和图片上传 */}
-          <Card style={styles.cardContent}>
-            <PostUserInfo />
-            <PostInput value={content} onChangeText={setContent} />
-            <ImageUploader
-              images={images}
-              onAddImage={handleAddImage}
-              onRemoveImage={handleRemoveImage}
-            />
-          </Card>
+          <View style={styles.cardWrapper}>
+            <LinearGradient
+              colors={['#ffffff', '#fff1f2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardGradient}
+            >
+              <PostUserInfo />
+              <PostInput value={content} onChangeText={setContent} />
+              <ImageUploader
+                images={images}
+                onAddImage={handleAddImage}
+                onRemoveImage={handleRemoveImage}
+              />
+            </LinearGradient>
+          </View>
 
           {/* 工具栏卡片 */}
-          <Card style={styles.cardContent}>
-            <PostToolbar />
-          </Card>
+          <View style={styles.cardWrapper}>
+            <LinearGradient
+              colors={['#ffffff', '#fff1f2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardGradient}
+            >
+              <PostToolbar />
+            </LinearGradient>
+          </View>
         </ScrollView>
 
         <PostFooter
@@ -113,7 +128,7 @@ export default function AddPostScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa' // 调整背景色为淡灰，以突显卡片
+    backgroundColor: '#fff' // 调整背景色为白色，与 Profile 页面一致
   },
   flex: {
     flex: 1
@@ -122,9 +137,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15 // 给 ScrollView 添加内边距
   },
-  cardContent: {
-    padding: 0,
+  cardWrapper: {
+    marginBottom: 15,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    borderRadius: 20,
+    backgroundColor: '#fff' // Fallback
+  },
+  cardGradient: {
+    borderRadius: 20,
     paddingVertical: 5,
-    overflow: 'hidden'
+    borderWidth: 1,
+    borderColor: '#fff'
   }
 })

@@ -11,7 +11,7 @@ import Carousel from 'react-native-reanimated-carousel'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { NavigationProps } from '../../types/navigation'
-import { Card } from '../common/Card'
+import { LinearGradient } from 'expo-linear-gradient'
 
 // 计算布局尺寸
 const { width } = Dimensions.get('window')
@@ -50,36 +50,48 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
         ]
 
   return (
-    <Card onPress={() => navigation.navigate('Album')} style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleWrapper}>
-          <View style={styles.iconBox}>
-            <Ionicons name="images-outline" size={20} color="#f43f5e" />
+    <View style={styles.cardWrapper}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('Album')}
+      >
+        <LinearGradient
+          colors={['#ffffff', '#fff1f2']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardGradient}
+        >
+          <View style={styles.header}>
+            <View style={styles.titleWrapper}>
+              <View style={styles.iconBox}>
+                <Ionicons name="images-outline" size={20} color="#f43f5e" />
+              </View>
+              <Text style={styles.title}>宝宝相册</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </View>
-          <Text style={styles.title}>宝宝相册</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-      </View>
 
-      {/* 图片展示区域 - 使用 Carousel 实现 Normal 效果 */}
-      <View style={styles.carouselContainer}>
-        <Carousel
-          loop={displayImages.length >= 3}
-          width={ITEM_SIZE} // 设置为单个 Item 的宽度
-          height={ITEM_SIZE - GAP} // 设置高度等于宽度减去间距，确保正方形
-          style={{
-            width: CONTAINER_WIDTH
-            // 移除 justifyContent 和 alignItems，避免干扰布局
-          }}
-          autoPlay={false}
-          data={displayImages}
-          scrollAnimationDuration={800}
-          renderItem={({ item }) => (
-            <AlbumItem item={item} navigation={navigation} />
-          )}
-        />
-      </View>
-    </Card>
+          {/* 图片展示区域 - 使用 Carousel 实现 Normal 效果 */}
+          <View style={styles.carouselContainer}>
+            <Carousel
+              loop={displayImages.length >= 3}
+              width={ITEM_SIZE} // 设置为单个 Item 的宽度
+              height={ITEM_SIZE - GAP} // 设置高度等于宽度减去间距，确保正方形
+              style={{
+                width: CONTAINER_WIDTH
+                // 移除 justifyContent 和 alignItems，避免干扰布局
+              }}
+              autoPlay={false}
+              data={displayImages}
+              scrollAnimationDuration={800}
+              renderItem={({ item }) => (
+                <AlbumItem item={item} navigation={navigation} />
+              )}
+            />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
   )
 }
 
@@ -98,16 +110,21 @@ const AlbumItem = ({ item, navigation }: any) => {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
+  cardWrapper: {
     marginBottom: 16,
-    backgroundColor: '#fff',
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3
+    backgroundColor: '#fff'
+  },
+  cardGradient: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fff'
   },
   header: {
     flexDirection: 'row',
@@ -126,7 +143,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffe4e6'
+    backgroundColor: '#fff1f2'
   },
   title: {
     fontSize: 16,

@@ -122,7 +122,7 @@ export default function Home() {
                       <Text style={styles.sectionTitle}>宝妈社区</Text>
                     </View>
                     <View style={styles.sectionBadge}>
-                      <Text style={styles.badgeText}>最新动态</Text>
+                      <Text style={styles.badgeText}>最新动态等你来看！</Text>
                     </View>
                   </View>
 

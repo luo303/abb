@@ -41,13 +41,13 @@ const styles = StyleSheet.create({
     borderTopColor: '#f5f7fa'
   },
   publishButton: {
-    backgroundColor: '#1f99b0',
+    backgroundColor: '#f43f5e',
     borderRadius: 25,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#1f99b0',
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

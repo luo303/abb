@@ -7,7 +7,7 @@ export default function PostToolbar() {
     <View style={styles.toolbar}>
       <TouchableOpacity style={styles.toolItem}>
         <View style={styles.iconBg}>
-          <Ionicons name="location" size={20} color="#1f99b0" />
+          <Ionicons name="location" size={20} color="#f43f5e" />
         </View>
         <Text style={styles.toolText}>所在位置</Text>
         <Text style={styles.valueText}>北京市·朝阳区</Text>
@@ -21,8 +21,8 @@ export default function PostToolbar() {
       <View style={styles.divider} />
 
       <TouchableOpacity style={styles.toolItem}>
-        <View style={[styles.iconBg, { backgroundColor: '#fff0f6' }]}>
-          <Ionicons name="pricetag" size={20} color="#eb2f96" />
+        <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
+          <Ionicons name="pricetag" size={20} color="#f43f5e" />
         </View>
         <Text style={styles.toolText}>添加话题</Text>
         <View style={styles.tagsContainer}>
@@ -39,8 +39,8 @@ export default function PostToolbar() {
       <View style={styles.divider} />
 
       <TouchableOpacity style={styles.toolItem}>
-        <View style={[styles.iconBg, { backgroundColor: '#f6ffed' }]}>
-          <Ionicons name="eye" size={20} color="#52c41a" />
+        <View style={[styles.iconBg, { backgroundColor: '#fff7ed' }]}>
+          <Ionicons name="eye" size={20} color="#f97316" />
         </View>
         <Text style={styles.toolText}>可见范围</Text>
         <Text style={styles.valueText}>公开</Text>
@@ -55,7 +55,7 @@ export default function PostToolbar() {
       {/* 静态提示卡片 */}
       <View style={styles.tipsCard}>
         <View style={styles.tipsHeader}>
-          <Ionicons name="bulb-outline" size={18} color="#faad14" />
+          <Ionicons name="bulb-outline" size={18} color="#f59e0b" />
           <Text style={styles.tipsTitle}>优质帖子小贴士</Text>
         </View>
         <Text style={styles.tipsContent}>
@@ -72,20 +72,18 @@ export default function PostToolbar() {
 
 const styles = StyleSheet.create({
   toolbar: {
-    backgroundColor: '#fff',
     marginTop: 0
   },
   toolItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff'
+    padding: 15
   },
   iconBg: {
     width: 32,
     height: 32,
     borderRadius: 20,
-    backgroundColor: '#e6f7ff',
+    backgroundColor: '#fff1f2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12
@@ -106,8 +104,8 @@ const styles = StyleSheet.create({
   },
   tag: {
     fontSize: 12,
-    color: '#1f99b0',
-    backgroundColor: '#e6f7ff',
+    color: '#f43f5e',
+    backgroundColor: '#fff1f2',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 20,

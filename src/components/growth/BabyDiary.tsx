@@ -3,72 +3,101 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { NavigationProps } from '../../types/navigation'
-import { Card } from '../common/Card'
+import { LinearGradient } from 'expo-linear-gradient'
 
 export default function BabyDiary() {
   const navigation = useNavigation<NavigationProps>()
 
   return (
-    <Card style={styles.card} onPress={() => navigation.navigate('Diary')}>
-      <View style={styles.header}>
-        <View style={styles.titleWrapper}>
-          <View style={styles.iconBox}>
-            <Ionicons name="book-outline" size={20} color="#f43f5e" />
+    <View style={styles.cardWrapper}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('Diary')}
+      >
+        <LinearGradient
+          colors={['#ffffff', '#fff1f2']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardGradient}
+        >
+          <View style={styles.header}>
+            <View style={styles.titleWrapper}>
+              <View style={styles.iconBox}>
+                <Ionicons name="book-outline" size={20} color="#f43f5e" />
+              </View>
+              <Text style={styles.title}>宝宝日记</Text>
+            </View>
+            <TouchableOpacity style={styles.addButton}>
+              <LinearGradient
+                colors={['#ff9a9e', '#f43f5e']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.addButtonGradient}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.addButtonText}>记一笔</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.title}>宝宝日记</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-      </View>
 
-      <View style={styles.contentRow}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={require('../../assets/testAvatar.png')}
-            style={styles.diaryImage}
-          />
-          <View style={styles.dateBadge}>
-            <Text style={styles.dayText}>01</Text>
-            <Text style={styles.monthText}>1月</Text>
-          </View>
-        </View>
+          <View style={styles.contentRow}>
+            <View style={styles.imageContainer}>
+              <Image
+                source={require('../../assets/testAvatar.png')}
+                style={styles.diaryImage}
+              />
+              <View style={styles.dateBadge}>
+                <Text style={styles.dayText}>01</Text>
+                <Text style={styles.monthText}>1月</Text>
+              </View>
+            </View>
 
-        <View style={styles.infoContainer}>
-          <View style={styles.infoHeader}>
-            <Text style={styles.timeText}>12:01</Text>
-            <View style={styles.moodBadge}>
-              <Text style={styles.moodText}>开心 😊</Text>
+            <View style={styles.infoContainer}>
+              <View style={styles.infoHeader}>
+                <Text style={styles.timeText}>12:01</Text>
+                <View style={styles.moodBadge}>
+                  <Text style={styles.moodText}>开心 😊</Text>
+                </View>
+              </View>
+
+              <Text style={styles.diaryText} numberOfLines={2}>
+                宝宝今天第一次翻身啦！ 看起来非常开心，一直在笑，我也好开心呀...
+              </Text>
+
+              <View style={styles.tagsContainer}>
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}># 第一次</Text>
+                </View>
+                <View style={[styles.tag, styles.redTag]}>
+                  <Text style={[styles.tagText, styles.redTagText]}>
+                    # 翻身
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
-
-          <Text style={styles.diaryText} numberOfLines={2}>
-            宝宝今天第一次翻身啦！ 看起来非常开心，一直在笑，我也好开心呀...
-          </Text>
-
-          <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}># 第一次</Text>
-            </View>
-            <View style={[styles.tag, styles.redTag]}>
-              <Text style={[styles.tagText, styles.redTagText]}># 翻身</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </Card>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
+  cardWrapper: {
     marginBottom: 16,
-    backgroundColor: '#fff',
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3
+    backgroundColor: '#fff'
+  },
+  cardGradient: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fff'
   },
   header: {
     flexDirection: 'row',
@@ -177,5 +206,21 @@ const styles = StyleSheet.create({
   },
   redTagText: {
     color: '#f43f5e'
+  },
+  addButton: {
+    borderRadius: 16,
+    overflow: 'hidden'
+  },
+  addButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff'
   }
 })

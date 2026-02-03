@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 
 interface ImageUploaderProps {
   images: string[]
@@ -29,13 +30,14 @@ export default function ImageUploader({
           </View>
         ))}
         {images.length < 9 && (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={onAddImage}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="camera-outline" size={32} color="#ccc" />
-            <Text style={styles.addText}>添加照片</Text>
+          <TouchableOpacity onPress={onAddImage} activeOpacity={0.7}>
+            <LinearGradient
+              colors={['#fff1f2', '#ffe4e6']}
+              style={styles.addButton}
+            >
+              <Ionicons name="camera-outline" size={32} color="#f43f5e" />
+              <Text style={styles.addText}>添加照片</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
@@ -80,17 +82,16 @@ const styles = StyleSheet.create({
   addButton: {
     width: 110, // 与图片尺寸一致
     height: 110,
-    backgroundColor: '#f9f9f9',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#fecdd3',
     borderStyle: 'dashed'
   },
   addText: {
     fontSize: 12,
-    color: '#999',
+    color: '#f43f5e',
     marginTop: 4
   }
 })

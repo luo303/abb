@@ -6,74 +6,86 @@ import { Card } from '../common/Card'
 
 export default function BabyStats() {
   return (
-    <Card style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <View style={styles.iconBg}>
-            <Ionicons name="body-outline" size={20} color="#f43f5e" />
+    <View style={styles.cardWrapper}>
+      <LinearGradient
+        colors={['#ffffff', '#fff1f2']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}
+      >
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <View style={styles.iconBg}>
+              <Ionicons name="body-outline" size={20} color="#f43f5e" />
+            </View>
+            <View>
+              <Text style={styles.title}>宝宝档案</Text>
+              <Text style={styles.subtitle}>出生 100 天</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.title}>宝宝档案</Text>
-            <Text style={styles.subtitle}>出生 100 天</Text>
-          </View>
+          <Ionicons name="ellipsis-horizontal" size={20} color="#9ca3af" />
         </View>
-        <Ionicons name="ellipsis-horizontal" size={20} color="#9ca3af" />
-      </View>
 
-      <View style={styles.statsContainer}>
-        {/* 身高卡片 - 使用暖色渐变，与主题保持一致 */}
-        <LinearGradient
-          colors={['#fff1f2', '#ffe4e6']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.statBox}
-        >
-          <View style={styles.statIcon}>
-            <Ionicons name="resize-outline" size={24} color="#f43f5e" />
-          </View>
-          <View>
-            <Text style={styles.statLabel}>身高</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.statValue}>65.5</Text>
-              <Text style={styles.statUnit}>cm</Text>
+        <View style={styles.statsContainer}>
+          {/* 身高卡片 - 使用暖色渐变，与主题保持一致 */}
+          <LinearGradient
+            colors={['#fff1f2', '#ffe4e6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statBox}
+          >
+            <View style={styles.statIcon}>
+              <Ionicons name="resize-outline" size={24} color="#f43f5e" />
             </View>
-          </View>
-        </LinearGradient>
+            <View>
+              <Text style={styles.statLabel}>身高</Text>
+              <View style={styles.valueContainer}>
+                <Text style={styles.statValue}>65.5</Text>
+                <Text style={styles.statUnit}>cm</Text>
+              </View>
+            </View>
+          </LinearGradient>
 
-        {/* 体重卡片 - 使用暖色渐变，与主题保持一致 */}
-        <LinearGradient
-          colors={['#fff7ed', '#ffedd5']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.statBox}
-        >
-          <View style={styles.statIcon}>
-            <Ionicons name="scale-outline" size={24} color="#f97316" />
-          </View>
-          <View>
-            <Text style={styles.statLabel}>体重</Text>
-            <View style={styles.valueContainer}>
-              <Text style={styles.statValue}>7.2</Text>
-              <Text style={styles.statUnit}>kg</Text>
+          {/* 体重卡片 - 使用暖色渐变，与主题保持一致 */}
+          <LinearGradient
+            colors={['#fff7ed', '#ffedd5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statBox}
+          >
+            <View style={styles.statIcon}>
+              <Ionicons name="scale-outline" size={24} color="#f97316" />
             </View>
-          </View>
-        </LinearGradient>
-      </View>
-    </Card>
+            <View>
+              <Text style={styles.statLabel}>体重</Text>
+              <View style={styles.valueContainer}>
+                <Text style={styles.statValue}>7.2</Text>
+                <Text style={styles.statUnit}>kg</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+      </LinearGradient>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
+  cardWrapper: {
     marginBottom: 16,
-    backgroundColor: '#fff',
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3
+    backgroundColor: '#fff'
+  },
+  cardGradient: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fff'
   },
   header: {
     flexDirection: 'row',
