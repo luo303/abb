@@ -10,11 +10,12 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Picker, Provider } from '@ant-design/react-native'
+import { Switch, Picker, Provider } from '@ant-design/react-native'
 
 interface PostToolbarProps {
   onLocationChange?: (locationName: string) => void
   onTagsChange?: (tags: string[]) => void
+  onPrivacyChange?: (isPublic: boolean) => void
 }
 
 const PROVINCES = [
@@ -88,12 +89,14 @@ const customTheme = {
 
 export default function PostToolbar({
   onLocationChange,
-  onTagsChange
+  onTagsChange,
+  onPrivacyChange
 }: PostToolbarProps) {
   const [locationName, setLocationName] = useState('')
   const [visible, setVisible] = useState(false)
   const [showTagsModal, setShowTagsModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [isPublic, setIsPublic] = useState(true)
 
   const handleSelectLocation = (value: any) => {
     const selectedValue = value[0]
@@ -119,6 +122,18 @@ export default function PostToolbar({
     if (onTagsChange) {
       onTagsChange(newTags)
     }
+  }
+
+  const handlePrivacyChange = (checked: boolean) => {
+    setIsPublic(checked)
+    if (onPrivacyChange) {
+      onPrivacyChange(checked)
+    }
+  }
+
+  // 点击整个条目切换开关状态
+  const togglePrivacy = () => {
+    handlePrivacyChange(!isPublic)
   }
 
   return (
@@ -248,18 +263,31 @@ export default function PostToolbar({
 
         <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.toolItem}>
-          <View style={[styles.iconBg, { backgroundColor: '#fff7ed' }]}>
-            <Ionicons name="eye" size={20} color="#f97316" />
+        <TouchableOpacity
+          style={styles.toolItem}
+          activeOpacity={0.7}
+          onPress={togglePrivacy}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
+            <Ionicons
+              name={isPublic ? 'eye' : 'eye-off'}
+              size={20}
+              color="#f43f5e"
+            />
           </View>
           <Text style={styles.toolText}>可见范围</Text>
-          <Text style={styles.valueText}>公开</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color="#ccc"
-            style={styles.arrow}
-          />
+          <View style={styles.switchContainer}>
+            <Text style={[styles.valueText, { marginRight: 8 }]}>
+              {isPublic ? '公开' : '私密'}
+            </Text>
+            <Switch
+              checked={isPublic}
+              onChange={handlePrivacyChange}
+              style={{ transform: [{ scale: 0.8 }] }}
+              trackColor={{ false: '#e5e5e5', true: '#f43f5e' }}
+              thumbColor="#fff"
+            />
+          </View>
         </TouchableOpacity>
         <View style={styles.divider} />
 
@@ -382,6 +410,10 @@ const styles = StyleSheet.create({
   locationAddress: {
     fontSize: 12,
     color: '#999'
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   divider: {
     height: 1,
