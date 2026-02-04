@@ -90,7 +90,7 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
               style={{
                 width: CONTAINER_WIDTH,
                 height: ITEM_SIZE - GAP, // 显式设置高度
-                overflow: 'visible' // 允许超出容器范围
+                overflow: 'hidden' // 确保只展示容器范围内的内容，隐藏多余部分
               }}
               autoPlay={false}
               data={displayImages}
