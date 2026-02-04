@@ -4,14 +4,17 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
-  Alert
+  Alert,
+  Modal,
+  ScrollView
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { Picker, Provider } from '@ant-design/react-native'
 
 interface PostToolbarProps {
   onLocationChange?: (locationName: string) => void
+  onTagsChange?: (tags: string[]) => void
 }
 
 const PROVINCES = [
@@ -52,6 +55,24 @@ const PROVINCES = [
   { label: '台湾省', value: '台湾省' }
 ]
 
+const TAGS = [
+  '宝宝日常',
+  '成长记录',
+  '育儿经验',
+  '亲子时光',
+  '辅食分享',
+  '绘本推荐',
+  '玩具测评',
+  '好物分享',
+  '宝宝穿搭',
+  '出行攻略',
+  '早教启蒙',
+  '睡眠引导',
+  '疾病护理',
+  '疫苗接种',
+  '情感交流'
+]
+
 const customTheme = {
   // 修改主色调为 App 主题色 (Warm Red)
   brand_primary: '#f43f5e',
@@ -65,9 +86,14 @@ const customTheme = {
   border_color_base: '#eeeeee'
 }
 
-export default function PostToolbar({ onLocationChange }: PostToolbarProps) {
+export default function PostToolbar({
+  onLocationChange,
+  onTagsChange
+}: PostToolbarProps) {
   const [locationName, setLocationName] = useState('')
   const [visible, setVisible] = useState(false)
+  const [showTagsModal, setShowTagsModal] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   const handleSelectLocation = (value: any) => {
     const selectedValue = value[0]
@@ -76,6 +102,23 @@ export default function PostToolbar({ onLocationChange }: PostToolbarProps) {
       onLocationChange(selectedValue)
     }
     setVisible(false)
+  }
+
+  const toggleTag = (tag: string) => {
+    let newTags
+    if (selectedTags.includes(tag)) {
+      newTags = selectedTags.filter(t => t !== tag)
+    } else {
+      if (selectedTags.length >= 5) {
+        Alert.alert('提示', '最多只能添加5个话题哦')
+        return
+      }
+      newTags = [...selectedTags, tag]
+    }
+    setSelectedTags(newTags)
+    if (onTagsChange) {
+      onTagsChange(newTags)
+    }
   }
 
   return (
@@ -116,14 +159,30 @@ export default function PostToolbar({ onLocationChange }: PostToolbarProps) {
 
         <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.toolItem}>
+        <TouchableOpacity
+          style={styles.toolItem}
+          onPress={() => setShowTagsModal(true)}
+        >
           <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
             <Ionicons name="pricetag" size={20} color="#f43f5e" />
           </View>
           <Text style={styles.toolText}>添加话题</Text>
           <View style={styles.tagsContainer}>
-            <Text style={styles.tag}>#宝宝日常</Text>
-            <Text style={styles.tag}>#成长记录</Text>
+            {selectedTags.length > 0 ? (
+              selectedTags.slice(0, 2).map(tag => (
+                <Text key={tag} style={styles.tag}>
+                  #{tag}
+                </Text>
+              ))
+            ) : (
+              <>
+                <Text style={styles.tag}>#宝宝日常</Text>
+                <Text style={styles.tag}>#成长记录</Text>
+              </>
+            )}
+            {selectedTags.length > 2 && (
+              <Text style={styles.tag}>+{selectedTags.length - 2}</Text>
+            )}
           </View>
           <Ionicons
             name="chevron-forward"
@@ -132,6 +191,61 @@ export default function PostToolbar({ onLocationChange }: PostToolbarProps) {
             style={styles.arrow}
           />
         </TouchableOpacity>
+
+        <Modal
+          visible={showTagsModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowTagsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { height: '60%' }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>选择话题 (最多5个)</Text>
+                <TouchableOpacity onPress={() => setShowTagsModal(false)}>
+                  <Ionicons name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={styles.tagsList}>
+                <View style={styles.tagsWrapper}>
+                  {TAGS.map(tag => (
+                    <TouchableOpacity
+                      key={tag}
+                      style={[
+                        styles.tagItem,
+                        selectedTags.includes(tag) && styles.tagItemActive
+                      ]}
+                      onPress={() => toggleTag(tag)}
+                    >
+                      <Text
+                        style={[
+                          styles.tagItemText,
+                          selectedTags.includes(tag) && styles.tagItemTextActive
+                        ]}
+                      >
+                        #{tag}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => setShowTagsModal(false)}
+              >
+                <LinearGradient
+                  colors={['#ff9a9e', '#f43f5e']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.confirmGradient}
+                >
+                  <Text style={styles.confirmText}>确定</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.divider} />
 
         <TouchableOpacity style={styles.toolItem}>
@@ -298,5 +412,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#d48806',
     lineHeight: 20
+  },
+  tagsList: {
+    paddingVertical: 10
+  },
+  tagsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12
+  },
+  tagItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f8f8f8',
+    borderWidth: 1,
+    borderColor: '#f0f0f0'
+  },
+  tagItemActive: {
+    backgroundColor: '#fff1f2',
+    borderColor: '#f43f5e'
+  },
+  tagItemText: {
+    fontSize: 14,
+    color: '#666'
+  },
+  tagItemTextActive: {
+    color: '#f43f5e',
+    fontWeight: 'bold'
+  },
+  confirmButton: {
+    marginTop: 16,
+    borderRadius: 24,
+    overflow: 'hidden'
+  },
+  confirmGradient: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  confirmText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold'
   }
 })

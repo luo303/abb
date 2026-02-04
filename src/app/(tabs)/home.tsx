@@ -53,7 +53,7 @@ export default function Home() {
       -1,
       true
     )
-  }, [])
+  })
 
   const animatedBadgeStyle = useAnimatedStyle(() => {
     return {

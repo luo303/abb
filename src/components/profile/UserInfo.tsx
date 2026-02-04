@@ -5,13 +5,10 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  ImageBackground,
-  Dimensions
+  ImageBackground
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-
-const { width } = Dimensions.get('window')
 
 export default function UserInfo() {
   return (
