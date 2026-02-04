@@ -18,16 +18,15 @@ import ImageUploader from '@/components/post/add/ImageUploader'
 import PostToolbar from '@/components/post/add/PostToolbar'
 import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
-import Card from '@/components/common/Card'
 
 export default function AddPostScreen() {
   const navigation = useNavigation<NavigationProps>()
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
+  const [locationName, setLocationName] = useState('')
 
   const handlePublish = () => {
-    // 这里处理发布逻辑
-    console.log('Publishing:', { content, images })
+    console.log('Publishing:', { content, images, locationName })
     // TODO: 调用API发布帖子
     navigation.goBack()
   }
@@ -111,7 +110,7 @@ export default function AddPostScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.cardGradient}
             >
-              <PostToolbar />
+              <PostToolbar onLocationChange={setLocationName} />
             </LinearGradient>
           </View>
         </ScrollView>
