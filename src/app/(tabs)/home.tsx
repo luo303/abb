@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { View, StyleSheet, Text } from 'react-native'
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
@@ -7,7 +7,12 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
-  Extrapolation
+  Extrapolation,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+  Easing
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
@@ -28,9 +33,51 @@ export default function Home() {
   const [communityY, setCommunityY] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
 
+  // 徽章动画
+  const badgeScale = useSharedValue(1)
+
+  // 社区模块闪烁动画
+  const communityOpacity = useSharedValue(1)
+
+  React.useEffect(() => {
+    // 创建心跳闪烁效果
+    badgeScale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 500, easing: Easing.ease }),
+        withTiming(1, { duration: 500, easing: Easing.ease }),
+        withDelay(1000, withTiming(1, { duration: 0 })) // 停顿一下
+      ),
+      -1,
+      true
+    )
+  }, [])
+
+  const animatedBadgeStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: badgeScale.value }]
+    }
+  })
+
+  const animatedCommunityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: communityOpacity.value
+    }
+  })
+
   // 定义滚动动作
   const handleScrollToCommunity = () => {
     scrollViewRef.current?.scrollTo({ y: communityY, animated: true })
+
+    // 滚动后触发闪烁提示动画 (闪烁3次)
+    communityOpacity.value = withDelay(
+      500, // 等待滚动完成
+      withSequence(
+        withTiming(0.2, { duration: 200 }),
+        withTiming(1, { duration: 200 }),
+        withTiming(0.2, { duration: 200 }),
+        withTiming(1, { duration: 200 })
+      )
+    )
   }
 
   const scrollHandler = useAnimatedScrollHandler(event => {
@@ -111,7 +158,9 @@ export default function Home() {
                   onLayout={e => setCommunityY(e.nativeEvent.layout.y)}
                 >
                   {/* 社区标题头 */}
-                  <View style={styles.sectionHeader}>
+                  <Animated.View
+                    style={[styles.sectionHeader, animatedCommunityStyle]}
+                  >
                     <View style={styles.sectionTitleWrapper}>
                       <LinearGradient
                         colors={['#ff9a9e', '#f43f5e']}
@@ -121,10 +170,17 @@ export default function Home() {
                       </LinearGradient>
                       <Text style={styles.sectionTitle}>宝妈社区</Text>
                     </View>
-                    <View style={styles.sectionBadge}>
-                      <Text style={styles.badgeText}>最新动态等你来看！</Text>
-                    </View>
-                  </View>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={handleScrollToCommunity}
+                    >
+                      <Animated.View
+                        style={[styles.sectionBadge, animatedBadgeStyle]}
+                      >
+                        <Text style={styles.badgeText}>最新动态等你来看！</Text>
+                      </Animated.View>
+                    </TouchableOpacity>
+                  </Animated.View>
 
                   {MOCK_POSTS.map(post => (
                     <View key={post.id} style={{ marginBottom: 12 }}>
@@ -206,16 +262,22 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   sectionBadge: {
-    backgroundColor: '#ffe4e6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fecdd3'
+    backgroundColor: '#ff1744', // 更鲜艳的红色背景
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#fff', // 白色边框增加层次感
+    shadowColor: '#ff1744',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4
   },
   badgeText: {
-    fontSize: 11,
-    color: '#e11d48',
-    fontWeight: '600'
+    fontSize: 12,
+    color: '#fff', // 白色文字对比更强
+    fontWeight: 'bold',
+    letterSpacing: 0.5
   }
 })
