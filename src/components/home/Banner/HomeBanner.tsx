@@ -1,5 +1,7 @@
+import React, { useMemo, useCallback } from 'react'
 import { View, StyleSheet, Dimensions } from 'react-native'
 import Carousel from 'react-native-reanimated-carousel'
+import { useIsFocused } from '@react-navigation/native'
 import Animated, {
   useAnimatedStyle,
   interpolate,
@@ -31,7 +33,37 @@ const RAW_DATA = [
 ]
 
 export default function HomeBanner() {
+  const isFocused = useIsFocused()
   const progress = useSharedValue(0)
+
+  const onProgressChange = useCallback(
+    (_: any, absoluteProgress: number) => {
+      progress.value = absoluteProgress
+    },
+    [progress]
+  )
+
+  const modeConfig = useMemo(
+    () => ({
+      parallaxScrollingScale: 0.9,
+      parallaxScrollingOffset: 50
+    }),
+    []
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: any }) => (
+      <View style={styles.itemContainer}>
+        <View style={styles.cardWrapper}>
+          <BannerItem
+            imageSource={item.imageSource}
+            targetPage={item.targetPage}
+          />
+        </View>
+      </View>
+    ),
+    []
+  )
 
   return (
     <View style={styles.container}>
@@ -39,28 +71,14 @@ export default function HomeBanner() {
         loop
         width={width}
         height={240}
-        autoPlay={true}
+        autoPlay={isFocused}
         autoPlayInterval={3000}
         data={RAW_DATA}
         scrollAnimationDuration={1000}
-        onProgressChange={(_, absoluteProgress) => {
-          progress.value = absoluteProgress
-        }}
+        onProgressChange={onProgressChange}
         mode="parallax"
-        modeConfig={{
-          parallaxScrollingScale: 0.9,
-          parallaxScrollingOffset: 50
-        }}
-        renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <View style={styles.cardWrapper}>
-              <BannerItem
-                imageSource={item.imageSource}
-                targetPage={item.targetPage}
-              />
-            </View>
-          </View>
-        )}
+        modeConfig={modeConfig}
+        renderItem={renderItem}
       />
 
       {/* 轮播图指示器 */}

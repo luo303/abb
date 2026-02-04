@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -38,16 +38,26 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
   const navigation = useNavigation<NavigationProps>()
 
   // 展示图片
-  const displayImages =
-    images.length > 0
-      ? images
-      : [
-          require('../../assets/testAvatar.png'), // 模拟图片
-          require('../../assets/testAvatar.png'),
-          require('../../assets/testAvatar.png'),
-          require('../../assets/testAvatar.png'), // 增加图片数量以测试滚动
-          require('../../assets/testAvatar.png')
-        ]
+  const displayImages = useMemo(
+    () =>
+      images.length > 0
+        ? images
+        : [
+            require('../../assets/testAvatar.png'), // 模拟图片
+            require('../../assets/testAvatar.png'),
+            require('../../assets/testAvatar.png'),
+            require('../../assets/testAvatar.png'), // 增加图片数量以测试滚动
+            require('../../assets/testAvatar.png')
+          ],
+    [images]
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: any }) => (
+      <AlbumItem item={item} navigation={navigation} />
+    ),
+    [navigation]
+  )
 
   return (
     <View style={styles.cardWrapper}>
@@ -84,9 +94,7 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
               autoPlay={false}
               data={displayImages}
               scrollAnimationDuration={800}
-              renderItem={({ item }) => (
-                <AlbumItem item={item} navigation={navigation} />
-              )}
+              renderItem={renderItem}
             />
           </View>
         </LinearGradient>
