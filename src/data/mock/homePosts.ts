@@ -13,6 +13,7 @@ export const MOCK_POSTS = [
       require('../../assets/icon.png'),
       require('../../assets/icon.png')
     ],
+    tags: ['新生儿', '报喜'],
     publishTime: '2024-05-17',
     location: '周口',
     stats: {
@@ -29,6 +30,7 @@ export const MOCK_POSTS = [
     description: '宝宝6个月',
     content: '宝宝今天终于会翻身了！太激动了，记录一下这个里程碑时刻。',
     images: [require('../../assets/icon.png')],
+    tags: ['大运动', '翻身'],
     publishTime: '2024-05-18',
     location: '北京',
     stats: {
@@ -46,6 +48,7 @@ export const MOCK_POSTS = [
     content:
       '关于宝宝辅食添加的几个误区，新手爸妈一定要注意！\n1. 不要在奶瓶里加米粉\n2. 不要过早添加调味品',
     images: [],
+    tags: ['辅食', '避坑指南'],
     publishTime: '2024-05-19',
     location: '上海',
     stats: {
