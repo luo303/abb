@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
-import { Card } from '../common/Card'
 
 export default function GrowthChart() {
   const navigation = useNavigation<NavigationProps>()

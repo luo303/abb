@@ -14,6 +14,9 @@ import { Ionicons } from '@expo/vector-icons'
 // 导入拆分后的组件
 import CurveTabs from '../../components/growth/curve/CurveTabs'
 import CurveRecordForm from '../../components/growth/curve/CurveRecordForm'
+import CurveHeightChart from '../../components/growth/curve/CurveHeightChart'
+import CurveWeightChart from '../../components/growth/curve/CurveWeightChart'
+import CurveHeadChart from '../../components/growth/curve/CurveHeadChart'
 
 export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
@@ -23,6 +26,7 @@ export default function GrowthCurveScreen() {
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
   const [headCircumference, setHeadCircumference] = useState('')
+  const [date, setDate] = useState(new Date())
 
   const tabs = [
     { key: 'record', label: '记录' },
@@ -48,7 +52,7 @@ export default function GrowthCurveScreen() {
             onTabChange={setActiveTab}
           />
 
-          {activeTab === 'record' ? (
+          {activeTab === 'record' && (
             <CurveRecordForm
               height={height}
               setHeight={setHeight}
@@ -56,15 +60,14 @@ export default function GrowthCurveScreen() {
               setWeight={setWeight}
               headCircumference={headCircumference}
               setHeadCircumference={setHeadCircumference}
-              date="2026-02-04"
+              date={date}
+              onDateChange={setDate}
             />
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>
-                {tabs.find(t => t.key === activeTab)?.label} 功能开发中...
-              </Text>
-            </View>
           )}
+
+          {activeTab === 'height' && <CurveHeightChart />}
+          {activeTab === 'weight' && <CurveWeightChart />}
+          {activeTab === 'head' && <CurveHeadChart />}
         </ScrollView>
       </KeyboardAvoidingView>
 

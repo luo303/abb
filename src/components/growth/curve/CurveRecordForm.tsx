@@ -1,6 +1,17 @@
-import React from 'react'
-import { View, Text, StyleSheet, TextInput } from 'react-native'
+import React, { useState } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Platform
+} from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent
+} from '@react-native-community/datetimepicker'
 
 interface CurveRecordFormProps {
   height: string
@@ -9,7 +20,8 @@ interface CurveRecordFormProps {
   setWeight: (text: string) => void
   headCircumference: string
   setHeadCircumference: (text: string) => void
-  date?: string
+  date: Date
+  onDateChange: (date: Date) => void
 }
 
 export default function CurveRecordForm({
@@ -19,11 +31,46 @@ export default function CurveRecordForm({
   setWeight,
   headCircumference,
   setHeadCircumference,
-  date = '2026-02-04'
+  date,
+  onDateChange
 }: CurveRecordFormProps) {
+  const [showDatePicker, setShowDatePicker] = useState(false)
+
+  // 格式化日期 YYYY-MM-DD
+  const formatDate = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const formattedDate = formatDate(date)
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date
+  ) => {
+    if (event.type === 'set' && selectedDate) {
+      onDateChange(selectedDate)
+    }
+  }
+
+  const showMode = (currentMode: 'date' | 'time') => {
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: date,
+        onChange: handleDateChange,
+        mode: currentMode,
+        is24Hour: true
+      })
+    } else {
+      setShowDatePicker(!showDatePicker)
+    }
+  }
+
   return (
     <View style={styles.formContainer}>
-      <Text style={styles.dateHint}>今天是 {date}</Text>
+      <Text style={styles.dateHint}>今天是 {formattedDate}</Text>
 
       <View style={styles.titleRow}>
         <Text style={styles.pageTitle}>记录宝宝的成长</Text>
@@ -39,11 +86,29 @@ export default function CurveRecordForm({
       {/* 测量日期 */}
       <View style={styles.inputRow}>
         <Text style={styles.label}>测量日期</Text>
-        <View style={styles.dateInputContainer}>
-          <Text style={styles.dateValue}>{date}</Text>
+        <TouchableOpacity
+          style={styles.dateInputContainer}
+          onPress={() => showMode('date')}
+        >
+          <Text style={styles.dateValue}>{formattedDate}</Text>
           <Ionicons name="calendar-outline" size={20} color="#FF9F43" />
-        </View>
+        </TouchableOpacity>
       </View>
+
+      {/* iOS DatePicker */}
+      {Platform.OS === 'ios' && showDatePicker && (
+        <View style={styles.datePickerContainer}>
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={date}
+            mode="date"
+            display="spinner"
+            onChange={handleDateChange}
+            style={styles.datePicker}
+            locale="zh-CN"
+          />
+        </View>
+      )}
 
       {/* 身高 */}
       <View style={styles.inputRow}>
@@ -179,6 +244,18 @@ const styles = StyleSheet.create({
   dateValue: {
     fontSize: 16,
     color: '#333'
+  },
+  datePickerContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FFF3E0'
+  },
+  datePicker: {
+    width: '100%',
+    height: 150
   },
   inputWrapper: {
     flex: 1,
