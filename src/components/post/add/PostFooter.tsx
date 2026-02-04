@@ -4,10 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
+import request from '@/utils/request'
 
 export interface PostData {
   content: string
@@ -29,32 +31,36 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
 
   const isPublishDisabled = !postData.content.trim() || isPublishing
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (isPublishing) return
 
     setIsPublishing(true)
-    // 模拟网络请求延迟
-    setTimeout(() => {
-      // 构建帖子数据
-      const newPost = {
-        id: Date.now().toString(),
-        ...postData,
-        user: {
-          name: '当前用户',
-          avatar: require('../../../assets/testAvatar.png')
-        },
-        createTime: '刚刚',
-        likes: 0,
-        comments: 0,
-        isLiked: false
+
+    try {
+      // 构造请求数据
+      // 注意：这里假设后端接口需要的字段结构，实际应根据后端 API 文档调整
+      const payload = {
+        content: postData.content,
+        images: postData.images, // 实际场景可能需要先上传图片获取 URL
+        location: postData.location,
+        tags: postData.tags,
+        isPublic: postData.isPublic ? 1 : 0, // 假设后端用 1/0 表示布尔值
+        createTime: new Date().toISOString()
       }
 
-      console.log('Publishing Post:', newPost)
+      console.log('Sending publish request:', payload)
 
-      // TODO: 这里应该调用实际的 API 发送数据到后端
-      // 这里的 console.log 模拟发送成功
+      // 发送 POST 请求 （此处使用云端 mock 地址）
+      const response = await request.post(
+        'https://m1.apifoxmock.com/m1/7571791-7309471-default/post/createPost',
+        payload
+      )
 
-      setIsPublishing(false)
+      console.log('Publish response:', response)
+
+      // 假设后端返回 code 200 表示成功
+      // 由于拦截器直接返回 response.data，这里需要根据实际返回结构判断
+      // 这里暂时认为只要没抛出异常就是成功
 
       // 触发成功回调
       if (onSuccess) {
@@ -64,9 +70,14 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 返回上一页（首页）
       navigation.goBack()
 
-      // 提示发布成功 (可选)
-      // Alert.alert('提示', '发布成功！')
-    }, 1500)
+      // 提示发布成功
+      Alert.alert('提示', '发布成功！')
+    } catch (error) {
+      console.error('Publish failed:', error)
+      Alert.alert('提示', '发布失败，请稍后重试')
+    } finally {
+      setIsPublishing(false)
+    }
   }
 
   return (
