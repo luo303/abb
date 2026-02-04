@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { NavigationProps } from '../../types/navigation'
+import { NavigationProps } from '@/types/navigation'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -24,12 +24,8 @@ export default function AddPostScreen() {
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [locationName, setLocationName] = useState('')
-
-  const handlePublish = () => {
-    console.log('Publishing:', { content, images, locationName })
-    // TODO: 调用API发布帖子
-    navigation.goBack()
-  }
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [isPublic, setIsPublic] = useState(true)
 
   // 从本地相册添加图片
   const handleAddImage = async () => {
@@ -110,14 +106,23 @@ export default function AddPostScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.cardGradient}
             >
-              <PostToolbar onLocationChange={setLocationName} />
+              <PostToolbar
+                onLocationChange={setLocationName}
+                onTagsChange={setSelectedTags}
+                onPrivacyChange={setIsPublic}
+              />
             </LinearGradient>
           </View>
         </ScrollView>
 
         <PostFooter
-          onPublish={handlePublish}
-          isPublishDisabled={!content.trim()}
+          postData={{
+            content,
+            images,
+            location: locationName,
+            tags: selectedTags,
+            isPublic
+          }}
         />
       </KeyboardAvoidingView>
     </View>
