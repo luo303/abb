@@ -19,12 +19,14 @@ interface ChatMessageProps {
   message: Message
   isSpeaking: boolean
   onSpeak: () => void
+  isTyping?: boolean
 }
 
 export default function ChatMessage({
   message,
   isSpeaking,
-  onSpeak
+  onSpeak,
+  isTyping = false
 }: ChatMessageProps) {
   const { showMessage } = useMessage()
   const [previewImage, setPreviewImage] = useState<string | null>(null)
@@ -102,7 +104,7 @@ export default function ChatMessage({
             )}
           </View>
         )}
-        {message.role === 'assistant' && (
+        {message.role === 'assistant' && !isTyping && (
           <View style={styles.aiFooter}>
             <TouchableOpacity
               onPress={handleCopy}

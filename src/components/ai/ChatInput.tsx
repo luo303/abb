@@ -6,7 +6,8 @@ import {
   Platform,
   Image,
   ScrollView,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,21 +15,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import ImagePreviewModal from '../common/ImagePreviewModal'
 
+export interface ImageItem {
+  uri: string
+  status: 'uploading' | 'done' | 'error'
+  url?: string
+}
+
 interface ChatInputProps {
   value: string
   onChangeText: (text: string) => void
-  onSend: (images?: string[]) => void
+  onSend: () => void
   disabled?: boolean
+  images: ImageItem[]
+  onAddImages: (uris: string[]) => void
+  onRemoveImage: (index: number) => void
 }
 
 export default function ChatInput({
   value,
   onChangeText,
   onSend,
-  disabled
+  disabled,
+  images = [],
+  onAddImages,
+  onRemoveImage
 }: ChatInputProps) {
   const insets = useSafeAreaInsets()
-  const [selectedImages, setSelectedImages] = useState<string[]>([])
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   const pickImage = async () => {
@@ -44,22 +56,17 @@ export default function ChatInput({
       allowsEditing: false, // 允许选择多张时通常不支持编辑
       quality: 0.8,
       allowsMultipleSelection: true, // 允许选择多张
-      selectionLimit: 9 - selectedImages.length // 限制总数
+      selectionLimit: 9 - images.length // 限制总数
     })
 
     if (!result.canceled) {
-      const newImages = result.assets.map(asset => asset.uri)
-      setSelectedImages(prev => [...prev, ...newImages])
+      const newUris = result.assets.map(asset => asset.uri)
+      onAddImages(newUris)
     }
   }
 
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index))
-  }
-
   const handleSend = () => {
-    onSend(selectedImages)
-    setSelectedImages([])
+    onSend()
   }
 
   return (
@@ -74,21 +81,37 @@ export default function ChatInput({
       pointerEvents="box-none"
     >
       <View style={styles.inputWrapper}>
-        {selectedImages.length > 0 && (
+        {images.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.imageList}
             contentContainerStyle={styles.imageListContent}
           >
-            {selectedImages.map((uri, index) => (
+            {images.map((img, index) => (
               <View key={index} style={styles.imagePreview}>
-                <TouchableOpacity onPress={() => setPreviewImage(uri)}>
-                  <Image source={{ uri }} style={styles.image} />
+                <TouchableOpacity onPress={() => setPreviewImage(img.uri)}>
+                  <Image
+                    source={{ uri: img.uri }}
+                    style={[
+                      styles.image,
+                      img.status === 'uploading' && styles.uploadingImage
+                    ]}
+                  />
+                  {img.status === 'uploading' && (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator size="small" color="#fff" />
+                    </View>
+                  )}
+                  {img.status === 'error' && (
+                    <View style={styles.errorOverlay}>
+                      <Ionicons name="alert-circle" size={20} color="#ff4444" />
+                    </View>
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => removeImage(index)}
+                  onPress={() => onRemoveImage(index)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons
@@ -117,23 +140,27 @@ export default function ChatInput({
               multiline
               maxLength={1000}
             />
-            {(value.trim().length > 0 || selectedImages.length > 0) && (
+            {(value.trim().length > 0 || images.length > 0) && (
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  disabled &&
-                    selectedImages.length === 0 &&
+                  (disabled ||
+                    images.some(img => img.status === 'uploading')) &&
                     styles.sendButtonDisabled
                 ]}
                 onPress={handleSend}
-                disabled={disabled && selectedImages.length === 0}
+                disabled={
+                  disabled || images.some(img => img.status === 'uploading')
+                }
                 activeOpacity={0.8}
               >
                 <Ionicons
                   name="arrow-up"
                   size={20}
                   color={
-                    disabled && selectedImages.length === 0 ? '#CFD8DC' : '#fff'
+                    disabled || images.some(img => img.status === 'uploading')
+                      ? '#CFD8DC'
+                      : '#fff'
                   }
                 />
               </TouchableOpacity>
@@ -245,5 +272,22 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8
+  },
+  uploadingImage: {
+    opacity: 0.8
   }
 })

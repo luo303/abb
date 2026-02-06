@@ -12,7 +12,7 @@ const initialState: ChatState = {
   currentConversationId: null,
   isLoading: false,
   search_private: false,
-  search_public: true
+  search_public: false
 }
 
 const chatSlice = createSlice({
@@ -96,7 +96,8 @@ const saveHistoryToStorage = async (list: HistoryItem[]) => {
 
 // 异步 Action：从 API 获取消息记录
 export const fetchHistoryMessages =
-  (sessionId: string) => async (dispatch: Dispatch) => {
+  (sessionId: string | null) => async (dispatch: Dispatch) => {
+    if (!sessionId) return
     dispatch(setLoading(true))
     try {
       const res: any = await GetSessionMessages(sessionId)

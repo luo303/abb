@@ -20,7 +20,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import 'react-native-get-random-values'
 import { v4 as uuidv4 } from 'uuid'
 import ChatMessage from './ChatMessage'
-import ChatInput from './ChatInput'
+import ChatInput, { ImageItem } from './ChatInput'
 import ChatEmptyState from './ChatEmptyState'
 import * as Speech from 'expo-speech'
 import { RootState } from '../../store'
@@ -31,7 +31,7 @@ import {
   updateLastMessageContent
 } from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
-import { SendMessage } from '@/api/ai'
+import { SendMessageStream } from '@/api/ai'
 import { uploadFile } from '../../api/upload'
 
 // 在 Android 上启用布局动画
@@ -59,7 +59,55 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null)
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const [pendingImages, setPendingImages] = useState<ImageItem[]>([])
+
+  // 处理图片添加和自动上传
+  const handleAddImages = (uris: string[]) => {
+    const newImages: ImageItem[] = uris.map(uri => ({
+      uri,
+      status: 'uploading'
+    }))
+    setPendingImages(prev => [...prev, ...newImages])
+
+    // 对每个新图片进行上传
+    newImages.forEach(async img => {
+      try {
+        const response = await uploadFile(img.uri)
+        console.log('Upload response:', response)
+
+        let url = ''
+        if (typeof response.data === 'string') {
+          url = response.data
+        } else if (response.data && typeof response.data.url === 'string') {
+          url = response.data.url
+        } else {
+          console.warn('Unknown upload response format:', response)
+          url = typeof response.data === 'string' ? response.data : ''
+        }
+
+        if (url) {
+          setPendingImages(prev =>
+            prev.map(p =>
+              p.uri === img.uri ? { ...p, status: 'done', url } : p
+            )
+          )
+        } else {
+          throw new Error('Invalid upload response')
+        }
+      } catch (error) {
+        console.error('Image upload failed:', error)
+        setPendingImages(prev =>
+          prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
+        )
+      }
+    })
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setPendingImages(prev => prev.filter((_, i) => i !== index))
+  }
 
   // 加载初始数据
   useEffect(() => {
@@ -123,15 +171,24 @@ export default function ChatScreen() {
     }
     Speech.stop()
     updateSpeakingIndex(null)
+    setIsStreaming(false)
   }, [currentConversationId])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const sendMessage = async (images?: string[]) => {
+  const sendMessage = async () => {
+    // 检查是否有正在上传的图片
+    if (pendingImages.some(img => img.status === 'uploading')) {
+      alert('图片正在上传中，请稍候')
+      return
+    }
+
     const contentToSend = inputText.trim()
-    const imagesToSend = images || []
+    const imagesToSend = pendingImages
+      .filter(img => img.status === 'done' && img.url)
+      .map(img => img.url!)
 
     if (!contentToSend && imagesToSend.length === 0) return
 
@@ -143,26 +200,19 @@ export default function ChatScreen() {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    //上传图片到后端并获取URL
-    if (imagesToSend.length > 0) {
-      imagesToSend.forEach(async (image, index) => {
-        try {
-          const response = await uploadFile(image)
-          imagesToSend[index] = response.data.url // 假设后端返回的是图片URL
-        } catch (error) {
-          console.error('图片上传失败:', error)
-          alert('图片上传失败，请稍后重试')
-        }
-      })
-    }
-
     // 如果当前没有会话ID，说明是新会话，需要先创建会话
     let sessionId = currentConversationId
     if (!sessionId) {
       sessionId = uuidv4()
       // @ts-ignore - Thunk action type issue
-      dispatch(createNewSession(sessionId))
+      await dispatch(createNewSession(sessionId))
     }
+
+    // 如果是新会话，sessionId 已经更新，但 Redux 中的 currentConversationId 可能还没更新完（异步）
+    // 不过我们这里直接用局部变量 sessionId 发请求，所以没问题
+    // 关键是 createNewSession 会清空 messages，所以我们要确保 addMessage 在 createNewSession 之后执行
+    // 并且要等待 dispatch 完成（如果是异步 action）
+
     const userMsg: Message = {
       content: contentToSend,
       role: 'user',
@@ -174,6 +224,7 @@ export default function ChatScreen() {
     // @ts-ignore
     dispatch(addMessage(userMsg))
     setInputText('')
+    setPendingImages([])
 
     // 添加一个空的 AI 消息占位
     const aiPlaceholderMsg: Message = {
@@ -184,9 +235,31 @@ export default function ChatScreen() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     // @ts-ignore
     dispatch(addMessage(aiPlaceholderMsg))
+    setIsStreaming(true)
 
     try {
-      const res = await SendMessage(
+      let buffer = ''
+
+      // 定义处理单行数据的函数
+      const processLine = (line: string) => {
+        if (line.startsWith('data:')) {
+          const jsonStr = line.slice(5).trim()
+          if (!jsonStr) return
+          try {
+            const data = JSON.parse(jsonStr)
+            if (data.type === 'content' && data.content) {
+              // @ts-ignore
+              dispatch(updateLastMessageContent(data.content))
+            } else if (data.type === 'done') {
+              console.log('Chat session done:', data.session_id)
+            }
+          } catch (e) {
+            console.error('SSE parse error:', e)
+          }
+        }
+      }
+
+      await SendMessageStream(
         {
           session_id: sessionId,
           message: contentToSend,
@@ -197,42 +270,25 @@ export default function ChatScreen() {
             search_public
           }
         },
+        chunk => {
+          buffer += chunk
+          // SSE 消息以双换行符分隔
+          const blocks = buffer.split('\n\n')
+          // 保留最后一个可能不完整的块
+          buffer = blocks.pop() || ''
+
+          for (const block of blocks) {
+            const lines = block.split('\n')
+            lines.forEach(processLine)
+          }
+        },
         abortController.signal
       )
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      while (true) {
-        const { done, value } = (await reader?.read()) || {}
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
 
-        // SSE 消息以双换行符分隔
-        const blocks = buffer.split('\n\n')
-        // 保留最后一个可能不完整的块
-        buffer = blocks.pop() || ''
-
-        for (const block of blocks) {
-          const lines = block.split('\n')
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              const jsonStr = line.slice(5).trim()
-              if (!jsonStr) continue
-              try {
-                const data = JSON.parse(jsonStr)
-                if (data.type === 'content' && data.content) {
-                  // @ts-ignore
-                  dispatch(updateLastMessageContent(data.content))
-                } else if (data.type === 'done') {
-                  // 会话结束，可以在这里处理 session_id 确认等逻辑
-                  console.log('Chat session done:', data.session_id)
-                }
-              } catch (e) {
-                console.error('SSE parse error:', e)
-              }
-            }
-          }
-        }
+      // 处理剩余的 buffer
+      if (buffer) {
+        const lines = buffer.split('\n')
+        lines.forEach(processLine)
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -242,7 +298,10 @@ export default function ChatScreen() {
       console.error('消息发送失败:', error)
       alert('消息发送失败，请稍后重试')
     } finally {
-      abortControllerRef.current = null
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null
+        setIsStreaming(false)
+      }
     }
     // 模拟 AI 回复
     // setTimeout(() => {
@@ -334,6 +393,9 @@ export default function ChatScreen() {
                     message={item}
                     isSpeaking={originalIndex === speakingIndex}
                     onSpeak={() => handleSpeak(originalIndex, item.content)}
+                    isTyping={
+                      isStreaming && originalIndex === messages.length - 1
+                    }
                   />
                 )
               }}
@@ -360,8 +422,14 @@ export default function ChatScreen() {
             <ChatInput
               value={inputText}
               onChangeText={setInputText}
-              onSend={images => sendMessage(images)}
-              disabled={!inputText.trim()}
+              onSend={sendMessage}
+              disabled={
+                isLoading ||
+                pendingImages.some(img => img.status === 'uploading')
+              }
+              images={pendingImages}
+              onAddImages={handleAddImages}
+              onRemoveImage={handleRemoveImage}
             />
           </View>
         </View>
