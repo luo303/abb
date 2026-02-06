@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, Dispatch } from '@reduxjs/toolkit'
 import * as SecureStore from 'expo-secure-store'
 import { historyList } from '../../data/mock/homePosts'
 import { Message, HistoryItem, ChatState } from '../../types/AIchat'
+import { GetSessionMessages } from '../../api/ai'
 
 const STORAGE_KEY_HISTORY = 'chat_history_list'
 
@@ -9,9 +10,9 @@ const initialState: ChatState = {
   messages: [],
   historyList: historyList,
   currentConversationId: null,
-  conversations: {},
+  isLoading: false,
   search_private: false,
-  search_public: false
+  search_public: true
 }
 
 const chatSlice = createSlice({
@@ -26,12 +27,6 @@ const chatSlice = createSlice({
     },
     addMessage: (state, action: PayloadAction<Message>) => {
       state.messages.push(action.payload)
-      if (state.currentConversationId) {
-        if (!state.conversations[state.currentConversationId]) {
-          state.conversations[state.currentConversationId] = []
-        }
-        state.conversations[state.currentConversationId].push(action.payload)
-      }
     },
     setMessages: (state, action: PayloadAction<Message[]>) => {
       state.messages = action.payload
@@ -50,7 +45,6 @@ const chatSlice = createSlice({
       state.historyList = state.historyList.filter(
         item => item.session_id !== id
       )
-      delete state.conversations[id]
       if (state.currentConversationId === id) {
         state.currentConversationId = null
         state.messages = []
@@ -59,19 +53,19 @@ const chatSlice = createSlice({
     setCurrentConversationId: (state, action: PayloadAction<string | null>) => {
       state.currentConversationId = action.payload
     },
-    // 新增：更新指定会话的消息记录（用于加载数据时同步 state）
-    updateConversation: (
-      state,
-      action: PayloadAction<{ id: string; messages: Message[] }>
-    ) => {
-      const { id, messages } = action.payload
-      state.conversations[id] = messages
-    },
-    // 新增：选择会话，同时加载对应的消息记录
     selectConversation: (state, action: PayloadAction<string>) => {
-      const id = action.payload
-      state.currentConversationId = id
-      state.messages = state.conversations[id] || []
+      state.currentConversationId = action.payload
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload
+    },
+    updateLastMessageContent: (state, action: PayloadAction<string>) => {
+      if (state.messages.length > 0) {
+        const lastMsg = state.messages[state.messages.length - 1]
+        if (lastMsg.role === 'assistant') {
+          lastMsg.content += action.payload
+        }
+      }
     }
   }
 })
@@ -84,10 +78,11 @@ export const {
   setHistoryList,
   deleteHistoryItem,
   setCurrentConversationId,
-  updateConversation,
   selectConversation,
   togglePublicEnabled,
-  togglePrivateEnabled
+  togglePrivateEnabled,
+  setLoading,
+  updateLastMessageContent
 } = chatSlice.actions
 
 // Helper: 保存历史列表
@@ -99,13 +94,24 @@ const saveHistoryToStorage = async (list: HistoryItem[]) => {
   }
 }
 
-// Helper: 模拟后端 API 获取详细对话
-const fetchConversationMessages = async (id: string): Promise<Message[]> => {
-  // TODO: 这里实现向后端发送请求的逻辑
-  // const response = await api.get(`/conversations/${id}/messages`)
-  // return response.data
-  return []
-}
+// 异步 Action：从 API 获取消息记录
+export const fetchHistoryMessages =
+  (sessionId: string) => async (dispatch: Dispatch) => {
+    dispatch(setLoading(true))
+    try {
+      const res: any = await GetSessionMessages(sessionId)
+      if (res.code === 0 && res.data) {
+        dispatch(setMessages(res.data.messages))
+      } else {
+        dispatch(setMessages([]))
+      }
+    } catch (error) {
+      console.error('Failed to fetch session messages:', error)
+      dispatch(setMessages([]))
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }
 
 // 异步 Action：加载初始数据（历史列表和上次会话）
 export const loadInitialData =
@@ -121,12 +127,10 @@ export const loadInitialData =
       // 2. 加载上次会话 ID
       const savedId = await SecureStore.getItemAsync('currentConversationId')
       if (savedId) {
-        // 3. TODO: 调用后端 API 获取该会话的详细消息
-        // const messages = await fetchConversationMessages(savedId)
-        // dispatch(updateConversation({ id: savedId, messages }))
-
-        // 恢复 ID 并选中会话
         dispatch(selectConversation(savedId))
+        // 从 API 获取消息
+        // @ts-ignore
+        dispatch(fetchHistoryMessages(savedId))
       }
     } catch (error) {
       console.error('Failed to load initial data:', error)
@@ -139,21 +143,16 @@ export const removeHistoryItem =
     dispatch(deleteHistoryItem(id))
     const state = getState().chat
     saveHistoryToStorage(state.historyList)
-    // TODO: 这里可以添加通知后端删除会话的逻辑
   }
 
 // 异步 Action：切换并持久化会话 ID
 export const switchConversation =
   (id: string) => async (dispatch: Dispatch, getState: any) => {
-    // 检查内存中是否已有消息，如果没有则尝试从后端获取
-    const state = getState().chat
-    if (!state.conversations[id] || state.conversations[id].length === 0) {
-      // TODO: 调用后端 API 获取该会话的详细消息
-      // const messages = await fetchConversationMessages(id)
-      // dispatch(updateConversation({ id, messages }))
-    }
-
     dispatch(selectConversation(id))
+    // 从 API 获取消息
+    // @ts-ignore
+    dispatch(fetchHistoryMessages(id))
+
     try {
       await SecureStore.setItemAsync('currentConversationId', id)
     } catch (error) {
@@ -189,6 +188,9 @@ export const createNewSession =
 
     // 2. 选中新会话（这会更新 currentConversationId）
     dispatch(selectConversation(id))
+    // 新会话初始为空消息
+    dispatch(clearMessages())
+
     // 3. 持久化
     try {
       await SecureStore.setItemAsync('currentConversationId', id)

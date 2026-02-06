@@ -10,7 +10,8 @@ import {
   Keyboard,
   TouchableOpacity,
   NativeSyntheticEvent,
-  NativeScrollEvent
+  NativeScrollEvent,
+  ActivityIndicator
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHeaderHeight } from '@react-navigation/elements'
@@ -26,9 +27,12 @@ import { RootState } from '../../store'
 import {
   createNewSession,
   addMessage,
-  loadInitialData
+  loadInitialData,
+  updateLastMessageContent
 } from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
+import { SendMessage } from '@/api/ai'
+import { uploadFile } from '../../api/upload'
 
 // 在 Android 上启用布局动画
 if (
@@ -43,11 +47,19 @@ export default function ChatScreen() {
   const currentConversationId = useSelector(
     (state: RootState) => state.chat.currentConversationId
   )
+  const isLoading = useSelector((state: RootState) => state.chat.isLoading)
+  const search_private = useSelector(
+    (state: RootState) => state.chat.search_private
+  )
+  const search_public = useSelector(
+    (state: RootState) => state.chat.search_public
+  )
   const dispatch = useDispatch()
   const [inputText, setInputText] = useState('')
   const flatListRef = useRef<FlatList>(null)
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 加载初始数据
   useEffect(() => {
@@ -103,8 +115,12 @@ export default function ChatScreen() {
     }
   }, [])
 
-  // 监听会话ID变化，停止语音播放
+  // 监听会话ID变化，停止语音播放，并中断可能的进行中的请求
   useEffect(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
     Speech.stop()
     updateSpeakingIndex(null)
   }, [currentConversationId])
@@ -113,23 +129,40 @@ export default function ChatScreen() {
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const sendMessage = (text?: string, images?: string[]) => {
-    const contentToSend = typeof text === 'string' ? text : inputText.trim()
+  const sendMessage = async (images?: string[]) => {
+    const contentToSend = inputText.trim()
     const imagesToSend = images || []
 
     if (!contentToSend && imagesToSend.length === 0) return
 
-    if (typeof text !== 'string') {
-      Keyboard.dismiss()
+    // 如果有正在进行的请求，先中断它
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    // 创建新的控制器
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    //上传图片到后端并获取URL
+    if (imagesToSend.length > 0) {
+      imagesToSend.forEach(async (image, index) => {
+        try {
+          const response = await uploadFile(image)
+          imagesToSend[index] = response.data.url // 假设后端返回的是图片URL
+        } catch (error) {
+          console.error('图片上传失败:', error)
+          alert('图片上传失败，请稍后重试')
+        }
+      })
     }
 
     // 如果当前没有会话ID，说明是新会话，需要先创建会话
-    if (!currentConversationId) {
-      const newId = uuidv4()
+    let sessionId = currentConversationId
+    if (!sessionId) {
+      sessionId = uuidv4()
       // @ts-ignore - Thunk action type issue
-      dispatch(createNewSession(newId))
+      dispatch(createNewSession(sessionId))
     }
-
     const userMsg: Message = {
       content: contentToSend,
       role: 'user',
@@ -137,31 +170,93 @@ export default function ChatScreen() {
       images: imagesToSend
     }
 
-    // TODO: 上传图片到后端
-    if (imagesToSend.length > 0) {
-      console.log('Need to upload images:', imagesToSend)
-    }
-
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     // @ts-ignore
     dispatch(addMessage(userMsg))
+    setInputText('')
 
-    if (typeof text !== 'string') {
-      setInputText('')
+    // 添加一个空的 AI 消息占位
+    const aiPlaceholderMsg: Message = {
+      content: '',
+      role: 'assistant',
+      timestamp: Date.now()
     }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    // @ts-ignore
+    dispatch(addMessage(aiPlaceholderMsg))
 
-    // 模拟 AI 回复
-    setTimeout(() => {
-      const aiMsg: Message = {
-        content:
-          '作为一个**AI助手**，我可以帮你解答育儿方面的问题，比如：\n\n- 宝宝辅食\n- 疫苗接种提醒\n- 生长发育评估\n\n> 随时欢迎向我提问哦！',
-        role: 'assistant',
-        timestamp: Date.now()
+    try {
+      const res = await SendMessage(
+        {
+          session_id: sessionId,
+          message: contentToSend,
+          images: imagesToSend,
+          kb_config: {
+            enable: search_private || search_public,
+            search_private,
+            search_public
+          }
+        },
+        abortController.signal
+      )
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = (await reader?.read()) || {}
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+
+        // SSE 消息以双换行符分隔
+        const blocks = buffer.split('\n\n')
+        // 保留最后一个可能不完整的块
+        buffer = blocks.pop() || ''
+
+        for (const block of blocks) {
+          const lines = block.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const jsonStr = line.slice(5).trim()
+              if (!jsonStr) continue
+              try {
+                const data = JSON.parse(jsonStr)
+                if (data.type === 'content' && data.content) {
+                  // @ts-ignore
+                  dispatch(updateLastMessageContent(data.content))
+                } else if (data.type === 'done') {
+                  // 会话结束，可以在这里处理 session_id 确认等逻辑
+                  console.log('Chat session done:', data.session_id)
+                }
+              } catch (e) {
+                console.error('SSE parse error:', e)
+              }
+            }
+          }
+        }
       }
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-      // @ts-ignore
-      dispatch(addMessage(aiMsg))
-    }, 1000)
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request aborted')
+        return
+      }
+      console.error('消息发送失败:', error)
+      alert('消息发送失败，请稍后重试')
+    } finally {
+      abortControllerRef.current = null
+    }
+    // 模拟 AI 回复
+    // setTimeout(() => {
+    //   const aiMsg: Message = {
+    //     content:
+    //       '作为一个**AI助手**，我可以帮你解答育儿方面的问题，比如：\n\n- 宝宝辅食\n- 疫苗接种提醒\n- 生长发育评估\n\n> 随时欢迎向我提问哦！',
+    //     role: 'assistant',
+    //     timestamp: Date.now()
+    //   }
+    //   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    //   // @ts-ignore
+    //   dispatch(addMessage(aiMsg))
+    // }, 1000)
+    // 像后端发送消息
   }
 
   // 当消息变化时，如果是AI回复，则平滑滚动到底部
@@ -219,7 +314,11 @@ export default function ChatScreen() {
         keyboardVerticalOffset={headerHeight}
       >
         <View style={styles.contentContainer}>
-          {messages.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#1f99b0" />
+            </View>
+          ) : messages.length === 0 ? (
             <ChatEmptyState />
           ) : (
             <FlatList
@@ -261,7 +360,7 @@ export default function ChatScreen() {
             <ChatInput
               value={inputText}
               onChangeText={setInputText}
-              onSend={images => sendMessage(undefined, images)}
+              onSend={images => sendMessage(images)}
               disabled={!inputText.trim()}
             />
           </View>
@@ -275,6 +374,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAFAFA' // 略微灰白色的背景
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   keyboardView: {
     flex: 1

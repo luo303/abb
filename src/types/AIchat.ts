@@ -36,13 +36,13 @@ export interface ChatState {
   messages: Message[]
   historyList: HistoryItem[]
   currentConversationId: string | null
-  conversations: Record<string, Message[]>
+  isLoading: boolean
   search_private: boolean
   search_public: boolean
 }
 
 //基本对话请求体
-export interface aiReuset {
+export interface AiRequest {
   session_id: string //前端生成的uuid，不可重复
   message: string
   images?: string[] //图片链接集合
