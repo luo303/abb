@@ -36,7 +36,13 @@
           "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "我们需要访问您的位置以在发帖时显示您所在的城市和区域。"
+        }
+      ]
     ]
   }
 }

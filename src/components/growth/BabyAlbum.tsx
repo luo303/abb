@@ -88,8 +88,9 @@ export default function BabyAlbum({ images = [] }: BabyAlbumProps) {
               width={ITEM_SIZE} // 设置为单个 Item 的宽度
               height={ITEM_SIZE - GAP} // 设置高度等于宽度减去间距，确保正方形
               style={{
-                width: CONTAINER_WIDTH
-                // 移除 justifyContent 和 alignItems，避免干扰布局
+                width: CONTAINER_WIDTH,
+                height: ITEM_SIZE - GAP, // 显式设置高度
+                overflow: 'hidden' // 确保只展示容器范围内的内容，隐藏多余部分
               }}
               autoPlay={false}
               data={displayImages}

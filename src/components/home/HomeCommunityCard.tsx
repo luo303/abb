@@ -54,6 +54,17 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           {data.content}
         </Text>
 
+        {/* 标签展示 */}
+        {data.tags && data.tags.length > 0 && (
+          <View style={styles.tagsContainer}>
+            {data.tags.map((tag: string, index: number) => (
+              <Text key={index} style={styles.tag}>
+                #{tag}
+              </Text>
+            ))}
+          </View>
+        )}
+
         {/* 图片网格 */}
         <View style={styles.imageGrid}>
           {data.images.map((img: any, index: number) => (
@@ -158,6 +169,21 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 12,
     lineHeight: 24
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12
+  },
+  tag: {
+    fontSize: 12,
+    color: '#f43f5e',
+    backgroundColor: '#fff1f2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    overflow: 'hidden'
   },
   imageGrid: {
     flexDirection: 'row',

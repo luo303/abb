@@ -16,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
+import { useNavigation } from '@react-navigation/native'
+import { NavigationProps } from '../../types/navigation'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
@@ -27,6 +29,7 @@ import { MOCK_POSTS } from '@/data/mock/homePosts'
  * 包含搜索管理、轮播图、功能导航和社区模块列表
  */
 export default function Home() {
+  const navigation = useNavigation<NavigationProps>()
   const insets = useSafeAreaInsets()
   const scrollY = useSharedValue(0)
   const scrollViewRef = useRef<Animated.ScrollView>(null)
@@ -50,7 +53,7 @@ export default function Home() {
       -1,
       true
     )
-  }, [])
+  })
 
   const animatedBadgeStyle = useAnimatedStyle(() => {
     return {
@@ -172,12 +175,12 @@ export default function Home() {
                     </View>
                     <TouchableOpacity
                       activeOpacity={0.8}
-                      onPress={handleScrollToCommunity}
+                      onPress={() => navigation.navigate('AddPost')}
                     >
                       <Animated.View
                         style={[styles.sectionBadge, animatedBadgeStyle]}
                       >
-                        <Text style={styles.badgeText}>最新动态等你来看！</Text>
+                        <Text style={styles.badgeText}>记录美好瞬间</Text>
                       </Animated.View>
                     </TouchableOpacity>
                   </Animated.View>
