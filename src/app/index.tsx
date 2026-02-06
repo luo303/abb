@@ -31,7 +31,7 @@ export default function Layout() {
       <MessageProvider>
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName={'Tabs'}
+            initialRouteName={store.getState().user.token ? 'Tabs' : 'Login'}
             screenOptions={{
               title: '', //默认标题为空
               headerTitleAlign: 'center', //安卓系统标题居中

@@ -23,15 +23,15 @@ export default function TabsLayout() {
   const token = useSelector((state: any) => state.user.token)
   const insets = useSafeAreaInsets()
 
-  // 路由鉴权：如果没有token，重定向到登录页
-  // useEffect(() => {
-  //   if (!token) {
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [{ name: 'Login' }]
-  //     })
-  //   }
-  // }, [token, navigation])
+  //路由鉴权：如果没有token，重定向到登录页
+  useEffect(() => {
+    if (!token) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }]
+      })
+    }
+  }, [token, navigation])
 
   return (
     <Tab.Navigator
