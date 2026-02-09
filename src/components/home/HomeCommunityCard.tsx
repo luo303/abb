@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions
 } from 'react-native'
+import { FlatList } from 'react-native-gesture-handler'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
@@ -16,6 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 const { width } = Dimensions.get('window')
 const NAV_MARGIN_H = 16
 const TARGET_WIDTH = width - NAV_MARGIN_H * 2
+const CARD_PADDING = 15
+const CAROUSEL_WIDTH = TARGET_WIDTH - CARD_PADDING * 2
+const GAP = 8
+const ITEM_WIDTH = (CAROUSEL_WIDTH - GAP * 2) / 3 // 减去间距计算每个item宽度
+const ITEM_HEIGHT = ITEM_WIDTH
 
 interface HomeCommunityCardProps {
   data: any
@@ -23,6 +29,16 @@ interface HomeCommunityCardProps {
 
 export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
+
+  const renderCarouselItem = ({ item }: { item: any }) => (
+    <View style={styles.carouselItem}>
+      <Image
+        source={typeof item === 'string' ? { uri: item } : item}
+        style={styles.postImage}
+      />
+    </View>
+  )
+
   return (
     <TouchableOpacity
       style={styles.communityContainer}
@@ -37,7 +53,14 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
       >
         {/* 用户信息行 */}
         <View style={styles.userInfoRow}>
-          <Image source={data.avatar} style={styles.avatar} />
+          <Image
+            source={
+              typeof data.avatar === 'string'
+                ? { uri: data.avatar }
+                : data.avatar
+            }
+            style={styles.avatar}
+          />
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{data.nickname}</Text>
             {/* 显示宝宝年龄描述，与详情页保持一致 */}
@@ -65,16 +88,30 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           </View>
         )}
 
-        {/* 图片网格 */}
-        <View style={styles.imageGrid}>
-          {data.images.map((img: any, index: number) => (
-            <Image key={index} source={img} style={styles.postImage} />
-          ))}
-          {/* 占位，保持布局平衡如果图片少于3张 */}
-          {data.images.length < 3 && (
-            <View style={styles.postImagePlaceholder} />
-          )}
-        </View>
+        {/* 图片展示 - 使用 FlatList 以实现完美的边界对齐效果 */}
+        {data.images && data.images.length > 0 && (
+          <View style={styles.carouselContainer}>
+            <FlatList
+              data={data.images}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={renderCarouselItem}
+              ItemSeparatorComponent={() => <View style={{ width: GAP }} />}
+              // 模拟 Carousel 的吸附效果
+              snapToInterval={ITEM_WIDTH + GAP}
+              decelerationRate="fast"
+              // 当图片少于3张时禁止滑动，避免松动感
+              scrollEnabled={data.images.length > 3}
+              // 优化性能
+              getItemLayout={(_, index) => ({
+                length: ITEM_WIDTH + GAP,
+                offset: (ITEM_WIDTH + GAP) * index,
+                index
+              })}
+            />
+          </View>
+        )}
 
         {/* 底部交互栏 */}
         <View style={styles.actionRow}>
@@ -185,20 +222,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden'
   },
-  imageGrid: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 8,
-    marginBottom: 16
+  carouselContainer: {
+    marginBottom: 16,
+    // 确保容器居中
+    alignItems: 'flex-start'
   },
-  postImage: {
-    width: 100,
-    height: 100,
+  carouselItem: {
+    width: ITEM_WIDTH,
+    height: ITEM_HEIGHT,
     borderRadius: 12,
+    overflow: 'hidden',
     backgroundColor: '#f5f5f5'
   },
-  postImagePlaceholder: {
-    // 空占位，不显示
+  postImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
   },
   actionRow: {
     flexDirection: 'row',

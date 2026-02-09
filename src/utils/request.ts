@@ -1,5 +1,6 @@
 import axios from 'axios'
-import store from '../store'
+// import store from '../store'
+import * as SecureStore from 'expo-secure-store'
 import { clearToken } from '../store/modules/userStore'
 //创建axios实例
 const baseURL = 'https://m1.apifoxmock.com/m1/7571791-7309471-default' //云端mock地址
@@ -9,7 +10,8 @@ const request = axios.create({
 })
 //请求拦截器
 request.interceptors.request.use((config: any) => {
-  const token = store.getState().user.token
+  // 直接从 SecureStore 获取 token，避免循环引用
+  const token = SecureStore.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -32,9 +34,9 @@ request.interceptors.response.use(
       switch (status) {
         case 401:
           msg = '登录失效'
+          // 动态导入 store 以处理 dispatch
+          const store = require('../store').default
           store.dispatch(clearToken())
-          // 登录过期处理：这里应该通过Redux或其他全局状态管理来处理导航
-          // 例如：dispatch(logout()) 然后在组件中监听状态变化进行导航
           console.log('登录过期，需要跳转到登录页')
           break
         default:

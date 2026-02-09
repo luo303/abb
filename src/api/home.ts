@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { MOCK_POSTS } from '@/data/mock/homePosts'
 
 export interface CommunityPost {
   nickname: string // 用户昵称
@@ -22,36 +23,45 @@ export interface CommunityPost {
  */
 export const getHomePosts = async (page = 1, pageSize = 10) => {
   try {
+    // 使用 request 实例发送请求
     const response: any = await request.get('/api/community/list', {
       params: { page, pageSize }
     })
 
-    // 适配逻辑：兼容有 code 的真实接口和没有 code 的 Mock 接口
-    const isSuccess = response.code === 200 || response.list
-
-    if (isSuccess) {
-      // 如果数据直接在 response 里（Mock 情况），或者在 response.data 里（标准情况）
-      const actualData = response.data || response
+    // request.ts 的响应拦截器已经返回了 response.data
+    if (response && response.code === 200) {
+      return response
+    } else {
+      // 如果接口请求失败或没有数据，回退到本地 Mock 数据
+      // 模拟分页逻辑
+      const start = (page - 1) * pageSize
+      const end = start + pageSize
+      const list = MOCK_POSTS.slice(start, end)
 
       return {
         code: 200,
-        msg: 'success',
+        msg: 'success (fallback mock)',
         data: {
-          list: actualData.list || [],
-          total: actualData.total || actualData.list?.length || 0,
+          list,
+          total: MOCK_POSTS.length,
           page,
           pageSize
         }
       }
-    } else {
-      throw new Error('Invalid structure')
     }
   } catch (error) {
-    console.error('[getHomePosts] Error:', error)
+    console.error('getHomePosts error:', error)
+    // 网络错误时也回退到 Mock 数据
+    const list = MOCK_POSTS.slice(0, pageSize)
     return {
-      code: 500,
-      msg: 'Network Error',
-      data: { list: [], total: 0, page, pageSize }
+      code: 200,
+      msg: 'Network Error (fallback mock)',
+      data: {
+        list,
+        total: MOCK_POSTS.length,
+        page,
+        pageSize
+      }
     }
   }
 }

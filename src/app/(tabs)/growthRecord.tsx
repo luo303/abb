@@ -7,7 +7,6 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
 
 // 导入组件
 import BabyStats from '../../components/growth/BabyStats'

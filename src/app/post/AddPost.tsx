@@ -20,7 +20,6 @@ import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
 
 export default function AddPostScreen() {
-  const navigation = useNavigation<NavigationProps>()
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -47,7 +46,7 @@ export default function AddPostScreen() {
 
     // 打开相册选择图片
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // 只允许选择图片
+      mediaTypes: ['images'], // 使用字符串数组 'images' 替代被弃用的 MediaTypeOptions.Images
       allowsMultipleSelection: true, // 允许多选
       selectionLimit: remainingCount, // 最多选择 remainingCount 张图片
       aspect: [1, 1], // 裁剪比例： 1：1

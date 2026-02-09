@@ -8,8 +8,10 @@ import {
   Alert
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, CommonActions } from '@react-navigation/native'
+import { uploadFile } from '@/api/upload'
 import request from '@/utils/request'
+import { MOCK_FALLBACK_IMAGE, MOCK_CURRENT_USER } from '@/data/mock/homePosts'
 
 export interface PostData {
   content: string
@@ -36,37 +38,101 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
     setIsPublishing(true)
 
     try {
+      // 1. 上传图片（如果有）
+      let uploadedImageUrls: string[] = []
+      // 保存有效的网络图片URL
+      const validNetworkUrls: string[] = []
+
+      if (postData.images && postData.images.length > 0) {
+        // 并发上传所有图片
+        const uploadPromises = postData.images.map(uri =>
+          uploadFile(uri).catch(err => {
+            console.warn('Image upload failed:', err)
+            return null
+          })
+        )
+        const results = await Promise.all(uploadPromises)
+
+        // 提取返回的 URL
+        uploadedImageUrls = results
+          .map((res: any) => {
+            if (!res) return ''
+
+            // 兼容多种可能的返回结构
+            if (res.data && res.data.url) return res.data.url
+            if (res.url) return res.url
+            if (typeof res.data === 'string') return res.data
+            // Mock 环境兜底
+            if (res.code === 200) return MOCK_FALLBACK_IMAGE
+
+            return ''
+          })
+          .filter(url => !!url)
+
+        validNetworkUrls.push(...uploadedImageUrls)
+      }
+
       // 构造请求数据
-      // 注意：这里假设后端接口需要的字段结构，实际应根据后端 API 文档调整
       const payload = {
         content: postData.content,
-        images: postData.images, // 实际场景可能需要先上传图片获取 URL
+        images: validNetworkUrls,
         tags: postData.tags,
-        isPublic: postData.isPublic ? 1 : 0, // 假设后端用 1/0 表示布尔值
+        isPublic: postData.isPublic ? 1 : 0,
         createTime: new Date().toISOString()
       }
 
-      console.log('Sending publish request:', payload)
-
-      // 发送 POST 请求 （此处使用云端 mock 地址）
-      const response = await request.post(
+      // 发送 POST 请求
+      await request.post(
         'https://m1.apifoxmock.com/m1/7571791-7309471-default/post/createPost',
         payload
       )
 
-      console.log('Publish response:', response)
+      console.log('Publish success')
 
-      // 假设后端返回 code 200 表示成功
-      // 由于拦截器直接返回 response.data，这里需要根据实际返回结构判断
-      // 这里暂时认为只要没抛出异常就是成功
+      // 构造完整的帖子对象用于前端展示
+      // 如果上传失败或 Mock 接口没返回 URL，回退使用本地 URI，确保首页能显示图片
+      const displayImages =
+        validNetworkUrls.length > 0 ? validNetworkUrls : postData.images
+
+      const newPost = {
+        id: Date.now().toString(), // 临时 ID
+        avatar: MOCK_CURRENT_USER.avatar, // Mock 头像
+        nickname: MOCK_CURRENT_USER.nickname, // Mock 昵称
+        description: MOCK_CURRENT_USER.description,
+        publishTime: '刚刚',
+        location: '未知位置', // 如果有定位功能可填充
+        content: payload.content,
+        tags: payload.tags,
+        images: displayImages, // 优先使用网络图，无则用本地图
+        stats: {
+          likes: 0,
+          dislikes: 0,
+          favorites: 0,
+          comments: 0
+        }
+      }
 
       // 触发成功回调
       if (onSuccess) {
         onSuccess()
       }
 
-      // 返回上一页（首页）
-      navigation.goBack()
+      // 使用 reset 重置路由栈，确保用户无法返回发布页
+      // @ts-ignore
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Tabs',
+              params: {
+                screen: 'Home',
+                params: { newPost }
+              }
+            }
+          ]
+        })
+      )
 
       // 提示发布成功
       Alert.alert('提示', '发布成功！')

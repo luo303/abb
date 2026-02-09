@@ -22,7 +22,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
-import { useNavigation, useIsFocused } from '@react-navigation/native'
+import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
@@ -36,6 +36,7 @@ import { getHomePosts } from '@/api/home'
  */
 export default function Home() {
   const navigation = useNavigation<NavigationProps>()
+  const route = useRoute<any>()
   const isFocused = useIsFocused()
   const insets = useSafeAreaInsets()
   const scrollY = useSharedValue(0)
@@ -43,7 +44,12 @@ export default function Home() {
   const [communityY, setCommunityY] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [posts, setPosts] = useState<any[]>([])
+  // 分离服务端数据和本地数据
+  const [serverPosts, setServerPosts] = useState<any[]>([])
+  const [localPosts, setLocalPosts] = useState<any[]>([])
+
+  // 合并展示的数据
+  const posts = [...localPosts, ...serverPosts]
 
   // 徽章动画
   const badgeScale = useSharedValue(1)
@@ -62,18 +68,41 @@ export default function Home() {
         response.data &&
         Array.isArray(response.data.list)
       ) {
-        setPosts(response.data.list)
+        setServerPosts(response.data.list)
       } else {
-        console.warn('Invalid response structure:', response)
-        setPosts([])
+        setServerPosts([])
       }
     } catch (error) {
       console.error('Fetch posts failed:', error)
-      setPosts([])
+      setServerPosts([])
     } finally {
       setIsLoading(false)
     }
   }
+
+  // 监听路由参数，如果有新发布的帖子，添加到列表头部
+  useEffect(() => {
+    // 检查 route.params 是否存在，避免 undefined 错误
+    if (route.params && route.params.newPost) {
+      // 更新本地帖子列表
+      setLocalPosts(prev => {
+        // 防止重复添加
+        const isDuplicate = prev.some(p => p.id === route.params.newPost.id)
+        if (isDuplicate) return prev
+        return [route.params.newPost, ...prev]
+      })
+
+      // 清除参数
+      // @ts-ignore
+      navigation.setParams({ newPost: null })
+
+      // 自动滚动到社区模块顶部，确保用户看到新帖子
+      // 使用 setTimeout 确保渲染完成后滚动
+      setTimeout(() => {
+        handleScrollToCommunity()
+      }, 300)
+    }
+  }, [route.params]) // 依赖项改为 route.params
 
   // 初始化和焦点变化时刷新数据
   useEffect(() => {
@@ -93,7 +122,7 @@ export default function Home() {
       -1,
       true
     )
-  }, [])
+  })
 
   const animatedBadgeStyle = useAnimatedStyle(() => {
     return {

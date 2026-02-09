@@ -1,13 +1,13 @@
 import request from '@/utils/request'
 import { AiRequest } from '@/types/AIchat'
-import store from '../store'
+import * as SecureStore from 'expo-secure-store'
 
 const AI_URL =
   'https://misapprehensive-overcontritely-roxy.ngrok-free.dev/api/common/ai/chat/stream'
 
 //基本ai对话
 export const SendMessage = async (data: AiRequest, signal?: AbortSignal) => {
-  const token = store.getState().user.token
+  const token = SecureStore.getItem('token')
   return fetch(AI_URL, {
     method: 'POST',
     headers: {
@@ -26,7 +26,7 @@ export const SendMessageStream = (
   signal?: AbortSignal
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const token = store.getState().user.token
+    const token = SecureStore.getItem('token')
     const xhr = new XMLHttpRequest()
     let lastReadIndex = 0
 

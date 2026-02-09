@@ -3,6 +3,16 @@ import { Comment } from '../../types/post'
 import { HistoryItem } from '../../types/AIchat'
 import { Vaccine } from '@/types/vaccine'
 
+// 默认回退图片
+export const MOCK_FALLBACK_IMAGE = 'https://loremflickr.com/320/320/baby'
+
+// 模拟当前登录用户（用于发帖回显）
+export const MOCK_CURRENT_USER = {
+  avatar: require('../../assets/testAvatar.png'),
+  nickname: 'user_123456',
+  description: '一名新手宝妈'
+}
+
 // 模拟疫苗数据
 export const MOCK_VACCINES: Vaccine[] = [
   {
