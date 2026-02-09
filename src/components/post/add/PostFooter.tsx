@@ -14,7 +14,6 @@ import request from '@/utils/request'
 export interface PostData {
   content: string
   images: string[]
-  location: string
   tags: string[]
   isPublic: boolean
 }
@@ -42,7 +41,6 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       const payload = {
         content: postData.content,
         images: postData.images, // 实际场景可能需要先上传图片获取 URL
-        location: postData.location,
         tags: postData.tags,
         isPublic: postData.isPublic ? 1 : 0, // 假设后端用 1/0 表示布尔值
         createTime: new Date().toISOString()

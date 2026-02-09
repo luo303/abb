@@ -23,7 +23,6 @@ export default function AddPostScreen() {
   const navigation = useNavigation<NavigationProps>()
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
-  const [locationName, setLocationName] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
 
@@ -107,7 +106,6 @@ export default function AddPostScreen() {
               style={styles.cardGradient}
             >
               <PostToolbar
-                onLocationChange={setLocationName}
                 onTagsChange={setSelectedTags}
                 onPrivacyChange={setIsPublic}
               />
@@ -119,7 +117,6 @@ export default function AddPostScreen() {
           postData={{
             content,
             images,
-            location: locationName,
             tags: selectedTags,
             isPublic
           }}

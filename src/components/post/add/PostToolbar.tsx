@@ -10,51 +10,12 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Switch, Picker, Provider } from '@ant-design/react-native'
+import { Switch, Provider } from '@ant-design/react-native'
 
 interface PostToolbarProps {
-  onLocationChange?: (locationName: string) => void
   onTagsChange?: (tags: string[]) => void
   onPrivacyChange?: (isPublic: boolean) => void
 }
-
-const PROVINCES = [
-  { label: '不显示位置', value: '' },
-  { label: '北京市', value: '北京市' },
-  { label: '天津市', value: '天津市' },
-  { label: '河北省', value: '河北省' },
-  { label: '山西省', value: '山西省' },
-  { label: '内蒙古自治区', value: '内蒙古自治区' },
-  { label: '辽宁省', value: '辽宁省' },
-  { label: '吉林省', value: '吉林省' },
-  { label: '黑龙江省', value: '黑龙江省' },
-  { label: '上海市', value: '上海市' },
-  { label: '江苏省', value: '江苏省' },
-  { label: '浙江省', value: '浙江省' },
-  { label: '安徽省', value: '安徽省' },
-  { label: '福建省', value: '福建省' },
-  { label: '江西省', value: '江西省' },
-  { label: '山东省', value: '山东省' },
-  { label: '河南省', value: '河南省' },
-  { label: '湖北省', value: '湖北省' },
-  { label: '湖南省', value: '湖南省' },
-  { label: '广东省', value: '广东省' },
-  { label: '广西壮族自治区', value: '广西壮族自治区' },
-  { label: '海南省', value: '海南省' },
-  { label: '重庆市', value: '重庆市' },
-  { label: '四川省', value: '四川省' },
-  { label: '贵州省', value: '贵州省' },
-  { label: '云南省', value: '云南省' },
-  { label: '西藏自治区', value: '西藏自治区' },
-  { label: '陕西省', value: '陕西省' },
-  { label: '甘肃省', value: '甘肃省' },
-  { label: '青海省', value: '青海省' },
-  { label: '宁夏回族自治区', value: '宁夏回族自治区' },
-  { label: '新疆维吾尔自治区', value: '新疆维吾尔自治区' },
-  { label: '香港特别行政区', value: '香港特别行政区' },
-  { label: '澳门特别行政区', value: '澳门特别行政区' },
-  { label: '台湾省', value: '台湾省' }
-]
 
 const TAGS = [
   '宝宝日常',
@@ -88,24 +49,12 @@ const customTheme = {
 }
 
 export default function PostToolbar({
-  onLocationChange,
   onTagsChange,
   onPrivacyChange
 }: PostToolbarProps) {
-  const [locationName, setLocationName] = useState('')
-  const [visible, setVisible] = useState(false)
   const [showTagsModal, setShowTagsModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
-
-  const handleSelectLocation = (value: any) => {
-    const selectedValue = value[0]
-    setLocationName(selectedValue)
-    if (onLocationChange) {
-      onLocationChange(selectedValue)
-    }
-    setVisible(false)
-  }
 
   const toggleTag = (tag: string) => {
     let newTags
@@ -139,41 +88,6 @@ export default function PostToolbar({
   return (
     <Provider theme={customTheme}>
       <View style={styles.toolbar}>
-        <TouchableOpacity
-          style={styles.toolItem}
-          onPress={() => setVisible(true)}
-        >
-          <View style={styles.iconBg}>
-            <Ionicons name="location" size={20} color="#f43f5e" />
-          </View>
-          <Text style={styles.toolText}>所在位置</Text>
-          <Text style={styles.valueText}>{locationName || '点击选择省份'}</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color="#ccc"
-            style={styles.arrow}
-          />
-        </TouchableOpacity>
-
-        <Picker
-          visible={visible}
-          data={PROVINCES}
-          cols={1}
-          value={[locationName]}
-          onChange={handleSelectLocation}
-          onDismiss={() => setVisible(false)}
-          onOk={handleSelectLocation}
-          title="选择所在省份"
-          okText="确定"
-          dismissText="取消"
-          itemStyle={{ fontSize: 16, fontWeight: '500', color: '#333' }}
-        >
-          <View />
-        </Picker>
-
-        <View style={styles.divider} />
-
         <TouchableOpacity
           style={styles.toolItem}
           onPress={() => setShowTagsModal(true)}
@@ -379,37 +293,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333'
-  },
-  listContent: {
-    paddingBottom: 20
-  },
-  locationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#f0f0f0'
-  },
-  locationIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f8f8f8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12
-  },
-  locationInfo: {
-    flex: 1
-  },
-  locationName: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 4
-  },
-  locationAddress: {
-    fontSize: 12,
-    color: '#999'
   },
   switchContainer: {
     flexDirection: 'row',

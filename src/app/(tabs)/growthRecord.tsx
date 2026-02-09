@@ -56,9 +56,6 @@ export default function GrowthRecord() {
               style={styles.headerAvatar}
               imageStyle={{ borderRadius: 28 }}
             />
-            <View style={styles.editIconBadge}>
-              <Ionicons name="camera" size={12} color="#fff" />
-            </View>
           </View>
         </View>
 

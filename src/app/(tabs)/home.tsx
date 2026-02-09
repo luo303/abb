@@ -1,5 +1,11 @@
-import React, { useState, useRef } from 'react'
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
+import React, { useState, useRef, useEffect } from 'react'
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator
+} from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
@@ -16,13 +22,13 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useIsFocused } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeSearchManager from '@/components/home/search/HomeSearchManager'
-import { MOCK_POSTS } from '@/data/mock/homePosts'
+import { getHomePosts } from '@/api/home'
 
 /**
  * 首页组件
@@ -30,11 +36,14 @@ import { MOCK_POSTS } from '@/data/mock/homePosts'
  */
 export default function Home() {
   const navigation = useNavigation<NavigationProps>()
+  const isFocused = useIsFocused()
   const insets = useSafeAreaInsets()
   const scrollY = useSharedValue(0)
   const scrollViewRef = useRef<Animated.ScrollView>(null)
   const [communityY, setCommunityY] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [posts, setPosts] = useState<any[]>([])
 
   // 徽章动画
   const badgeScale = useSharedValue(1)
@@ -42,18 +51,49 @@ export default function Home() {
   // 社区模块闪烁动画
   const communityOpacity = useSharedValue(1)
 
-  React.useEffect(() => {
-    // 创建心跳闪烁效果
+  // 获取帖子列表
+  const fetchPosts = async () => {
+    setIsLoading(true)
+    try {
+      const response: any = await getHomePosts()
+      if (
+        response &&
+        response.code === 200 &&
+        response.data &&
+        Array.isArray(response.data.list)
+      ) {
+        setPosts(response.data.list)
+      } else {
+        console.warn('Invalid response structure:', response)
+        setPosts([])
+      }
+    } catch (error) {
+      console.error('Fetch posts failed:', error)
+      setPosts([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 初始化和焦点变化时刷新数据
+  useEffect(() => {
+    if (isFocused) {
+      fetchPosts()
+    }
+  }, [isFocused])
+
+  // 徽章动画效果
+  useEffect(() => {
     badgeScale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: 500, easing: Easing.ease }),
         withTiming(1, { duration: 500, easing: Easing.ease }),
-        withDelay(1000, withTiming(1, { duration: 0 })) // 停顿一下
+        withDelay(1000, withTiming(1, { duration: 0 }))
       ),
       -1,
       true
     )
-  })
+  }, [])
 
   const animatedBadgeStyle = useAnimatedStyle(() => {
     return {
@@ -67,13 +107,12 @@ export default function Home() {
     }
   })
 
-  // 定义滚动动作
+  // 滚动到社区模块
   const handleScrollToCommunity = () => {
     scrollViewRef.current?.scrollTo({ y: communityY, animated: true })
 
-    // 滚动后触发闪烁提示动画 (闪烁3次)
     communityOpacity.value = withDelay(
-      500, // 等待滚动完成
+      500,
       withSequence(
         withTiming(0.2, { duration: 200 }),
         withTiming(1, { duration: 200 }),
@@ -89,20 +128,14 @@ export default function Home() {
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {
-    // 当滚动到社区部分时，背景变为白色
-    // 阈值设定为社区部分接近顶部时
     const triggerPoint = communityY > 0 ? communityY - insets.top - 50 : 300
-
     const opacity = interpolate(
       scrollY.value,
       [triggerPoint - 100, triggerPoint],
       [0, 1],
       Extrapolation.CLAMP
     )
-
-    return {
-      opacity
-    }
+    return { opacity }
   })
 
   return (
@@ -119,7 +152,6 @@ export default function Home() {
             style={[styles.headerGradient, { height: 280 + insets.top }]}
           />
           <View style={styles.headerCurve} />
-          {/* 白色遮罩层，用于滚动时渐变到白色 */}
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
@@ -138,29 +170,23 @@ export default function Home() {
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: 100 }}
           >
-            {/* 1. 搜索管理组件 (包含搜索栏和搜索结果) */}
             <HomeSearchManager
-              posts={MOCK_POSTS}
+              posts={posts}
               onSearchStateChange={setIsSearching}
             />
 
-            {/* 只有在没有搜索内容时，才显示轮播图和导航网格以及默认帖子列表 */}
             {!isSearching && (
               <>
-                {/* 2. 顶部轮播图组件 */}
                 <View style={styles.bannerSection}>
                   <HomeBanner />
                 </View>
 
-                {/* 3. 中间功能导航组件 */}
                 <HomeNavGrid />
 
-                {/* 4. 底部默认社区模块组件列表 */}
                 <View
                   style={styles.communitySection}
                   onLayout={e => setCommunityY(e.nativeEvent.layout.y)}
                 >
-                  {/* 社区标题头 */}
                   <Animated.View
                     style={[styles.sectionHeader, animatedCommunityStyle]}
                   >
@@ -185,8 +211,14 @@ export default function Home() {
                     </TouchableOpacity>
                   </Animated.View>
 
-                  {MOCK_POSTS.map(post => (
-                    <View key={post.id} style={{ marginBottom: 12 }}>
+                  {isLoading ? (
+                    <View style={{ padding: 20 }}>
+                      <ActivityIndicator size="small" color="#f43f5e" />
+                    </View>
+                  ) : null}
+
+                  {posts.map((post: any, index: number) => (
+                    <View key={post.id || index} style={{ marginBottom: 12 }}>
                       <HomeCommunityCard data={post} />
                     </View>
                   ))}
@@ -265,12 +297,12 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   sectionBadge: {
-    backgroundColor: '#ff1744', // 更鲜艳的红色背景
+    backgroundColor: '#ff1744',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#fff', // 白色边框增加层次感
+    borderColor: '#fff',
     shadowColor: '#ff1744',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -279,7 +311,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    color: '#fff', // 白色文字对比更强
+    color: '#fff',
     fontWeight: 'bold',
     letterSpacing: 0.5
   }
