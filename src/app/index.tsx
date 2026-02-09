@@ -15,6 +15,7 @@ import TabooScreen from './(HomeNavGrid)/Taboo'
 import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
+import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
 import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
 import DiaryScreen from './(GrowthSubPages)/Diary'
@@ -95,6 +96,11 @@ export default function Layout() {
               name="VaccineRecord"
               component={VaccineRecordScreen}
               options={{ title: '疫苗记录' }}
+            />
+            <Stack.Screen
+              name="VaccineDetail"
+              component={VaccineDetailScreen}
+              options={{ title: '详情', headerShown: false }}
             />
             <Stack.Screen
               name="Album"

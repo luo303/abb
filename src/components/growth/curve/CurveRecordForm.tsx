@@ -9,9 +9,9 @@ import {
 } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import DateTimePicker, {
-  DateTimePickerAndroid,
   DateTimePickerEvent
 } from '@react-native-community/datetimepicker'
+import { openDatePicker } from '@/utils/datePicker'
 
 interface CurveRecordFormProps {
   height: string
@@ -56,14 +56,8 @@ export default function CurveRecordForm({
   }
 
   const showMode = (currentMode: 'date' | 'time') => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: date,
-        onChange: handleDateChange,
-        mode: currentMode,
-        is24Hour: true
-      })
-    } else {
+    const handled = openDatePicker(date, handleDateChange, currentMode)
+    if (!handled) {
       setShowDatePicker(!showDatePicker)
     }
   }
