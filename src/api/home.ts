@@ -1,4 +1,3 @@
-import request from '@/utils/request'
 import { MOCK_POSTS } from '@/data/mock/homePosts'
 
 export interface CommunityPost {
@@ -22,46 +21,25 @@ export interface CommunityPost {
  * @param pageSize 每页数量
  */
 export const getHomePosts = async (page = 1, pageSize = 10) => {
-  try {
-    // 使用 request 实例发送请求
-    const response: any = await request.get('/api/community/list', {
-      params: { page, pageSize }
-    })
+  // 纯 Mock 模式：直接返回本地数据
+  const start = (page - 1) * pageSize
+  const end = start + pageSize
+  const list = MOCK_POSTS.slice(start, end)
 
-    // request.ts 的响应拦截器已经返回了 response.data
-    if (response && response.code === 200) {
-      return response
-    } else {
-      // 如果接口请求失败或没有数据，回退到本地 Mock 数据
-      // 模拟分页逻辑
-      const start = (page - 1) * pageSize
-      const end = start + pageSize
-      const list = MOCK_POSTS.slice(start, end)
-
-      return {
-        code: 200,
-        msg: 'success (fallback mock)',
-        data: {
-          list,
-          total: MOCK_POSTS.length,
-          page,
-          pageSize
-        }
-      }
-    }
-  } catch (error) {
-    console.error('getHomePosts error:', error)
-    // 网络错误时也回退到 Mock 数据
-    const list = MOCK_POSTS.slice(0, pageSize)
-    return {
-      code: 200,
-      msg: 'Network Error (fallback mock)',
-      data: {
-        list,
-        total: MOCK_POSTS.length,
-        page,
-        pageSize
-      }
+  return {
+    code: 200,
+    msg: 'success (local mock)',
+    data: {
+      list,
+      total: MOCK_POSTS.length,
+      page,
+      pageSize
     }
   }
+
+  /*
+  try {
+    // ... 原有的网络请求逻辑已注释 ...
+  } catch (error) { ... }
+  */
 }

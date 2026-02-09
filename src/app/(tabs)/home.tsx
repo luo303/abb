@@ -48,8 +48,11 @@ export default function Home() {
   const [serverPosts, setServerPosts] = useState<any[]>([])
   const [localPosts, setLocalPosts] = useState<any[]>([])
 
-  // 合并展示的数据
-  const posts = [...localPosts, ...serverPosts]
+  // 合并展示的数据，并去重（防止本地乐观更新和服务器数据重复）
+  const allPosts = [...localPosts, ...serverPosts]
+  const posts = allPosts.filter(
+    (post, index, self) => index === self.findIndex(p => p.id === post.id)
+  )
 
   // 徽章动画
   const badgeScale = useSharedValue(1)

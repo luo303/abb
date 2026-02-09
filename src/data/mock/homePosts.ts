@@ -81,7 +81,8 @@ export const MOCK_VACCINES: Vaccine[] = [
 ]
 
 // 模拟社区帖子数据
-export const MOCK_POSTS = [
+// 使用 let 允许在运行时添加新数据
+export let MOCK_POSTS = [
   {
     id: '1',
     avatar: require('../../assets/icon.png'),
@@ -138,6 +139,12 @@ export const MOCK_POSTS = [
     }
   }
 ]
+
+// 添加新帖子的辅助函数
+export const addMockPost = (newPost: any) => {
+  // 插入到头部
+  MOCK_POSTS = [newPost, ...MOCK_POSTS]
+}
 //帖子评论
 export const MOCK_COMMENTS: Comment[] = [
   {

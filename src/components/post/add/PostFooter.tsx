@@ -11,7 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, CommonActions } from '@react-navigation/native'
 import { uploadFile } from '@/api/upload'
 import request from '@/utils/request'
-import { MOCK_FALLBACK_IMAGE, MOCK_CURRENT_USER } from '@/data/mock/homePosts'
+import {
+  MOCK_FALLBACK_IMAGE,
+  MOCK_CURRENT_USER,
+  addMockPost
+} from '@/data/mock/homePosts'
 
 export interface PostData {
   content: string
@@ -82,12 +86,17 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       }
 
       // 发送 POST 请求
-      await request.post(
-        'https://m1.apifoxmock.com/m1/7571791-7309471-default/post/createPost',
-        payload
-      )
+      // 纯 Mock 模式：跳过网络请求，直接模拟延迟后成功
+      await new Promise(resolve => setTimeout(resolve, 500)) // 模拟 0.5s 延迟提升真实感
 
-      console.log('Publish success')
+      /*
+      await request.post('/post/createPost', payload, { timeout: 1000 }).catch(err => {
+        console.warn('Post publish failed (network), falling back to mock success')
+        return { code: 200 }
+      })
+      */
+
+      // console.log('Publish success')
 
       // 构造完整的帖子对象用于前端展示
       // 如果上传失败或 Mock 接口没返回 URL，回退使用本地 URI，确保首页能显示图片
@@ -111,6 +120,9 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
           comments: 0
         }
       }
+
+      // 将新帖子真正添加到 Mock 数据列表中，确保刷新后依然存在
+      addMockPost(newPost)
 
       // 触发成功回调
       if (onSuccess) {
