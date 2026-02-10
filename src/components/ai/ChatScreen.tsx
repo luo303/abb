@@ -97,7 +97,7 @@ export default function ChatScreen() {
           throw new Error('Invalid upload response')
         }
       } catch (error) {
-        console.error('Image upload failed:', error)
+        console.warn('Image upload failed:', error)
         setPendingImages(prev =>
           prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
         )

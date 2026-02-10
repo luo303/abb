@@ -13,7 +13,7 @@ import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
-import ImagePreviewModal from '../common/ImagePreviewModal'
+import ImageViewing from 'react-native-image-viewing'
 
 export interface ImageItem {
   uri: string
@@ -41,7 +41,8 @@ export default function ChatInput({
   onRemoveImage
 }: ChatInputProps) {
   const insets = useSafeAreaInsets()
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const pickImage = async () => {
     // 请求权限
@@ -90,7 +91,12 @@ export default function ChatInput({
           >
             {images.map((img, index) => (
               <View key={index} style={styles.imagePreview}>
-                <TouchableOpacity onPress={() => setPreviewImage(img.uri)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCurrentImageIndex(index)
+                    setIsPreviewVisible(true)
+                  }}
+                >
                   <Image
                     source={{ uri: img.uri }}
                     style={[
@@ -145,12 +151,18 @@ export default function ChatInput({
                 style={[
                   styles.sendButton,
                   (disabled ||
-                    images.some(img => img.status === 'uploading')) &&
+                    images.some(
+                      img =>
+                        img.status === 'uploading' || img.status === 'error'
+                    )) &&
                     styles.sendButtonDisabled
                 ]}
                 onPress={handleSend}
                 disabled={
-                  disabled || images.some(img => img.status === 'uploading')
+                  disabled ||
+                  images.some(
+                    img => img.status === 'uploading' || img.status === 'error'
+                  )
                 }
                 activeOpacity={0.8}
               >
@@ -158,7 +170,11 @@ export default function ChatInput({
                   name="arrow-up"
                   size={20}
                   color={
-                    disabled || images.some(img => img.status === 'uploading')
+                    disabled ||
+                    images.some(
+                      img =>
+                        img.status === 'uploading' || img.status === 'error'
+                    )
                       ? '#CFD8DC'
                       : '#fff'
                   }
@@ -169,10 +185,14 @@ export default function ChatInput({
         </View>
       </View>
 
-      <ImagePreviewModal
-        visible={!!previewImage}
-        imageUrl={previewImage}
-        onClose={() => setPreviewImage(null)}
+      <ImageViewing
+        images={images.map(img => ({ uri: img.uri }))}
+        imageIndex={currentImageIndex}
+        visible={isPreviewVisible}
+        onRequestClose={() => setIsPreviewVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+        keyExtractor={(_, index) => `chat-input-preview-${index}`}
       />
     </View>
   )
@@ -246,7 +266,8 @@ const styles = StyleSheet.create({
   },
   imageList: {
     marginBottom: 8,
-    maxHeight: 100
+    maxHeight: 110,
+    paddingTop: 8
   },
   imageListContent: {
     paddingHorizontal: 4

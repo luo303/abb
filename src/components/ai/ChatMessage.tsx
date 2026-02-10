@@ -13,7 +13,7 @@ import Markdown from 'react-native-markdown-display'
 
 import { useMessage } from '../Message'
 import { Message } from '../../types/AIchat'
-import ImagePreviewModal from '../common/ImagePreviewModal'
+import ImageViewing from 'react-native-image-viewing'
 
 interface ChatMessageProps {
   message: Message
@@ -29,7 +29,8 @@ export default function ChatMessage({
   isTyping = false
 }: ChatMessageProps) {
   const { showMessage } = useMessage()
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(message.content)
@@ -63,7 +64,10 @@ export default function ChatMessage({
             {message.images.map((img, index) => (
               <TouchableOpacity
                 key={index}
-                onPress={() => setPreviewImage(img)}
+                onPress={() => {
+                  setCurrentImageIndex(index)
+                  setIsPreviewVisible(true)
+                }}
                 activeOpacity={0.9}
                 style={styles.imageWrapper}
               >
@@ -128,10 +132,14 @@ export default function ChatMessage({
         )}
       </View>
 
-      <ImagePreviewModal
-        visible={!!previewImage}
-        imageUrl={previewImage}
-        onClose={() => setPreviewImage(null)}
+      <ImageViewing
+        images={message.images?.map(uri => ({ uri })) || []}
+        imageIndex={currentImageIndex}
+        visible={isPreviewVisible}
+        onRequestClose={() => setIsPreviewVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+        keyExtractor={(_, index) => `chat-message-preview-${index}`}
       />
     </View>
   )

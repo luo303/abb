@@ -75,7 +75,11 @@ export default function CommentItem({
         {comment.replies && comment.replies.length > 0 && (
           <View style={styles.repliesContainer}>
             {comment.replies.map(reply => (
-              <ReplyItem key={reply.id} comment={reply} onReply={onReply} />
+              <ReplyItem
+                key={`sub-reply-${reply.id}`}
+                comment={reply}
+                onReply={onReply}
+              />
             ))}
           </View>
         )}

@@ -74,7 +74,7 @@ const AnimatedHeart = ({
         }
       })
     )
-  })
+  }, []) // 仅在挂载时执行一次
 
   return (
     <Animated.View style={[animatedStyle, { pointerEvents: 'none' }]}>
@@ -91,6 +91,8 @@ export default function DoubleTapLike({
 }: DoubleTapLikeProps) {
   const [hearts, setHearts] = useState<Heart[]>([])
 
+  const counterRef = React.useRef(0)
+
   const removeHeart = useCallback((id: number) => {
     setHearts(prev => prev.filter(heart => heart.id !== id))
   }, [])
@@ -99,7 +101,9 @@ export default function DoubleTapLike({
     (event: TapGestureHandlerStateChangeEvent) => {
       if (event.nativeEvent.state === State.ACTIVE) {
         const { x, y } = event.nativeEvent
-        const id = Date.now()
+        counterRef.current += 1
+        // 使用更复杂的 ID 生成策略，避免快速点击或重置时重复
+        const id = counterRef.current + Math.random()
         // 生成 -15 到 15 度的随机旋转
         const angle = Math.random() * 30 - 15
 
@@ -117,7 +121,7 @@ export default function DoubleTapLike({
         numberOfTaps={2}
         maxDelayMs={300}
       >
-        <Animated.View>{children}</Animated.View>
+        <Animated.View style={{ width: '100%' }}>{children}</Animated.View>
       </TapGestureHandler>
 
       {/* 渲染爱心层 - 确保层级最高 */}

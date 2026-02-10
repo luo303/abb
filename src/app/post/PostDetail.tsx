@@ -281,7 +281,7 @@ export default function PostDetail() {
         <View style={styles.commentsList}>
           {comments.map(comment => (
             <CommentItem
-              key={comment.id}
+              key={`comment-${comment.id}`}
               comment={comment}
               onLike={handleLikeComment}
               onReply={handleReply}

@@ -54,9 +54,9 @@ export default function PostBody({
       {tags && tags.length > 0 && (
         <View style={styles.tagsContainer}>
           {tags.map((tag, index) => (
-            <Text key={index} style={styles.tag}>
-              #{tag}
-            </Text>
+            <View key={`tag-${index}`} style={styles.tagWrapper}>
+              <Text style={styles.tag}>#{tag}</Text>
+            </View>
           ))}
         </View>
       )}
@@ -65,7 +65,7 @@ export default function PostBody({
         <View style={styles.imageGrid}>
           {images.map((img, index) => (
             <TouchableOpacity
-              key={index}
+              key={`img-${index}`}
               activeOpacity={0.9}
               onPress={() => handleImagePress(index)}
             >
@@ -95,6 +95,7 @@ export default function PostBody({
         onRequestClose={() => setIsVisible(false)}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
+        keyExtractor={(_, index) => `preview-img-${index}`}
       />
 
       <View style={styles.metaInfo}>
@@ -126,8 +127,12 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12
+    marginBottom: 12,
+    width: '100%'
+  },
+  tagWrapper: {
+    marginRight: 8,
+    marginBottom: 8
   },
   tag: {
     fontSize: 14,
@@ -141,7 +146,8 @@ const styles = StyleSheet.create({
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12
+    marginBottom: 12,
+    width: '100%'
   },
   image: {
     borderRadius: 8,
