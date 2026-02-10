@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Image, Dimensions } from 'react-native'
 interface PostBodyProps {
   title?: string
   content: string
+  tags?: string[]
   images?: any[]
   publishTime?: string
   location?: string
@@ -18,6 +19,7 @@ const imageSize = (width - contentPadding * 2 - imageGap * 2) / 3
 export default function PostBody({
   title,
   content,
+  tags = [],
   images = [],
   publishTime,
   location
@@ -28,12 +30,22 @@ export default function PostBody({
 
       <Text style={styles.content}>{content}</Text>
 
+      {tags && tags.length > 0 && (
+        <View style={styles.tagsContainer}>
+          {tags.map((tag, index) => (
+            <Text key={index} style={styles.tag}>
+              #{tag}
+            </Text>
+          ))}
+        </View>
+      )}
+
       {images.length > 0 && (
         <View style={styles.imageGrid}>
           {images.map((img, index) => (
             <Image
               key={index}
-              source={img}
+              source={typeof img === 'string' ? { uri: img } : img}
               style={[
                 styles.image,
                 {
@@ -74,6 +86,21 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 24,
     marginBottom: 12
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12
+  },
+  tag: {
+    fontSize: 14,
+    color: '#f43f5e',
+    backgroundColor: '#fff1f2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    overflow: 'hidden'
   },
   imageGrid: {
     flexDirection: 'row',

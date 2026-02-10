@@ -145,6 +145,26 @@ export const addMockPost = (newPost: any) => {
   // 插入到头部
   MOCK_POSTS = [newPost, ...MOCK_POSTS]
 }
+
+// 更新帖子的辅助函数（用于点赞、收藏等同步）
+export const updateMockPost = (id: string, updates: any) => {
+  MOCK_POSTS = MOCK_POSTS.map(post => {
+    if (post.id === id) {
+      // 深度合并 stats
+      const newStats = updates.stats
+        ? { ...post.stats, ...updates.stats }
+        : post.stats
+
+      return { ...post, ...updates, stats: newStats }
+    }
+    return post
+  })
+}
+
+// 获取单个帖子详情（用于详情页加载）
+export const getMockPostById = (id: string) => {
+  return MOCK_POSTS.find(post => post.id === id)
+}
 //帖子评论
 export const MOCK_COMMENTS: Comment[] = [
   {

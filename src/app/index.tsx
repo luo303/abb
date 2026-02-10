@@ -44,9 +44,10 @@ export default function Layout() {
                   fontSize: 16,
                   fontWeight: '400',
                   color: '#2A2929'
-                },
-                statusBarAnimation: 'slide',
-                statusBarStyle: 'dark'
+                }
+                // Windows 开发环境下无法修改 iOS 原生配置，暂时注释掉以避免 Expo Go 红屏报错
+                // statusBarAnimation: 'slide',
+                // statusBarStyle: 'dark'
               }}
             >
               <Stack.Screen

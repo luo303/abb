@@ -48,11 +48,12 @@ export default function Home() {
   const [serverPosts, setServerPosts] = useState<any[]>([])
   const [localPosts, setLocalPosts] = useState<any[]>([])
 
-  // 合并展示的数据，并去重（防止本地乐观更新和服务器数据重复）
-  const allPosts = [...localPosts, ...serverPosts]
-  const posts = allPosts.filter(
-    (post, index, self) => index === self.findIndex(p => p.id === post.id)
-  )
+  // 合并展示的数据
+  // 逻辑优化：优先使用 serverPosts 的数据（因为它是经过详情页更新后的最新状态）
+  // 只有当 serverPosts 里没有时（还没同步），才使用 localPosts
+  const serverIds = new Set(serverPosts.map(p => p.id))
+  const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.id))
+  const posts = [...uniqueLocalPosts, ...serverPosts]
 
   // 徽章动画
   const badgeScale = useSharedValue(1)

@@ -1,13 +1,33 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
-import { MOCK_POSTS } from '@/data/mock/homePosts'
+import { Ionicons } from '@expo/vector-icons'
 
 interface PostFooterProps {
   onInputPress: () => void
+  stats: {
+    likes: number
+    dislikes: number
+    favorites: number
+    comments: number
+  }
+  isLiked?: boolean
+  isDisliked?: boolean
+  isFavorited?: boolean
+  onLike?: () => void
+  onDislike?: () => void
+  onFavorite?: () => void
 }
 
-export default function PostFooter({ onInputPress }: PostFooterProps) {
+export default function PostFooter({
+  onInputPress,
+  stats,
+  isLiked = false,
+  isDisliked = false,
+  isFavorited = false,
+  onLike,
+  onDislike,
+  onFavorite
+}: PostFooterProps) {
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -19,23 +39,44 @@ export default function PostFooter({ onInputPress }: PostFooterProps) {
       </TouchableOpacity>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn}>
-          <AntDesign name="heart" size={22} color="#333" />
-          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.likes}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <AntDesign name="star" size={22} color="#333" />
-          <Text style={styles.actionText}>收藏</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <MaterialCommunityIcons
-            name="comment-processing-outline"
-            size={22}
-            color="#333"
+        <TouchableOpacity style={styles.actionBtn} onPress={onLike}>
+          <Ionicons
+            name={isLiked ? 'heart' : 'heart-outline'}
+            size={24}
+            color={isLiked ? '#ff4d4f' : '#333'}
           />
-          <Text style={styles.actionText}>{MOCK_POSTS[0].stats.comments}</Text>
+          <Text style={[styles.actionText, isLiked && { color: '#ff4d4f' }]}>
+            {stats.likes}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={onDislike}>
+          <Ionicons
+            name={isDisliked ? 'heart-dislike' : 'heart-dislike-outline'}
+            size={24}
+            color={isDisliked ? '#666' : '#333'}
+          />
+          <Text style={[styles.actionText, isDisliked && { color: '#666' }]}>
+            {stats.dislikes || 0}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={onFavorite}>
+          <Ionicons
+            name={isFavorited ? 'star' : 'star-outline'}
+            size={24}
+            color={isFavorited ? '#ffba00' : '#333'}
+          />
+          <Text
+            style={[styles.actionText, isFavorited && { color: '#ffba00' }]}
+          >
+            {isFavorited ? '已收藏' : '收藏'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn}>
+          <Ionicons name="chatbubble-outline" size={24} color="#333" />
+          <Text style={styles.actionText}>{stats.comments}</Text>
         </TouchableOpacity>
       </View>
     </View>
