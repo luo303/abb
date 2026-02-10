@@ -1,5 +1,13 @@
-import React from 'react'
-import { View, Text, StyleSheet, Image, Dimensions } from 'react-native'
+import React, { useState } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Dimensions,
+  TouchableOpacity
+} from 'react-native'
+import ImageViewing from 'react-native-image-viewing'
 
 interface PostBodyProps {
   title?: string
@@ -24,6 +32,19 @@ export default function PostBody({
   publishTime,
   location
 }: PostBodyProps) {
+  const [visible, setIsVisible] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  // 格式化图片数据供 ImageViewing 使用
+  const formattedImages = images.map(img =>
+    typeof img === 'string' ? { uri: img } : img
+  )
+
+  const handleImagePress = (index: number) => {
+    setCurrentImageIndex(index)
+    setIsVisible(true)
+  }
+
   return (
     <View style={styles.container}>
       {title && <Text style={styles.title}>{title}</Text>}
@@ -43,23 +64,38 @@ export default function PostBody({
       {images.length > 0 && (
         <View style={styles.imageGrid}>
           {images.map((img, index) => (
-            <Image
+            <TouchableOpacity
               key={index}
-              source={typeof img === 'string' ? { uri: img } : img}
-              style={[
-                styles.image,
-                {
-                  width: imageSize,
-                  height: imageSize,
-                  marginBottom: imageGap,
-                  marginRight: (index + 1) % 3 === 0 ? 0 : imageGap
-                }
-              ]}
-              resizeMode="cover"
-            />
+              activeOpacity={0.9}
+              onPress={() => handleImagePress(index)}
+            >
+              <Image
+                source={typeof img === 'string' ? { uri: img } : img}
+                style={[
+                  styles.image,
+                  {
+                    width: imageSize,
+                    height: imageSize,
+                    marginBottom: imageGap,
+                    marginRight: (index + 1) % 3 === 0 ? 0 : imageGap
+                  }
+                ]}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           ))}
         </View>
       )}
+
+      {/* 图片预览组件 */}
+      <ImageViewing
+        images={formattedImages}
+        imageIndex={currentImageIndex}
+        visible={visible}
+        onRequestClose={() => setIsVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+      />
 
       <View style={styles.metaInfo}>
         <Text style={styles.metaText}>

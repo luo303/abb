@@ -68,7 +68,7 @@ const AnimatedHeart = ({
     // 2. 负责透明度（消失）- 独立执行，不等待 Spring 结束
     opacity.value = withDelay(
       150, // 弹起动作大概持续 100-150ms，我们在 150ms 后强制开始淡出
-      withTiming(0, { duration: 100 }, finished => {
+      withTiming(0, { duration: 1000 }, finished => {
         if (finished) {
           runOnJS(onFinish)()
         }
