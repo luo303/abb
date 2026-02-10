@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, StyleSheet, FlatList, StatusBar } from 'react-native'
+import { View, StyleSheet, FlatList } from 'react-native'
 import TabooSearchBar from '@/components/Taboo/TabooSearchBar'
 import FoodCard from '@/components/Taboo/FoodCard'
 import { MOCK_FOODS } from '@/data/mock/homePosts'
@@ -23,7 +23,6 @@ export default function TabooScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <TabooSearchBar
         value={searchText}
         onChangeText={handleSearch}

@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
 
@@ -24,117 +25,111 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
 
-const Stack = createStackNavigator()
+const Stack = createNativeStackNavigator()
 
 export default function Layout() {
   return (
-    <Provider store={store}>
-      <MessageProvider>
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName={store.getState().user.token ? 'Tabs' : 'Login'}
-            screenOptions={{
-              title: '', //默认标题为空
-              headerTitleAlign: 'center', //安卓系统标题居中
-              headerShadowVisible: false, //隐藏标题栏阴影
-              animation: 'slide_from_right',
-              headerTintColor: '#1f99b0',
-              headerTitleStyle: {
-                fontSize: 16,
-                fontWeight: '400',
-                color: '#2A2929'
-              },
-              headerBackButtonDisplayMode: 'minimal' //设置返回按钮只显示箭头，不显示文字
-            }}
-          >
-            <Stack.Screen
-              name="Login"
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Register"
-              component={RegisterScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Password"
-              component={PasswordScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Tabs"
-              component={TabsLayout}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="AIAssistant"
-              component={AIAssistant}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="PostDetail"
-              component={PostDetail}
-              options={{ title: '帖子详情' }}
-            />
-            <Stack.Screen
-              name="Taboo"
-              component={TabooScreen}
-              options={{ title: '查忌口' }}
-            />
-            <Stack.Screen
-              name="BabyStories"
-              component={BabyStoriesScreen}
-              options={{ title: '宝宝故事' }}
-            />
-            <Stack.Screen
-              name="DailyRecord"
-              component={DailyRecordScreen}
-              options={{ title: '日常记录' }}
-            />
-            <Stack.Screen
-              name="VaccineRecord"
-              component={VaccineRecordScreen}
-              options={{
-                title: '疫苗接种',
-                headerStyle: { backgroundColor: '#f8fafc' },
-                headerShadowVisible: false,
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <MessageProvider>
+          <NavigationContainer>
+            <Stack.Navigator
+              initialRouteName={store.getState().user.token ? 'Tabs' : 'Login'}
+              screenOptions={{
+                title: '', //默认标题为空
+                headerTitleAlign: 'center', //安卓系统标题居中
+                headerShadowVisible: false, //隐藏标题栏阴影
+                contentStyle: { backgroundColor: '#fff' }, // Native Stack 使用 contentStyle 设置背景
                 headerTitleStyle: {
-                  fontSize: 18,
-                  fontWeight: '600',
-                  color: '#1e293b'
+                  fontSize: 16,
+                  fontWeight: '400',
+                  color: '#2A2929'
                 },
-                headerTintColor: '#1e293b'
+                statusBarAnimation: 'slide',
+                statusBarStyle: 'dark'
               }}
-            />
-            <Stack.Screen
-              name="VaccineDetail"
-              component={VaccineDetailScreen}
-              options={{ title: '详情', headerShown: false }}
-            />
-            <Stack.Screen
-              name="Album"
-              component={AlbumScreen}
-              options={{ title: '宝宝相册' }}
-            />
-            <Stack.Screen
-              name="GrowthCurve"
-              component={GrowthCurveScreen}
-              options={{ title: '成长曲线' }}
-            />
-            <Stack.Screen
-              name="Diary"
-              component={DiaryScreen}
-              options={{ title: '宝宝日记' }}
-            />
-            <Stack.Screen
-              name="AddPost"
-              component={AddPostScreen}
-              options={{ headerShown: false, presentation: 'modal' }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </MessageProvider>
-    </Provider>
+            >
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Password"
+                component={PasswordScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Tabs"
+                component={TabsLayout}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="AIAssistant"
+                component={AIAssistant}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="PostDetail"
+                component={PostDetail}
+                options={{ title: '帖子详情' }}
+              />
+              <Stack.Screen
+                name="Taboo"
+                component={TabooScreen}
+                options={{ title: '查忌口' }}
+              />
+              <Stack.Screen
+                name="BabyStories"
+                component={BabyStoriesScreen}
+                options={{ title: '宝宝故事' }}
+              />
+              <Stack.Screen
+                name="DailyRecord"
+                component={DailyRecordScreen}
+                options={{ title: '日常记录' }}
+              />
+              <Stack.Screen
+                name="VaccineRecord"
+                component={VaccineRecordScreen}
+                options={{
+                  title: '疫苗接种'
+                }}
+              />
+              <Stack.Screen
+                name="VaccineDetail"
+                component={VaccineDetailScreen}
+                options={{ title: '详情', headerShown: false }}
+              />
+              <Stack.Screen
+                name="Album"
+                component={AlbumScreen}
+                options={{ title: '宝宝相册' }}
+              />
+              <Stack.Screen
+                name="GrowthCurve"
+                component={GrowthCurveScreen}
+                options={{ title: '成长曲线' }}
+              />
+              <Stack.Screen
+                name="Diary"
+                component={DiaryScreen}
+                options={{ title: '宝宝日记' }}
+              />
+              <Stack.Screen
+                name="AddPost"
+                component={AddPostScreen}
+                options={{ headerShown: false, presentation: 'modal' }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </MessageProvider>
+      </Provider>
+    </GestureHandlerRootView>
   )
 }

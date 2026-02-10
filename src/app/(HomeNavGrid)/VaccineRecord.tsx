@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  StatusBar,
   Platform
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -156,8 +155,6 @@ export default function VaccineRecordScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
-
       {/* 分类 Tab - 悬浮胶囊风格 */}
       <View style={styles.headerContainer}>
         <View style={styles.tabContainer}>
