@@ -10,18 +10,20 @@
     "scheme": "abb",
     "splash": {
       "image": "./src/assets/splash-icon.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "UIViewControllerBasedStatusBarAppearance": true
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "splash": {
+        "image": "./src/assets/splash-icon.png",
+        "resizeMode": "cover",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
