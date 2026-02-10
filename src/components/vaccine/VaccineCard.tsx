@@ -1,16 +1,18 @@
 import React from 'react'
-import { View, Text, StyleSheet, Switch } from 'react-native'
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Vaccine } from '@/types/vaccine'
 
 interface VaccineCardProps {
   data: Vaccine
   onToggleStatus?: (id: string, value: boolean) => void
+  onDatePress?: (id: string, date?: string) => void
 }
 
 export default function VaccineCard({
   data,
-  onToggleStatus
+  onToggleStatus,
+  onDatePress
 }: VaccineCardProps) {
   const isCompleted = data.status === 'completed'
 
@@ -46,12 +48,17 @@ export default function VaccineCard({
 
         <View style={styles.footerRow}>
           {isCompleted ? (
-            <View style={[styles.statusBadge, styles.completedBadge]}>
-              <Ionicons name="checkmark-circle" size={16} color="#15803d" />
-              <Text style={styles.completedText}>
-                接种时间: {data.vaccinationDate || '未知'}
-              </Text>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={() => onDatePress?.(data.id, data.vaccinationDate)}
+            >
+              <View style={[styles.statusBadge, styles.completedBadge]}>
+                <Ionicons name="checkmark-circle" size={16} color="#15803d" />
+                <Text style={styles.completedText}>
+                  接种时间: {data.vaccinationDate || '未知'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           ) : (
             <View style={[styles.statusBadge, styles.pendingBadge]}>
               <Ionicons name="calendar-outline" size={16} color="#1d4ed8" />

@@ -95,7 +95,17 @@ export default function Layout() {
             <Stack.Screen
               name="VaccineRecord"
               component={VaccineRecordScreen}
-              options={{ title: '疫苗记录' }}
+              options={{
+                title: '疫苗接种',
+                headerStyle: { backgroundColor: '#f8fafc' },
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontSize: 18,
+                  fontWeight: '600',
+                  color: '#1e293b'
+                },
+                headerTintColor: '#1e293b'
+              }}
             />
             <Stack.Screen
               name="VaccineDetail"

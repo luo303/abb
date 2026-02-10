@@ -8,7 +8,6 @@ import {
   StatusBar,
   Platform
 } from 'react-native'
-import { Stack, useRouter } from 'expo-router'
 import { useNavigation } from '@react-navigation/native'
 import VaccineCard from '@/components/vaccine/VaccineCard'
 import { Vaccine } from '@/types/vaccine'
@@ -21,7 +20,6 @@ import { openDatePicker } from '@/utils/datePicker'
 type FilterType = 'all' | 'completed' | 'pending'
 
 export default function VaccineRecordScreen() {
-  const router = useRouter()
   const navigation = useNavigation<any>()
   const [filter, setFilter] = useState<FilterType>('all')
   const [vaccines, setVaccines] = useState<Vaccine[]>(MOCK_VACCINES)
@@ -31,10 +29,27 @@ export default function VaccineRecordScreen() {
   const [showIOSPicker, setShowIOSPicker] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
 
-  const filteredData = vaccines.filter(item => {
-    if (filter === 'all') return true
-    return item.status === filter
-  })
+  const filteredData = vaccines
+    .filter(item => {
+      if (filter === 'all') return true
+      return item.status === filter
+    })
+    .sort((a, b) => {
+      // 获取排序用的日期
+      // 如果已接种，使用 vaccinationDate；如果未接种，使用 recommendedDate
+      const getDate = (item: Vaccine) => {
+        if (item.status === 'completed' && item.vaccinationDate) {
+          return item.vaccinationDate
+        }
+        return item.recommendedDate
+      }
+
+      const dateA = getDate(a)
+      const dateB = getDate(b)
+
+      // 按日期升序排序（早的时间在前）
+      return new Date(dateA).getTime() - new Date(dateB).getTime()
+    })
 
   // 格式化日期，避免时区问题
   const formatDateLocal = (date: Date) => {
@@ -105,6 +120,18 @@ export default function VaccineRecordScreen() {
     }
   }
 
+  const handleDateClick = (id: string, date?: string) => {
+    targetIdRef.current = id
+    // 如果已有日期，使用该日期初始化；否则使用当前日期
+    const initialDate = date ? new Date(date) : new Date()
+    setSelectedDate(initialDate)
+
+    const handled = openDatePicker(initialDate, handleDateChange)
+    if (!handled) {
+      setShowIOSPicker(true)
+    }
+  }
+
   const handleCardPress = (item: Vaccine) => {
     if (item.detail) {
       // 使用 navigation.navigate 进行跳转，兼容 React Navigation
@@ -129,19 +156,6 @@ export default function VaccineRecordScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: '疫苗记录',
-          headerStyle: { backgroundColor: '#f8fafc' },
-          headerShadowVisible: false,
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#1e293b'
-          },
-          headerTintColor: '#1e293b'
-        }}
-      />
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
       {/* 分类 Tab - 悬浮胶囊风格 */}
@@ -164,7 +178,11 @@ export default function VaccineRecordScreen() {
             activeOpacity={0.8}
             onPress={() => handleCardPress(item)}
           >
-            <VaccineCard data={item} onToggleStatus={handleToggleStatus} />
+            <VaccineCard
+              data={item}
+              onToggleStatus={handleToggleStatus}
+              onDatePress={handleDateClick}
+            />
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.listContent}
