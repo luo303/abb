@@ -74,7 +74,7 @@ const AnimatedHeart = ({
         }
       })
     )
-  }, []) // 仅在挂载时执行一次
+  }) // 仅在挂载时执行一次
 
   return (
     <Animated.View style={[animatedStyle, { pointerEvents: 'none' }]}>

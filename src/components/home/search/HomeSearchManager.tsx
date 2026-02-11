@@ -28,8 +28,10 @@ export default function HomeSearchManager({
     const searchContent = searchText.toLowerCase()
     return (
       post.content.toLowerCase().includes(searchContent) ||
-      post.nickname.toLowerCase().includes(searchContent) ||
-      post.location.toLowerCase().includes(searchContent)
+      (post.author_name &&
+        post.author_name.toLowerCase().includes(searchContent)) ||
+      (post.author_city &&
+        post.author_city.toLowerCase().includes(searchContent))
     )
   })
 
@@ -40,7 +42,7 @@ export default function HomeSearchManager({
       {isSearching && (
         <View style={{ marginTop: 15 }}>
           {filteredPosts.map((post, index) => (
-            <HomeCommunityCard key={post.id || index} data={post} />
+            <HomeCommunityCard key={post.post_id || index} data={post} />
           ))}
         </View>
       )}

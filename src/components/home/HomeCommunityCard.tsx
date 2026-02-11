@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import { LinearGradient } from 'expo-linear-gradient'
+import { PostItem } from '@/types/home'
 
 // 计算宽度，与 HomeNavGrid 和 HomeBanner 一致
 const { width } = Dimensions.get('window')
@@ -24,7 +25,7 @@ const ITEM_WIDTH = (CAROUSEL_WIDTH - GAP * 2) / 3 // 减去间距计算每个ite
 const ITEM_HEIGHT = ITEM_WIDTH
 
 interface HomeCommunityCardProps {
-  data: any
+  data: PostItem
 }
 
 export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
@@ -39,11 +40,49 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     </View>
   )
 
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    return `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+  }
+
+  const getImageSource = (img: string | any) => {
+    if (typeof img === 'string') {
+      return img ? { uri: img } : require('@/assets/testAvatar.png')
+    }
+    return img
+  }
+
+  const getPostImages = () => {
+    if (data.images && data.images.length > 0) {
+      return data.images
+    }
+    if (data.cover) {
+      return [data.cover]
+    }
+    return []
+  }
+
+  const displayImages = getPostImages()
+
+  const handlePress = () => {
+    // 优先使用 post_id，如果不存在则尝试使用 id
+    const postId = data.post_id || data.id
+    console.log('CommunityCard pressed, postId:', postId)
+    if (postId) {
+      navigation.navigate('PostDetail', { id: postId })
+    } else {
+      console.warn('Post ID is missing', data)
+    }
+  }
+
   return (
     <TouchableOpacity
       style={styles.communityContainer}
       activeOpacity={0.9}
-      onPress={() => navigation.navigate('PostDetail', { id: data.id })}
+      onPress={handlePress}
     >
       <LinearGradient
         colors={['#ffffff', '#fff1f2']}
@@ -54,21 +93,17 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         {/* 用户信息行 */}
         <View style={styles.userInfoRow}>
           <Image
-            source={
-              typeof data.avatar === 'string'
-                ? { uri: data.avatar }
-                : data.avatar
-            }
+            source={getImageSource(data.author_avatar)}
             style={styles.avatar}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{data.nickname}</Text>
+            <Text style={styles.userName}>{data.author_name}</Text>
             {/* 显示宝宝年龄描述，与详情页保持一致 */}
-            <Text style={styles.userDesc}>{data.description}</Text>
+            <Text style={styles.userDesc}>{data.baby_age_text}</Text>
           </View>
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>{data.publishTime}</Text>
-            <Text style={styles.timeText}>{data.location}</Text>
+            <Text style={styles.dateText}>{formatDate(data.ctime)}</Text>
+            <Text style={styles.timeText}>{data.author_city}</Text>
           </View>
         </View>
 
@@ -89,10 +124,10 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         )}
 
         {/* 图片展示 - 使用 FlatList 以实现完美的边界对齐效果 */}
-        {data.images && data.images.length > 0 && (
+        {displayImages.length > 0 && (
           <View style={styles.carouselContainer}>
             <FlatList
-              data={data.images}
+              data={displayImages}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, index) => index.toString()}
@@ -102,7 +137,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
               snapToInterval={ITEM_WIDTH + GAP}
               decelerationRate="fast"
               // 当图片少于3张时禁止滑动，避免松动感
-              scrollEnabled={data.images.length > 3}
+              scrollEnabled={displayImages.length > 3}
               // 优化性能
               getItemLayout={(_, index) => ({
                 length: ITEM_WIDTH + GAP,
@@ -117,19 +152,19 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
             <Ionicons name="heart-outline" size={20} color="#f43f5e" />
-            <Text style={styles.actionText}>{data.stats.likes}</Text>
+            <Text style={styles.actionText}>{data.like_count}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="heart-dislike-outline" size={20} color="#94a3b8" />
-            <Text style={styles.actionText}>{data.stats.dislikes}</Text>
+            <Text style={styles.actionText}>{data.dislike_count}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="star-outline" size={20} color="#f59e0b" />
-            <Text style={styles.actionText}>{data.stats.favorites}</Text>
+            <Text style={styles.actionText}>{data.collect_count}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="chatbubble-outline" size={20} color="#3b82f6" />
-            <Text style={styles.actionText}>{data.stats.comments}</Text>
+            <Text style={styles.actionText}>{data.comment_count}</Text>
           </View>
         </View>
       </LinearGradient>

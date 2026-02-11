@@ -2,15 +2,17 @@ import { TabooItem } from '@/types/taboo'
 import { Comment } from '../../types/post'
 import { HistoryItem } from '../../types/AIchat'
 import { Vaccine } from '@/types/vaccine'
+import { PostItem } from '@/types/home'
 
 // 默认回退图片
 export const MOCK_FALLBACK_IMAGE = 'https://loremflickr.com/320/320/baby'
 
 // 模拟当前登录用户（用于发帖回显）
 export const MOCK_CURRENT_USER = {
-  avatar: require('../../assets/testAvatar.png'),
-  nickname: 'user_123456',
-  description: '一名新手宝妈'
+  author_id: 'user_123456',
+  author_avatar: require('../../assets/testAvatar.png'),
+  author_name: 'user_123456',
+  baby_age_text: '一名新手宝妈'
 }
 
 // 模拟疫苗数据
@@ -82,61 +84,58 @@ export const MOCK_VACCINES: Vaccine[] = [
 
 // 模拟社区帖子数据
 // 使用 let 允许在运行时添加新数据
-export let MOCK_POSTS = [
+export let MOCK_POSTS: PostItem[] = [
   {
-    id: '1',
-    avatar: require('../../assets/icon.png'),
-    nickname: '有青春的猫咪脸JAP8',
-    description: '宝宝1岁8个月',
+    post_id: '1',
+    author_id: 'user_1',
+    author_avatar: require('../../assets/icon.png'),
+    author_name: '有青春的猫咪脸JAP8',
+    baby_age_text: '宝宝1岁8个月',
     content: '老婆辛苦了❤️\n母女平安，6斤5两\n浓眉大眼双眼皮，随我',
     images: [
       require('../../assets/icon.png'),
       require('../../assets/icon.png')
     ],
     tags: ['新生儿', '报喜'],
-    publishTime: '2024-05-17',
-    location: '周口',
-    stats: {
-      likes: 11,
-      dislikes: 1,
-      favorites: 6,
-      comments: 2
-    }
+    ctime: 1715904000000,
+    author_city: '周口',
+    like_count: 11,
+    dislike_count: 1,
+    collect_count: 6,
+    comment_count: 2
   },
   {
-    id: '2',
-    avatar: require('../../assets/icon.png'),
-    nickname: '快乐的宝妈',
-    description: '宝宝6个月',
+    post_id: '2',
+    author_id: 'user_2',
+    author_avatar: require('../../assets/icon.png'),
+    author_name: '快乐的宝妈',
+    baby_age_text: '宝宝6个月',
     content: '宝宝今天终于会翻身了！太激动了，记录一下这个里程碑时刻。',
     images: [require('../../assets/icon.png')],
     tags: ['大运动', '翻身'],
-    publishTime: '2024-05-18',
-    location: '北京',
-    stats: {
-      likes: 56,
-      dislikes: 0,
-      favorites: 12,
-      comments: 8
-    }
+    ctime: 1715990400000,
+    author_city: '北京',
+    like_count: 56,
+    dislike_count: 0,
+    collect_count: 12,
+    comment_count: 8
   },
   {
-    id: '3',
-    avatar: require('../../assets/icon.png'),
-    nickname: '育儿专家',
-    description: '专业育儿顾问',
+    post_id: '3',
+    author_id: 'user_3',
+    author_avatar: require('../../assets/icon.png'),
+    author_name: '育儿专家',
+    baby_age_text: '专业育儿顾问',
     content:
       '关于宝宝辅食添加的几个误区，新手爸妈一定要注意！\n1. 不要在奶瓶里加米粉\n2. 不要过早添加调味品',
     images: [],
     tags: ['辅食', '避坑指南'],
-    publishTime: '2024-05-19',
-    location: '上海',
-    stats: {
-      likes: 128,
-      dislikes: 2,
-      favorites: 89,
-      comments: 45
-    }
+    ctime: 1716076800000,
+    author_city: '上海',
+    like_count: 128,
+    dislike_count: 2,
+    collect_count: 89,
+    comment_count: 45
   }
 ]
 
@@ -241,21 +240,16 @@ export const MOCK_GROWTH_DATA = {
 }
 
 // 添加新帖子的辅助函数
-export const addMockPost = (newPost: any) => {
+export const addMockPost = (newPost: PostItem) => {
   // 插入到头部
   MOCK_POSTS = [newPost, ...MOCK_POSTS]
 }
 
 // 更新帖子的辅助函数（用于点赞、收藏等同步）
-export const updateMockPost = (id: string, updates: any) => {
+export const updateMockPost = (id: string, updates: Partial<PostItem>) => {
   MOCK_POSTS = MOCK_POSTS.map(post => {
-    if (post.id === id) {
-      // 深度合并 stats
-      const newStats = updates.stats
-        ? { ...post.stats, ...updates.stats }
-        : post.stats
-
-      return { ...post, ...updates, stats: newStats }
+    if (post.post_id === id) {
+      return { ...post, ...updates }
     }
     return post
   })
@@ -263,7 +257,7 @@ export const updateMockPost = (id: string, updates: any) => {
 
 // 获取单个帖子详情（用于详情页加载）
 export const getMockPostById = (id: string) => {
-  return MOCK_POSTS.find(post => post.id === id)
+  return MOCK_POSTS.find(post => post.post_id === id)
 }
 //帖子评论
 export const MOCK_COMMENTS: Comment[] = [

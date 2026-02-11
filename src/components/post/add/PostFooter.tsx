@@ -16,6 +16,7 @@ import {
   MOCK_CURRENT_USER,
   addMockPost
 } from '@/data/mock/homePosts'
+import { PostItem } from '@/types/home'
 
 export interface PostData {
   content: string
@@ -103,22 +104,21 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       const displayImages =
         validNetworkUrls.length > 0 ? validNetworkUrls : postData.images
 
-      const newPost = {
-        id: Date.now().toString(), // 临时 ID
-        avatar: MOCK_CURRENT_USER.avatar, // Mock 头像
-        nickname: MOCK_CURRENT_USER.nickname, // Mock 昵称
-        description: MOCK_CURRENT_USER.description,
-        publishTime: '刚刚',
-        location: '未知位置', // 如果有定位功能可填充
+      const newPost: PostItem = {
+        post_id: Date.now().toString(), // 临时 ID
+        author_id: MOCK_CURRENT_USER.author_id,
+        author_avatar: MOCK_CURRENT_USER.author_avatar, // Mock 头像
+        author_name: MOCK_CURRENT_USER.author_name, // Mock 昵称
+        baby_age_text: MOCK_CURRENT_USER.baby_age_text,
+        ctime: Date.now(),
+        author_city: '未知位置', // 如果有定位功能可填充
         content: payload.content,
         tags: payload.tags,
         images: displayImages, // 优先使用网络图，无则用本地图
-        stats: {
-          likes: 0,
-          dislikes: 0,
-          favorites: 0,
-          comments: 0
-        }
+        like_count: 0,
+        dislike_count: 0,
+        collect_count: 0,
+        comment_count: 0
       }
 
       // 将新帖子真正添加到 Mock 数据列表中，确保刷新后依然存在
