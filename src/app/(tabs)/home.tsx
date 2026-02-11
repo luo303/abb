@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   View,
   StyleSheet,
@@ -18,7 +18,8 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  Easing
+  Easing,
+  runOnJS
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
@@ -29,6 +30,7 @@ import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeSearchManager from '@/components/home/search/HomeSearchManager'
 import { getHomePosts } from '@/api/home'
+import { PostItem } from '@/types/home'
 
 /**
  * 首页组件
@@ -44,15 +46,19 @@ export default function Home() {
   const [communityY, setCommunityY] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(1)
+
   // 分离服务端数据和本地数据
-  const [serverPosts, setServerPosts] = useState<any[]>([])
-  const [localPosts, setLocalPosts] = useState<any[]>([])
+  const [serverPosts, setServerPosts] = useState<PostItem[]>([])
+  const [localPosts, setLocalPosts] = useState<PostItem[]>([])
 
   // 合并展示的数据
   // 逻辑优化：优先使用 serverPosts 的数据（因为它是经过详情页更新后的最新状态）
   // 只有当 serverPosts 里没有时（还没同步），才使用 localPosts
-  const serverIds = new Set(serverPosts.map(p => p.id))
-  const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.id))
+  const serverIds = new Set(serverPosts.map(p => p.post_id))
+  const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.post_id))
   const posts = [...uniqueLocalPosts, ...serverPosts]
 
   // 徽章动画
@@ -61,19 +67,33 @@ export default function Home() {
   // 社区模块闪烁动画
   const communityOpacity = useSharedValue(1)
 
-  // 获取帖子列表
+  // 获取帖子列表（刷新）
   const fetchPosts = async () => {
     setIsLoading(true)
+    setPage(1)
     try {
-      const response: any = await getHomePosts()
-      if (
-        response &&
-        response.code === 200 &&
-        response.data &&
-        Array.isArray(response.data.list)
-      ) {
-        setServerPosts(response.data.list)
+      const response = await getHomePosts(1)
+      console.log('Home fetchPosts response:', JSON.stringify(response))
+
+      // 兼容后端可能返回 code 0 的情况，或者 data.items 存在的情况（防止 code 乱码）
+      const isSuccess =
+        response && (response.code === 200 || response.code === 0)
+      const hasData = response?.data && Array.isArray(response.data.items)
+
+      if (isSuccess || hasData) {
+        if (hasData) {
+          console.log(
+            'Home fetchPosts items count:',
+            response.data.items.length
+          )
+          setServerPosts(response.data.items)
+          setHasMore(response.data.has_more)
+        } else {
+          console.warn('Response data.items is not an array:', response?.data)
+          setServerPosts([])
+        }
       } else {
+        console.warn('Fetch posts failed with code:', response?.code)
         setServerPosts([])
       }
     } catch (error) {
@@ -84,6 +104,39 @@ export default function Home() {
     }
   }
 
+  // 加载更多
+  const loadMorePosts = useCallback(async () => {
+    if (isLoadingMore || !hasMore || isLoading) return
+
+    setIsLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const response = await getHomePosts(nextPage)
+      const isSuccess =
+        response && (response.code === 200 || response.code === 0)
+      const hasData = response?.data && Array.isArray(response.data.items)
+
+      if (isSuccess || hasData) {
+        if (hasData) {
+          setServerPosts(prev => {
+            // 过滤重复数据，防止 key 重复报错
+            const existingIds = new Set(prev.map(p => p.post_id))
+            const newItems = response.data.items.filter(
+              p => !existingIds.has(p.post_id)
+            )
+            return [...prev, ...newItems]
+          })
+          setHasMore(response.data.has_more)
+          setPage(nextPage)
+        }
+      }
+    } catch (error) {
+      console.error('Load more posts failed:', error)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [isLoadingMore, hasMore, isLoading, page])
+
   // 监听路由参数，如果有新发布的帖子，添加到列表头部
   useEffect(() => {
     // 检查 route.params 是否存在，避免 undefined 错误
@@ -91,7 +144,9 @@ export default function Home() {
       // 更新本地帖子列表
       setLocalPosts(prev => {
         // 防止重复添加
-        const isDuplicate = prev.some(p => p.id === route.params.newPost.id)
+        const isDuplicate = prev.some(
+          p => p.post_id === route.params.newPost.post_id
+        )
         if (isDuplicate) return prev
         return [route.params.newPost, ...prev]
       })
@@ -155,9 +210,22 @@ export default function Home() {
     )
   }
 
-  const scrollHandler = useAnimatedScrollHandler(event => {
-    scrollY.value = event.contentOffset.y
-  })
+  const scrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: event => {
+        scrollY.value = event.contentOffset.y
+        const paddingToBottom = 100
+        const isClose =
+          event.layoutMeasurement.height + event.contentOffset.y >=
+          event.contentSize.height - paddingToBottom
+
+        if (isClose) {
+          runOnJS(loadMorePosts)()
+        }
+      }
+    },
+    [loadMorePosts]
+  )
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {
@@ -244,17 +312,36 @@ export default function Home() {
                     </TouchableOpacity>
                   </Animated.View>
 
-                  {isLoading ? (
+                  {isLoading && page === 1 ? (
                     <View style={{ padding: 20 }}>
                       <ActivityIndicator size="small" color="#f43f5e" />
                     </View>
                   ) : null}
 
-                  {posts.map((post: any, index: number) => (
-                    <View key={post.id || index} style={{ marginBottom: 12 }}>
+                  {posts.map((post: PostItem, index: number) => (
+                    <View
+                      key={`${post.post_id || 'unknown'}-${index}`}
+                      style={{ marginBottom: 12 }}
+                    >
                       <HomeCommunityCard data={post} />
                     </View>
                   ))}
+
+                  {isLoadingMore && (
+                    <View style={{ padding: 10, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color="#f43f5e" />
+                      <Text style={{ color: '#999', fontSize: 12 }}>
+                        加载更多...
+                      </Text>
+                    </View>
+                  )}
+                  {!hasMore && posts.length > 0 && (
+                    <View style={{ padding: 10, alignItems: 'center' }}>
+                      <Text style={{ color: '#ccc', fontSize: 12 }}>
+                        - 没有更多内容了 -
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </>
             )}

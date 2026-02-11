@@ -4,12 +4,10 @@ import { Ionicons } from '@expo/vector-icons'
 
 interface PostFooterProps {
   onInputPress: () => void
-  stats: {
-    likes: number
-    dislikes: number
-    favorites: number
-    comments: number
-  }
+  likeCount: number
+  dislikeCount: number
+  collectCount: number
+  commentCount: number
   isLiked?: boolean
   isDisliked?: boolean
   isFavorited?: boolean
@@ -20,7 +18,10 @@ interface PostFooterProps {
 
 export default function PostFooter({
   onInputPress,
-  stats,
+  likeCount,
+  dislikeCount,
+  collectCount,
+  commentCount,
   isLiked = false,
   isDisliked = false,
   isFavorited = false,
@@ -46,7 +47,7 @@ export default function PostFooter({
             color={isLiked ? '#ff4d4f' : '#333'}
           />
           <Text style={[styles.actionText, isLiked && { color: '#ff4d4f' }]}>
-            {stats.likes}
+            {likeCount}
           </Text>
         </TouchableOpacity>
 
@@ -57,7 +58,7 @@ export default function PostFooter({
             color={isDisliked ? '#666' : '#333'}
           />
           <Text style={[styles.actionText, isDisliked && { color: '#666' }]}>
-            {stats.dislikes || 0}
+            {dislikeCount || 0}
           </Text>
         </TouchableOpacity>
 
@@ -76,7 +77,7 @@ export default function PostFooter({
 
         <TouchableOpacity style={styles.actionBtn}>
           <Ionicons name="chatbubble-outline" size={24} color="#333" />
-          <Text style={styles.actionText}>{stats.comments}</Text>
+          <Text style={styles.actionText}>{commentCount}</Text>
         </TouchableOpacity>
       </View>
     </View>

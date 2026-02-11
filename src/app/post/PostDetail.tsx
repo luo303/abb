@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   StyleSheet,
@@ -16,21 +16,20 @@ import CommentItem from '../../components/post/CommentItem'
 import PostFooter from '../../components/post/PostFooter'
 import ReplyInput from '../../components/post/ReplyInput'
 import DoubleTapLike from '../../components/post/DoubleTapLike'
-import {
-  MOCK_COMMENTS,
-  getMockPostById,
-  updateMockPost
-} from '@/data/mock/homePosts'
+import { MOCK_COMMENTS, updateMockPost } from '@/data/mock/homePosts'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
+import { usePostDetail } from '@/hooks/usePostDetail'
 
 type PostDetailRouteProp = RouteProp<{ params: { id: string } }, 'params'>
 
 export default function PostDetail() {
   const route = useRoute<PostDetailRouteProp>()
-  const { id } = route.params || {} // 获取路由参数中的 ID
+  const { id } = route.params || {}
 
-  const [post, setPost] = useState<any>(null)
+  // 使用自定义 Hook 获取帖子详情
+  const { post, isLoading, updateLocalPost } = usePostDetail(id)
+
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
@@ -44,81 +43,96 @@ export default function PostDetail() {
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
 
-  // 初始化加载数据
+  // 初始化交互状态（仅在 post 加载完成后执行一次）
   useEffect(() => {
-    if (id) {
-      const data = getMockPostById(id)
-      if (data) {
-        setPost(data)
-        // 模拟：随机生成初始点赞状态，或者从数据中获取（如果数据支持）
-        // 这里简单处理：默认未点赞
-        setIsLiked(false)
-        setIsDisliked(false)
-        setIsFavorited(false)
-      }
+    if (post) {
+      setIsLiked(post.like_count > 0 && Math.random() > 0.5) // 模拟：随机初始状态
+      setIsDisliked(false)
+      setIsFavorited(false)
     }
-  }, [id])
+  }, [post?.post_id])
+
+  // 处理显示数据：头像和图片
+  const displayAvatar = useMemo(() => {
+    if (!post?.author_avatar) {
+      return require('@/assets/testAvatar.png')
+    }
+    return typeof post.author_avatar === 'string'
+      ? { uri: post.author_avatar }
+      : post.author_avatar
+  }, [post?.author_avatar])
+
+  const displayImages = useMemo(() => {
+    if (!post) return []
+    if (post.images && post.images.length > 0) {
+      return post.images
+    }
+    if (post.cover) {
+      return [post.cover]
+    }
+    return []
+  }, [post])
+
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    return `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+  }
 
   // 处理帖子点赞
   const handleLikePost = () => {
     if (!post) return
 
-    // 如果当前是 Dislike 状态，先取消 Dislike
-    const newIsDisliked = false
-    const newDislikes = isDisliked
-      ? post.stats.dislikes - 1
-      : post.stats.dislikes
-
     const newIsLiked = !isLiked
-    const newLikes = newIsLiked ? post.stats.likes + 1 : post.stats.likes - 1
+    // 简单的计数逻辑，实际应由后端返回
+    const newLikes = newIsLiked
+      ? post.like_count + 1
+      : Math.max(0, post.like_count - 1)
 
-    // 更新本地 UI 状态
     setIsLiked(newIsLiked)
-    setIsDisliked(newIsDisliked)
+    if (newIsLiked && isDisliked) {
+      setIsDisliked(false)
+      updateLocalPost({
+        like_count: newLikes,
+        dislike_count: Math.max(0, post.dislike_count - 1)
+      })
+    } else {
+      updateLocalPost({ like_count: newLikes })
+    }
 
-    setPost((prev: any) => ({
-      ...prev,
-      stats: { ...prev.stats, likes: newLikes, dislikes: newDislikes }
-    }))
-
-    // 同步更新到 Mock 数据源
-    updateMockPost(post.id, {
-      stats: { likes: newLikes, dislikes: newDislikes }
-    })
+    // 更新 Mock 数据（如果需要保持兼容）
+    updateMockPost(post.post_id, { like_count: newLikes })
   }
 
-  // 处理双击点赞（只点赞，不取消）
+  // 处理双击点赞
   const handleDoubleTapLike = () => {
-    if (isLiked) return // 已经点赞了就不重复处理（组件内部会有爱心动画）
+    if (isLiked) return
     handleLikePost()
   }
 
-  // 处理帖子踩/不喜欢
+  // 处理帖子踩
   const handleDislikePost = () => {
     if (!post) return
 
-    // 如果当前是 Like 状态，先取消 Like
-    const newIsLiked = false
-    const newLikes = isLiked ? post.stats.likes - 1 : post.stats.likes
-
     const newIsDisliked = !isDisliked
     const newDislikes = newIsDisliked
-      ? (post.stats.dislikes || 0) + 1
-      : (post.stats.dislikes || 0) - 1
+      ? post.dislike_count + 1
+      : Math.max(0, post.dislike_count - 1)
 
-    // 更新本地 UI 状态
-    setIsLiked(newIsLiked)
     setIsDisliked(newIsDisliked)
+    if (newIsDisliked && isLiked) {
+      setIsLiked(false)
+      updateLocalPost({
+        dislike_count: newDislikes,
+        like_count: Math.max(0, post.like_count - 1)
+      })
+    } else {
+      updateLocalPost({ dislike_count: newDislikes })
+    }
 
-    setPost((prev: any) => ({
-      ...prev,
-      stats: { ...prev.stats, likes: newLikes, dislikes: newDislikes }
-    }))
-
-    // 同步更新到 Mock 数据源
-    updateMockPost(post.id, {
-      stats: { likes: newLikes, dislikes: newDislikes }
-    })
+    updateMockPost(post.post_id, { dislike_count: newDislikes })
   }
 
   // 处理帖子收藏
@@ -126,22 +140,17 @@ export default function PostDetail() {
     if (!post) return
     const newIsFavorited = !isFavorited
     const newFavorites = newIsFavorited
-      ? post.stats.favorites + 1
-      : post.stats.favorites - 1
+      ? post.collect_count + 1
+      : Math.max(0, post.collect_count - 1)
 
     setIsFavorited(newIsFavorited)
-    setPost((prev: any) => ({
-      ...prev,
-      stats: { ...prev.stats, favorites: newFavorites }
-    }))
-
-    updateMockPost(post.id, {
-      stats: { favorites: newFavorites }
-    })
+    updateLocalPost({ collect_count: newFavorites })
+    updateMockPost(post.post_id, { collect_count: newFavorites })
 
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
   }
 
+  // ... 评论相关逻辑保持不变 ...
   const handleLikeComment = (id: string) => {
     setComments(prev =>
       prev.map(item =>
@@ -173,8 +182,8 @@ export default function PostDetail() {
 
     const newComment: Comment = {
       id: Date.now().toString(),
-      avatar: require('../../assets/icon.png'), // 默认头像
-      nickname: '我', // 模拟当前用户
+      avatar: require('../../assets/icon.png'),
+      nickname: '我',
       content: text,
       time: '刚刚',
       location: '北京',
@@ -184,7 +193,6 @@ export default function PostDetail() {
     }
 
     if (replyTarget) {
-      // 如果是回复某个评论，则添加到该评论的 replies 中
       const addReply = (items: Comment[]): Comment[] => {
         return items.map(item => {
           if (item.id === replyTarget.id) {
@@ -203,34 +211,30 @@ export default function PostDetail() {
       }
       setComments(prev => addReply(prev))
     } else {
-      // 如果是发表新评论，则添加到根列表中
       setComments(prev => [newComment, ...prev])
-      // 同步更新帖子评论数
       if (post) {
-        const newCommentsCount = post.stats.comments + 1
-        setPost((prev: any) => ({
-          ...prev,
-          stats: { ...prev.stats, comments: newCommentsCount }
-        }))
-        updateMockPost(post.id, {
-          stats: { comments: newCommentsCount }
-        })
+        const newCommentsCount = post.comment_count + 1
+        updateLocalPost({ comment_count: newCommentsCount })
+        updateMockPost(post.post_id, { comment_count: newCommentsCount })
       }
     }
     showMessage('评论成功')
     setInputVisible(false)
   }
 
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f43f5e" />
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    )
+  }
+
   if (!post) {
     return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: 'center', alignItems: 'center' }
-        ]}
-      >
-        <ActivityIndicator size="large" color="#f43f5e" />
-        <Text style={{ marginTop: 10, color: '#999' }}>加载中...</Text>
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>未找到帖子内容</Text>
       </View>
     )
   }
@@ -243,9 +247,9 @@ export default function PostDetail() {
         contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}
       >
         <PostHeader
-          avatar={post.avatar}
-          nickname={post.nickname}
-          description={post.description}
+          avatar={displayAvatar}
+          nickname={post.author_name}
+          description={post.baby_age_text}
           isFollowing={isFollowing}
           onFollow={() => setIsFollowing(!isFollowing)}
         />
@@ -253,12 +257,15 @@ export default function PostDetail() {
           <PostBody
             content={post.content}
             tags={post.tags}
-            images={post.images}
-            publishTime={post.publishTime}
-            location={post.location}
+            images={displayImages}
+            publishTime={formatDate(post.ctime)}
+            location={post.author_city}
           />
         </DoubleTapLike>
+
         <View style={styles.divider} />
+
+        {/* 评论区头部 */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>回帖 {comments.length}</Text>
           <View style={styles.filterContainer}>
@@ -271,6 +278,7 @@ export default function PostDetail() {
             />
           </View>
         </View>
+
         <View style={styles.tipContainer}>
           <View style={styles.tipIcon} />
           <Text style={styles.tipText}>优秀回帖将会被优先展示</Text>
@@ -278,6 +286,7 @@ export default function PostDetail() {
             <Text style={styles.uText}>U</Text>
           </View>
         </View>
+
         <View style={styles.commentsList}>
           {comments.map(comment => (
             <CommentItem
@@ -294,7 +303,10 @@ export default function PostDetail() {
       <View style={[styles.footerWrapper, { paddingBottom: insets.bottom }]}>
         <PostFooter
           onInputPress={handleStartInput}
-          stats={post.stats}
+          likeCount={post.like_count}
+          dislikeCount={post.dislike_count}
+          collectCount={post.collect_count}
+          commentCount={post.comment_count}
           isLiked={isLiked}
           isDisliked={isDisliked}
           isFavorited={isFavorited}
@@ -304,7 +316,6 @@ export default function PostDetail() {
         />
       </View>
 
-      {/* 真正的输入框 Modal */}
       <ReplyInput
         visible={isInputVisible}
         placeholder={replyPlaceholder}
@@ -319,6 +330,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff'
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#999'
   },
   scrollView: {
     flex: 1
