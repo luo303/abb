@@ -11,8 +11,7 @@ export default function CurveHeadChart() {
       babyData={MOCK_GROWTH_DATA.head.baby}
       yMin={30}
       yMax={50}
-      standardColor="#E9D8FF"
-      babyColor="#9F7AEA"
+      // 使用默认颜色：标准数据蓝线，宝宝数据红线
     />
   )
 }

@@ -25,8 +25,8 @@ export default function BaseGrowthChart({
   babyData = [],
   yMin,
   yMax,
-  standardColor = '#FFB8B8',
-  babyColor = '#FF9F43'
+  standardColor = '#5470C6', // 默认蓝色
+  babyColor = '#EE6666' // 默认红色
 }: BaseGrowthChartProps) {
   // 确保数据存在
   const safeStandardData = standardData || []
@@ -80,8 +80,8 @@ export default function BaseGrowthChart({
             var myChart = echarts.init(document.getElementById('main'), null, { renderer: 'svg' });
             
             var option = {
-              animation: false,
-              backgroundColor: '#ffffff',
+              animation: true,
+              backgroundColor: '#fae7ebff',
               grid: {
                 top: '25%',
                 left: '3%',
@@ -124,7 +124,9 @@ export default function BaseGrowthChart({
                   end: ${endZoom},
                   height: 24,
                   bottom: 5,
-                  handleSize: '120%',
+                  handleSize: '100%',
+                  moveHandleSize : '0',
+                  brushSelect: false,
                   borderColor: 'transparent',
                   backgroundColor: '#f5f5f5',
                   fillerColor: '${babyColor}33',
@@ -190,10 +192,10 @@ export default function BaseGrowthChart({
                   smooth: false,
                   showSymbol: false,
                   lineStyle: { 
-                    color: '#999', 
+                    color: '${standardColor}', 
                     width: 2,
                     type: 'dashed',
-                    opacity: 0.6
+                    opacity: 0.8
                   },
                   emphasis: { disabled: true }
                 },
@@ -205,20 +207,25 @@ export default function BaseGrowthChart({
                   connectNulls: true,
                   showSymbol: true,
                   symbol: 'circle',
-                  symbolSize: 8,
+                  symbolSize: 10,
                   itemStyle: { 
-                    color: '${babyColor}',
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    color: '#fff',
+                    borderWidth: 3,
+                    borderColor: '${babyColor}',
+                    shadowColor: 'rgba(0,0,0,0.2)',
+                    shadowBlur: 5
                   },
                   lineStyle: { 
                     color: '${babyColor}', 
-                    width: 3
+                    width: 3,
+                    shadowColor: '${babyColor}4d',
+                    shadowBlur: 10,
+                    shadowOffsetY: 4
                   },
                   areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                      { offset: 0, color: '${babyColor}33' },
-                      { offset: 1, color: '${babyColor}05' }
+                      { offset: 0, color: '${babyColor}4d' },
+                      { offset: 1, color: '${babyColor}00' }
                     ])
                   }
                 }
@@ -254,25 +261,19 @@ export default function BaseGrowthChart({
 
 const styles = StyleSheet.create({
   outerContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10
+    paddingHorizontal: 6,
+    paddingVertical: 3
   },
   container: {
     height: 380,
     backgroundColor: '#fff',
-    borderRadius: 24,
+    borderRadius: 10,
     overflow: 'hidden',
-    // 阴影设计：更柔和的多层阴影
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
     borderWidth: 1,
     borderColor: '#f0f0f0'
   },
   webview: {
     flex: 1,
-    backgroundColor: 'transparent'
+    backgroundColor: '#f6f7fb'
   }
 })

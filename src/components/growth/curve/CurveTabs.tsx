@@ -46,12 +46,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    shadowColor: '#FF9F43',
+    shadowColor: '#EE6666',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20
+    elevation: 2
   },
   tabItem: {
     paddingVertical: 6,
@@ -59,11 +58,11 @@ const styles = StyleSheet.create({
     borderRadius: 16
   },
   activeTabItem: {
-    backgroundColor: '#FF9F43'
+    backgroundColor: '#EE6666'
   },
   tabText: {
     fontSize: 14,
-    color: '#FFB74D',
+    color: '#666',
     fontWeight: '500'
   },
   activeTabText: {

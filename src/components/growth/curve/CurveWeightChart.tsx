@@ -11,8 +11,7 @@ export default function CurveWeightChart() {
       babyData={MOCK_GROWTH_DATA.weight.baby}
       yMin={2}
       yMax={12}
-      standardColor="#B8D8FF"
-      babyColor="#4399FF"
+      // 使用默认颜色：标准数据蓝线，宝宝数据红线
     />
   )
 }

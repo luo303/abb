@@ -64,28 +64,18 @@ export default function CurveRecordForm({
 
   return (
     <View style={styles.formContainer}>
-      <Text style={styles.dateHint}>今天是 {formattedDate}</Text>
-
-      <View style={styles.titleRow}>
-        <Text style={styles.pageTitle}>记录宝宝的成长</Text>
-        <View style={styles.babyIconWrapper}>
-          <MaterialCommunityIcons
-            name="baby-face-outline"
-            size={24}
-            color="#FF9F43"
-          />
-        </View>
-      </View>
-
       {/* 测量日期 */}
-      <View style={styles.inputRow}>
+      <View style={styles.sectionContainer}>
         <Text style={styles.label}>测量日期</Text>
         <TouchableOpacity
           style={styles.dateInputContainer}
           onPress={() => showMode('date')}
         >
-          <Text style={styles.dateValue}>{formattedDate}</Text>
-          <Ionicons name="calendar-outline" size={20} color="#FF9F43" />
+          <View style={styles.dateContentLeft}>
+            <Ionicons name="calendar-outline" size={22} color="#5470C6" />
+            <Text style={styles.dateValue}>{formattedDate}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#CCC" />
         </TouchableOpacity>
       </View>
 
@@ -105,9 +95,16 @@ export default function CurveRecordForm({
       )}
 
       {/* 身高 */}
-      <View style={styles.inputRow}>
-        <Text style={styles.label}>身高 (cm)</Text>
+      <View style={styles.sectionContainer}>
+        <Text style={styles.label}>身高</Text>
         <View style={styles.inputWrapper}>
+          <View style={styles.iconBox}>
+            <MaterialCommunityIcons
+              name="sprout-outline"
+              size={24}
+              color="#EE6666"
+            />
+          </View>
           <TextInput
             style={styles.input}
             placeholder="0.0"
@@ -116,20 +113,21 @@ export default function CurveRecordForm({
             value={height}
             onChangeText={setHeight}
           />
-          <View style={styles.inputDecoration}>
-            <MaterialCommunityIcons
-              name="sprout-outline"
-              size={20}
-              color="#AED581"
-            />
-          </View>
+          <Text style={styles.unitText}>cm</Text>
         </View>
       </View>
 
       {/* 体重 */}
-      <View style={styles.inputRow}>
-        <Text style={styles.label}>体重 (kg)</Text>
+      <View style={styles.sectionContainer}>
+        <Text style={styles.label}>体重</Text>
         <View style={styles.inputWrapper}>
+          <View style={styles.iconBox}>
+            <MaterialCommunityIcons
+              name="shoe-print"
+              size={24}
+              color="#EE6666"
+            />
+          </View>
           <TextInput
             style={styles.input}
             placeholder="0.0"
@@ -138,20 +136,17 @@ export default function CurveRecordForm({
             value={weight}
             onChangeText={setWeight}
           />
-          <View style={styles.inputDecoration}>
-            <MaterialCommunityIcons
-              name="shoe-print"
-              size={20}
-              color="#FFCC80"
-            />
-          </View>
+          <Text style={styles.unitText}>kg</Text>
         </View>
       </View>
 
       {/* 头围 */}
-      <View style={styles.inputRow}>
-        <Text style={styles.label}>头围 (cm)</Text>
+      <View style={styles.sectionContainer}>
+        <Text style={styles.label}>头围</Text>
         <View style={styles.inputWrapper}>
+          <View style={styles.iconBox}>
+            <Ionicons name="heart-outline" size={24} color="#EE6666" />
+          </View>
           <TextInput
             style={styles.input}
             placeholder="0.0"
@@ -160,23 +155,8 @@ export default function CurveRecordForm({
             value={headCircumference}
             onChangeText={setHeadCircumference}
           />
-          <View style={styles.inputDecoration}>
-            <Ionicons name="heart-outline" size={20} color="#F48FB1" />
-          </View>
+          <Text style={styles.unitText}>cm</Text>
         </View>
-      </View>
-
-      {/* 提示信息 */}
-      <View style={styles.tipContainer}>
-        <Ionicons
-          name="bulb"
-          size={18}
-          color="#FFD54F"
-          style={styles.tipIcon}
-        />
-        <Text style={styles.tipText}>
-          定期记录宝宝的生长数据可以帮助医疗专家更好地评估宝宝的健康发育状态情况哦。
-        </Text>
       </View>
     </View>
   )
@@ -184,60 +164,36 @@ export default function CurveRecordForm({
 
 const styles = StyleSheet.create({
   formContainer: {
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
+    paddingTop: 30
   },
-  dateHint: {
-    fontSize: 14,
-    color: '#FFB74D',
-    marginBottom: 8
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  sectionContainer: {
     marginBottom: 24
   },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  babyIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF3E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FFE0B2'
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20
-  },
   label: {
-    width: 90,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#555'
+    color: '#333',
+    marginBottom: 12
   },
   dateInputContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#FFF3E0'
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    height: 64
+  },
+  dateContentLeft: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   dateValue: {
-    fontSize: 16,
-    color: '#333'
+    fontSize: 18,
+    color: '#333',
+    marginLeft: 12,
+    fontWeight: '500'
   },
   datePickerContainer: {
     backgroundColor: '#fff',
@@ -252,46 +208,33 @@ const styles = StyleSheet.create({
     height: 150
   },
   inputWrapper: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     paddingHorizontal: 16,
-    height: 54,
-    shadowColor: '#FF9F43',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1
+    height: 72 // 加高输入框
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFF0F0', // 浅红背景
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 20, // 大字体
+    fontWeight: 'bold',
     color: '#333',
     height: '100%'
   },
-  inputDecoration: {
+  unitText: {
+    fontSize: 16,
+    color: '#999',
     marginLeft: 8,
-    opacity: 0.8
-  },
-  tipContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFDE7', // 极淡的黄色
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#FFF9C4'
-  },
-  tipIcon: {
-    marginTop: 2,
-    marginRight: 10
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#757575',
-    lineHeight: 20
+    fontWeight: '500'
   }
 })

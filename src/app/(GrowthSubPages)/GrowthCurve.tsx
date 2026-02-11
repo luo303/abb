@@ -28,6 +28,9 @@ export default function GrowthCurveScreen() {
   const [headCircumference, setHeadCircumference] = useState('')
   const [date, setDate] = useState(new Date())
 
+  // 检查表单是否已填写（所有项都必须填写）
+  const isFormValid = height && weight && headCircumference
+
   const tabs = [
     { key: 'record', label: '记录' },
     { key: 'height', label: '身高曲线' },
@@ -74,14 +77,29 @@ export default function GrowthCurveScreen() {
       {/* 底部按钮 */}
       {activeTab === 'record' && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-          <TouchableOpacity style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>保存记录</Text>
-            <Ionicons
-              name="checkmark-circle"
-              size={20}
-              color="#fff"
-              style={{ marginLeft: 8 }}
-            />
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              !isFormValid && styles.saveButtonDisabled
+            ]}
+            disabled={!isFormValid}
+          >
+            <Text
+              style={[
+                styles.saveButtonText,
+                !isFormValid && styles.saveButtonTextDisabled
+              ]}
+            >
+              {isFormValid ? '保存记录' : '请填写数据'}
+            </Text>
+            {isFormValid && (
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#fff"
+                style={{ marginLeft: 8 }}
+              />
+            )}
           </TouchableOpacity>
         </View>
       )}
@@ -92,7 +110,7 @@ export default function GrowthCurveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFDF5' // 米黄色背景
+    backgroundColor: '#F5F7FA' // 浅灰蓝背景
   },
   scrollView: {
     flex: 1
@@ -105,27 +123,35 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFDF5', // 与背景同色
+    backgroundColor: '#F5F7FA', // 与背景同色
     paddingHorizontal: 20,
     paddingTop: 10
   },
   saveButton: {
     flexDirection: 'row',
-    backgroundColor: '#FF9F43',
+    backgroundColor: '#EE6666',
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF9F43',
+    shadowColor: '#EE6666',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2, // 降低阴影不透明度
     shadowRadius: 8,
     elevation: 4
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#F0F0F0',
+    shadowOpacity: 0,
+    elevation: 0
   },
   saveButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff'
+  },
+  saveButtonTextDisabled: {
+    color: '#CCC'
   },
   emptyState: {
     padding: 40,

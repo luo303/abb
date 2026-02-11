@@ -98,7 +98,7 @@ export default function ChatInput({
                   }}
                 >
                   <Image
-                    source={{ uri: img.uri }}
+                    source={{ uri: img.url }}
                     style={[
                       styles.image,
                       img.status === 'uploading' && styles.uploadingImage
@@ -186,7 +186,7 @@ export default function ChatInput({
       </View>
 
       <ImageViewing
-        images={images.map(img => ({ uri: img.uri }))}
+        images={images.map(img => ({ uri: img.url }))}
         imageIndex={currentImageIndex}
         visible={isPreviewVisible}
         onRequestClose={() => setIsPreviewVisible(false)}

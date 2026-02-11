@@ -11,8 +11,7 @@ export default function CurveHeightChart() {
       babyData={MOCK_GROWTH_DATA.height.baby}
       yMin={45}
       yMax={75}
-      standardColor="#FFB8B8"
-      babyColor="#FF9F43"
+      // 使用默认颜色：标准数据蓝线，宝宝数据红线
     />
   )
 }
