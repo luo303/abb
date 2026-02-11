@@ -1,27 +1,18 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import BaseGrowthChart from './BaseGrowthChart'
+import { MOCK_GROWTH_DATA } from '../../../data/mock/homePosts'
 
 export default function CurveHeadChart() {
   return (
-    <View style={styles.container}>
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyText}>头围曲线功能开发中...</Text>
-      </View>
-    </View>
+    <BaseGrowthChart
+      title="头围发育曲线"
+      unit="cm"
+      standardData={MOCK_GROWTH_DATA.head.standard}
+      babyData={MOCK_GROWTH_DATA.head.baby}
+      yMin={30}
+      yMax={50}
+      standardColor="#E9D8FF"
+      babyColor="#9F7AEA"
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 16
-  }
-})

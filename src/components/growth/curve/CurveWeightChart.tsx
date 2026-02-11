@@ -1,27 +1,18 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import BaseGrowthChart from './BaseGrowthChart'
+import { MOCK_GROWTH_DATA } from '../../../data/mock/homePosts'
 
 export default function CurveWeightChart() {
   return (
-    <View style={styles.container}>
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyText}>体重曲线功能开发中...</Text>
-      </View>
-    </View>
+    <BaseGrowthChart
+      title="体重发育曲线"
+      unit="kg"
+      standardData={MOCK_GROWTH_DATA.weight.standard}
+      babyData={MOCK_GROWTH_DATA.weight.baby}
+      yMin={2}
+      yMax={12}
+      standardColor="#B8D8FF"
+      babyColor="#4399FF"
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 16
-  }
-})

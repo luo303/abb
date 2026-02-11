@@ -140,6 +140,106 @@ export let MOCK_POSTS = [
   }
 ]
 
+// 模拟生长曲线数据
+export const MOCK_GROWTH_DATA = {
+  height: {
+    standard: [
+      { month: '0', value: 50 },
+      { month: '1', value: 54 },
+      { month: '2', value: 58 },
+      { month: '3', value: 61 },
+      { month: '4', value: 64 },
+      { month: '5', value: 66 },
+      { month: '6', value: 68 },
+      { month: '7', value: 69 },
+      { month: '8', value: 70 },
+      { month: '9', value: 72 },
+      { month: '10', value: 73 },
+      { month: '11', value: 74 },
+      { month: '12', value: 75 }
+    ],
+    baby: [
+      { month: '0', value: 49 },
+      { month: '1', value: 53 },
+      { month: '2', value: 57 },
+      { month: '3', value: 62 },
+      { month: '4', value: 65 },
+      { month: '5', value: 67 },
+      { month: '6', value: 68 },
+      { month: '7', value: 68.5 },
+      { month: '8', value: 69 },
+      { month: '9', value: 71.5 },
+      { month: '10', value: 73.5 },
+      { month: '11', value: 74.5 },
+      { month: '12', value: 75 }
+    ]
+  },
+  weight: {
+    standard: [
+      { month: '0', value: 3.3 },
+      { month: '1', value: 4.5 },
+      { month: '2', value: 5.6 },
+      { month: '3', value: 6.4 },
+      { month: '4', value: 7.0 },
+      { month: '5', value: 7.5 },
+      { month: '6', value: 7.9 },
+      { month: '7', value: 8.3 },
+      { month: '8', value: 8.6 },
+      { month: '9', value: 8.9 },
+      { month: '10', value: 9.2 },
+      { month: '11', value: 9.4 },
+      { month: '12', value: 9.6 }
+    ],
+    baby: [
+      { month: '0', value: 3.1 },
+      { month: '1', value: 4.2 },
+      { month: '2', value: 5.4 },
+      { month: '3', value: 6.6 },
+      { month: '4', value: 7.2 },
+      { month: '5', value: 7.8 },
+      { month: '6', value: 8.1 },
+      { month: '7', value: 8.3 },
+      { month: '8', value: 8.5 },
+      { month: '9', value: 8.8 },
+      { month: '10', value: 9.1 },
+      { month: '11', value: 9.4 },
+      { month: '12', value: 9.5 }
+    ]
+  },
+  head: {
+    standard: [
+      { month: '0', value: 34 },
+      { month: '1', value: 37 },
+      { month: '2', value: 39 },
+      { month: '3', value: 40 },
+      { month: '4', value: 41 },
+      { month: '5', value: 42 },
+      { month: '6', value: 43 },
+      { month: '7', value: 43.5 },
+      { month: '8', value: 44 },
+      { month: '9', value: 44.5 },
+      { month: '10', value: 45 },
+      { month: '11', value: 45.5 },
+      { month: '12', value: 46 }
+    ],
+    baby: [
+      { month: '0', value: 33.5 },
+      { month: '1', value: 36.5 },
+      { month: '2', value: 38.8 },
+      { month: '3', value: 40.2 },
+      { month: '4', value: 41.5 },
+      { month: '5', value: 42.8 },
+      { month: '6', value: 43.2 },
+      { month: '7', value: 43.5 },
+      { month: '8', value: 44 },
+      { month: '9', value: 44.2 },
+      { month: '10', value: 44.8 },
+      { month: '11', value: 45.4 },
+      { month: '12', value: 45.8 }
+    ]
+  }
+}
+
 // 添加新帖子的辅助函数
 export const addMockPost = (newPost: any) => {
   // 插入到头部
