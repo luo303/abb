@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -9,8 +9,35 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Dropdown } from 'react-native-element-dropdown'
+
+const DATA = [
+  { label: '大宝', value: '1', icon: require('../../assets/poster_cjk.png') },
+  {
+    label: '二宝',
+    value: '2',
+    icon: require('../../assets/poster_ai 2.0.jpg')
+  },
+  {
+    label: '三宝',
+    value: '3',
+    icon: require('../../assets/poster_community.png')
+  }
+]
 
 export default function UserInfo() {
+  const [value, setValue] = useState<string>('1')
+  const [isFocus, setIsFocus] = useState(false)
+
+  const renderItem = (item: any) => {
+    return (
+      <View style={styles.item}>
+        <Image source={item.icon} style={styles.itemIcon} />
+        <Text style={styles.textItem}>{item.label}</Text>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.wrapper}>
       <ImageBackground
@@ -29,9 +56,61 @@ export default function UserInfo() {
         >
           {/* 右上角装饰图标 */}
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="color-palette-outline" size={20} color="#fff" />
-            </TouchableOpacity>
+            <Dropdown
+              style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
+              containerStyle={styles.dropdownListContainer}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              iconStyle={styles.iconStyle}
+              data={DATA}
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder={!isFocus ? '选择宝宝' : '...'}
+              value={value}
+              onFocus={() => setIsFocus(true)}
+              onBlur={() => setIsFocus(false)}
+              onChange={item => {
+                setValue(item.value)
+                setIsFocus(false)
+              }}
+              renderLeftIcon={() => {
+                const selectedItem = DATA.find(item => item.value === value)
+                return selectedItem ? (
+                  <Image
+                    source={selectedItem.icon}
+                    style={styles.selectedIcon}
+                  />
+                ) : (
+                  <Ionicons
+                    style={styles.icon}
+                    color={isFocus ? 'blue' : 'black'}
+                    name="people-outline"
+                    size={20}
+                  />
+                )
+              }}
+              renderItem={renderItem}
+              flatListProps={{
+                ListHeaderComponent: (
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => {
+                      setIsFocus(false)
+                      // Handle add logic here
+                      console.log('Add new baby clicked')
+                    }}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={24}
+                      color="#007AFF"
+                    />
+                    <Text style={styles.addButtonText}>新增宝宝</Text>
+                  </TouchableOpacity>
+                )
+              }}
+            />
           </View>
 
           {/* 底部信息栏 */}
@@ -44,8 +123,13 @@ export default function UserInfo() {
                 />
               </View>
               <View style={styles.userTexts}>
-                <Text style={styles.userName}>Piaodaqiang</Text>
-                <Text style={styles.userSignature}>Keep to yourself!</Text>
+                <Text
+                  style={styles.userName}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Piaodaqiang
+                </Text>
               </View>
             </View>
 
@@ -104,14 +188,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)'
   },
   bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
     marginBottom: 5
   },
   userInfo: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 10
   },
   avatarContainer: {
     shadowColor: '#000',
@@ -129,7 +213,8 @@ const styles = StyleSheet.create({
     marginRight: 15
   },
   userTexts: {
-    justifyContent: 'center'
+    justifyContent: 'center',
+    alignItems: 'flex-start'
   },
   userName: {
     fontSize: 20,
@@ -148,7 +233,8 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     borderRadius: 20,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    alignSelf: 'flex-end'
   },
   settingsGradient: {
     flexDirection: 'row',
@@ -166,5 +252,92 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600'
+  },
+  dropdown: {
+    height: 45,
+    borderRadius: 24,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 140,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  dropdownListContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  icon: {
+    marginRight: 8
+  },
+  selectedIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 12.5,
+    marginRight: 8
+  },
+  label: {
+    position: 'absolute',
+    backgroundColor: 'white',
+    left: 22,
+    top: 8,
+    zIndex: 999,
+    paddingHorizontal: 8,
+    fontSize: 14
+  },
+  placeholderStyle: {
+    fontSize: 14,
+    color: '#333'
+  },
+  selectedTextStyle: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500'
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+    tintColor: '#666'
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff'
+  },
+  addButtonText: {
+    marginLeft: 8,
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#f0f0f0'
+  },
+  itemIcon: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+    borderRadius: 16
+  },
+  textItem: {
+    fontSize: 14,
+    color: '#333'
   }
 })

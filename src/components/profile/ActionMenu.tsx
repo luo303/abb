@@ -1,13 +1,14 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 
 interface ActionItemProps {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap
+  icon: string
   label: string
   color: string
   onPress?: () => void
+  IconComponent?: any
 }
 
 export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
@@ -20,7 +21,6 @@ export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
         style={styles.container}
       >
         <View style={styles.grid}>
-          <ActionItem icon="clock-outline" label="浏览历史" color="#f43f5e" />
           <ActionItem icon="heart-outline" label="收藏" color="#ec4899" />
           <ActionItem
             icon="comment-text-outline"
@@ -28,8 +28,9 @@ export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
             color="#f97316"
           />
           <ActionItem
-            icon="cog-outline"
-            label="设置"
+            icon="user-switch"
+            IconComponent={AntDesign}
+            label="切换账号"
             color="#94a3b8"
             onPress={onLogout}
           />
@@ -39,10 +40,16 @@ export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
   )
 }
 
-const ActionItem = ({ icon, label, color, onPress }: ActionItemProps) => (
+const ActionItem = ({
+  icon,
+  label,
+  color,
+  onPress,
+  IconComponent = MaterialCommunityIcons
+}: ActionItemProps) => (
   <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
     <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
-      <MaterialCommunityIcons name={icon} size={26} color={color} />
+      <IconComponent name={icon} size={26} color={color} />
     </View>
     <Text style={styles.label}>{label}</Text>
   </TouchableOpacity>
