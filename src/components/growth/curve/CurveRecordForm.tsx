@@ -20,8 +20,8 @@ interface CurveRecordFormProps {
   setWeight: (text: string) => void
   headCircumference: string
   setHeadCircumference: (text: string) => void
-  date: Date
-  onDateChange: (date: Date) => void
+  date: number
+  onDateChange: (date: number) => void
 }
 
 export default function CurveRecordForm({
@@ -36,6 +36,9 @@ export default function CurveRecordForm({
 }: CurveRecordFormProps) {
   const [showDatePicker, setShowDatePicker] = useState(false)
 
+  // 转换时间戳为 Date 对象
+  const dateObj = new Date(date)
+
   // 格式化日期 YYYY-MM-DD
   const formatDate = (d: Date) => {
     const year = d.getFullYear()
@@ -44,19 +47,19 @@ export default function CurveRecordForm({
     return `${year}-${month}-${day}`
   }
 
-  const formattedDate = formatDate(date)
+  const formattedDate = formatDate(dateObj)
 
   const handleDateChange = (
     event: DateTimePickerEvent,
     selectedDate?: Date
   ) => {
     if (event.type === 'set' && selectedDate) {
-      onDateChange(selectedDate)
+      onDateChange(selectedDate.getTime())
     }
   }
 
   const showMode = (currentMode: 'date' | 'time') => {
-    const handled = openDatePicker(date, handleDateChange, currentMode)
+    const handled = openDatePicker(dateObj, handleDateChange, currentMode)
     if (!handled) {
       setShowDatePicker(!showDatePicker)
     }
@@ -84,7 +87,7 @@ export default function CurveRecordForm({
         <View style={styles.datePickerContainer}>
           <DateTimePicker
             testID="dateTimePicker"
-            value={date}
+            value={dateObj}
             mode="date"
             display="spinner"
             onChange={handleDateChange}

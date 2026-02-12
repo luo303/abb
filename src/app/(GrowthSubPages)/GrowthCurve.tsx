@@ -26,7 +26,7 @@ export default function GrowthCurveScreen() {
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
   const [headCircumference, setHeadCircumference] = useState('')
-  const [date, setDate] = useState(new Date())
+  const [date, setDate] = useState<number>(Date.now())
 
   // 检查表单是否已填写（所有项都必须填写）
   const isFormValid = height && weight && headCircumference

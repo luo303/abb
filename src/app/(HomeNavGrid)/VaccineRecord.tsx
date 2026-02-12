@@ -47,16 +47,8 @@ export default function VaccineRecordScreen() {
       const dateB = getDate(b)
 
       // 按日期升序排序（早的时间在前）
-      return new Date(dateA).getTime() - new Date(dateB).getTime()
+      return dateA - dateB
     })
-
-  // 格式化日期，避免时区问题
-  const formatDateLocal = (date: Date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
 
   // 处理日期变更
   const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
@@ -93,8 +85,7 @@ export default function VaccineRecordScreen() {
           ? {
               ...item,
               status: completed ? 'completed' : 'pending',
-              vaccinationDate:
-                completed && date ? formatDateLocal(date) : undefined
+              vaccinationDate: completed && date ? date.getTime() : undefined
             }
           : item
       )
@@ -119,7 +110,7 @@ export default function VaccineRecordScreen() {
     }
   }
 
-  const handleDateClick = (id: string, date?: string) => {
+  const handleDateClick = (id: string, date?: number) => {
     targetIdRef.current = id
     // 如果已有日期，使用该日期初始化；否则使用当前日期
     const initialDate = date ? new Date(date) : new Date()

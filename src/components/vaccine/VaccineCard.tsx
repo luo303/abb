@@ -6,7 +6,7 @@ import { Vaccine } from '@/types/vaccine'
 interface VaccineCardProps {
   data: Vaccine
   onToggleStatus?: (id: string, value: boolean) => void
-  onDatePress?: (id: string, date?: string) => void
+  onDatePress?: (id: string, date?: number) => void
 }
 
 export default function VaccineCard({
@@ -15,6 +15,16 @@ export default function VaccineCard({
   onDatePress
 }: VaccineCardProps) {
   const isCompleted = data.status === 'completed'
+
+  // 格式化日期
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return '未知'
+    const date = new Date(timestamp)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   return (
     <View
@@ -55,7 +65,7 @@ export default function VaccineCard({
               <View style={[styles.statusBadge, styles.completedBadge]}>
                 <Ionicons name="checkmark-circle" size={16} color="#15803d" />
                 <Text style={styles.completedText}>
-                  接种时间: {data.vaccinationDate || '未知'}
+                  接种时间: {formatDate(data.vaccinationDate)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -63,7 +73,7 @@ export default function VaccineCard({
             <View style={[styles.statusBadge, styles.pendingBadge]}>
               <Ionicons name="calendar-outline" size={16} color="#1d4ed8" />
               <Text style={styles.pendingText}>
-                推荐时间: {data.recommendedDate}
+                推荐时间: {formatDate(data.recommendedDate)}
               </Text>
             </View>
           )}

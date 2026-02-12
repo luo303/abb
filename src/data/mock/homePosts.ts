@@ -23,8 +23,8 @@ export const MOCK_VACCINES: Vaccine[] = [
     dose: '第1剂',
     description: '预防乙型肝炎病毒感染，保护肝脏健康。',
     status: 'completed',
-    recommendedDate: '2023-10-01',
-    vaccinationDate: '2023-10-01',
+    recommendedDate: new Date('2023-10-01').getTime(),
+    vaccinationDate: new Date('2023-10-01').getTime(),
     detail:
       'https://baike.baidu.com/item/%E4%B9%99%E8%82%9D%E7%96%AB%E8%8B%97/5226072'
   },
@@ -33,8 +33,8 @@ export const MOCK_VACCINES: Vaccine[] = [
     name: '卡介苗',
     description: '预防结核病，特别是预防结核性脑膜炎和粟粒性结核病。',
     status: 'completed',
-    recommendedDate: '2023-10-02',
-    vaccinationDate: '2023-10-02',
+    recommendedDate: new Date('2023-10-02').getTime(),
+    vaccinationDate: new Date('2023-10-02').getTime(),
     detail:
       'https://www.nhc.gov.cn/wjw/jbyfykz/201604/e73973a39ece42fdba98e3d8a001acd7.shtml'
   },
@@ -44,8 +44,8 @@ export const MOCK_VACCINES: Vaccine[] = [
     dose: '第2剂',
     description: '加强免疫，确保抗体水平达标。',
     status: 'completed',
-    recommendedDate: '2023-11-01',
-    vaccinationDate: '2023-11-01',
+    recommendedDate: new Date('2023-11-01').getTime(),
+    vaccinationDate: new Date('2023-11-01').getTime(),
     detail:
       'https://baike.baidu.com/item/%E4%B9%99%E8%82%9D%E7%96%AB%E8%8B%97/5226072'
   },
@@ -56,7 +56,7 @@ export const MOCK_VACCINES: Vaccine[] = [
     description:
       '预防白喉、破伤风、百日咳、脊髓灰质炎和b型流感嗜血杆菌引起的感染。',
     status: 'pending',
-    recommendedDate: '2023-12-01',
+    recommendedDate: new Date('2023-12-01').getTime(),
     detail:
       'https://baike.baidu.com/item/%E4%B9%99%E8%82%9D%E7%96%AB%E8%8B%97/5226072'
   },
@@ -66,7 +66,7 @@ export const MOCK_VACCINES: Vaccine[] = [
     dose: '第1剂',
     description: '预防脊髓灰质炎（小儿麻痹症）。',
     status: 'pending',
-    recommendedDate: '2023-12-01',
+    recommendedDate: new Date('2023-12-01').getTime(),
     detail:
       'https://baike.baidu.com/item/%E4%B9%99%E8%82%9D%E7%96%AB%E8%8B%97/5226072'
   },
@@ -76,7 +76,7 @@ export const MOCK_VACCINES: Vaccine[] = [
     dose: '第1剂',
     description: '预防肺炎球菌引起的肺炎、脑膜炎等疾病。',
     status: 'pending',
-    recommendedDate: '2024-01-01',
+    recommendedDate: new Date('2024-01-01').getTime(),
     detail:
       'https://baike.baidu.com/item/%E4%B9%99%E8%82%9D%E7%96%AB%E8%8B%97/5226072'
   }

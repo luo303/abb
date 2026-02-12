@@ -98,7 +98,7 @@ export default function ChatInput({
                   }}
                 >
                   <Image
-                    source={{ uri: img.uri }}
+                    source={{ uri: img.url }}
                     style={[
                       styles.image,
                       img.status === 'uploading' && styles.uploadingImage
