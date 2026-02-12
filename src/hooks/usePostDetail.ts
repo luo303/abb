@@ -7,7 +7,6 @@ export interface UsePostDetailReturn {
   post: PostItem | null
   isLoading: boolean
   error: Error | null
-  refresh: () => Promise<void>
   updateLocalPost: (updates: Partial<PostItem>) => void
 }
 
@@ -65,7 +64,6 @@ export function usePostDetail(id: string): UsePostDetailReturn {
     post,
     isLoading,
     error,
-    refresh: fetchPostDetail,
     updateLocalPost
   }
 }

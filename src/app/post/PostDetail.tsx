@@ -27,7 +27,6 @@ export default function PostDetail() {
   const route = useRoute<PostDetailRouteProp>()
   const { id } = route.params || {}
 
-  // 使用自定义 Hook 获取帖子详情
   const { post, isLoading, updateLocalPost } = usePostDetail(id)
 
   const [isLiked, setIsLiked] = useState(false)
@@ -101,9 +100,6 @@ export default function PostDetail() {
     } else {
       updateLocalPost({ like_count: newLikes })
     }
-
-    // 更新 Mock 数据（如果需要保持兼容）
-    updateMockPost(post.post_id, { like_count: newLikes })
   }
 
   // 处理双击点赞
@@ -131,8 +127,6 @@ export default function PostDetail() {
     } else {
       updateLocalPost({ dislike_count: newDislikes })
     }
-
-    updateMockPost(post.post_id, { dislike_count: newDislikes })
   }
 
   // 处理帖子收藏
@@ -145,7 +139,6 @@ export default function PostDetail() {
 
     setIsFavorited(newIsFavorited)
     updateLocalPost({ collect_count: newFavorites })
-    updateMockPost(post.post_id, { collect_count: newFavorites })
 
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
   }
@@ -215,7 +208,7 @@ export default function PostDetail() {
       if (post) {
         const newCommentsCount = post.comment_count + 1
         updateLocalPost({ comment_count: newCommentsCount })
-        updateMockPost(post.post_id, { comment_count: newCommentsCount })
+        // updateMockPost(post.post_id, { comment_count: newCommentsCount })
       }
     }
     showMessage('评论成功')
