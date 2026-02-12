@@ -3,13 +3,14 @@ import { StyleSheet, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
 export interface ChartPoint {
-  month: string
+  label: string
   value: number
 }
 
 interface BaseGrowthChartProps {
   title: string
   unit: string
+  xAxisName?: string // X轴名称，默认为"月龄"
   standardData: ChartPoint[]
   babyData: ChartPoint[]
   yMin: number
@@ -21,6 +22,7 @@ interface BaseGrowthChartProps {
 export default function BaseGrowthChart({
   title,
   unit,
+  xAxisName = '月龄',
   standardData = [],
   babyData = [],
   yMin,
@@ -32,13 +34,13 @@ export default function BaseGrowthChart({
   const safeStandardData = standardData || []
   const safeBabyData = babyData || []
 
-  // 使用标准数据的月份作为 x 轴
-  const months = safeStandardData.map(d => d.month)
+  // 使用标准数据的label作为 x 轴
+  const labels = safeStandardData.map(d => d.label)
   const standardValues = safeStandardData.map(d => d.value)
 
-  // 映射宝宝数据到对应的月份，没有数据的月份填 null
-  const babyValues = months.map(m => {
-    const point = safeBabyData.find(d => d.month === m)
+  // 映射宝宝数据到对应的label，没有数据的label填 null
+  const babyValues = labels.map(l => {
+    const point = safeBabyData.find(d => d.label === l)
     return point ? point.value : null
   })
 
@@ -47,8 +49,8 @@ export default function BaseGrowthChart({
   let startZoom = 0
   let endZoom = 100
 
-  if (months.length > MAX_VISIBLE_POINTS) {
-    endZoom = Math.floor((MAX_VISIBLE_POINTS / months.length) * 100)
+  if (labels.length > MAX_VISIBLE_POINTS) {
+    endZoom = Math.floor((MAX_VISIBLE_POINTS / labels.length) * 100)
   }
 
   const chartHtml = `
@@ -124,7 +126,7 @@ export default function BaseGrowthChart({
                   end: ${endZoom},
                   height: 24,
                   bottom: 5,
-                  handleSize: '100%',
+                  handleSize: '150%',
                   moveHandleSize : '0',
                   brushSelect: false,
                   borderColor: 'transparent',
@@ -150,7 +152,7 @@ export default function BaseGrowthChart({
                 textStyle: { color: '#333', fontSize: 13 },
                 extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;',
                 formatter: function(params) {
-                  let res = '<div style="font-weight:600;margin-bottom:4px;">' + params[0].name + ' 个月</div>';
+                  let res = '<div style="font-weight:600;margin-bottom:4px;">' + params[0].name + ' ${xAxisName}</div>';
                   params.forEach(item => {
                     // 只有当有有效数值时才显示
                     if (item.value != null && item.value !== undefined) {
@@ -165,9 +167,9 @@ export default function BaseGrowthChart({
               },
               xAxis: {
                 type: 'category',
-                name: '月龄',
+                name: '${xAxisName}',
                 nameTextStyle: { color: '#999', fontSize: 11 },
-                data: ${JSON.stringify(months)},
+                data: ${JSON.stringify(labels)},
                 axisLine: { lineStyle: { color: '#f0f0f0' } },
                 axisTick: { show: false },
                 axisLabel: { color: '#999', fontSize: 11, margin: 12 }
@@ -207,7 +209,7 @@ export default function BaseGrowthChart({
                   connectNulls: true,
                   showSymbol: true,
                   symbol: 'circle',
-                  symbolSize: 10,
+                  symbolSize: 7,
                   itemStyle: { 
                     color: '#fff',
                     borderWidth: 3,

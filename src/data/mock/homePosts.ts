@@ -139,105 +139,299 @@ export let MOCK_POSTS: PostItem[] = [
   }
 ]
 
-// 模拟生长曲线数据
-export const MOCK_GROWTH_DATA = {
-  height: {
-    standard: [
-      { month: '0', value: 50 },
-      { month: '1', value: 54 },
-      { month: '2', value: 58 },
-      { month: '3', value: 61 },
-      { month: '4', value: 64 },
-      { month: '5', value: 66 },
-      { month: '6', value: 68 },
-      { month: '7', value: 69 },
-      { month: '8', value: 70 },
-      { month: '9', value: 72 },
-      { month: '10', value: 73 },
-      { month: '11', value: 74 },
-      { month: '12', value: 75 }
-    ],
-    baby: [
-      { month: '0', value: 49 },
-      { month: '1', value: 53 },
-      { month: '2', value: 57 },
-      { month: '3', value: 62 },
-      { month: '4', value: 65 },
-      { month: '5', value: 67 },
-      { month: '6', value: 68 },
-      { month: '7', value: 68.5 },
-      { month: '8', value: 69 },
-      { month: '9', value: 71.5 },
-      { month: '10', value: 73.5 },
-      { month: '11', value: 74.5 },
-      { month: '12', value: 75 }
-    ]
-  },
-  weight: {
-    standard: [
-      { month: '0', value: 3.3 },
-      { month: '1', value: 4.5 },
-      { month: '2', value: 5.6 },
-      { month: '3', value: 6.4 },
-      { month: '4', value: 7.0 },
-      { month: '5', value: 7.5 },
-      { month: '6', value: 7.9 },
-      { month: '7', value: 8.3 },
-      { month: '8', value: 8.6 },
-      { month: '9', value: 8.9 },
-      { month: '10', value: 9.2 },
-      { month: '11', value: 9.4 },
-      { month: '12', value: 9.6 }
-    ],
-    baby: [
-      { month: '0', value: 3.1 },
-      { month: '1', value: 4.2 },
-      { month: '2', value: 5.4 },
-      { month: '3', value: 6.6 },
-      { month: '4', value: 7.2 },
-      { month: '5', value: 7.8 },
-      { month: '6', value: 8.1 },
-      { month: '7', value: 8.3 },
-      { month: '8', value: 8.5 },
-      { month: '9', value: 8.8 },
-      { month: '10', value: 9.1 },
-      { month: '11', value: 9.4 },
-      { month: '12', value: 9.5 }
-    ]
-  },
-  head: {
-    standard: [
-      { month: '0', value: 34 },
-      { month: '1', value: 37 },
-      { month: '2', value: 39 },
-      { month: '3', value: 40 },
-      { month: '4', value: 41 },
-      { month: '5', value: 42 },
-      { month: '6', value: 43 },
-      { month: '7', value: 43.5 },
-      { month: '8', value: 44 },
-      { month: '9', value: 44.5 },
-      { month: '10', value: 45 },
-      { month: '11', value: 45.5 },
-      { month: '12', value: 46 }
-    ],
-    baby: [
-      { month: '0', value: 33.5 },
-      { month: '1', value: 36.5 },
-      { month: '2', value: 38.8 },
-      { month: '3', value: 40.2 },
-      { month: '4', value: 41.5 },
-      { month: '5', value: 42.8 },
-      { month: '6', value: 43.2 },
-      { month: '7', value: 43.5 },
-      { month: '8', value: 44 },
-      { month: '9', value: 44.2 },
-      { month: '10', value: 44.8 },
-      { month: '11', value: 45.4 },
-      { month: '12', value: 45.8 }
-    ]
-  }
+// 定义数据接口
+interface BabyGrowthData {
+  day: number // 天数（0-30）
+  maleWeight: number // 男宝体重 (kg)
+  femaleWeight: number // 女宝体重 (kg)
+  maleHeadCircumference: number // 男宝头围 (cm)
+  femaleHeadCircumference: number // 女宝头围 (cm)
+  maleHeight: number // 男宝身高 (cm)
+  femaleHeight: number // 女宝身高 (cm)
 }
+
+// 宝宝前30天生长模拟数据（含体重、头围、身高）
+export const BABY_GROWTH_SIMULATION_DATA: BabyGrowthData[] = [
+  {
+    day: 0,
+    maleWeight: 3.35,
+    femaleWeight: 3.28,
+    maleHeadCircumference: 34.5,
+    femaleHeadCircumference: 34.0,
+    maleHeight: 50.0,
+    femaleHeight: 49.2
+  },
+  {
+    day: 1,
+    maleWeight: 3.37,
+    femaleWeight: 3.29,
+    maleHeadCircumference: 34.55,
+    femaleHeadCircumference: 34.05,
+    maleHeight: 50.2,
+    femaleHeight: 49.4
+  },
+  {
+    day: 2,
+    maleWeight: 3.39,
+    femaleWeight: 3.31,
+    maleHeadCircumference: 34.58,
+    femaleHeadCircumference: 34.08,
+    maleHeight: 50.4,
+    femaleHeight: 49.6
+  },
+  {
+    day: 3,
+    maleWeight: 3.41,
+    femaleWeight: 3.33,
+    maleHeadCircumference: 34.62,
+    femaleHeadCircumference: 34.11,
+    maleHeight: 50.6,
+    femaleHeight: 49.8
+  },
+  {
+    day: 4,
+    maleWeight: 3.43,
+    femaleWeight: 3.35,
+    maleHeadCircumference: 34.65,
+    femaleHeadCircumference: 34.14,
+    maleHeight: 50.8,
+    femaleHeight: 50.0
+  },
+  {
+    day: 5,
+    maleWeight: 3.45,
+    femaleWeight: 3.37,
+    maleHeadCircumference: 34.68,
+    femaleHeadCircumference: 34.17,
+    maleHeight: 51.0,
+    femaleHeight: 50.2
+  },
+  {
+    day: 6,
+    maleWeight: 3.47,
+    femaleWeight: 3.39,
+    maleHeadCircumference: 34.71,
+    femaleHeadCircumference: 34.2,
+    maleHeight: 51.2,
+    femaleHeight: 50.4
+  },
+  {
+    day: 7,
+    maleWeight: 3.49,
+    femaleWeight: 3.41,
+    maleHeadCircumference: 34.75,
+    femaleHeadCircumference: 34.24,
+    maleHeight: 51.4,
+    femaleHeight: 50.6
+  },
+  {
+    day: 8,
+    maleWeight: 3.51,
+    femaleWeight: 3.43,
+    maleHeadCircumference: 34.78,
+    femaleHeadCircumference: 34.27,
+    maleHeight: 51.6,
+    femaleHeight: 50.8
+  },
+  {
+    day: 9,
+    maleWeight: 3.53,
+    femaleWeight: 3.45,
+    maleHeadCircumference: 34.81,
+    femaleHeadCircumference: 34.3,
+    maleHeight: 51.8,
+    femaleHeight: 51.0
+  },
+  {
+    day: 10,
+    maleWeight: 3.55,
+    femaleWeight: 3.47,
+    maleHeadCircumference: 34.84,
+    femaleHeadCircumference: 34.33,
+    maleHeight: 52.0,
+    femaleHeight: 51.2
+  },
+  {
+    day: 11,
+    maleWeight: 3.57,
+    femaleWeight: 3.49,
+    maleHeadCircumference: 34.88,
+    femaleHeadCircumference: 34.36,
+    maleHeight: 52.2,
+    femaleHeight: 51.4
+  },
+  {
+    day: 12,
+    maleWeight: 3.59,
+    femaleWeight: 3.51,
+    maleHeadCircumference: 34.91,
+    femaleHeadCircumference: 34.39,
+    maleHeight: 52.4,
+    femaleHeight: 51.6
+  },
+  {
+    day: 13,
+    maleWeight: 3.61,
+    femaleWeight: 3.53,
+    maleHeadCircumference: 34.94,
+    femaleHeadCircumference: 34.42,
+    maleHeight: 52.6,
+    femaleHeight: 51.8
+  },
+  {
+    day: 14,
+    maleWeight: 3.63,
+    femaleWeight: 3.55,
+    maleHeadCircumference: 34.97,
+    femaleHeadCircumference: 34.45,
+    maleHeight: 52.8,
+    femaleHeight: 52.0
+  },
+  {
+    day: 15,
+    maleWeight: 3.65,
+    femaleWeight: 3.57,
+    maleHeadCircumference: 35.01,
+    femaleHeadCircumference: 34.48,
+    maleHeight: 53.0,
+    femaleHeight: 52.2
+  },
+  {
+    day: 16,
+    maleWeight: 3.67,
+    femaleWeight: 3.59,
+    maleHeadCircumference: 35.04,
+    femaleHeadCircumference: 34.51,
+    maleHeight: 53.2,
+    femaleHeight: 52.4
+  },
+  {
+    day: 17,
+    maleWeight: 3.69,
+    femaleWeight: 3.61,
+    maleHeadCircumference: 35.07,
+    femaleHeadCircumference: 34.54,
+    maleHeight: 53.4,
+    femaleHeight: 52.6
+  },
+  {
+    day: 18,
+    maleWeight: 3.71,
+    femaleWeight: 3.63,
+    maleHeadCircumference: 35.1,
+    femaleHeadCircumference: 34.57,
+    maleHeight: 53.6,
+    femaleHeight: 52.8
+  },
+  {
+    day: 19,
+    maleWeight: 3.73,
+    femaleWeight: 3.65,
+    maleHeadCircumference: 35.14,
+    femaleHeadCircumference: 34.6,
+    maleHeight: 53.8,
+    femaleHeight: 53.0
+  },
+  {
+    day: 20,
+    maleWeight: 3.75,
+    femaleWeight: 3.67,
+    maleHeadCircumference: 35.17,
+    femaleHeadCircumference: 34.64,
+    maleHeight: 54.0,
+    femaleHeight: 53.2
+  },
+  {
+    day: 21,
+    maleWeight: 3.77,
+    femaleWeight: 3.69,
+    maleHeadCircumference: 35.2,
+    femaleHeadCircumference: 34.67,
+    maleHeight: 54.2,
+    femaleHeight: 53.4
+  },
+  {
+    day: 22,
+    maleWeight: 3.79,
+    femaleWeight: 3.71,
+    maleHeadCircumference: 35.23,
+    femaleHeadCircumference: 34.7,
+    maleHeight: 54.4,
+    femaleHeight: 53.6
+  },
+  {
+    day: 23,
+    maleWeight: 3.81,
+    femaleWeight: 3.73,
+    maleHeadCircumference: 35.27,
+    femaleHeadCircumference: 34.73,
+    maleHeight: 54.6,
+    femaleHeight: 53.8
+  },
+  {
+    day: 24,
+    maleWeight: 3.83,
+    femaleWeight: 3.75,
+    maleHeadCircumference: 35.3,
+    femaleHeadCircumference: 34.76,
+    maleHeight: 54.8,
+    femaleHeight: 54.0
+  },
+  {
+    day: 25,
+    maleWeight: 3.85,
+    femaleWeight: 3.77,
+    maleHeadCircumference: 35.33,
+    femaleHeadCircumference: 34.79,
+    maleHeight: 55.0,
+    femaleHeight: 54.2
+  },
+  {
+    day: 26,
+    maleWeight: 3.87,
+    femaleWeight: 3.79,
+    maleHeadCircumference: 35.36,
+    femaleHeadCircumference: 34.82,
+    maleHeight: 55.2,
+    femaleHeight: 54.4
+  },
+  {
+    day: 27,
+    maleWeight: 3.89,
+    femaleWeight: 3.81,
+    maleHeadCircumference: 35.4,
+    femaleHeadCircumference: 34.85,
+    maleHeight: 55.4,
+    femaleHeight: 54.6
+  },
+  {
+    day: 28,
+    maleWeight: 3.91,
+    femaleWeight: 3.83,
+    maleHeadCircumference: 35.43,
+    femaleHeadCircumference: 34.88,
+    maleHeight: 55.6,
+    femaleHeight: 54.8
+  },
+  {
+    day: 29,
+    maleWeight: 3.93,
+    femaleWeight: 3.85,
+    maleHeadCircumference: 35.46,
+    femaleHeadCircumference: 34.91,
+    maleHeight: 55.8,
+    femaleHeight: 55.0
+  },
+  {
+    day: 30,
+    maleWeight: 3.95,
+    femaleWeight: 3.87,
+    maleHeadCircumference: 35.49,
+    femaleHeadCircumference: 34.94,
+    maleHeight: 56.0,
+    femaleHeight: 55.2
+  }
+]
 
 // 添加新帖子的辅助函数
 export const addMockPost = (newPost: PostItem) => {
