@@ -1,54 +1,108 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '@/store'
+import { fetchBabies } from '@/store/modules/BabyStore'
 import VaccineCard from '@/components/vaccine/VaccineCard'
-import { Vaccine } from '@/types/vaccine'
-import { MOCK_VACCINES } from '@/data/mock/homePosts'
+import {
+  getVaccineListReq,
+  changeVaccineStatusReq,
+  VaccineItem
+} from '@/api/vaccine'
 import DateTimePicker, {
   DateTimePickerEvent
 } from '@react-native-community/datetimepicker'
 import { openDatePicker } from '@/utils/datePicker'
+import { useMessage } from '@/components/Message'
 
 type FilterType = 'all' | 'completed' | 'pending'
 
 export default function VaccineRecordScreen() {
-  const navigation = useNavigation<any>()
+  const dispatch = useDispatch<AppDispatch>()
+  const { showMessage } = useMessage()
+  const currentBabyId = useSelector(
+    (state: RootState) => state.baby.currentBabyId
+  )
+
   const [filter, setFilter] = useState<FilterType>('all')
-  const [vaccines, setVaccines] = useState<Vaccine[]>(MOCK_VACCINES)
+  const [vaccines, setVaccines] = useState<VaccineItem[]>([])
+  const [loading, setLoading] = useState(false)
 
   // 日期选择相关状态
   const targetIdRef = useRef<string | null>(null) // 使用 Ref 解决 Android 回调闭包问题
   const [showIOSPicker, setShowIOSPicker] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
 
-  const filteredData = vaccines
-    .filter(item => {
-      if (filter === 'all') return true
-      return item.status === filter
-    })
-    .sort((a, b) => {
-      // 获取排序用的日期
-      // 如果已接种，使用 vaccinationDate；如果未接种，使用 recommendedDate
-      const getDate = (item: Vaccine) => {
-        if (item.status === 'completed' && item.vaccinationDate) {
-          return item.vaccinationDate
+  // 获取 API 对应的 status 参数
+  const getApiStatus = (currentFilter: FilterType) => {
+    switch (currentFilter) {
+      case 'completed':
+        return 'given'
+      case 'pending':
+        return 'not_given'
+      default:
+        return 'all'
+    }
+  }
+
+  // 排序函数
+  const sortVaccines = (items: VaccineItem[]) => {
+    return items.sort((a, b) => {
+      const getDate = (item: VaccineItem) => {
+        // 如果已接种且有接种时间，优先使用接种时间
+        if (item.status === 'given' && item.actual_time) {
+          return item.actual_time
         }
-        return item.recommendedDate
+        // 否则使用推荐接种时间
+        return item.due_time
       }
-
-      const dateA = getDate(a)
-      const dateB = getDate(b)
-
-      // 按日期升序排序（早的时间在前）
-      return dateA - dateB
+      return getDate(a) - getDate(b)
     })
+  }
+
+  // 获取疫苗列表
+  const fetchVaccineList = useCallback(async () => {
+    if (!currentBabyId) return
+
+    setLoading(true)
+    try {
+      const apiStatus = getApiStatus(filter)
+      const res = await getVaccineListReq(currentBabyId, apiStatus)
+      if (res.code === 0 && res.data) {
+        const items = res.data.items || []
+        // 按照时间升序排序（从上到下）
+        const sortedList = sortVaccines(items)
+        setVaccines(sortedList)
+      } else {
+        showMessage(res.message || '获取疫苗列表失败')
+      }
+    } catch (error) {
+      console.error('Fetch vaccine error:', error)
+      showMessage('网络请求失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentBabyId, filter])
+
+  // 如果没有宝宝ID，尝试获取宝宝列表
+  useEffect(() => {
+    if (!currentBabyId) {
+      dispatch(fetchBabies())
+    }
+  }, [currentBabyId, dispatch])
+
+  // 进入页面或切换 Filter 时获取数据
+  useEffect(() => {
+    fetchVaccineList()
+  }, [fetchVaccineList])
 
   // 处理日期变更
   const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
@@ -78,18 +132,60 @@ export default function VaccineRecordScreen() {
     targetIdRef.current = null
   }
 
-  const updateVaccineStatus = (id: string, completed: boolean, date?: Date) => {
-    setVaccines(prev =>
-      prev.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              status: completed ? 'completed' : 'pending',
-              vaccinationDate: completed && date ? date.getTime() : undefined
-            }
-          : item
-      )
+  const updateVaccineStatus = async (
+    id: string,
+    completed: boolean,
+    date?: Date
+  ) => {
+    if (!currentBabyId) return
+
+    const status: 'given' | 'not_given' = completed ? 'given' : 'not_given'
+    const actual_time = completed && date ? date.getTime() : 0
+
+    // 乐观更新：先更新 UI，并重新排序
+    const originalVaccines = [...vaccines]
+
+    let updatedList = vaccines.map(item =>
+      item.dose_id === id
+        ? ({
+            ...item,
+            status,
+            actual_time
+          } as VaccineItem)
+        : item
     )
+
+    // 如果当前处于特定筛选状态（非全部），则移除不符合当前筛选条件的项
+    if (filter === 'completed' && status === 'not_given') {
+      updatedList = updatedList.filter(item => item.dose_id !== id)
+    } else if (filter === 'pending' && status === 'given') {
+      updatedList = updatedList.filter(item => item.dose_id !== id)
+    }
+
+    // 重新排序
+    setVaccines(sortVaccines(updatedList))
+
+    try {
+      const res = await changeVaccineStatusReq({
+        baby_id: currentBabyId,
+        dose_id: id,
+        status,
+        actual_time
+      })
+
+      if (res.code === 0) {
+        showMessage('更新成功')
+      } else {
+        // 失败回滚
+        setVaccines(originalVaccines)
+        showMessage(res.message || '更新失败')
+      }
+    } catch (error) {
+      console.error('Update vaccine status error:', error)
+      // 失败回滚
+      setVaccines(originalVaccines)
+      showMessage('网络请求失败')
+    }
   }
 
   const handleToggleStatus = (id: string, value: boolean) => {
@@ -128,14 +224,9 @@ export default function VaccineRecordScreen() {
     }
   }
 
-  const handleCardPress = (item: Vaccine) => {
-    if (item.detail) {
-      // 使用 navigation.navigate 进行跳转，兼容 React Navigation
-      navigation.navigate('VaccineDetail', {
-        url: item.detail,
-        title: item.name
-      })
-    }
+  const handleCardPress = (item: VaccineItem) => {
+    // API 没有提供详情链接，暂时不处理跳转
+    // if (item.detail) { ... }
   }
 
   const renderTab = (type: FilterType, label: string) => (
@@ -164,29 +255,38 @@ export default function VaccineRecordScreen() {
       </View>
 
       {/* 列表内容 */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => handleCardPress(item)}
-          >
-            <VaccineCard
-              data={item}
-              onToggleStatus={handleToggleStatus}
-              onDatePress={handleDateClick}
-            />
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>暂无记录</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+        </View>
+      ) : (
+        <FlatList
+          data={vaccines}
+          keyExtractor={item => item.dose_id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => handleCardPress(item)}
+              disabled={true} // 暂时禁用点击
+            >
+              <VaccineCard
+                data={item}
+                onToggleStatus={handleToggleStatus}
+                onDatePress={handleDateClick}
+              />
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {currentBabyId ? '暂无记录' : '请先添加或选择宝宝'}
+              </Text>
+            </View>
+          }
+        />
+      )}
 
       {/* iOS DatePicker 覆盖层 */}
       {Platform.OS === 'ios' && showIOSPicker && (
@@ -320,5 +420,10 @@ const styles = StyleSheet.create({
   iosPicker: {
     height: 200,
     width: '100%'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 })

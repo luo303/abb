@@ -1,10 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Vaccine } from '@/types/vaccine'
+import { VaccineItem } from '@/api/vaccine'
 
 interface VaccineCardProps {
-  data: Vaccine
+  data: VaccineItem
   onToggleStatus?: (id: string, value: boolean) => void
   onDatePress?: (id: string, date?: number) => void
 }
@@ -14,7 +14,7 @@ export default function VaccineCard({
   onToggleStatus,
   onDatePress
 }: VaccineCardProps) {
-  const isCompleted = data.status === 'completed'
+  const isCompleted = data.status === 'given'
 
   // 格式化日期
   const formatDate = (timestamp?: number) => {
@@ -37,15 +37,15 @@ export default function VaccineCard({
         <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
             <Text style={styles.name}>{data.name}</Text>
-            {data.dose ? (
+            {data.dose_number ? (
               <View style={styles.doseBadge}>
-                <Text style={styles.doseText}>{data.dose}</Text>
+                <Text style={styles.doseText}>第{data.dose_number}剂</Text>
               </View>
             ) : null}
           </View>
           <Switch
             value={isCompleted}
-            onValueChange={val => onToggleStatus?.(data.id, val)}
+            onValueChange={val => onToggleStatus?.(data.dose_id, val)}
             trackColor={{ false: '#e2e8f0', true: '#86efac' }}
             thumbColor={isCompleted ? '#22c55e' : '#f1f5f9'}
             ios_backgroundColor="#e2e8f0"
@@ -53,19 +53,19 @@ export default function VaccineCard({
         </View>
 
         <Text style={styles.description} numberOfLines={2}>
-          {data.description}
+          {data.disease}
         </Text>
 
         <View style={styles.footerRow}>
           {isCompleted ? (
             <TouchableOpacity
               activeOpacity={0.6}
-              onPress={() => onDatePress?.(data.id, data.vaccinationDate)}
+              onPress={() => onDatePress?.(data.dose_id, data.actual_time)}
             >
               <View style={[styles.statusBadge, styles.completedBadge]}>
                 <Ionicons name="checkmark-circle" size={16} color="#15803d" />
                 <Text style={styles.completedText}>
-                  接种时间: {formatDate(data.vaccinationDate)}
+                  接种时间: {formatDate(data.actual_time)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -73,7 +73,7 @@ export default function VaccineCard({
             <View style={[styles.statusBadge, styles.pendingBadge]}>
               <Ionicons name="calendar-outline" size={16} color="#1d4ed8" />
               <Text style={styles.pendingText}>
-                推荐时间: {formatDate(data.recommendedDate)}
+                推荐时间: {formatDate(data.due_time)}
               </Text>
             </View>
           )}

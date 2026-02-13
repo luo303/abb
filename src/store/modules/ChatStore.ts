@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction, Dispatch } from '@reduxjs/toolkit'
 import * as SecureStore from 'expo-secure-store'
-import { historyList } from '../../data/mock/homePosts'
 import { Message, HistoryItem, ChatState } from '../../types/AIchat'
 import { GetSessionMessages } from '../../api/ai'
 
@@ -8,7 +7,7 @@ const STORAGE_KEY_HISTORY = 'chat_history_list'
 
 const initialState: ChatState = {
   messages: [],
-  historyList: historyList,
+  historyList: [],
   currentConversationId: null,
   isLoading: false,
   search_private: false,

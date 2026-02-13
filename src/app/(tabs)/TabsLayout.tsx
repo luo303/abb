@@ -55,7 +55,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 12
         },
-        animation: 'shift'
+        animation: 'none'
       }}
     >
       <Tab.Screen

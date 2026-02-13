@@ -87,6 +87,10 @@ const babySlice = createSlice({
         state.loading = false
         if (action.payload?.code === 0) {
           state.babiesList = action.payload.data?.babies || []
+          // 如果当前没有选中的宝宝，且列表不为空，默认选中第一个
+          if (!state.currentBabyId && state.babiesList.length > 0) {
+            state.currentBabyId = state.babiesList[0].baby_id
+          }
         } else {
           state.error = action.payload?.message || '未知错误'
         }
