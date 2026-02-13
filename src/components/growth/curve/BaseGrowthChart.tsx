@@ -53,13 +53,16 @@ export default function BaseGrowthChart({
     return point ? point.value : null
   })
 
-  // 计算默认显示的缩放比例（如果数据点超过8个，则只显示前8个，支持滑动查看更多）
+  // 计算默认显示的缩放比例（如果数据点超过8个，则只显示最后8个）
   const MAX_VISIBLE_POINTS = 8
   let startZoom = 0
   let endZoom = 100
 
   if (labels.length > MAX_VISIBLE_POINTS) {
-    endZoom = Math.floor((MAX_VISIBLE_POINTS / labels.length) * 100)
+    // 默认显示最后 MAX_VISIBLE_POINTS 个点
+    // startZoom 计算公式： (1 - MAX_VISIBLE_POINTS / 总数) * 100
+    startZoom = Math.floor((1 - MAX_VISIBLE_POINTS / labels.length) * 100)
+    endZoom = 100
   }
 
   // 获取最新的宝宝数据值
