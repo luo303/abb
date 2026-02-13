@@ -30,6 +30,15 @@ export default function BaseGrowthChart({
   standardColor = '#5470C6', // 默认蓝色
   babyColor = '#EE6666' // 默认红色
 }: BaseGrowthChartProps) {
+  // 从主题色提取的值
+  const THEME_BLUE = '#3b66f5' // 标准范围颜色
+  const THEME_RED = '#f46e6e' // 宝宝数据颜色
+
+  // 覆盖默认颜色
+  const finalStandardColor =
+    standardColor === '#5470C6' ? THEME_BLUE : standardColor
+  const finalBabyColor = babyColor === '#EE6666' ? THEME_RED : babyColor
+
   // 确保数据存在
   const safeStandardData = standardData || []
   const safeBabyData = babyData || []
@@ -53,6 +62,9 @@ export default function BaseGrowthChart({
     endZoom = Math.floor((MAX_VISIBLE_POINTS / labels.length) * 100)
   }
 
+  // 获取最新的宝宝数据值
+  const lastBabyValue = babyValues.filter(v => v !== null).pop()
+
   const chartHtml = `
     <html>
       <head>
@@ -67,6 +79,9 @@ export default function BaseGrowthChart({
             height: 100%; 
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; /* 禁用点击高亮 */
+            user-select: none; /* 禁止选中文本 */
+            -webkit-user-select: none;
           }
           #main { width: 100vw; height: 100vh; }
         </style>
@@ -83,7 +98,7 @@ export default function BaseGrowthChart({
             
             var option = {
               animation: true,
-              backgroundColor: '#fae7ebff',
+              backgroundColor: '#ffffff',
               grid: {
                 top: '25%',
                 left: '3%',
@@ -92,22 +107,29 @@ export default function BaseGrowthChart({
                 containLabel: true
               },
               title: {
-                text: '${title}',
+                text: '{value|宝宝目前${title.replace('发育曲线', '')}} {num|${lastBabyValue || '--'}} {unit|${unit}}',
                 left: 'center',
-                top: '0%',
+                top: '5%',
                 textStyle: { 
-                  color: '#333', 
-                  fontSize: 18,
-                  fontWeight: '600'
+                  rich: {
+                    value: { color: '#666', fontSize: 14, fontWeight: '500' },
+                    num: { color: '${THEME_BLUE}', fontSize: 24, fontWeight: '600', padding: [0, 4, 0, 8] },
+                    unit: { color: '${THEME_BLUE}', fontSize: 14 }
+                  }
                 }
               },
               legend: {
-                top: '30',
+                top: '15%',
                 left: 'center',
                 icon: 'circle',
                 itemWidth: 8,
                 itemHeight: 8,
-                textStyle: { color: '#666', fontSize: 12 }
+                itemGap: 20,
+                textStyle: { color: '#666', fontSize: 12 },
+                data: [
+                  { name: '标准范围', icon: 'circle' },
+                  { name: '宝宝数据', icon: 'circle', itemStyle: { color: '#fff', borderColor: '${finalBabyColor}', borderWidth: 2 } }
+                ]
               },
               dataZoom: [
                 {
@@ -124,17 +146,17 @@ export default function BaseGrowthChart({
                   xAxisIndex: 0,
                   start: ${startZoom},
                   end: ${endZoom},
-                  height: 24,
-                  bottom: 5,
+                  height: 30,
+                  bottom: 20,
                   handleSize: '150%',
                   moveHandleSize : '0',
                   brushSelect: false,
                   borderColor: 'transparent',
                   backgroundColor: '#f5f5f5',
-                  fillerColor: '${babyColor}33',
+                  fillerColor: '${finalBabyColor}33',
                   showDataShadow: false,
                   handleStyle: {
-                    color: '${babyColor}',
+                    color: '${finalBabyColor}',
                     shadowBlur: 3,
                     shadowColor: 'rgba(0, 0, 0, 0.2)',
                     shadowOffsetX: 1,
@@ -152,13 +174,20 @@ export default function BaseGrowthChart({
                 textStyle: { color: '#333', fontSize: 13 },
                 extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;',
                 formatter: function(params) {
-                  let res = '<div style="font-weight:600;margin-bottom:4px;">' + params[0].name + ' ${xAxisName}</div>';
+                  let res = '<div style="color:#999;font-size:12px;margin-bottom:8px;">' +' 第 '+ params[0].name + ' ${xAxisName}</div>';
                   params.forEach(item => {
                     // 只有当有有效数值时才显示
                     if (item.value != null && item.value !== undefined) {
-                      res += '<div style="display:flex;align-items:center;justify-content:space-between;min-width:100px;">' +
-                             '<span>' + item.marker + item.seriesName + '</span>' +
-                             '<span style="font-weight:600;margin-left:10px;">' + item.value + ' ${unit}</span>' +
+                      let color = item.seriesName === '标准范围' ? '${finalStandardColor}' : '${finalBabyColor}';
+                      let fontWeight = item.seriesName === '宝宝数据' ? '600' : '400';
+                      // 手动构建图标样式
+                      let iconStyle = item.seriesName === '宝宝数据' 
+                        ? 'background-color:#fff;border:2px solid ' + color + ';width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px;'
+                        : 'background-color:' + color + ';width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;';
+                      
+                      res += '<div style="display:flex;align-items:center;justify-content:space-between;min-width:120px;margin-bottom:4px;">' +
+                             '<div><span style="' + iconStyle + '"></span><span>' + item.seriesName + '</span></div>' +
+                             '<span style="font-weight:' + fontWeight + ';color:' + color + ';margin-left:10px;">' + item.value + ' ${unit}</span>' +
                              '</div>';
                     }
                   });
@@ -176,15 +205,22 @@ export default function BaseGrowthChart({
               },
               yAxis: {
                 type: 'value',
-                name: '单位: ${unit}',
-                nameTextStyle: { color: '#999', fontSize: 11, padding: [0, 0, 0, 10] },
+                name: '${unit}', // 显示单位
+                nameTextStyle: { 
+                  color: '#999', 
+                  fontSize: 11, 
+                  align: 'right',
+                },
                 min: ${yMin},
                 max: ${yMax},
                 splitNumber: 5,
-                axisLine: { show: false },
+                axisLine: { show:true,lineStyle: { color: '#f0f0f0' } },
                 axisTick: { show: false },
                 splitLine: { lineStyle: { color: '#f5f5f5', type: 'dashed' } },
-                axisLabel: { color: '#999', fontSize: 11 }
+                axisLabel: { 
+                  color: '#999', 
+                  fontSize: 11
+                }
               },
               series: [
                 {
@@ -194,7 +230,7 @@ export default function BaseGrowthChart({
                   smooth: false,
                   showSymbol: false,
                   lineStyle: { 
-                    color: '${standardColor}', 
+                    color: '${finalStandardColor}', 
                     width: 2,
                     type: 'dashed',
                     opacity: 0.8
@@ -209,26 +245,47 @@ export default function BaseGrowthChart({
                   connectNulls: true,
                   showSymbol: true,
                   symbol: 'circle',
-                  symbolSize: 7,
+                  symbolSize: 8,
                   itemStyle: { 
                     color: '#fff',
                     borderWidth: 3,
-                    borderColor: '${babyColor}',
-                    shadowColor: 'rgba(0,0,0,0.2)',
-                    shadowBlur: 5
+                    borderColor: '${finalBabyColor}',
+                    shadowColor: 'rgba(0,0,0,0.1)',
+                    shadowBlur: 2
                   },
                   lineStyle: { 
-                    color: '${babyColor}', 
+                    color: '${finalBabyColor}', 
                     width: 3,
-                    shadowColor: '${babyColor}4d',
-                    shadowBlur: 10,
-                    shadowOffsetY: 4
+                    shadowColor: '${finalBabyColor}4d',
+                    shadowBlur: 4,
+                    shadowOffsetY: 2
                   },
                   areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                      { offset: 0, color: '${babyColor}4d' },
-                      { offset: 1, color: '${babyColor}00' }
+                      { offset: 0, color: '${finalBabyColor}26' }, // 15% opacity
+                      { offset: 1, color: '${finalBabyColor}00' }
                     ])
+                  },
+                  markPoint: {
+                    symbol: 'path://M10,0 L20,10 L10,20 L0,10 Z', // Custom symbol if needed, or use 'pin'
+                    symbolSize: 0, // Hide default symbol
+                    label: {
+                      show: true,
+                      formatter: '{c} ${unit}',
+                      offset: [0, -20],
+                      backgroundColor: '#fff',
+                      borderColor: '#eee',
+                      borderWidth: 1,
+                      borderRadius: 4,
+                      padding: [4, 8],
+                      color: '${THEME_BLUE}',
+                      fontWeight: 'bold',
+                      shadowColor: 'rgba(0,0,0,0.1)',
+                      shadowBlur: 4
+                    },
+                    data: [
+                      { type: 'max', name: '最大值' }
+                    ]
                   }
                 }
               ]
