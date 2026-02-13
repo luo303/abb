@@ -12,6 +12,7 @@ import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
+import AddBabyScreen from '../components/profile/AddBady'
 import TabooScreen from './(HomeNavGrid)/Taboo'
 import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
@@ -126,6 +127,11 @@ export default function Layout() {
                 name="AddPost"
                 component={AddPostScreen}
                 options={{ headerShown: false, presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="AddBaby"
+                component={AddBabyScreen}
+                options={{ title: '新增宝宝' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

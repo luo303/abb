@@ -104,19 +104,25 @@ export default function VaccineRecordScreen() {
     const now = new Date()
     setSelectedDate(now)
 
-    const handled = openDatePicker(now, handleDateChange)
+    const handled = openDatePicker(now, handleDateChange, 'date', now)
     if (!handled) {
       setShowIOSPicker(true)
     }
   }
 
+  // 点击卡片日期
   const handleDateClick = (id: string, date?: number) => {
     targetIdRef.current = id
     // 如果已有日期，使用该日期初始化；否则使用当前日期
     const initialDate = date ? new Date(date) : new Date()
     setSelectedDate(initialDate)
 
-    const handled = openDatePicker(initialDate, handleDateChange)
+    const handled = openDatePicker(
+      initialDate,
+      handleDateChange,
+      'date',
+      new Date()
+    )
     if (!handled) {
       setShowIOSPicker(true)
     }

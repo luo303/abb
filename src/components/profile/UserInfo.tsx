@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   View,
   Text,
@@ -11,29 +11,47 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Dropdown } from 'react-native-element-dropdown'
 
-const DATA = [
-  { label: '大宝', value: '1', icon: require('../../assets/poster_cjk.png') },
-  {
-    label: '二宝',
-    value: '2',
-    icon: require('../../assets/poster_ai 2.0.jpg')
-  },
-  {
-    label: '三宝',
-    value: '3',
-    icon: require('../../assets/poster_community.png')
-  }
-]
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import { NavigationProps } from '../../types/navigation'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, RootState } from '../../store'
+import { fetchBabies } from '../../store/modules/BabyStore'
 
 export default function UserInfo() {
-  const [value, setValue] = useState<string>('1')
+  const navigation = useNavigation<NavigationProps>()
+  const dispatch = useDispatch<AppDispatch>()
+  const { babiesList, currentBabyId } = useSelector(
+    (state: RootState) => state.baby
+  )
+  const [value, setValue] = useState<string | null>(null)
   const [isFocus, setIsFocus] = useState(false)
+  const dropdownRef = useRef<any>(null)
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchBabies())
+    }, [dispatch])
+  )
+
+  useEffect(() => {
+    if (currentBabyId) {
+      setValue(currentBabyId)
+    } else if (babiesList.length > 0 && !value) {
+      setValue(babiesList[0].baby_id)
+    }
+  }, [currentBabyId, babiesList, value])
 
   const renderItem = (item: any) => {
     return (
       <View style={styles.item}>
-        <Image source={item.icon} style={styles.itemIcon} />
-        <Text style={styles.textItem}>{item.label}</Text>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.itemIcon} />
+        ) : (
+          <View style={[styles.itemIcon, styles.placeholderIcon]}>
+            <Ionicons name="person" size={20} color="#ccc" />
+          </View>
+        )}
+        <Text style={styles.textItem}>{item.name}</Text>
       </View>
     )
   }
@@ -57,37 +75,53 @@ export default function UserInfo() {
           {/* 右上角装饰图标 */}
           <View style={styles.headerActions}>
             <Dropdown
+              ref={dropdownRef}
               style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
               containerStyle={styles.dropdownListContainer}
               placeholderStyle={styles.placeholderStyle}
               selectedTextStyle={styles.selectedTextStyle}
               iconStyle={styles.iconStyle}
-              data={DATA}
+              data={babiesList}
               maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder={!isFocus ? '选择宝宝' : '...'}
+              labelField="name"
+              valueField="baby_id"
+              placeholder={
+                !isFocus
+                  ? babiesList.length === 0
+                    ? '暂无宝宝'
+                    : '选择宝宝'
+                  : '...'
+              }
               value={value}
               onFocus={() => setIsFocus(true)}
               onBlur={() => setIsFocus(false)}
               onChange={item => {
-                setValue(item.value)
+                setValue(item.baby_id)
                 setIsFocus(false)
               }}
               renderLeftIcon={() => {
-                const selectedItem = DATA.find(item => item.value === value)
-                return selectedItem ? (
+                const selectedItem = babiesList.find(
+                  item => item.baby_id === value
+                )
+                if (!selectedItem) {
+                  return (
+                    <Ionicons
+                      style={styles.icon}
+                      color={'#ccc'}
+                      name="person"
+                      size={20}
+                    />
+                  )
+                }
+                return selectedItem.avatar ? (
                   <Image
-                    source={selectedItem.icon}
+                    source={{ uri: selectedItem.avatar }}
                     style={styles.selectedIcon}
                   />
                 ) : (
-                  <Ionicons
-                    style={styles.icon}
-                    color={isFocus ? 'blue' : 'black'}
-                    name="people-outline"
-                    size={20}
-                  />
+                  <View style={[styles.selectedIcon, styles.placeholderIcon]}>
+                    <Ionicons name="person" size={16} color="#ccc" />
+                  </View>
                 )
               }}
               renderItem={renderItem}
@@ -96,9 +130,9 @@ export default function UserInfo() {
                   <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => {
+                      dropdownRef.current?.close()
                       setIsFocus(false)
-                      // Handle add logic here
-                      console.log('Add new baby clicked')
+                      navigation.navigate('AddBaby')
                     }}
                   >
                     <Ionicons
@@ -339,5 +373,10 @@ const styles = StyleSheet.create({
   textItem: {
     fontSize: 14,
     color: '#333'
+  },
+  placeholderIcon: {
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 })

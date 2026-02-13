@@ -59,7 +59,12 @@ export default function CurveRecordForm({
   }
 
   const showMode = (currentMode: 'date' | 'time') => {
-    const handled = openDatePicker(dateObj, handleDateChange, currentMode)
+    const handled = openDatePicker(
+      dateObj,
+      handleDateChange,
+      currentMode,
+      new Date()
+    )
     if (!handled) {
       setShowDatePicker(!showDatePicker)
     }
@@ -93,6 +98,7 @@ export default function CurveRecordForm({
             onChange={handleDateChange}
             style={styles.datePicker}
             locale="zh-CN"
+            maximumDate={new Date()}
           />
         </View>
       )}

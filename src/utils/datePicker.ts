@@ -1,8 +1,10 @@
 import { Platform } from 'react-native'
-import {
+import DateTimePicker, {
   DateTimePickerAndroid,
   DateTimePickerEvent
 } from '@react-native-community/datetimepicker'
+
+export { DateTimePicker }
 
 /**
  * 打开日期选择器 (Android 使用 imperative API, iOS 返回 false 需自行处理 UI)
@@ -14,14 +16,16 @@ import {
 export const openDatePicker = (
   value: Date,
   onChange: (event: DateTimePickerEvent, date?: Date) => void,
-  mode: 'date' | 'time' = 'date'
+  mode: 'date' | 'time' = 'date',
+  maximumDate?: Date
 ): boolean => {
   if (Platform.OS === 'android') {
     DateTimePickerAndroid.open({
       value,
       onChange,
       mode,
-      is24Hour: true
+      is24Hour: true,
+      maximumDate
     })
     return true
   }

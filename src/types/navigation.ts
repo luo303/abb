@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Diary: undefined
   PostDetail: { id: string }
   AddPost: undefined
+  AddBaby: undefined
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>
