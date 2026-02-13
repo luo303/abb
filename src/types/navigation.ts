@@ -16,6 +16,7 @@ export type RootStackParamList = {
   PostDetail: { id: string }
   AddPost: undefined
   AddBaby: undefined
+  VaccineDetail: { url: string; title: string }
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>

@@ -9,6 +9,7 @@ export interface VaccineItem {
   actual_time: number
   dose_id: string
   dose_number: number
+  link: string
 }
 
 export interface GetVaccineListResponse {
