@@ -6,8 +6,6 @@ import {
   Platform,
   KeyboardAvoidingView
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { NavigationProps } from '@/types/navigation'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 

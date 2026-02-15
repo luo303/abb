@@ -1,11 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   View,
-  StyleSheet,
   Text,
+  StyleSheet,
   TouchableOpacity,
+  RefreshControl,
   ActivityIndicator,
-  RefreshControl
+  FlatList,
+  ScrollView
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -30,8 +32,8 @@ import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeSearchBar from '@/components/home/search/HomeSearchBar'
-import { getHomePosts } from '@/api/home'
 import { PostItem } from '@/types/home'
+import { usePostList } from '../../hooks/usePagination'
 
 /**
  * 首页组件
@@ -43,18 +45,22 @@ export default function Home() {
   const isFocused = useIsFocused()
   const insets = useSafeAreaInsets()
   const scrollY = useSharedValue(0)
-  const scrollViewRef = useRef<Animated.ScrollView>(null)
-  const [communityY, setCommunityY] = useState(0)
+  const flatListRef = useRef<any>(null)
   const [searchText, setSearchText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
-
-  // 分离服务端数据和本地数据
-  const [serverPosts, setServerPosts] = useState<PostItem[]>([])
   const [localPosts, setLocalPosts] = useState<PostItem[]>([])
+  const [activeTab, setActiveTab] = useState('推荐')
+  const [refreshing, setRefreshing] = useState(false)
+
+  // 使用帖子列表Hook
+  const {
+    posts: serverPosts,
+    page,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    refresh: fetchPosts,
+    loadMore: loadMorePosts
+  } = usePostList()
 
   // 合并展示的数据
   // 逻辑优化：优先使用 serverPosts 的数据（因为它是经过详情页更新后的最新状态）
@@ -84,116 +90,6 @@ export default function Home() {
 
   // 社区模块闪烁动画
   const communityOpacity = useSharedValue(1)
-
-  // 获取帖子列表（刷新）
-  const fetchPosts = async () => {
-    setIsLoading(true)
-    setPage(1)
-    try {
-      const response = await getHomePosts(1)
-      console.log('Home fetchPosts response:', JSON.stringify(response))
-
-      // 宽松的成功校验：
-      // 1. code 为 200 或 0
-      // 2. 或者 data.items 是数组
-      // 3. 或者 data.post 存在（容错：Mock 返回了详情结构）
-      // 4. 或者 data 本身就是数组
-      const hasItemsArray =
-        response?.data?.items && Array.isArray(response.data.items)
-      // 使用类型断言或可选链来安全访问可能不存在的 post 属性
-      const responseData = response?.data as any
-      const hasPostDetail = !!responseData?.post
-      const isDataArray = Array.isArray(response?.data)
-      const isSuccessCode =
-        response && (response.code === 200 || response.code === 0)
-
-      if (isSuccessCode || hasItemsArray || hasPostDetail || isDataArray) {
-        let items: PostItem[] = []
-
-        if (hasItemsArray) {
-          items = response.data.items
-        } else if (isDataArray) {
-          items = response.data as unknown as PostItem[]
-        } else if (hasPostDetail) {
-          // 如果返回的是单个帖子详情，包装成数组
-          items = [responseData.post]
-        }
-
-        if (items.length > 0) {
-          console.log('Home fetchPosts items count:', items.length)
-          setServerPosts(items)
-          setHasMore(response?.data?.has_more ?? false)
-        } else {
-          console.warn(
-            'Response data is empty or invalid format:',
-            response?.data
-          )
-          setServerPosts([])
-        }
-      } else {
-        console.warn('Fetch posts failed with code:', response?.code)
-        setServerPosts([])
-      }
-    } catch (error) {
-      console.error('Fetch posts failed:', error)
-      setServerPosts([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 加载更多
-  const loadMorePosts = useCallback(async () => {
-    if (isLoadingMore || !hasMore || isLoading) return
-
-    setIsLoadingMore(true)
-    try {
-      const nextPage = page + 1
-      const response = await getHomePosts(nextPage)
-
-      const hasItemsArray =
-        response?.data?.items && Array.isArray(response.data.items)
-      // 使用类型断言或可选链来安全访问可能不存在的 post 属性
-      const responseData = response?.data as any
-      const hasPostDetail = !!responseData?.post
-      const isDataArray = Array.isArray(response?.data)
-
-      let newItems: PostItem[] = []
-
-      if (hasItemsArray) {
-        newItems = response.data.items
-      } else if (isDataArray) {
-        newItems = response.data as unknown as PostItem[]
-      } else if (hasPostDetail) {
-        newItems = [responseData.post]
-      }
-
-      if (newItems.length > 0) {
-        setServerPosts(prev => {
-          // 过滤重复数据，防止 key 重复报错
-          const existingIds = new Set(prev.map(p => p.post_id))
-          const uniqueNewItems = newItems.filter(
-            p => !existingIds.has(p.post_id)
-          )
-          return [...prev, ...uniqueNewItems]
-        })
-        setHasMore(response?.data?.has_more ?? false)
-        setPage(nextPage)
-      }
-    } catch (error) {
-      console.error('Load more posts failed:', error)
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [isLoadingMore, hasMore, isLoading, page])
-
-  // 下拉刷新
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    // 刷新时不需要显示中间的 loading，因为有 RefreshControl 的 spinner
-    await fetchPosts()
-    setRefreshing(false)
-  }, [])
 
   // 监听路由参数，如果有新发布的帖子，添加到列表头部
   useEffect(() => {
@@ -226,7 +122,7 @@ export default function Home() {
     if (isFocused) {
       fetchPosts()
     }
-  }, [isFocused])
+  }, [isFocused, fetchPosts])
 
   // 徽章动画效果
   useEffect(() => {
@@ -255,7 +151,12 @@ export default function Home() {
 
   // 滚动到社区模块
   const handleScrollToCommunity = () => {
-    scrollViewRef.current?.scrollTo({ y: communityY, animated: true })
+    // 滚动到社区标题栏位置，确保吸顶效果完全显示
+    const scrollPosition = communityHeaderY
+    flatListRef.current?.scrollToOffset({
+      offset: scrollPosition,
+      animated: true
+    })
 
     communityOpacity.value = withDelay(
       500,
@@ -266,6 +167,18 @@ export default function Home() {
         withTiming(1, { duration: 200 })
       )
     )
+  }
+
+  // 下拉刷新处理函数
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await fetchPosts()
+    } catch (error) {
+      console.error('Refresh failed:', error)
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const scrollHandler = useAnimatedScrollHandler(
@@ -287,7 +200,8 @@ export default function Home() {
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {
-    const triggerPoint = communityY > 0 ? communityY - insets.top - 50 : 300
+    const triggerPoint =
+      communityHeaderY > 0 ? communityHeaderY - insets.top - 50 : 300
     const opacity = interpolate(
       scrollY.value,
       [triggerPoint - 100, triggerPoint],
@@ -296,6 +210,215 @@ export default function Home() {
     )
     return { opacity }
   })
+
+  // 准备 FlatList 数据
+  const flatListData = isSearching
+    ? filteredPosts
+    : posts.map(post => ({
+        type: 'post',
+        id: post.post_id || `unknown-${Math.random()}`,
+        data: post
+      }))
+
+  // 渲染 FlatList 项
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    if (isSearching) {
+      return (
+        <View style={{ marginBottom: 12 }}>
+          <HomeCommunityCard data={item} />
+        </View>
+      )
+    }
+
+    if (item.type === 'post') {
+      return (
+        <View style={{ marginBottom: 12 }}>
+          <HomeCommunityCard data={item.data} />
+        </View>
+      )
+    }
+
+    return null
+  }
+
+  // 渲染社区标题栏
+  const renderCommunityHeader = () => (
+    <View style={styles.stickyHeader}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.titleAndTabsContainer}>
+          <View style={styles.sectionTitleWrapper}>
+            <LinearGradient
+              colors={['#ff9a9e', '#f43f5e']}
+              style={styles.iconBox}
+            >
+              <Ionicons name="people" size={16} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.sectionTitle}>宝妈社区</Text>
+          </View>
+          {/* 添加标签栏 */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabContainer}
+          >
+            <TouchableOpacity
+              style={activeTab === '推荐' ? styles.activeTab : styles.tab}
+              onPress={() => setActiveTab('推荐')}
+            >
+              <Text
+                style={
+                  activeTab === '推荐' ? styles.activeTabText : styles.tabText
+                }
+              >
+                推荐
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={activeTab === '关注' ? styles.activeTab : styles.tab}
+              onPress={() => setActiveTab('关注')}
+            >
+              <Text
+                style={
+                  activeTab === '关注' ? styles.activeTabText : styles.tabText
+                }
+              >
+                关注
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('AddPost')}
+        >
+          <LinearGradient
+            colors={['#ff9a9e', '#f43f5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.sectionBadge}
+          >
+            <Text style={styles.badgeText}>记录美好瞬间</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+
+  // 渲染列表头部（轮播图和工具栏）
+  const ListHeaderComponent = () => {
+    if (isSearching) {
+      return (
+        <View style={styles.communitySection}>
+          {filteredPosts.length === 0 && (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#999' }}>未找到相关内容</Text>
+            </View>
+          )}
+        </View>
+      )
+    }
+
+    return (
+      <>
+        {/* 轮播图 */}
+        <View style={styles.bannerSection}>
+          <HomeBanner />
+        </View>
+
+        {/* 工具栏 */}
+        <HomeNavGrid />
+
+        {/* 加载状态 */}
+        {isLoading && page === 1 ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color="#f43f5e" />
+          </View>
+        ) : null}
+      </>
+    )
+  }
+
+  // 渲染列表尾部
+  const ListFooterComponent = () => {
+    if (isSearching) return null
+
+    return (
+      <View>
+        {isLoadingMore && (
+          <View style={{ padding: 10, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color="#f43f5e" />
+            <Text style={{ color: '#999', fontSize: 12 }}>加载更多...</Text>
+          </View>
+        )}
+        {!hasMore && posts.length > 0 && (
+          <View style={{ padding: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#ccc', fontSize: 12 }}>
+              - 没有更多内容了 -
+            </Text>
+          </View>
+        )}
+      </View>
+    )
+  }
+
+  // 社区标题栏引用
+  const communityHeaderRef = useRef<View>(null)
+  // 搜索栏高度
+  const [searchBarHeight, setSearchBarHeight] = useState(0)
+  // 社区标题栏原始位置
+  const [communityHeaderY, setCommunityHeaderY] = useState(0)
+
+  // 使用Animated API实现平滑过渡
+  const stickyProgress = useSharedValue(0)
+
+  // 处理滚动事件
+  const handleScroll = (event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y
+
+    // 计算滚动进度，用于平滑过渡
+    if (communityHeaderY > 0) {
+      const threshold = communityHeaderY - searchBarHeight
+      const progress = Math.max(0, Math.min(1, (scrollY - threshold + 20) / 40))
+      stickyProgress.value = progress
+    }
+  }
+
+  // 计算吸顶标题栏的样式
+  const stickyHeaderAnimatedStyle = useAnimatedStyle(() => {
+    // 根据滚动进度计算透明度和位置
+    const opacity = stickyProgress.value
+    const translateY = stickyProgress.value * (searchBarHeight + 10)
+
+    return {
+      opacity,
+      transform: [{ translateY }],
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 99
+    }
+  })
+
+  // 计算滚动标题栏的样式
+  const scrollHeaderAnimatedStyle = useAnimatedStyle(() => {
+    // 根据滚动进度计算透明度
+    const opacity = 1 - stickyProgress.value
+
+    return {
+      opacity
+    }
+  })
+
+  // 测量搜索栏高度
+  const measureSearchBar = (event: any) => {
+    setSearchBarHeight(event.nativeEvent.layout.height)
+  }
+
+  // 测量社区标题栏位置
+  const measureCommunityHeader = (event: any) => {
+    setCommunityHeaderY(event.nativeEvent.layout.y)
+  }
 
   return (
     <HomeScrollToContext.Provider
@@ -321,110 +444,73 @@ export default function Home() {
         </View>
 
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <HomeSearchBar onSearch={setSearchText} />
-          <Animated.ScrollView
+          {/* 搜索栏固定位置，不参与滚动 */}
+          <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
+            <HomeSearchBar onSearch={setSearchText} />
+          </View>
+
+          {/* 固定的社区标题栏（使用动画实现平滑过渡） */}
+          {!isSearching && (
+            <Animated.View
+              style={[styles.stickyHeader, stickyHeaderAnimatedStyle]}
+            >
+              <LinearGradient
+                colors={['#fff1f2', '#ffe4e6']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={{ zIndex: 1 }}>{renderCommunityHeader()}</View>
+            </Animated.View>
+          )}
+
+          {/* 使用 FlatList 实现滚动 */}
+          <FlatList
+            ref={flatListRef}
             style={styles.container}
+            contentContainerStyle={[{ paddingBottom: 100 }]}
             showsVerticalScrollIndicator={false}
-            ref={scrollViewRef}
-            onScroll={scrollHandler}
+            data={flatListData}
+            keyExtractor={(item, index) => {
+              if (isSearching) {
+                return item.post_id || `post-${index}`
+              }
+              return item.id || `item-${index}`
+            }}
+            renderItem={renderItem}
+            ListHeaderComponent={() => (
+              <>
+                {ListHeaderComponent()}
+                {/* 社区标题栏（滚动时显示，使用动画实现平滑过渡） */}
+                {!isSearching && (
+                  <Animated.View
+                    ref={communityHeaderRef}
+                    onLayout={measureCommunityHeader}
+                    style={[styles.stickyHeader, scrollHeaderAnimatedStyle]}
+                  >
+                    {renderCommunityHeader()}
+                  </Animated.View>
+                )}
+              </>
+            )}
+            ListFooterComponent={ListFooterComponent}
+            onScroll={handleScroll}
             scrollEventThrottle={16}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            onEndReached={() => {
+              if (!isSearching && hasMore && !isLoadingMore) {
+                loadMorePosts()
+              }
+            }}
+            onEndReachedThreshold={0.1}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={['#f43f5e']} // Android 颜色
-                tintColor="#f43f5e" // iOS 颜色
-                progressViewOffset={insets.top + 60} // 调整 spinner 位置，避免被 header 遮挡
+                onRefresh={handleRefresh}
+                colors={['#f43f5e']}
+                tintColor="#f43f5e"
               />
             }
-          >
-            {isSearching ? (
-              <View style={styles.communitySection}>
-                {filteredPosts.map((post, index) => (
-                  <View
-                    key={`${post.post_id || 'unknown'}-${index}`}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <HomeCommunityCard data={post} />
-                  </View>
-                ))}
-                {filteredPosts.length === 0 && (
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text style={{ color: '#999' }}>未找到相关内容</Text>
-                  </View>
-                )}
-              </View>
-            ) : (
-              <>
-                <View style={styles.bannerSection}>
-                  <HomeBanner />
-                </View>
-
-                <HomeNavGrid />
-
-                <View
-                  style={styles.communitySection}
-                  onLayout={e => setCommunityY(e.nativeEvent.layout.y)}
-                >
-                  <Animated.View
-                    style={[styles.sectionHeader, animatedCommunityStyle]}
-                  >
-                    <View style={styles.sectionTitleWrapper}>
-                      <LinearGradient
-                        colors={['#ff9a9e', '#f43f5e']}
-                        style={styles.iconBox}
-                      >
-                        <Ionicons name="people" size={16} color="#fff" />
-                      </LinearGradient>
-                      <Text style={styles.sectionTitle}>宝妈社区</Text>
-                    </View>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => navigation.navigate('AddPost')}
-                    >
-                      <Animated.View
-                        style={[styles.sectionBadge, animatedBadgeStyle]}
-                      >
-                        <Text style={styles.badgeText}>记录美好瞬间</Text>
-                      </Animated.View>
-                    </TouchableOpacity>
-                  </Animated.View>
-
-                  {isLoading && page === 1 ? (
-                    <View style={{ padding: 20 }}>
-                      <ActivityIndicator size="small" color="#f43f5e" />
-                    </View>
-                  ) : null}
-
-                  {posts.map((post: PostItem, index: number) => (
-                    <View
-                      key={`${post.post_id || 'unknown'}-${index}`}
-                      style={{ marginBottom: 12 }}
-                    >
-                      <HomeCommunityCard data={post} />
-                    </View>
-                  ))}
-
-                  {isLoadingMore && (
-                    <View style={{ padding: 10, alignItems: 'center' }}>
-                      <ActivityIndicator size="small" color="#f43f5e" />
-                      <Text style={{ color: '#999', fontSize: 12 }}>
-                        加载更多...
-                      </Text>
-                    </View>
-                  )}
-                  {!hasMore && posts.length > 0 && (
-                    <View style={{ padding: 10, alignItems: 'center' }}>
-                      <Text style={{ color: '#ccc', fontSize: 12 }}>
-                        - 没有更多内容了 -
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </>
-            )}
-          </Animated.ScrollView>
+          />
         </SafeAreaView>
       </View>
     </HomeScrollToContext.Provider>
@@ -460,7 +546,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   bannerSection: {
-    marginBottom: 10
+    marginBottom: 5
   },
   communitySection: {
     paddingHorizontal: 16,
@@ -470,8 +556,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 10
+    paddingVertical: 10
+  },
+  titleAndTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 20
   },
   sectionTitleWrapper: {
     flexDirection: 'row',
@@ -496,22 +587,53 @@ const styles = StyleSheet.create({
     color: '#1e293b'
   },
   sectionBadge: {
-    backgroundColor: '#ff1744',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#fff',
-    shadowColor: '#ff1744',
+    backgroundColor: '#f43f5e',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 4
+    elevation: 3
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#fff',
-    fontWeight: 'bold',
-    letterSpacing: 0.5
+    fontWeight: 'bold'
+  },
+  // 标签栏样式
+  tabContainer: {
+    flexDirection: 'row',
+    gap: 20
+  },
+  tab: {
+    paddingVertical: 5
+  },
+  activeTab: {
+    paddingVertical: 5,
+    borderBottomWidth: 2,
+    borderBottomColor: '#ff1744'
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500'
+  },
+  activeTabText: {
+    fontSize: 16,
+    color: '#ff1744',
+    fontWeight: '600'
+  },
+  // 吸顶标题栏样式
+  stickyHeader: {
+    paddingHorizontal: 8,
+    marginTop: 15,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 10
   }
 })

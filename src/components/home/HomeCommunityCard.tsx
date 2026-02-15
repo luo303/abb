@@ -55,10 +55,49 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     return img
   }
 
+  // 解析内容，尝试从 JSON 字符串中提取 text 和 images
+  const parsedContent = React.useMemo(() => {
+    try {
+      // 尝试解析 content
+      if (data.content && typeof data.content === 'string') {
+        // 判断是否像 JSON (简单的判断，避免解析普通文本报错)
+        if (
+          data.content.trim().startsWith('{') &&
+          data.content.trim().endsWith('}')
+        ) {
+          const parsed = JSON.parse(data.content)
+          return {
+            text: parsed.content || parsed.text || '', // 兼容 content 或 text 字段
+            images: Array.isArray(parsed.images) ? parsed.images : []
+          }
+        }
+      }
+    } catch (e) {
+      // 解析失败，说明不是 JSON，按普通文本处理
+      // console.warn('Content parse failed:', e)
+    }
+    // 默认返回原始 content 和 data.images
+    return {
+      text: data.content,
+      images: data.images || []
+    }
+  }, [data.content, data.images])
+
+  /**
+   * 获取文章图片的函数
+   * 优先级顺序为：解析内容中的图片 > 数据中的图片 > 封面图
+   * @returns {Array} 返回图片URL数组，如果没有图片则返回空数组
+   */
   const getPostImages = () => {
+    // 优先使用解析出来的 images
+    if (parsedContent.images && parsedContent.images.length > 0) {
+      return parsedContent.images
+    }
+    // 其次使用 data.images
     if (data.images && data.images.length > 0) {
       return data.images
     }
+    // 最后使用 cover
     if (data.cover) {
       return [data.cover]
     }
@@ -70,11 +109,8 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const handlePress = () => {
     // 优先使用 post_id，如果不存在则尝试使用 id
     const postId = data.post_id || data.id
-    console.log('CommunityCard pressed, postId:', postId)
     if (postId) {
       navigation.navigate('PostDetail', { id: postId })
-    } else {
-      console.warn('Post ID is missing', data)
     }
   }
 
@@ -109,7 +145,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 
         {/* 帖子内容 - 只显示第一行或者截断 */}
         <Text style={styles.postContent} numberOfLines={2} ellipsizeMode="tail">
-          {data.content}
+          {parsedContent.text}
         </Text>
 
         {/* 标签展示 */}
@@ -152,19 +188,19 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
             <Ionicons name="heart-outline" size={20} color="#f43f5e" />
-            <Text style={styles.actionText}>{data.like_count}</Text>
+            <Text style={styles.actionText}>{data.like_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="heart-dislike-outline" size={20} color="#94a3b8" />
-            <Text style={styles.actionText}>{data.dislike_count}</Text>
+            <Text style={styles.actionText}>{data.dislike_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="star-outline" size={20} color="#f59e0b" />
-            <Text style={styles.actionText}>{data.collect_count}</Text>
+            <Text style={styles.actionText}>{data.collect_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons name="chatbubble-outline" size={20} color="#3b82f6" />
-            <Text style={styles.actionText}>{data.comment_count}</Text>
+            <Text style={styles.actionText}>{data.comment_count || 0}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -182,7 +218,7 @@ const styles = StyleSheet.create({
     // backgroundColor: '#fff', // Removed for gradient
     borderRadius: 24, // 统一圆角
     padding: 15,
-    marginBottom: 20, // 下边距可以保留在外部或内部，这里是内部
+    marginBottom: 10, // 减小下边距
     // Shadow
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 }, // 统一阴影方向

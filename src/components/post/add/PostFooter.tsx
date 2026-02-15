@@ -9,14 +9,15 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, CommonActions } from '@react-navigation/native'
+import { createPost } from '@/api/home'
 import { uploadFile } from '@/api/upload'
-import request from '@/utils/request'
 import {
   MOCK_FALLBACK_IMAGE,
   MOCK_CURRENT_USER,
   addMockPost
 } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
+import { useMessage } from '@/components/Message'
 
 export interface PostData {
   content: string
@@ -34,6 +35,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [isPublishing, setIsPublishing] = useState(false)
+  const { showMessage } = useMessage()
 
   const isPublishDisabled = !postData.content.trim() || isPublishing
 
@@ -67,12 +69,19 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
             if (res.data && res.data.url) return res.data.url
             if (res.url) return res.url
             if (typeof res.data === 'string') return res.data
+            // 如果后端返回 code 0，也认为成功
+            if (res.code === 0 && res.data) {
+              // 有些接口直接把 url 放在 data 里，有些放在 data.url
+              return typeof res.data === 'string'
+                ? res.data
+                : res.data.url || ''
+            }
             // Mock 环境兜底
             if (res.code === 200) return MOCK_FALLBACK_IMAGE
 
             return ''
           })
-          .filter(url => !!url)
+          .filter((url: string) => !!url) // 显式声明类型
 
         validNetworkUrls.push(...uploadedImageUrls)
       }
@@ -83,38 +92,29 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         images: validNetworkUrls,
         tags: postData.tags,
         isPublic: postData.isPublic ? 1 : 0,
-        createTime: new Date().toISOString()
+        status: 'published' as const // 状态：发布
       }
 
       // 发送 POST 请求
-      // 纯 Mock 模式：跳过网络请求，直接模拟延迟后成功
-      await new Promise(resolve => setTimeout(resolve, 500)) // 模拟 0.5s 延迟提升真实感
-
-      /*
-      await request.post('/post/createPost', payload, { timeout: 1000 }).catch(err => {
-        console.warn('Post publish failed (network), falling back to mock success')
-        return { code: 200 }
-      })
-      */
-
-      // console.log('Publish success')
+      const response = await createPost(payload)
 
       // 构造完整的帖子对象用于前端展示
-      // 如果上传失败或 Mock 接口没返回 URL，回退使用本地 URI，确保首页能显示图片
+      // 在 Mock 演示模式下，优先使用本地图片，因为 Mock 上传接口返回的 URL 通常是固定的假图
+      // 只有当本地没有图片时（例如纯文本贴），才尝试使用网络返回的图片
       const displayImages =
-        validNetworkUrls.length > 0 ? validNetworkUrls : postData.images
+        postData.images.length > 0 ? postData.images : validNetworkUrls
 
       const newPost: PostItem = {
-        post_id: Date.now().toString(), // 临时 ID
+        post_id: response.data.post_id || Date.now().toString(),
         author_id: MOCK_CURRENT_USER.author_id,
-        author_avatar: MOCK_CURRENT_USER.author_avatar, // Mock 头像
-        author_name: MOCK_CURRENT_USER.author_name, // Mock 昵称
+        author_avatar: MOCK_CURRENT_USER.author_avatar,
+        author_name: MOCK_CURRENT_USER.author_name,
         baby_age_text: MOCK_CURRENT_USER.baby_age_text,
         ctime: Date.now(),
-        author_city: '未知位置', // 如果有定位功能可填充
+        author_city: '未知位置',
         content: payload.content,
         tags: payload.tags,
-        images: displayImages, // 优先使用网络图，无则用本地图
+        images: displayImages,
         like_count: 0,
         dislike_count: 0,
         collect_count: 0,
@@ -129,8 +129,10 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         onSuccess()
       }
 
+      // 提示发布成功
+      showMessage('发布成功！')
+
       // 使用 reset 重置路由栈，确保用户无法返回发布页
-      // @ts-ignore
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -145,9 +147,6 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
           ]
         })
       )
-
-      // 提示发布成功
-      Alert.alert('提示', '发布成功！')
     } catch (error) {
       console.error('Publish failed:', error)
       Alert.alert('提示', '发布失败，请稍后重试')

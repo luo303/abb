@@ -25,15 +25,18 @@ export interface PostItem {
   location?: string // Keep location for compatibility if needed
 }
 
+// 首页获取帖子响应数据 - 使用Trae生成的类型结构
 export interface PostListResponse {
   code: number
   message: string
   data: {
+    has_more: boolean
     items: PostItem[]
     page: number
     page_size: number
-    has_more: boolean
+    [property: string]: any
   }
+  [property: string]: any
 }
 
 export interface PostDetailResponse {
