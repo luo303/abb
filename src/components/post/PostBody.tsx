@@ -21,8 +21,9 @@ interface PostBodyProps {
 const { width } = Dimensions.get('window')
 const contentPadding = 16
 const imageGap = 8
+const imageWidth = width - contentPadding * 2
 // 计算网格中每个图片的大小（3列）
-const imageSize = (width - contentPadding * 2 - imageGap * 2) / 3
+const gridImageSize = (imageWidth - imageGap * 2) / 3
 
 export default function PostBody({
   title,
@@ -45,6 +46,11 @@ export default function PostBody({
     setIsVisible(true)
   }
 
+  // 图片加载失败处理
+  const handleImageError = (error: any) => {
+    // 静默处理图片加载错误
+  }
+
   return (
     <View style={styles.container}>
       {title && <Text style={styles.title}>{title}</Text>}
@@ -62,28 +68,49 @@ export default function PostBody({
       )}
 
       {images.length > 0 && (
-        <View style={styles.imageGrid}>
-          {images.map((img, index) => (
+        <View style={styles.imageContainer}>
+          {images.length === 1 ? (
+            // 单张图片大图显示
             <TouchableOpacity
-              key={`img-${index}`}
               activeOpacity={0.9}
-              onPress={() => handleImagePress(index)}
+              onPress={() => handleImagePress(0)}
+              style={styles.singleImageWrapper}
             >
               <Image
-                source={typeof img === 'string' ? { uri: img } : img}
-                style={[
-                  styles.image,
-                  {
-                    width: imageSize,
-                    height: imageSize,
-                    marginBottom: imageGap,
-                    marginRight: (index + 1) % 3 === 0 ? 0 : imageGap
-                  }
-                ]}
+                source={
+                  typeof images[0] === 'string' ? { uri: images[0] } : images[0]
+                }
+                style={styles.singleImage}
                 resizeMode="cover"
+                onError={handleImageError}
               />
             </TouchableOpacity>
-          ))}
+          ) : (
+            // 多张图片网格显示
+            <View style={styles.imageGrid}>
+              {images.map((img, index) => (
+                <TouchableOpacity
+                  key={`img-${index}`}
+                  activeOpacity={0.9}
+                  onPress={() => handleImagePress(index)}
+                  style={[
+                    styles.gridImageWrapper,
+                    {
+                      marginRight: (index + 1) % 3 === 0 ? 0 : imageGap,
+                      marginBottom: imageGap
+                    }
+                  ]}
+                >
+                  <Image
+                    source={typeof img === 'string' ? { uri: img } : img}
+                    style={styles.gridImage}
+                    resizeMode="cover"
+                    onError={handleImageError}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -143,15 +170,37 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden'
   },
-  imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  imageContainer: {
     marginBottom: 12,
     width: '100%'
   },
-  image: {
+  singleImageWrapper: {
     borderRadius: 8,
-    backgroundColor: '#eee'
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5',
+    marginBottom: imageGap
+  },
+  singleImage: {
+    width: imageWidth,
+    height: imageWidth,
+    borderRadius: 8
+  },
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%'
+  },
+  gridImageWrapper: {
+    width: gridImageSize,
+    height: gridImageSize,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5'
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8
   },
   metaInfo: {
     marginTop: 4

@@ -89,27 +89,26 @@ export const createPost = async (
 
 /**
  * 获取帖子详情
- * @param id 帖子ID
+ * @param post_id 帖子ID
  */
 export const getPostDetail = async (
-  id: string
+  post_id: string
 ): Promise<PostDetailResponse> => {
   try {
-    const res = await request.get(`/post/${id}`)
-    return res as unknown as PostDetailResponse
-  } catch (error) {
-    console.warn('Network request failed, falling back to mock data')
-    // 降级使用 Mock 数据
-    const mockPost = MOCK_POSTS.find(p => p.post_id === id)
-    if (mockPost) {
-      return {
-        code: 200,
-        message: 'success (local mock)',
-        data: {
-          post: mockPost
-        }
-      }
+    const res = await request.get(`/post/${post_id}`)
+    const response = res as unknown as PostDetailResponse
+
+    // 打印日志确认响应
+    if (response?.data?.post) {
+      console.log('Post detail fetched:', {
+        post_id: response.data.post.post_id,
+        author_name: response.data.post.author_name
+      })
     }
+
+    return response
+  } catch (error) {
+    // 直接抛出错误，移除本地 Mock 降级逻辑
     throw error
   }
 }

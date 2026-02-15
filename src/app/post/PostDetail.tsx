@@ -21,13 +21,17 @@ import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
 import { usePostDetail } from '@/hooks/usePostDetail'
 
-type PostDetailRouteProp = RouteProp<{ params: { id: string } }, 'params'>
+type PostDetailRouteProp = RouteProp<
+  { params: { id: string; post_id: string } },
+  'params'
+>
 
 export default function PostDetail() {
   const route = useRoute<PostDetailRouteProp>()
-  const { id } = route.params || {}
+  const { id, post_id } = route.params || {}
+  const postId = post_id || id
 
-  const { post, isLoading, updateLocalPost } = usePostDetail(id)
+  const { post, isLoading, updateLocalPost } = usePostDetail(postId)
 
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
