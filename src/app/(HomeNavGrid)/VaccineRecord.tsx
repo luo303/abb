@@ -8,6 +8,8 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { NavigationProps } from '@/types/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/store'
 import { fetchBabies } from '@/store/modules/BabyStore'
@@ -26,6 +28,7 @@ import { useMessage } from '@/components/Message'
 type FilterType = 'all' | 'completed' | 'pending'
 
 export default function VaccineRecordScreen() {
+  const navigation = useNavigation<NavigationProps>()
   const dispatch = useDispatch<AppDispatch>()
   const { showMessage } = useMessage()
   const currentBabyId = useSelector(
@@ -225,8 +228,16 @@ export default function VaccineRecordScreen() {
   }
 
   const handleCardPress = (item: VaccineItem) => {
-    // API 没有提供详情链接，暂时不处理跳转
-    // if (item.detail) { ... }
+    // 如果有链接，跳转到详情页
+    if (item.link) {
+      navigation.navigate('VaccineDetail', {
+        url: item.link,
+        title: item.name
+      })
+    } else {
+      // 否则提示暂无详情
+      showMessage('暂无详情')
+    }
   }
 
   const renderTab = (type: FilterType, label: string) => (
@@ -267,7 +278,6 @@ export default function VaccineRecordScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => handleCardPress(item)}
-              disabled={true} // 暂时禁用点击
             >
               <VaccineCard
                 data={item}

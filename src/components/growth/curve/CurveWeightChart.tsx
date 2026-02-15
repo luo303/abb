@@ -1,41 +1,78 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import BaseGrowthChart from './BaseGrowthChart'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import { BABY_GROWTH_SIMULATION_DATA } from '../../../data/mock/homePosts'
+import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
+import DataDescription from './DataDescription'
 
 export default function CurveWeightChart() {
-  const { standardData, babyData } = useMemo(() => {
-    // 处理宝宝数据：转换为 { label, value } 格式
-    // 默认展示男宝数据
-    const baby = BABY_GROWTH_SIMULATION_DATA.map(item => ({
-      label: item.day.toString(),
-      value: item.maleWeight
-    }))
+  const [timeRange, setTimeRange] = useState<TimeRange>('day')
 
-    // 获取宝宝数据中存在的天数
-    const babyDays = new Set(baby.map(item => item.label))
+  const { standardData, babyData, xAxisName } = useMemo(() => {
+    let xAxisName = '天'
+    let baby: any[] = []
 
-    // 处理标准数据：过滤出宝宝数据中存在的天数
+    if (timeRange === 'day') {
+      baby = BABY_GROWTH_SIMULATION_DATA.map(item => ({
+        label: item.day.toString(),
+        value: item.maleWeight,
+        originalDay: item.day.toString()
+      }))
+    } else {
+      const period = timeRange === 'week' ? 7 : 30
+      xAxisName = timeRange === 'week' ? '周' : '月'
+
+      const maxDay = Math.max(...BABY_GROWTH_SIMULATION_DATA.map(d => d.day))
+      const periodCount = Math.ceil(maxDay / period) || 1
+
+      for (let i = 1; i <= periodCount; i++) {
+        const startDay = (i - 1) * period
+        const endDay = i * period
+
+        const recordsInPeriod = BABY_GROWTH_SIMULATION_DATA.filter(
+          item => item.day > startDay && item.day <= endDay
+        )
+
+        if (recordsInPeriod.length > 0) {
+          const lastRecord = recordsInPeriod[recordsInPeriod.length - 1]
+          baby.push({
+            label: i.toString(),
+            value: lastRecord.maleWeight,
+            originalDay: lastRecord.day.toString()
+          })
+        }
+      }
+    }
+
+    const babyDays = new Set(baby.map(item => item.originalDay))
+
     const standard = STANDARD_GROWTH_DATA.weight
       .filter(item => babyDays.has(item.day))
-      .map(item => ({
-        label: item.day,
-        value: item.male // 默认展示男宝标准
-      }))
+      .map(item => {
+        const babyItem = baby.find(b => b.originalDay === item.day)
+        return {
+          label: babyItem ? babyItem.label : item.day,
+          value: item.male
+        }
+      })
 
-    return { standardData: standard, babyData: baby }
-  }, [])
+    return { standardData: standard, babyData: baby, xAxisName }
+  }, [timeRange])
 
   return (
-    <BaseGrowthChart
-      title="体重发育曲线"
-      unit="kg"
-      xAxisName="天"
-      standardData={standardData}
-      babyData={babyData}
-      yMin={2.5}
-      yMax={5.0}
-      // 使用默认颜色：标准数据蓝线，宝宝数据红线
-    />
+    <>
+      <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+      <BaseGrowthChart
+        title="体重发育曲线"
+        unit="kg"
+        xAxisName={xAxisName}
+        standardData={standardData}
+        babyData={babyData}
+        yMin={2.5}
+        yMax={5.0}
+        // 使用默认颜色：标准数据蓝线，宝宝数据红线
+      />
+      <DataDescription type="weight" />
+    </>
   )
 }

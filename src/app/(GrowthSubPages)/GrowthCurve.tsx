@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { useNavigation } from '@react-navigation/native'
 
 // 导入拆分后的组件
 import CurveTabs from '../../components/growth/curve/CurveTabs'
@@ -20,6 +21,7 @@ import CurveHeadChart from '../../components/growth/curve/CurveHeadChart'
 
 export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
+  const navigation = useNavigation()
   const [activeTab, setActiveTab] = useState('record') // record, height, weight, head
 
   // 表单状态
@@ -40,6 +42,15 @@ export default function GrowthCurveScreen() {
 
   return (
     <View style={styles.container}>
+      {/* 固定在顶部的 Tabs */}
+      <View style={{ zIndex: 10 }}>
+        <CurveTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -49,12 +60,6 @@ export default function GrowthCurveScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <CurveTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-
           {activeTab === 'record' && (
             <CurveRecordForm
               height={height}
@@ -75,7 +80,7 @@ export default function GrowthCurveScreen() {
       </KeyboardAvoidingView>
 
       {/* 底部按钮 */}
-      {activeTab === 'record' && (
+      {activeTab === 'record' ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
           <TouchableOpacity
             style={[
@@ -100,6 +105,28 @@ export default function GrowthCurveScreen() {
                 style={{ marginLeft: 8 }}
               />
             )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+          <TouchableOpacity
+            style={styles.aiButton}
+            onPress={() => {
+              navigation.goBack()
+              // @ts-ignore
+              navigation.navigate('AIAssistant')
+            }}
+          >
+            <View style={styles.aiButtonContent}>
+              <Ionicons name="sparkles" size={20} color="#fff" />
+              <Text style={styles.aiButtonText}>AI 智能分析</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color="#fff"
+                style={{ marginLeft: 4 }}
+              />
+            </View>
           </TouchableOpacity>
         </View>
       )}
@@ -152,6 +179,29 @@ const styles = StyleSheet.create({
   },
   saveButtonTextDisabled: {
     color: '#CCC'
+  },
+  aiButton: {
+    backgroundColor: '#5470C6',
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#5470C6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  aiButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  aiButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: 8
   },
   emptyState: {
     padding: 40,
