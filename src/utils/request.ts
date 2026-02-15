@@ -9,11 +9,15 @@ const request = axios.create({
   timeout: 10000 //10s
 })
 //请求拦截器
-request.interceptors.request.use((config: any) => {
+request.interceptors.request.use(async (config: any) => {
   // 直接从 SecureStore 获取 token，避免循环引用
-  const token = SecureStore.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  try {
+    const token = await SecureStore.getItemAsync('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch (error) {
+    console.warn('Error getting token:', error)
   }
   return config
 })
@@ -37,12 +41,10 @@ request.interceptors.response.use(
           // 动态导入 store 以处理 dispatch
           const store = require('../store').default
           store.dispatch(clearToken())
-          console.log('登录过期，需要跳转到登录页')
           break
         default:
           msg = `${error.response.data.message}`
       }
-      console.log(msg)
       return Promise.reject(error)
     }
   }

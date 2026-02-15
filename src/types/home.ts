@@ -16,6 +16,8 @@ export interface PostItem {
   comment_count: number
   cover?: string
   images?: (string | any)[] // Assuming images are still needed for the carousel
+  imageUrls?: string[] // 从 content 中提取的图片 URL 数组
+  cleanedContent?: string // 清洗后的纯文字内容
   ctime?: number
   utime?: number
   tags: string[]

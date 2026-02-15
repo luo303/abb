@@ -18,6 +18,7 @@ import {
 } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
+import { prepareImagesForUpload } from '@/utils/image'
 
 export interface PostData {
   content: string
@@ -45,14 +46,29 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
     setIsPublishing(true)
 
     try {
-      // 1. 上传图片（如果有）
+      // 1. 处理图片（如果有）
+      let processedImages = postData.images || []
+
+      // 处理图片：格式转换和压缩
+      if (processedImages.length > 0) {
+        console.log('Processing images before upload...')
+        const preparedImages = await prepareImagesForUpload(processedImages, {
+          maxSize: 2 * 1024 * 1024, // 2MB 限制
+          quality: 0.8, // 80% 质量
+          targetFormat: 'jpeg' // 转换为 JPEG 格式
+        })
+        processedImages = preparedImages.map(img => img.uri)
+        console.log('Image processing completed')
+      }
+
+      // 2. 上传图片（如果有）
       let uploadedImageUrls: string[] = []
       // 保存有效的网络图片URL
       const validNetworkUrls: string[] = []
 
-      if (postData.images && postData.images.length > 0) {
+      if (processedImages.length > 0) {
         // 并发上传所有图片
-        const uploadPromises = postData.images.map(uri =>
+        const uploadPromises = processedImages.map(uri =>
           uploadFile(uri).catch(err => {
             console.warn('Image upload failed:', err)
             return null

@@ -5,7 +5,8 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native'
 import { FlatList } from 'react-native-gesture-handler'
 import { Ionicons } from '@expo/vector-icons'
@@ -31,13 +32,56 @@ interface HomeCommunityCardProps {
 export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
 
+  // 图片组件，处理加载和错误状态
+  const PostImage = ({ item }: { item: any }) => {
+    const [imageLoading, setImageLoading] = React.useState(true)
+    const [imageError, setImageError] = React.useState(false)
+    const imageUrl = typeof item === 'string' ? item : undefined
+
+    const handleImageLoad = () => {
+      setImageLoading(false)
+      setImageError(false)
+    }
+
+    const handleImageError = (error: any) => {
+      console.error('Image load failed:', imageUrl, error.nativeEvent.error)
+      setImageLoading(false)
+      setImageError(true)
+    }
+
+    return (
+      <View style={styles.carouselItem}>
+        {/* 图片加载态 */}
+        {imageLoading && (
+          <View style={[styles.postImage, styles.imageLoading]}>
+            <ActivityIndicator size="small" color="#999" />
+          </View>
+        )}
+
+        {/* 图片组件 */}
+        <Image
+          source={typeof item === 'string' ? { uri: item } : item}
+          style={[
+            styles.postImage,
+            (imageLoading || imageError) && styles.imageHidden
+          ]}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+
+        {/* 错误占位图 */}
+        {imageError && (
+          <View style={[styles.postImage, styles.imageError]}>
+            <Ionicons name="image-outline" size={24} color="#ccc" />
+          </View>
+        )}
+      </View>
+    )
+  }
+
+  // 渲染轮播项
   const renderCarouselItem = ({ item }: { item: any }) => (
-    <View style={styles.carouselItem}>
-      <Image
-        source={typeof item === 'string' ? { uri: item } : item}
-        style={styles.postImage}
-      />
-    </View>
+    <PostImage item={item} />
   )
 
   const formatDate = (timestamp?: number) => {
@@ -55,43 +99,15 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     return img
   }
 
-  // 解析内容，尝试从 JSON 字符串中提取 text 和 images
-  const parsedContent = React.useMemo(() => {
-    try {
-      // 尝试解析 content
-      if (data.content && typeof data.content === 'string') {
-        // 判断是否像 JSON (简单的判断，避免解析普通文本报错)
-        if (
-          data.content.trim().startsWith('{') &&
-          data.content.trim().endsWith('}')
-        ) {
-          const parsed = JSON.parse(data.content)
-          return {
-            text: parsed.content || parsed.text || '', // 兼容 content 或 text 字段
-            images: Array.isArray(parsed.images) ? parsed.images : []
-          }
-        }
-      }
-    } catch (e) {
-      // 解析失败，说明不是 JSON，按普通文本处理
-      // console.warn('Content parse failed:', e)
-    }
-    // 默认返回原始 content 和 data.images
-    return {
-      text: data.content,
-      images: data.images || []
-    }
-  }, [data.content, data.images])
-
   /**
    * 获取文章图片的函数
-   * 优先级顺序为：解析内容中的图片 > 数据中的图片 > 封面图
+   * 优先级顺序为：提取的 imageUrls > 数据中的 images > 封面图
    * @returns {Array} 返回图片URL数组，如果没有图片则返回空数组
    */
   const getPostImages = () => {
-    // 优先使用解析出来的 images
-    if (parsedContent.images && parsedContent.images.length > 0) {
-      return parsedContent.images
+    // 优先使用提取的 imageUrls
+    if (data.imageUrls && data.imageUrls.length > 0) {
+      return data.imageUrls
     }
     // 其次使用 data.images
     if (data.images && data.images.length > 0) {
@@ -105,6 +121,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   }
 
   const displayImages = getPostImages()
+  const displayContent = data.cleanedContent || data.content
 
   const handlePress = () => {
     // 优先使用 post_id，如果不存在则尝试使用 id
@@ -145,7 +162,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 
         {/* 帖子内容 - 只显示第一行或者截断 */}
         <Text style={styles.postContent} numberOfLines={2} ellipsizeMode="tail">
-          {parsedContent.text}
+          {displayContent}
         </Text>
 
         {/* 标签展示 */}
@@ -309,6 +326,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover'
+  },
+  imageLoading: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  imageHidden: {
+    position: 'absolute',
+    opacity: 0
+  },
+  imageError: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   actionRow: {
     flexDirection: 'row',
