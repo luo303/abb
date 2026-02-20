@@ -7,7 +7,9 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
@@ -96,7 +98,11 @@ export default function AddBabyScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarSection}>
           <TouchableOpacity
@@ -265,7 +271,7 @@ export default function AddBabyScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 
