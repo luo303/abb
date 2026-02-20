@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Password: undefined
   Tabs: undefined
   AIAssistant: undefined
+  PartnerChat: undefined
   Taboo: undefined
   DailyRecord: undefined
   VaccineRecord: undefined

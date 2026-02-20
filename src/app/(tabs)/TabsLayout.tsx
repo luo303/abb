@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react'
-import { Platform } from 'react-native'
+import { View, Platform, Dimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { FontAwesome, AntDesign } from '@expo/vector-icons'
 import { useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Svg, { Path } from 'react-native-svg'
+import { LinearGradient } from 'expo-linear-gradient'
 
 // 导入页面组件
 import HomeScreen from './home'
@@ -17,6 +19,63 @@ const Tab = createBottomTabNavigator()
 
 // 定义一个空的占位组件，避免内联函数导致的重渲染警告
 const NullComponent = () => null
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
+const CustomTabBarBackground = () => {
+  const insets = useSafeAreaInsets()
+  const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 46 + insets.bottom : 56
+
+  // Calculate path
+  const centerWidth = 100 // Wider opening for a gentler curve
+  const centerHeight = 28 // Increased depth slightly (was 22)
+  const startX = (SCREEN_WIDTH - centerWidth) / 2
+  const endX = (SCREEN_WIDTH + centerWidth) / 2
+  const centerX = SCREEN_WIDTH / 2
+
+  // Optimized smooth curve using cubic bezier to match the reference image
+  // The curve starts flat, gently dips, and returns flat
+  const path = `
+    M0,0 
+    L${startX},0 
+    C${startX + 35},0 ${centerX - 35},${centerHeight} ${centerX},${centerHeight} 
+    C${centerX + 35},${centerHeight} ${endX - 35},0 ${endX},0 
+    L${SCREEN_WIDTH},0 
+    L${SCREEN_WIDTH},${TAB_BAR_HEIGHT + 50} 
+    L0,${TAB_BAR_HEIGHT + 50} 
+    Z
+  `
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: -2
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+
+        elevation: 0,
+        backgroundColor: 'transparent'
+      }}
+    >
+      <Svg
+        width={SCREEN_WIDTH}
+        height={TAB_BAR_HEIGHT}
+        style={{ position: 'absolute', top: 0 }}
+      >
+        <Path d={path} fill="#fff" stroke="#eee" strokeWidth="1" />
+      </Svg>
+    </View>
+  )
+}
 
 export default function TabsLayout() {
   const navigation = useNavigation<NavigationProps>()
@@ -47,11 +106,15 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: '#999999', //tab未选中颜色
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 46 + insets.bottom : 56,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
-          borderTopColor: '#eeeeee',
-          borderTopWidth: 1,
-          backgroundColor: '#ffffff'
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0
         },
+        tabBarBackground: () => <CustomTabBarBackground />,
         tabBarLabelStyle: {
           fontSize: 12
         },
@@ -94,7 +157,52 @@ export default function TabsLayout() {
         options={{
           title: 'AI助手',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="twitch" size={24} color={color} />
+            <LinearGradient
+              // Modern gradient: Coral to Orange-Red (Warmer, less pink)
+              colors={['#FF8C66', '#FF5E62']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: Platform.OS === 'ios' ? 0 : 35,
+                marginTop: Platform.OS === 'ios' ? -35 : 0,
+                // Refined shadow: centered, softer, less directional
+                shadowColor: '#FF5E62',
+                shadowOffset: {
+                  width: 0,
+                  height: 8 // Increased vertical offset for "floating" effect
+                },
+                shadowOpacity: 0.35, // Slightly reduced opacity
+                shadowRadius: 10, // Increased radius for softer diffusion
+                elevation: 10 // Increased elevation for Android
+              }}
+            >
+              <AntDesign name="twitch" size={28} color="#fff" />
+            </LinearGradient>
+          ),
+          tabBarLabelStyle: {
+            marginTop: Platform.OS === 'ios' ? 0 : 35,
+            fontSize: 12
+          }
+        }}
+      />
+      <Tab.Screen
+        name="PartnerTab"
+        component={NullComponent}
+        listeners={{
+          tabPress: e => {
+            e.preventDefault()
+            navigation.navigate('PartnerChat')
+          }
+        }}
+        options={{
+          title: '另一半',
+          tabBarIcon: ({ color }) => (
+            <AntDesign name="heart" size={24} color={color} />
           )
         }}
       />

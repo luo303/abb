@@ -25,6 +25,7 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
+import PartnerChat from './(tabs)/PartnerChat'
 
 const Stack = createNativeStackNavigator()
 
@@ -75,6 +76,15 @@ export default function Layout() {
                 name="AIAssistant"
                 component={AIAssistant}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="PartnerChat"
+                component={PartnerChat}
+                options={{
+                  title: '另一半',
+                  headerTitleAlign: 'center',
+                  headerShadowVisible: false
+                }}
               />
               <Stack.Screen
                 name="PostDetail"

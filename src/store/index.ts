@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit'
 import userReducer from './modules/userStore'
 import chatReducer from './modules/ChatStore'
 import babyReducer from './modules/BabyStore'
+import partnerReducer from './modules/PartnerStore'
 
 const store = configureStore({
   reducer: {
     user: userReducer,
     chat: chatReducer,
-    baby: babyReducer
+    baby: babyReducer,
+    partner: partnerReducer
   }
 })
 
