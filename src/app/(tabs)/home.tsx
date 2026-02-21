@@ -13,7 +13,6 @@ import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   useSharedValue,
-  useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
   Extrapolation,
@@ -21,12 +20,11 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  Easing,
-  runOnJS
+  Easing
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
-import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeNavGrid from '@/components/home/HomeNavGrid'
@@ -42,7 +40,6 @@ import { usePostList } from '../../hooks/usePagination'
 export default function Home() {
   const navigation = useNavigation<NavigationProps>()
   const route = useRoute<any>()
-  const isFocused = useIsFocused()
   const insets = useSafeAreaInsets()
   const scrollY = useSharedValue(0)
   const flatListRef = useRef<any>(null)
@@ -117,13 +114,6 @@ export default function Home() {
     }
   }, [route.params]) // 依赖项改为 route.params
 
-  // 初始化和焦点变化时刷新数据
-  useEffect(() => {
-    if (isFocused) {
-      fetchPosts()
-    }
-  }, [isFocused, fetchPosts])
-
   // 徽章动画效果
   useEffect(() => {
     badgeScale.value = withRepeat(
@@ -135,18 +125,6 @@ export default function Home() {
       -1,
       true
     )
-  })
-
-  const animatedBadgeStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: badgeScale.value }]
-    }
-  })
-
-  const animatedCommunityStyle = useAnimatedStyle(() => {
-    return {
-      opacity: communityOpacity.value
-    }
   })
 
   // 滚动到社区模块
@@ -180,23 +158,6 @@ export default function Home() {
       setRefreshing(false)
     }
   }
-
-  const scrollHandler = useAnimatedScrollHandler(
-    {
-      onScroll: event => {
-        scrollY.value = event.contentOffset.y
-        const paddingToBottom = 100
-        const isClose =
-          event.layoutMeasurement.height + event.contentOffset.y >=
-          event.contentSize.height - paddingToBottom
-
-        if (isClose) {
-          runOnJS(loadMorePosts)()
-        }
-      }
-    },
-    [loadMorePosts]
-  )
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {

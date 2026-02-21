@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import {
   addBabyReq,
   fetchBabiesReq,
@@ -58,6 +58,9 @@ const babySlice = createSlice({
     },
     clearCurrentBabyId: state => {
       state.currentBabyId = null
+    },
+    setCurrentBabyId: (state, action: PayloadAction<string>) => {
+      state.currentBabyId = action.payload
     }
   },
   extraReducers: builder => {
@@ -102,5 +105,6 @@ const babySlice = createSlice({
   }
 })
 
-export const { resetBabyState, clearCurrentBabyId } = babySlice.actions
+export const { resetBabyState, clearCurrentBabyId, setCurrentBabyId } =
+  babySlice.actions
 export default babySlice.reducer
