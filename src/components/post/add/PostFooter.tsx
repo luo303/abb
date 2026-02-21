@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import {
   View,
   Text,
@@ -36,14 +36,16 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [isPublishing, setIsPublishing] = useState(false)
+  const isPublishingRef = useRef(false)
   const { showMessage } = useMessage()
 
   const isPublishDisabled = !postData.content.trim() || isPublishing
 
   const handlePublish = async () => {
-    if (isPublishing) return
+    if (isPublishing || isPublishingRef.current) return
 
     setIsPublishing(true)
+    isPublishingRef.current = true
 
     try {
       // 1. 处理图片（如果有）
@@ -168,6 +170,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       Alert.alert('提示', '发布失败，请稍后重试')
     } finally {
       setIsPublishing(false)
+      isPublishingRef.current = false
     }
   }
 

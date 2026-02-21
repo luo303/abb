@@ -16,7 +16,6 @@ export default function PostInput({ value, onChangeText }: PostInputProps) {
         value={value}
         onChangeText={onChangeText}
         placeholderTextColor="#fda4af"
-        autoFocus
         textAlignVertical="top"
       />
     </View>

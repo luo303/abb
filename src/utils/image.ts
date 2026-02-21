@@ -33,7 +33,6 @@ export const prepareImageForUpload = async (
 ): Promise<ImageInfo> => {
   const {
     maxSize = 2 * 1024 * 1024, // 默认 2MB
-    quality = 0.8, // 默认压缩质量 80%
     targetFormat = 'jpeg' // 默认转换为 JPEG 格式
   } = options
 

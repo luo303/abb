@@ -6,7 +6,9 @@ import {
   StyleSheet,
   Alert,
   Modal,
-  ScrollView
+  ScrollView,
+  TextInput,
+  Keyboard
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -55,21 +57,35 @@ export default function PostToolbar({
   const [showTagsModal, setShowTagsModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
+  const [customTagInput, setCustomTagInput] = useState('')
 
   const toggleTag = (tag: string) => {
     let newTags
     if (selectedTags.includes(tag)) {
       newTags = selectedTags.filter(t => t !== tag)
     } else {
-      if (selectedTags.length >= 5) {
-        Alert.alert('提示', '最多只能添加5个话题哦')
-        return
-      }
       newTags = [...selectedTags, tag]
     }
     setSelectedTags(newTags)
     if (onTagsChange) {
       onTagsChange(newTags)
+    }
+  }
+
+  const addCustomTag = () => {
+    const trimmedTag = customTagInput.trim()
+    if (trimmedTag) {
+      if (!selectedTags.includes(trimmedTag)) {
+        const newTags = [...selectedTags, trimmedTag]
+        setSelectedTags(newTags)
+        if (onTagsChange) {
+          onTagsChange(newTags)
+        }
+        setCustomTagInput('')
+        Keyboard.dismiss()
+      } else {
+        Alert.alert('提示', '该话题已添加')
+      }
     }
   }
 
@@ -130,9 +146,49 @@ export default function PostToolbar({
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { height: '60%' }]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>选择话题 (最多5个)</Text>
+                <Text style={styles.modalTitle}>选择话题</Text>
                 <TouchableOpacity onPress={() => setShowTagsModal(false)}>
                   <Ionicons name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+
+              {/* 已选择的话题显示区域 */}
+              {selectedTags.length > 0 && (
+                <View style={styles.selectedTagsContainer}>
+                  <Text style={styles.selectedTagsTitle}>已选择的话题</Text>
+                  <View style={styles.selectedTagsList}>
+                    {selectedTags.map(tag => (
+                      <TouchableOpacity
+                        key={tag}
+                        style={styles.selectedTagItem}
+                        onPress={() => toggleTag(tag)}
+                      >
+                        <Text style={styles.selectedTagText}>#{tag}</Text>
+                        <Ionicons
+                          name="close-circle"
+                          size={16}
+                          color="#f43f5e"
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.customTagInputContainer}>
+                <TextInput
+                  style={styles.customTagInput}
+                  placeholder="输入自定义话题"
+                  value={customTagInput}
+                  onChangeText={setCustomTagInput}
+                  onSubmitEditing={addCustomTag}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity
+                  style={styles.addTagButton}
+                  onPress={addCustomTag}
+                >
+                  <Text style={styles.addTagButtonText}>添加</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView contentContainerStyle={styles.tagsList}>
@@ -370,5 +426,64 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  customTagInputContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    gap: 10
+  },
+  customTagInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    backgroundColor: '#f8f8f8'
+  },
+  addTagButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f43f5e',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  addTagButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold'
+  },
+  selectedTagsContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 10
+  },
+  selectedTagsTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8
+  },
+  selectedTagsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  selectedTagItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#fff1f2',
+    borderWidth: 1,
+    borderColor: '#f43f5e',
+    gap: 6
+  },
+  selectedTagText: {
+    fontSize: 13,
+    color: '#f43f5e'
   }
 })
