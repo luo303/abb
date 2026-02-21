@@ -30,12 +30,14 @@ export default function RegisterScreen() {
     password: string
     username: string
     code: string
+    gender: string
   }>({
     account: '',
     email: '',
     password: '',
     username: '',
-    code: ''
+    code: '',
+    gender: 'male'
   })
 
   // 加载状态
@@ -157,7 +159,8 @@ export default function RegisterScreen() {
         email: '',
         password: '',
         account: '',
-        code: ''
+        code: '',
+        gender: 'male'
       })
     } catch (error) {
       showMessage('注册失败，请稍后重试')

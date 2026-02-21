@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  useLayoutEffect
+} from 'react'
 import {
   View,
   Text,
@@ -15,32 +22,59 @@ import {
 import { useSelector, useDispatch } from 'react-redux'
 import { Ionicons } from '@expo/vector-icons'
 import { useHeaderHeight } from '@react-navigation/elements'
+import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { v4 as uuidv4 } from 'uuid'
 import { RootState } from '../../store'
-import { setPartner, addMessage } from '../../store/modules/PartnerStore'
+import {
+  setPartner,
+  removePartner,
+  addMessage,
+  setConnectionStatus
+} from '../../store/modules/PartnerStore'
+import {
+  fetchPartner,
+  bindPartner,
+  connectPartnerSocket,
+  closePartnerSocket,
+  sendPartnerSocket,
+  PARTNER_WS_BASE_URL
+} from '@/api/ws'
 
 export default function PartnerChat() {
   const dispatch = useDispatch()
+  const navigation = useNavigation()
   const { partnerId, messages } = useSelector(
     (state: RootState) => state.partner
   )
+  const token = useSelector((state: RootState) => state.user.token)
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
+  const hasFetchedPartnerRef = useRef(false)
 
   // 绑定信息
   const [inputPartnerAccount, setInputPartnerAccount] = useState('')
   const [inputPartnerPassword, setInputPartnerPassword] = useState('')
+  const [isBinding, setIsBinding] = useState(false)
+  const [isPartnerLoading, setIsPartnerLoading] = useState(false)
 
   // 聊天输入
   const [inputText, setInputText] = useState('')
   const flatListRef = useRef<FlatList>(null)
+  const clientIdRef = useRef(
+    `client-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  )
 
   const scrollToBottom = useCallback((animated: boolean) => {
     requestAnimationFrame(() => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated })
     })
   }, [])
+
+  const listData = useMemo(() => {
+    return [...messages].reverse()
+  }, [messages])
 
   // 消息变化时滚动到底部
   useEffect(() => {
@@ -64,27 +98,167 @@ export default function PartnerChat() {
     }
   }, [])
 
-  const handleAddPartner = () => {
+  useEffect(() => {
+    let isActive = true
+    const loadPartner = async () => {
+      if (hasFetchedPartnerRef.current) return
+      hasFetchedPartnerRef.current = true
+      if (partnerId) return
+      try {
+        setIsPartnerLoading(true)
+        const res = await fetchPartner()
+        if (!isActive) return
+        const serverPartnerId = res?.data?.partner_id
+        if (res?.code === 0 && serverPartnerId) {
+          dispatch(
+            setPartner({
+              id: serverPartnerId,
+              name: '另一半'
+            })
+          )
+        }
+      } catch (error) {
+        if (!isActive) return
+      } finally {
+        if (isActive) {
+          setIsPartnerLoading(false)
+        }
+      }
+    }
+    loadPartner()
+    return () => {
+      isActive = false
+    }
+  }, [dispatch, partnerId])
+
+  const handleIncomingMessage = useCallback(
+    (rawText: string) => {
+      let payload: any = null
+      try {
+        payload = JSON.parse(rawText)
+      } catch {
+        payload = null
+      }
+
+      const textValue =
+        payload?.text ?? payload?.content ?? payload?.message ?? rawText
+      if (!textValue || typeof textValue !== 'string') return
+
+      const incomingClientId =
+        payload?.clientId ?? payload?.sender ?? payload?.from ?? payload?.role
+      if (incomingClientId && incomingClientId === clientIdRef.current) {
+        return
+      }
+
+      const senderValue =
+        incomingClientId === 'me' ||
+        incomingClientId === 'user' ||
+        incomingClientId === clientIdRef.current
+          ? 'me'
+          : 'partner'
+
+      dispatch(
+        addMessage({
+          id: uuidv4(),
+          text: textValue,
+          sender: senderValue,
+          timestamp: Date.now()
+        })
+      )
+    },
+    [dispatch]
+  )
+
+  const closeSocket = useCallback(() => {
+    closePartnerSocket()
+    dispatch(setConnectionStatus(false))
+  }, [dispatch])
+
+  const handleUnbindPartner = useCallback(() => {
+    closeSocket()
+    dispatch(removePartner())
+  }, [closeSocket, dispatch])
+
+  const connectSocket = useCallback(() => {
+    if (!partnerId || !token) return
+    const wsUrl = `${PARTNER_WS_BASE_URL}?token=${encodeURIComponent(
+      token
+    )}&user_id=${encodeURIComponent(partnerId)}`
+    connectPartnerSocket(wsUrl, {
+      onOpen: () => {
+        dispatch(setConnectionStatus(true))
+      },
+      onClose: () => {
+        dispatch(setConnectionStatus(false))
+      },
+      onError: () => {
+        dispatch(setConnectionStatus(false))
+      },
+      onMessage: handleIncomingMessage
+    })
+  }, [dispatch, partnerId, token, handleIncomingMessage])
+
+  useEffect(() => {
+    if (partnerId) {
+      connectSocket()
+    } else {
+      closeSocket()
+    }
+  }, [partnerId, connectSocket, closeSocket])
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        partnerId ? (
+          <TouchableOpacity
+            onPress={handleUnbindPartner}
+            style={styles.headerButton}
+          >
+            <Text style={styles.headerButtonText}>解绑</Text>
+          </TouchableOpacity>
+        ) : null
+    })
+  }, [navigation, partnerId, handleUnbindPartner])
+
+  const handleAddPartner = async () => {
     if (!inputPartnerAccount.trim() || !inputPartnerPassword.trim()) {
       Alert.alert('提示', '请完整填写账号和密码')
       return
     }
-    // 模拟绑定另一半
-    dispatch(
-      setPartner({
-        id: inputPartnerAccount,
-        name: `伴侣 ${inputPartnerAccount}` // 名称占位
+    try {
+      setIsBinding(true)
+      const res = await bindPartner({
+        account: inputPartnerAccount.trim(),
+        password: inputPartnerPassword
       })
-    )
-    Alert.alert('成功', '已成功添加另一半')
+      const serverPartnerId = res?.data?.partner_id
+      if (res?.code === 0 && serverPartnerId) {
+        dispatch(
+          setPartner({
+            id: serverPartnerId,
+            name: '另一半'
+          })
+        )
+        setInputPartnerAccount('')
+        setInputPartnerPassword('')
+        Alert.alert('成功', '已成功添加另一半')
+        return
+      }
+      Alert.alert('提示', res?.message || '绑定失败')
+    } catch (error: any) {
+      Alert.alert('提示', error?.message || '绑定失败，请稍后重试')
+    } finally {
+      setIsBinding(false)
+    }
   }
 
   const handleSendMessage = () => {
-    if (!inputText.trim()) return
+    const content = inputText.trim()
+    if (!content) return
 
     const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
+      id: uuidv4(),
+      text: content,
       sender: 'me' as const,
       timestamp: Date.now()
     }
@@ -92,16 +266,17 @@ export default function PartnerChat() {
     dispatch(addMessage(newMessage))
     setInputText('')
 
-    // 模拟自动回复
-    setTimeout(() => {
-      const replyMessage = {
-        id: (Date.now() + 1).toString(),
-        text: `收到: ${inputText}`,
-        sender: 'partner' as const,
-        timestamp: Date.now()
-      }
-      dispatch(addMessage(replyMessage))
-    }, 1000)
+    const payload = {
+      text: content,
+      clientId: clientIdRef.current,
+      partnerId,
+      timestamp: Date.now()
+    }
+    const ok = sendPartnerSocket(payload)
+    if (!ok) {
+      connectSocket()
+      Alert.alert('提示', '连接已断开，正在尝试重新连接')
+    }
   }
 
   const renderNoPartner = () => (
@@ -148,10 +323,13 @@ export default function PartnerChat() {
             </View>
 
             <TouchableOpacity
-              style={styles.addButton}
+              style={[styles.addButton, isBinding && styles.addButtonDisabled]}
               onPress={handleAddPartner}
+              disabled={isBinding}
             >
-              <Text style={styles.addButtonText}>立即绑定</Text>
+              <Text style={styles.addButtonText}>
+                {isBinding ? '绑定中...' : '立即绑定'}
+              </Text>
             </TouchableOpacity>
             <Text style={styles.addPartnerFootnote}>
               绑定后可随时在设置中解除
@@ -209,7 +387,7 @@ export default function PartnerChat() {
       >
         <FlatList
           ref={flatListRef}
-          data={[...messages].reverse()}
+          data={listData}
           style={{ flex: 1 }}
           renderItem={renderMessageItem}
           keyExtractor={item => item.id}
@@ -262,7 +440,13 @@ export default function PartnerChat() {
         }
       ]}
     >
-      {partnerId ? renderChat() : renderNoPartner()}
+      {partnerId ? (
+        renderChat()
+      ) : isPartnerLoading ? (
+        <View style={styles.container} />
+      ) : (
+        renderNoPartner()
+      )}
     </SafeAreaView>
   )
 }
@@ -355,6 +539,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5
+  },
+  addButtonDisabled: {
+    backgroundColor: '#FFCACA'
   },
   addButtonText: {
     color: '#fff',
@@ -460,5 +647,16 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#FFCACA'
+  },
+  headerButton: {
+    marginRight: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#FEE2E2'
+  },
+  headerButtonText: {
+    fontSize: 12,
+    color: '#DC2626'
   }
 })

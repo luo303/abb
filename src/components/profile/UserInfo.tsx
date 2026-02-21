@@ -15,7 +15,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
-import { fetchBabies } from '../../store/modules/BabyStore'
+import { fetchBabies, setCurrentBabyId } from '../../store/modules/BabyStore'
 
 export default function UserInfo() {
   const navigation = useNavigation<NavigationProps>()
@@ -97,6 +97,7 @@ export default function UserInfo() {
               onBlur={() => setIsFocus(false)}
               onChange={item => {
                 setValue(item.baby_id)
+                dispatch(setCurrentBabyId(item.baby_id))
                 setIsFocus(false)
               }}
               renderLeftIcon={() => {
