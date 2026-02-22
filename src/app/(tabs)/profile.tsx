@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, StyleSheet, ScrollView } from 'react-native'
+import { View, StyleSheet, ScrollView, Platform } from 'react-native'
 import { useDispatch } from 'react-redux'
 import { useNavigation, NavigationProp } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -37,7 +37,13 @@ export default function Profile() {
       />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingBottom:
+              (Platform.OS === 'ios' ? 46 : 56) + insets.bottom + 16
+          }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* 顶部个人信息 Banner */}
