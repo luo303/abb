@@ -71,7 +71,7 @@ export default function PostFooter({
           <Text
             style={[styles.actionText, isFavorited && { color: '#ffba00' }]}
           >
-            {isFavorited ? '已收藏' : '收藏'}
+            {collectCount}
           </Text>
         </TouchableOpacity>
 

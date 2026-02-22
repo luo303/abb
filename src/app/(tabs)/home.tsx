@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons } from '@expo/vector-icons'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,7 +23,6 @@ import Animated, {
   withDelay,
   Easing
 } from 'react-native-reanimated'
-import { Ionicons } from '@expo/vector-icons'
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
@@ -31,7 +31,8 @@ import HomeNavGrid from '@/components/home/HomeNavGrid'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeSearchBar from '@/components/home/search/HomeSearchBar'
 import { PostItem } from '@/types/home'
-import { usePostList } from '../../hooks/usePagination'
+import { useAppSelector, useAppDispatch } from '../../hooks/redux'
+import { fetchPostList, loadMorePosts } from '@/store/modules/PostStore'
 
 /**
  * 首页组件
@@ -48,22 +49,18 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('推荐')
   const [refreshing, setRefreshing] = useState(false)
 
-  // 使用帖子列表Hook
-  const {
-    posts: serverPosts,
-    page,
-    hasMore,
-    isLoadingMore,
-    refresh: fetchPosts,
-    loadMore: loadMorePosts
-  } = usePostList()
+  // 使用 Redux store
+  const dispatch = useAppDispatch()
+  const { postList, loading, hasMore, isLoadingMore, page } = useAppSelector(
+    state => state.post
+  )
 
   // 合并展示的数据
-  // 逻辑优化：优先使用 serverPosts 的数据（因为它是经过详情页更新后的最新状态）
-  // 只有当 serverPosts 里没有时（还没同步），才使用 localPosts
-  const serverIds = new Set(serverPosts.map(p => p.post_id))
+  // 逻辑优化：优先使用 postList 的数据（因为它是经过详情页更新后的最新状态）
+  // 只有当 postList 里没有时（还没同步），才使用 localPosts
+  const serverIds = new Set(postList.map(p => p.post_id))
   const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.post_id))
-  const posts = [...uniqueLocalPosts, ...serverPosts]
+  const posts = [...uniqueLocalPosts, ...postList]
 
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
@@ -82,24 +79,32 @@ export default function Home() {
   })
 
   // 根据标签栏筛选和排序帖子
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
-    switch (activeTab) {
-      case '推荐':
-        // 按照发布时间排序（如果有ctime字段），否则随机排序
-        if (a.ctime && b.ctime) {
-          return b.ctime - a.ctime
-        }
-        return Math.random() - 0.5
-      case '热搜':
-        // 按照点赞数由高到低排序
-        return (b.like_count || 0) - (a.like_count || 0)
-      case '关注':
-        // 暂时不实现关注筛选，保持原样
-        return 0
-      default:
-        return 0
-    }
-  })
+  const sortedPosts =
+    activeTab === '关注'
+      ? [...filteredPosts]
+          .filter(post => post.is_followed === true)
+          .sort((a, b) => {
+            // 关注标签下按照发布时间排序
+            if (a.ctime && b.ctime) {
+              return b.ctime - a.ctime
+            }
+            return Math.random() - 0.5
+          })
+      : [...filteredPosts].sort((a, b) => {
+          switch (activeTab) {
+            case '推荐':
+              // 按照发布时间排序（如果有ctime字段），否则随机排序
+              if (a.ctime && b.ctime) {
+                return b.ctime - a.ctime
+              }
+              return Math.random() - 0.5
+            case '热搜':
+              // 按照点赞数由高到低排序
+              return (b.like_count || 0) - (a.like_count || 0)
+            default:
+              return 0
+          }
+        })
 
   // 徽章动画
   const badgeScale = useSharedValue(1)
@@ -170,13 +175,18 @@ export default function Home() {
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await fetchPosts()
+      await dispatch(fetchPostList({ page: 1 }))
     } catch (error) {
       console.error('Refresh failed:', error)
     } finally {
       setRefreshing(false)
     }
   }
+
+  // 初始化时加载数据
+  useEffect(() => {
+    dispatch(fetchPostList({ page: 1 }))
+  }, [dispatch])
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {
@@ -317,6 +327,28 @@ export default function Home() {
   // 渲染列表尾部
   const ListFooterComponent = () => {
     if (isSearching) return null
+
+    // 关注标签的空状态提示
+    if (activeTab === '关注' && sortedPosts.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateTitle}>还没有关注任何人</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            关注感兴趣的作者，获取他们的最新动态
+          </Text>
+          <TouchableOpacity onPress={() => setActiveTab('推荐')}>
+            <LinearGradient
+              colors={['#ff9a9e', '#f43f5e']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.emptyStateButton}
+            >
+              <Text style={styles.emptyStateButtonText}>去发现精彩内容</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )
+    }
 
     return (
       <View>
@@ -474,7 +506,7 @@ export default function Home() {
             scrollEventThrottle={16}
             onEndReached={() => {
               if (!isSearching && hasMore && !isLoadingMore) {
-                loadMorePosts()
+                dispatch(loadMorePosts({ page: page + 1 }))
               }
             }}
             onEndReachedThreshold={0.1}
@@ -611,5 +643,41 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     zIndex: 10
+  },
+  // 关注标签空状态样式
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 10
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 30
+  },
+  emptyStateButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  emptyStateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff'
   }
 })
