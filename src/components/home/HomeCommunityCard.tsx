@@ -99,17 +99,43 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     return img
   }
 
+  // 解析 content 的函数
+  const parseContent = () => {
+    try {
+      // 尝试解析 content
+      const parsed = JSON.parse(data.content)
+      return {
+        success: true,
+        text: parsed.text || '',
+        images: parsed.images || []
+      }
+    } catch (error) {
+      // 解析失败，返回原始 content
+      return {
+        success: false,
+        text: data.cleanedContent || data.content,
+        images: []
+      }
+    }
+  }
+
+  const parsedContent = parseContent()
+
   /**
    * 获取文章图片的函数
-   * 优先级顺序为：提取的 imageUrls > 数据中的 images > 封面图
+   * 优先级顺序为：解析出的 images > 提取的 imageUrls > 数据中的 images > 封面图
    * @returns {Array} 返回图片URL数组，如果没有图片则返回空数组
    */
   const getPostImages = () => {
-    // 优先使用提取的 imageUrls
+    // 优先使用解析出的 images
+    if (parsedContent.success && parsedContent.images.length > 0) {
+      return parsedContent.images
+    }
+    // 其次使用提取的 imageUrls
     if (data.imageUrls && data.imageUrls.length > 0) {
       return data.imageUrls
     }
-    // 其次使用 data.images
+    // 再次使用 data.images
     if (data.images && data.images.length > 0) {
       return data.images
     }
@@ -121,7 +147,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   }
 
   const displayImages = getPostImages()
-  const displayContent = data.cleanedContent || data.content
+  const displayContent = parsedContent.text
 
   const handlePress = () => {
     // 优先使用 post_id，如果不存在则尝试使用 id
