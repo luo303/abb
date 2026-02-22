@@ -412,6 +412,7 @@ export default function PartnerChat() {
             value={inputText}
             onChangeText={setInputText}
             placeholder="发消息..."
+            placeholderTextColor="#9CA3AF"
             multiline
             maxLength={200}
           />

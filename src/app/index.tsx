@@ -13,6 +13,7 @@ import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
 import AddBabyScreen from '../components/profile/AddBady'
+import EditProfileScreen from '../components/profile/EditProfile'
 import TabooScreen from './(HomeNavGrid)/Taboo'
 import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
@@ -142,6 +143,11 @@ export default function Layout() {
                 name="AddBaby"
                 component={AddBabyScreen}
                 options={{ title: '新增宝宝' }}
+              />
+              <Stack.Screen
+                name="EditProfile"
+                component={EditProfileScreen}
+                options={{ title: '编辑资料' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

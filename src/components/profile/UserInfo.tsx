@@ -10,14 +10,28 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Dropdown } from 'react-native-element-dropdown'
+import * as ImagePicker from 'expo-image-picker'
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
 import { fetchBabies, setCurrentBabyId } from '../../store/modules/BabyStore'
+import {
+  UserMeResponse,
+  UpdateAvatarResponse,
+  updateAvatarReq,
+  ApiResponse
+} from '../../api/profile'
+import { useMessage } from '../Message'
+import { uploadFile } from '@/api/upload'
+import { setUserInfo } from '../../store/modules/userStore'
 
-export default function UserInfo() {
+interface UserInfoProps {
+  userInfo: UserMeResponse | null
+}
+
+export default function UserInfo({ userInfo }: UserInfoProps) {
   const navigation = useNavigation<NavigationProps>()
   const dispatch = useDispatch<AppDispatch>()
   const { babiesList, currentBabyId } = useSelector(
@@ -25,7 +39,9 @@ export default function UserInfo() {
   )
   const [value, setValue] = useState<string | null>(null)
   const [isFocus, setIsFocus] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const dropdownRef = useRef<any>(null)
+  const { showMessage } = useMessage()
 
   useFocusEffect(
     useCallback(() => {
@@ -54,6 +70,64 @@ export default function UserInfo() {
         <Text style={styles.textItem}>{item.name}</Text>
       </View>
     )
+  }
+
+  const handleChangeAvatar = async () => {
+    if (uploadingAvatar) return
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      showMessage('需要访问相册权限才能更换头像')
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8
+    })
+
+    if (result.canceled || !result.assets || result.assets.length === 0) {
+      return
+    }
+
+    const uri = result.assets[0].uri
+
+    try {
+      setUploadingAvatar(true)
+      const response = await uploadFile(uri)
+
+      let url = ''
+      if (typeof response.data === 'string') {
+        url = response.data
+      } else if (response.data && typeof response.data.url === 'string') {
+        url = response.data.url
+      }
+
+      if (!url) {
+        showMessage('图片上传失败，请稍后重试')
+        return
+      }
+
+      const avatarRes = (await updateAvatarReq({
+        avatar: url
+      })) as unknown as ApiResponse<UpdateAvatarResponse>
+
+      if (avatarRes.code === 0) {
+        if (userInfo) {
+          dispatch(setUserInfo({ ...userInfo, avatar: url }))
+        }
+        showMessage('头像更新成功')
+      } else {
+        showMessage('头像更新失败')
+      }
+    } catch (error) {
+      console.error(error)
+      showMessage('头像更新失败，请稍后重试')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   return (
@@ -151,24 +225,39 @@ export default function UserInfo() {
           {/* 底部信息栏 */}
           <View style={styles.bottomBar}>
             <View style={styles.userInfo}>
-              <View style={styles.avatarContainer}>
-                <Image
-                  source={require('../../assets/testAvatar.png')}
-                  style={styles.avatar}
-                />
-              </View>
+              <TouchableOpacity
+                style={styles.avatarContainer}
+                activeOpacity={0.8}
+                onPress={handleChangeAvatar}
+                disabled={uploadingAvatar}
+              >
+                {userInfo?.avatar ? (
+                  <Image
+                    source={{ uri: userInfo.avatar }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <Image
+                    source={require('../../assets/testAvatar.png')}
+                    style={styles.avatar}
+                  />
+                )}
+              </TouchableOpacity>
               <View style={styles.userTexts}>
                 <Text
                   style={styles.userName}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  Piaodaqiang
+                  {userInfo?.username || userInfo?.account || '稚慧宝用户'}
                 </Text>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.settingsButton}>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
               <LinearGradient
                 colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)']}
                 style={styles.settingsGradient}

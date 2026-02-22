@@ -17,6 +17,7 @@ export type RootStackParamList = {
   PostDetail: { id: string }
   AddPost: undefined
   AddBaby: undefined
+  EditProfile: undefined
   VaccineDetail: { url: string; title: string }
 }
 

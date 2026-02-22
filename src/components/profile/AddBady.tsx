@@ -127,6 +127,7 @@ export default function AddBabyScreen() {
           <TextInput
             style={styles.input}
             placeholder="请输入宝宝姓名"
+            placeholderTextColor="#9CA3AF"
             value={name}
             onChangeText={setName}
             maxLength={20}
@@ -211,6 +212,7 @@ export default function AddBabyScreen() {
             <TextInput
               style={styles.input}
               placeholder="0.0"
+              placeholderTextColor="#9CA3AF"
               value={height}
               onChangeText={setHeight}
               keyboardType="numeric"
@@ -221,6 +223,7 @@ export default function AddBabyScreen() {
             <TextInput
               style={styles.input}
               placeholder="0.0"
+              placeholderTextColor="#9CA3AF"
               value={weight}
               onChangeText={setWeight}
               keyboardType="numeric"
@@ -233,6 +236,7 @@ export default function AddBabyScreen() {
           <TextInput
             style={styles.input}
             placeholder="0.0"
+            placeholderTextColor="#9CA3AF"
             value={headCircumference}
             onChangeText={setHeadCircumference}
             keyboardType="numeric"
@@ -244,6 +248,7 @@ export default function AddBabyScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="备注信息，可填可不填"
+            placeholderTextColor="#9CA3AF"
             value={remark}
             onChangeText={setRemark}
             multiline

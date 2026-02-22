@@ -193,6 +193,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入用户名（3-20位）"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.username}
                   onChangeText={value => handleInputChange('username', value)}
                   autoCapitalize="none"
@@ -205,6 +206,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入账号(可用于后续登录)"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.account}
                   onChangeText={value => handleInputChange('account', value)}
                   autoCapitalize="none"
@@ -217,6 +219,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入密码（至少6位）"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.password}
                   onChangeText={value => handleInputChange('password', value)}
                   secureTextEntry
@@ -230,6 +233,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入邮箱"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.email}
                   onChangeText={value => handleInputChange('email', value)}
                   keyboardType="email-address"
@@ -244,6 +248,7 @@ export default function RegisterScreen() {
                   <TextInput
                     style={[styles.input, { flex: 1, marginBottom: 0 }]}
                     placeholder="请输入验证码"
+                    placeholderTextColor="#9CA3AF"
                     value={formData.code}
                     onChangeText={value => handleInputChange('code', value)}
                     keyboardType="number-pad"

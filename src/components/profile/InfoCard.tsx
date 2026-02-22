@@ -2,8 +2,38 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { UserMeResponse } from '../../api/profile'
 
-export default function InfoCard() {
+interface InfoCardProps {
+  userInfo: UserMeResponse | null
+}
+
+function formatBirthday(birthday?: number) {
+  if (!birthday) return ''
+  const date = new Date(birthday)
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export default function InfoCard({ userInfo }: InfoCardProps) {
+  const occupation = userInfo?.occupation || '未填写'
+  const phone = userInfo?.phone || '未填写'
+  const email = userInfo?.email || '未填写'
+  const address =
+    userInfo && (userInfo.province || userInfo.city)
+      ? `${userInfo.province || ''}${userInfo.city || ''}`
+      : '未填写'
+  const birthday = formatBirthday(userInfo?.birthday)
+  const gender =
+    userInfo?.gender === 'male'
+      ? '男'
+      : userInfo?.gender === 'female'
+        ? '女'
+        : '未填写'
+  const account = userInfo?.account || '未填写'
+
   return (
     <View style={styles.wrapper}>
       <LinearGradient
@@ -18,26 +48,22 @@ export default function InfoCard() {
         </View>
 
         <View style={styles.content}>
-          <InfoItem label="职业" value="产品经理" icon="briefcase-outline" />
-          <InfoItem
-            label="电话号码"
-            value="138 0000 0000"
-            icon="call-outline"
-          />
-          <InfoItem
-            label="邮箱地址"
-            value="hello@example.com"
-            icon="mail-outline"
-          />
-          <InfoItem label="地址" value="北京市海淀区" icon="location-outline" />
-          <InfoItem label="生日" value="2000-01-01" icon="gift-outline" />
-          <InfoItem label="性别" value="男" icon="male-female-outline" />
           <InfoItem
             label="账号"
-            value="user_123456"
+            value={account}
             icon="id-card-outline"
             isLast
           />
+          <InfoItem
+            label="生日"
+            value={birthday || '未填写'}
+            icon="gift-outline"
+          />
+          <InfoItem label="性别" value={gender} icon="male-female-outline" />
+          <InfoItem label="地址" value={address} icon="location-outline" />
+          <InfoItem label="邮箱地址" value={email} icon="mail-outline" />
+          <InfoItem label="电话号码" value={phone} icon="call-outline" />
+          <InfoItem label="职业" value={occupation} icon="briefcase-outline" />
         </View>
       </LinearGradient>
     </View>
