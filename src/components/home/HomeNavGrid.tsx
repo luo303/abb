@@ -5,7 +5,7 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
 
-export default function HomeNavGrid() {
+const HomeNavGrid = React.memo(function HomeNavGrid() {
   const navigation = useNavigation<NavigationProps>()
 
   return (
@@ -45,7 +45,9 @@ export default function HomeNavGrid() {
       />
     </LinearGradient>
   )
-}
+})
+
+export default HomeNavGrid
 
 const NavItem = ({ icon, label, library, color, onPress }: any) => {
   const IconComponent =

@@ -53,7 +53,6 @@ export default function Home() {
     posts: serverPosts,
     page,
     hasMore,
-    isLoading,
     isLoadingMore,
     refresh: fetchPosts,
     loadMore: loadMorePosts
@@ -80,6 +79,26 @@ export default function Home() {
       (post.author_city &&
         post.author_city.toLowerCase().includes(searchContent))
     )
+  })
+
+  // 根据标签栏筛选和排序帖子
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
+    switch (activeTab) {
+      case '推荐':
+        // 按照发布时间排序（如果有ctime字段），否则随机排序
+        if (a.ctime && b.ctime) {
+          return b.ctime - a.ctime
+        }
+        return Math.random() - 0.5
+      case '热搜':
+        // 按照点赞数由高到低排序
+        return (b.like_count || 0) - (a.like_count || 0)
+      case '关注':
+        // 暂时不实现关注筛选，保持原样
+        return 0
+      default:
+        return 0
+    }
   })
 
   // 徽章动画
@@ -174,8 +193,8 @@ export default function Home() {
 
   // 准备 FlatList 数据
   const flatListData = isSearching
-    ? filteredPosts
-    : posts.map(post => ({
+    ? sortedPosts
+    : sortedPosts.map(post => ({
         type: 'post',
         id: post.post_id || `unknown-${Math.random()}`,
         data: post
@@ -207,15 +226,6 @@ export default function Home() {
     <View style={styles.stickyHeader}>
       <View style={styles.sectionHeader}>
         <View style={styles.titleAndTabsContainer}>
-          <View style={styles.sectionTitleWrapper}>
-            <LinearGradient
-              colors={['#ff9a9e', '#f43f5e']}
-              style={styles.iconBox}
-            >
-              <Ionicons name="people" size={16} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.sectionTitle}>宝妈社区</Text>
-          </View>
           {/* 添加标签栏 */}
           <ScrollView
             horizontal
@@ -232,6 +242,18 @@ export default function Home() {
                 }
               >
                 推荐
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={activeTab === '热搜' ? styles.activeTab : styles.tab}
+              onPress={() => setActiveTab('热搜')}
+            >
+              <Text
+                style={
+                  activeTab === '热搜' ? styles.activeTabText : styles.tabText
+                }
+              >
+                热搜
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -288,13 +310,6 @@ export default function Home() {
 
         {/* 工具栏 */}
         <HomeNavGrid />
-
-        {/* 加载状态 */}
-        {isLoading && page === 1 ? (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color="#f43f5e" />
-          </View>
-        ) : null}
       </>
     )
   }

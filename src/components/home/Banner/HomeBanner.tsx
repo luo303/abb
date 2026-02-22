@@ -32,7 +32,7 @@ const RAW_DATA = [
   }
 ]
 
-export default function HomeBanner() {
+const HomeBanner = React.memo(function HomeBanner() {
   const isFocused = useIsFocused()
   const progress = useSharedValue(0)
 
@@ -96,7 +96,9 @@ export default function HomeBanner() {
       )}
     </View>
   )
-}
+})
+
+export default HomeBanner
 
 // 轮播图指示点组件
 const PaginationDot = ({
