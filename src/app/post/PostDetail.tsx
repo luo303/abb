@@ -19,7 +19,12 @@ import DoubleTapLike from '../../components/post/DoubleTapLike'
 import { MOCK_COMMENTS } from '@/data/mock/homePosts'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
-import { usePostDetail } from '@/hooks/usePostDetail'
+import { useAppSelector, useAppDispatch } from '@/hooks/redux'
+import {
+  fetchPostDetail,
+  updatePostStats,
+  toggleFollow
+} from '@/store/modules/PostStore'
 
 type PostDetailRouteProp = RouteProp<
   { params: { id: string; post_id: string } },
@@ -31,7 +36,10 @@ export default function PostDetail() {
   const { id, post_id } = route.params || {}
   const postId = post_id || id
 
-  const { post, isLoading, updateLocalPost } = usePostDetail(postId)
+  const dispatch = useAppDispatch()
+  const { currentPost, loading: isLoading } = useAppSelector(
+    state => state.post
+  )
 
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
@@ -46,35 +54,43 @@ export default function PostDetail() {
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
 
+  // 加载帖子详情
+  useEffect(() => {
+    if (postId) {
+      dispatch(fetchPostDetail(postId))
+    }
+  }, [dispatch, postId])
+
   // 初始化交互状态（仅在 post 加载完成后执行一次）
   useEffect(() => {
-    if (post) {
-      setIsLiked(post.like_count > 0 && Math.random() > 0.5) // 模拟：随机初始状态
+    if (currentPost) {
+      setIsLiked(currentPost.like_count > 0 && Math.random() > 0.5) // 模拟：随机初始状态
       setIsDisliked(false)
       setIsFavorited(false)
+      setIsFollowing(currentPost.is_followed || false)
     }
-  }, [post?.post_id])
+  }, [currentPost?.post_id])
 
   // 处理显示数据：头像和图片
   const displayAvatar = useMemo(() => {
-    if (!post?.author_avatar) {
+    if (!currentPost?.author_avatar) {
       return require('@/assets/testAvatar.png')
     }
-    return typeof post.author_avatar === 'string'
-      ? { uri: post.author_avatar }
-      : post.author_avatar
-  }, [post?.author_avatar])
+    return typeof currentPost.author_avatar === 'string'
+      ? { uri: currentPost.author_avatar }
+      : currentPost.author_avatar
+  }, [currentPost?.author_avatar])
 
   const displayImages = useMemo(() => {
-    if (!post) return []
-    if (post.images && post.images.length > 0) {
-      return post.images
+    if (!currentPost) return []
+    if (currentPost.images && currentPost.images.length > 0) {
+      return currentPost.images
     }
-    if (post.cover) {
-      return [post.cover]
+    if (currentPost.cover) {
+      return [currentPost.cover]
     }
     return []
-  }, [post])
+  }, [currentPost])
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return ''
@@ -86,23 +102,33 @@ export default function PostDetail() {
 
   // 处理帖子点赞
   const handleLikePost = () => {
-    if (!post) return
+    if (!currentPost) return
 
     const newIsLiked = !isLiked
     // 简单的计数逻辑，实际应由后端返回
     const newLikes = newIsLiked
-      ? post.like_count + 1
-      : Math.max(0, post.like_count - 1)
+      ? currentPost.like_count + 1
+      : Math.max(0, currentPost.like_count - 1)
 
     setIsLiked(newIsLiked)
     if (newIsLiked && isDisliked) {
       setIsDisliked(false)
-      updateLocalPost({
-        like_count: newLikes,
-        dislike_count: Math.max(0, post.dislike_count - 1)
-      })
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: {
+            like_count: newLikes,
+            dislike_count: Math.max(0, currentPost.dislike_count - 1)
+          }
+        })
+      )
     } else {
-      updateLocalPost({ like_count: newLikes })
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: { like_count: newLikes }
+        })
+      )
     }
   }
 
@@ -114,37 +140,61 @@ export default function PostDetail() {
 
   // 处理帖子踩
   const handleDislikePost = () => {
-    if (!post) return
+    if (!currentPost) return
 
     const newIsDisliked = !isDisliked
     const newDislikes = newIsDisliked
-      ? post.dislike_count + 1
-      : Math.max(0, post.dislike_count - 1)
+      ? currentPost.dislike_count + 1
+      : Math.max(0, currentPost.dislike_count - 1)
 
     setIsDisliked(newIsDisliked)
     if (newIsDisliked && isLiked) {
       setIsLiked(false)
-      updateLocalPost({
-        dislike_count: newDislikes,
-        like_count: Math.max(0, post.like_count - 1)
-      })
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: {
+            dislike_count: newDislikes,
+            like_count: Math.max(0, currentPost.like_count - 1)
+          }
+        })
+      )
     } else {
-      updateLocalPost({ dislike_count: newDislikes })
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: { dislike_count: newDislikes }
+        })
+      )
     }
   }
 
   // 处理帖子收藏
   const handleFavoritePost = () => {
-    if (!post) return
+    if (!currentPost) return
     const newIsFavorited = !isFavorited
     const newFavorites = newIsFavorited
-      ? post.collect_count + 1
-      : Math.max(0, post.collect_count - 1)
+      ? currentPost.collect_count + 1
+      : Math.max(0, currentPost.collect_count - 1)
 
     setIsFavorited(newIsFavorited)
-    updateLocalPost({ collect_count: newFavorites })
+    dispatch(
+      updatePostStats({
+        postId: currentPost.post_id,
+        stats: { collect_count: newFavorites }
+      })
+    )
 
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
+  }
+
+  // 处理关注作者
+  const handleFollowAuthor = () => {
+    if (!currentPost) return
+    const newIsFollowing = !isFollowing
+    setIsFollowing(newIsFollowing)
+    dispatch(toggleFollow(currentPost.author_id))
+    showMessage(newIsFollowing ? '关注成功' : '取消关注')
   }
 
   // ... 评论相关逻辑保持不变 ...
@@ -209,10 +259,14 @@ export default function PostDetail() {
       setComments(prev => addReply(prev))
     } else {
       setComments(prev => [newComment, ...prev])
-      if (post) {
-        const newCommentsCount = post.comment_count + 1
-        updateLocalPost({ comment_count: newCommentsCount })
-        // updateMockPost(post.post_id, { comment_count: newCommentsCount })
+      if (currentPost) {
+        const newCommentsCount = currentPost.comment_count + 1
+        dispatch(
+          updatePostStats({
+            postId: currentPost.post_id,
+            stats: { comment_count: newCommentsCount }
+          })
+        )
       }
     }
     showMessage('评论成功')
@@ -228,7 +282,7 @@ export default function PostDetail() {
     )
   }
 
-  if (!post) {
+  if (!currentPost) {
     return (
       <View style={[styles.container, styles.center]}>
         <Text style={styles.loadingText}>未找到帖子内容</Text>
@@ -245,18 +299,18 @@ export default function PostDetail() {
       >
         <PostHeader
           avatar={displayAvatar}
-          nickname={post.author_name}
-          description={post.baby_age_text}
+          nickname={currentPost.author_name}
+          description={currentPost.baby_age_text}
           isFollowing={isFollowing}
-          onFollow={() => setIsFollowing(!isFollowing)}
+          onFollow={handleFollowAuthor}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
-            content={post.content}
-            tags={post.tags}
+            content={currentPost.content}
+            tags={currentPost.tags}
             images={displayImages}
-            publishTime={formatDate(post.ctime)}
-            location={post.author_city}
+            publishTime={formatDate(currentPost.ctime)}
+            location={currentPost.author_city}
           />
         </DoubleTapLike>
 
@@ -300,10 +354,10 @@ export default function PostDetail() {
       <View style={[styles.footerWrapper, { paddingBottom: insets.bottom }]}>
         <PostFooter
           onInputPress={handleStartInput}
-          likeCount={post.like_count}
-          dislikeCount={post.dislike_count}
-          collectCount={post.collect_count}
-          commentCount={post.comment_count}
+          likeCount={currentPost.like_count}
+          dislikeCount={currentPost.dislike_count}
+          collectCount={currentPost.collect_count}
+          commentCount={currentPost.comment_count}
           isLiked={isLiked}
           isDisliked={isDisliked}
           isFavorited={isFavorited}

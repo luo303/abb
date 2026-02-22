@@ -158,8 +158,8 @@ export default function TabsLayout() {
           title: 'AI助手',
           tabBarIcon: ({ color }) => (
             <LinearGradient
-              // Modern gradient: Coral to Orange-Red (Warmer, less pink)
-              colors={['#FF8C66', '#FF5E62']}
+              // Theme gradient: Warm Red to Pink-Red (Matching app theme)
+              colors={['#ff9a9e', '#f43f5e']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
