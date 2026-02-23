@@ -140,22 +140,31 @@ export default function PartnerChat() {
         payload = null
       }
 
-      const textValue =
-        payload?.text ?? payload?.content ?? payload?.message ?? rawText
+      const typeValue = payload?.type ?? null
+      if (
+        rawText === 'pong' ||
+        rawText === 'ping' ||
+        typeValue === 'pong' ||
+        typeValue === 'ping' ||
+        typeValue === 'heartbeat'
+      ) {
+        return
+      }
+
+      if (typeValue !== 'chat') {
+        return
+      }
+
+      const textValue = payload?.text
       if (!textValue || typeof textValue !== 'string') return
 
-      const incomingClientId =
-        payload?.clientId ?? payload?.sender ?? payload?.from ?? payload?.role
+      const incomingClientId = payload?.clientId ?? null
       if (incomingClientId && incomingClientId === clientIdRef.current) {
         return
       }
 
       const senderValue =
-        incomingClientId === 'me' ||
-        incomingClientId === 'user' ||
-        incomingClientId === clientIdRef.current
-          ? 'me'
-          : 'partner'
+        incomingClientId === clientIdRef.current ? 'me' : 'partner'
 
       dispatch(
         addMessage({
@@ -267,6 +276,7 @@ export default function PartnerChat() {
     setInputText('')
 
     const payload = {
+      type: 'chat',
       text: content,
       clientId: clientIdRef.current,
       partnerId,
