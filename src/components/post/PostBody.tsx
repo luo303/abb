@@ -11,7 +11,7 @@ import ImageViewing from 'react-native-image-viewing'
 
 interface PostBodyProps {
   title?: string
-  content: string
+  content: string | { text: string; images: string[] }
   tags?: string[]
   images?: any[]
   publishTime?: string
@@ -36,8 +36,30 @@ export default function PostBody({
   const [visible, setIsVisible] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
+  // 处理content，确保获取到正确的text和images
+  const getContentText = () => {
+    if (typeof content === 'object') {
+      return content.text || ''
+    }
+    return content || ''
+  }
+
+  const getContentImages = () => {
+    if (
+      typeof content === 'object' &&
+      content.images &&
+      content.images.length > 0
+    ) {
+      return content.images
+    }
+    return images
+  }
+
+  const displayContent = getContentText()
+  const displayImages = getContentImages()
+
   // 格式化图片数据供 ImageViewing 使用
-  const formattedImages = images.map(img =>
+  const formattedImages = displayImages.map(img =>
     typeof img === 'string' ? { uri: img } : img
   )
 
@@ -55,7 +77,7 @@ export default function PostBody({
     <View style={styles.container}>
       {title && <Text style={styles.title}>{title}</Text>}
 
-      <Text style={styles.content}>{content}</Text>
+      <Text style={styles.content}>{displayContent}</Text>
 
       {tags && tags.length > 0 && (
         <View style={styles.tagsContainer}>
@@ -67,9 +89,9 @@ export default function PostBody({
         </View>
       )}
 
-      {images.length > 0 && (
+      {displayImages.length > 0 && (
         <View style={styles.imageContainer}>
-          {images.length === 1 ? (
+          {displayImages.length === 1 ? (
             // 单张图片大图显示
             <TouchableOpacity
               activeOpacity={0.9}
@@ -78,7 +100,9 @@ export default function PostBody({
             >
               <Image
                 source={
-                  typeof images[0] === 'string' ? { uri: images[0] } : images[0]
+                  typeof displayImages[0] === 'string'
+                    ? { uri: displayImages[0] }
+                    : displayImages[0]
                 }
                 style={styles.singleImage}
                 resizeMode="cover"
@@ -88,7 +112,7 @@ export default function PostBody({
           ) : (
             // 多张图片网格显示
             <View style={styles.imageGrid}>
-              {images.map((img, index) => (
+              {displayImages.map((img, index) => (
                 <TouchableOpacity
                   key={`img-${index}`}
                   activeOpacity={0.9}

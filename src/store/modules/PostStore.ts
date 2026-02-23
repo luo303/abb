@@ -129,6 +129,31 @@ const postSlice = createSlice({
           is_followed: !state.currentPost.is_followed
         }
       }
+    },
+    addNewPost: (state, action: PayloadAction<PostItem>) => {
+      // 确保content已被正确解析
+      const newPost = { ...action.payload }
+      if (newPost.content) {
+        if (typeof newPost.content === 'string') {
+          try {
+            const parsedContent = JSON.parse(newPost.content)
+            if (parsedContent) {
+              newPost.content = parsedContent
+              newPost.images = parsedContent.images || newPost.images
+            }
+          } catch (parseError) {
+            // 如果解析失败，保持原content不变
+          }
+        } else if (
+          typeof newPost.content === 'object' &&
+          newPost.content.text
+        ) {
+          // content已经是对象，直接使用
+          newPost.images = newPost.content.images || newPost.images
+        }
+      }
+      // 将新帖子插入到列表首位
+      state.postList.unshift(newPost)
     }
   },
   extraReducers: builder => {
@@ -144,18 +169,29 @@ const postSlice = createSlice({
           // 统一对 content 字段进行 JSON.parse 解析
           const parsedPostList =
             action.payload.data?.items?.map((post: PostItem) => {
-              if (post.content && typeof post.content === 'string') {
-                try {
-                  const parsedContent = JSON.parse(post.content)
-                  if (parsedContent) {
-                    return {
-                      ...post,
-                      content: parsedContent.text || '',
-                      images: parsedContent.images || []
+              if (post.content) {
+                if (typeof post.content === 'string') {
+                  try {
+                    const parsedContent = JSON.parse(post.content)
+                    if (parsedContent) {
+                      return {
+                        ...post,
+                        content: parsedContent,
+                        images: parsedContent.images || []
+                      }
                     }
+                  } catch (parseError) {
+                    // 如果解析失败，保持原 content 不变
                   }
-                } catch (parseError) {
-                  // 如果解析失败，保持原 content 不变
+                } else if (
+                  typeof post.content === 'object' &&
+                  post.content.text
+                ) {
+                  // content已经是对象，直接使用
+                  return {
+                    ...post,
+                    images: post.content.images || []
+                  }
                 }
               }
               return post
@@ -182,18 +218,29 @@ const postSlice = createSlice({
           // 统一对 content 字段进行 JSON.parse 解析
           const parsedPostList =
             action.payload.data?.items?.map((post: PostItem) => {
-              if (post.content && typeof post.content === 'string') {
-                try {
-                  const parsedContent = JSON.parse(post.content)
-                  if (parsedContent) {
-                    return {
-                      ...post,
-                      content: parsedContent.text || '',
-                      images: parsedContent.images || []
+              if (post.content) {
+                if (typeof post.content === 'string') {
+                  try {
+                    const parsedContent = JSON.parse(post.content)
+                    if (parsedContent) {
+                      return {
+                        ...post,
+                        content: parsedContent,
+                        images: parsedContent.images || []
+                      }
                     }
+                  } catch (parseError) {
+                    // 如果解析失败，保持原 content 不变
                   }
-                } catch (parseError) {
-                  // 如果解析失败，保持原 content 不变
+                } else if (
+                  typeof post.content === 'object' &&
+                  post.content.text
+                ) {
+                  // content已经是对象，直接使用
+                  return {
+                    ...post,
+                    images: post.content.images || []
+                  }
                 }
               }
               return post
@@ -231,18 +278,29 @@ const postSlice = createSlice({
           let postData = action.payload.data?.post
           if (postData) {
             // 统一对 content 字段进行 JSON.parse 解析
-            if (postData.content && typeof postData.content === 'string') {
-              try {
-                const parsedContent = JSON.parse(postData.content)
-                if (parsedContent) {
-                  postData = {
-                    ...postData,
-                    content: parsedContent.text || '',
-                    images: parsedContent.images || []
+            if (postData.content) {
+              if (typeof postData.content === 'string') {
+                try {
+                  const parsedContent = JSON.parse(postData.content)
+                  if (parsedContent) {
+                    postData = {
+                      ...postData,
+                      content: parsedContent,
+                      images: parsedContent.images || []
+                    }
                   }
+                } catch (parseError) {
+                  // 如果解析失败，保持原 content 不变
                 }
-              } catch (parseError) {
-                // 如果解析失败，保持原 content 不变
+              } else if (
+                typeof postData.content === 'object' &&
+                postData.content.text
+              ) {
+                // content已经是对象，直接使用
+                postData = {
+                  ...postData,
+                  images: postData.content.images || []
+                }
               }
             }
             state.currentPost = postData
@@ -262,6 +320,7 @@ export const {
   resetPostState,
   clearCurrentPost,
   updatePostStats,
-  toggleFollow
+  toggleFollow,
+  addNewPost
 } = postSlice.actions
 export default postSlice.reducer
