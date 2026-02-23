@@ -14,7 +14,7 @@ export type RootStackParamList = {
   Album: undefined
   GrowthCurve: undefined
   Diary: undefined
-  PostDetail: { id: string }
+  PostDetail: { post_id: string }
   AddPost: undefined
   AddBaby: undefined
   EditProfile: undefined

@@ -60,11 +60,12 @@ export default function Home() {
   ) as UserMeResponse | null
 
   // 合并展示的数据
-  // 逻辑优化：优先使用 postList 的数据（因为它是经过详情页更新后的最新状态）
+  // 优先使用 postList 的数据（因为它是经过详情页更新后的最新状态）
   // 只有当 postList 里没有时（还没同步），才使用 localPosts
   const serverIds = new Set(postList.map(p => p.post_id))
   const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.post_id))
-  const posts = [...uniqueLocalPosts, ...postList]
+  // 确保 postList 中的数据（已更新状态）优先显示
+  const posts = [...postList, ...uniqueLocalPosts]
 
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
@@ -111,7 +112,7 @@ export default function Home() {
                 return b.ctime - a.ctime
               }
               return Math.random() - 0.5
-            case '热搜':
+            case '热门':
               // 按照点赞数由高到低排序
               return (b.like_count || 0) - (a.like_count || 0)
             default:
@@ -294,15 +295,15 @@ export default function Home() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={activeTab === '热搜' ? styles.activeTab : styles.tab}
-              onPress={() => setActiveTab('热搜')}
+              style={activeTab === '热门' ? styles.activeTab : styles.tab}
+              onPress={() => setActiveTab('热门')}
             >
               <Text
                 style={
-                  activeTab === '热搜' ? styles.activeTabText : styles.tabText
+                  activeTab === '热门' ? styles.activeTabText : styles.tabText
                 }
               >
-                热搜
+                热门
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

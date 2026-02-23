@@ -26,6 +26,9 @@ export interface PostItem {
   baby_age_text: string
   location?: string // Keep location for compatibility if needed
   is_followed?: boolean // 是否关注作者
+  is_liked?: boolean // 是否点赞
+  is_disliked?: boolean // 是否踩
+  is_collected?: boolean // 是否收藏
 }
 
 // 首页获取帖子响应数据 - 使用Trae生成的类型结构

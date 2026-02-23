@@ -173,7 +173,7 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     // 优先使用 post_id，如果不存在则尝试使用 id
     const postId = data.post_id || data.id
     if (postId) {
-      navigation.navigate('PostDetail', { id: postId })
+      navigation.navigate('PostDetail', { post_id: postId })
     }
   }
 
@@ -202,9 +202,20 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           </View>
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>{formatDate(data.ctime)}</Text>
-            <Text style={styles.timeText}>{data.author_city}</Text>
+            <Text style={styles.timeText}>
+              {data.author_province && data.author_city
+                ? `${data.author_province} ${data.author_city}`
+                : data.author_city}
+            </Text>
           </View>
         </View>
+
+        {/* 帖子标题 */}
+        {data.title && (
+          <Text style={styles.postTitle} numberOfLines={1} ellipsizeMode="tail">
+            {data.title}
+          </Text>
+        )}
 
         {/* 帖子内容 - 只显示第一行或者截断 */}
         <Text style={styles.postContent} numberOfLines={2} ellipsizeMode="tail">
@@ -250,15 +261,29 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         {/* 底部交互栏 */}
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
-            <Ionicons name="heart-outline" size={20} color="#f43f5e" />
+            <Ionicons
+              name={data.is_liked ? 'heart' : 'heart-outline'}
+              size={20}
+              color={data.is_liked ? '#f43f5e' : '#f43f5e'}
+            />
             <Text style={styles.actionText}>{data.like_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
-            <Ionicons name="heart-dislike-outline" size={20} color="#94a3b8" />
+            <Ionicons
+              name={
+                data.is_disliked ? 'heart-dislike' : 'heart-dislike-outline'
+              }
+              size={20}
+              color={data.is_disliked ? '#94a3b8' : '#94a3b8'}
+            />
             <Text style={styles.actionText}>{data.dislike_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
-            <Ionicons name="star-outline" size={20} color="#f59e0b" />
+            <Ionicons
+              name={data.is_collected ? 'star' : 'star-outline'}
+              size={20}
+              color={data.is_collected ? '#f59e0b' : '#f59e0b'}
+            />
             <Text style={styles.actionText}>{data.collect_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
@@ -334,6 +359,13 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 12,
     color: '#999'
+  },
+  postTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+    lineHeight: 22
   },
   postContent: {
     fontSize: 15,

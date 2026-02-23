@@ -18,6 +18,7 @@ import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
 
 export default function AddPostScreen() {
+  const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -85,7 +86,12 @@ export default function AddPostScreen() {
               style={styles.cardGradient}
             >
               <PostUserInfo />
-              <PostInput value={content} onChangeText={setContent} />
+              <PostInput
+                title={title}
+                onTitleChange={setTitle}
+                value={content}
+                onChangeText={setContent}
+              />
               <ImageUploader
                 images={images}
                 onAddImage={handleAddImage}
@@ -112,6 +118,7 @@ export default function AddPostScreen() {
 
         <PostFooter
           postData={{
+            title,
             content,
             images,
             tags: selectedTags,

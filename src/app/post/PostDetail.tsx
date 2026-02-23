@@ -118,7 +118,9 @@ export default function PostDetail() {
           postId: currentPost.post_id,
           stats: {
             like_count: newLikes,
-            dislike_count: Math.max(0, currentPost.dislike_count - 1)
+            dislike_count: Math.max(0, currentPost.dislike_count - 1),
+            is_liked: newIsLiked,
+            is_disliked: false
           }
         })
       )
@@ -126,7 +128,10 @@ export default function PostDetail() {
       dispatch(
         updatePostStats({
           postId: currentPost.post_id,
-          stats: { like_count: newLikes }
+          stats: {
+            like_count: newLikes,
+            is_liked: newIsLiked
+          }
         })
       )
     }
@@ -155,7 +160,9 @@ export default function PostDetail() {
           postId: currentPost.post_id,
           stats: {
             dislike_count: newDislikes,
-            like_count: Math.max(0, currentPost.like_count - 1)
+            like_count: Math.max(0, currentPost.like_count - 1),
+            is_disliked: newIsDisliked,
+            is_liked: false
           }
         })
       )
@@ -163,7 +170,10 @@ export default function PostDetail() {
       dispatch(
         updatePostStats({
           postId: currentPost.post_id,
-          stats: { dislike_count: newDislikes }
+          stats: {
+            dislike_count: newDislikes,
+            is_disliked: newIsDisliked
+          }
         })
       )
     }
@@ -181,7 +191,10 @@ export default function PostDetail() {
     dispatch(
       updatePostStats({
         postId: currentPost.post_id,
-        stats: { collect_count: newFavorites }
+        stats: {
+          collect_count: newFavorites,
+          is_collected: newIsFavorited
+        }
       })
     )
 
@@ -306,11 +319,16 @@ export default function PostDetail() {
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
+            title={currentPost.title}
             content={currentPost.content}
             tags={currentPost.tags}
             images={displayImages}
             publishTime={formatDate(currentPost.ctime)}
-            location={currentPost.author_city}
+            location={
+              currentPost.author_province && currentPost.author_city
+                ? `${currentPost.author_province} ${currentPost.author_city}`
+                : currentPost.author_city
+            }
           />
         </DoubleTapLike>
 

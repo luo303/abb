@@ -92,20 +92,24 @@ const postSlice = createSlice({
           like_count: number
           dislike_count: number
           collect_count: number
+          is_collected?: boolean
           comment_count: number
+          is_liked?: boolean
+          is_disliked?: boolean
         }>
       }>
     ) => {
       const { postId, stats } = action.payload
 
       // 更新详情页数据
-      if (state.currentPost && state.currentPost.post_id === postId) {
+      if (state.currentPost && state.currentPost.post_id === String(postId)) {
         state.currentPost = { ...state.currentPost, ...stats }
       }
 
       // 更新列表页数据
       state.postList = state.postList.map(post => {
-        if (post.post_id === postId) {
+        if (post.post_id === String(postId)) {
+          console.log('已同步更新首页列表中的点赞数，ID: ' + postId)
           return { ...post, ...stats }
         }
         return post

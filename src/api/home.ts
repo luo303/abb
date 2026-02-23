@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import { MOCK_POSTS } from '@/data/mock/homePosts'
+import { MOCK_POSTS, getMockPostById } from '@/data/mock/homePosts'
 import { PostListResponse, PostDetailResponse } from '@/types/home'
 
 /**
@@ -79,7 +79,7 @@ export const createPost = async (
       code: 200,
       message: 'success (mock fallback)',
       data: {
-        post_id: Date.now().toString(),
+        post_id: '1011',
         status: 'published',
         message: '创建成功 (Mock)'
       }
@@ -99,7 +99,22 @@ export const getPostDetail = async (
     const response = res as unknown as PostDetailResponse
     return response
   } catch (error) {
-    // 直接抛出错误，移除本地 Mock 降级逻辑
+    console.warn('Network request failed, falling back to mock data', error)
+
+    // 从本地 Mock 数据中获取
+    const mockPost = getMockPostById(post_id)
+
+    if (mockPost) {
+      return {
+        code: 200,
+        message: 'success (local mock)',
+        data: {
+          post: mockPost
+        }
+      }
+    }
+
+    // 如果 Mock 数据中也没有，再抛出错误
     throw error
   }
 }

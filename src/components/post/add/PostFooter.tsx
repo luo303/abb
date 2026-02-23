@@ -22,6 +22,7 @@ import { NavigationProps } from '@/types/navigation'
 import { RootState } from '@/store'
 
 export interface PostData {
+  title?: string
   content: string
   images: string[]
   tags: string[]
@@ -145,9 +146,11 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
           ? { uri: userInfo.avatar }
           : require('../../../assets/testAvatar.png'),
         author_name: userInfo?.username || userInfo?.account || '稚慧宝用户',
+        author_province: userInfo?.province || '',
+        author_city: userInfo?.city || '未知位置',
+        title: postData.title || '',
         baby_age_text: '一名宝爸/宝妈',
         ctime: Date.now(),
-        author_city: userInfo?.city || '未知位置',
         content: contentObj, // 直接使用解析后的对象
         tags: payload.tags,
         images: validNetworkUrls,
@@ -191,7 +194,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
 
       // 延迟一下再跳转到详情页，确保路由栈已经重置
       setTimeout(() => {
-        navigation.navigate('PostDetail', { id: postId })
+        navigation.navigate('PostDetail', { post_id: postId })
       }, 100)
     } catch (error) {
       console.error('Publish failed:', error)
