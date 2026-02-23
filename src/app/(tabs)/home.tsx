@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -33,6 +32,8 @@ import HomeSearchBar from '@/components/home/search/HomeSearchBar'
 import { PostItem } from '@/types/home'
 import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { fetchPostList, loadMorePosts } from '@/store/modules/PostStore'
+import { getUserMeReq, ApiResponse, UserMeResponse } from '../../api/profile'
+import { setUserInfo } from '../../store/modules/userStore'
 
 /**
  * 首页组件
@@ -54,6 +55,9 @@ export default function Home() {
   const { postList, loading, hasMore, isLoadingMore, page } = useAppSelector(
     state => state.post
   )
+  const userInfo = useAppSelector(
+    state => state.user.userInfo
+  ) as UserMeResponse | null
 
   // 合并展示的数据
   // 逻辑优化：优先使用 postList 的数据（因为它是经过详情页更新后的最新状态）
@@ -196,6 +200,32 @@ export default function Home() {
   useEffect(() => {
     dispatch(fetchPostList({ page: 1 }))
   }, [dispatch])
+
+  // 首次进入首页时获取一次用户信息（如果 Redux 中还没有）
+  useEffect(() => {
+    if (userInfo) return
+    let isActive = true
+
+    const fetchUserInfo = async () => {
+      try {
+        const res =
+          (await getUserMeReq()) as unknown as ApiResponse<UserMeResponse>
+        if (!isActive) return
+        if (res.code === 0 && res.data) {
+          dispatch(setUserInfo(res.data))
+        }
+      } catch (error) {
+        if (!isActive) return
+        console.error('获取用户信息失败：', error)
+      }
+    }
+
+    fetchUserInfo()
+
+    return () => {
+      isActive = false
+    }
+  }, [dispatch, userInfo])
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {
