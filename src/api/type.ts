@@ -37,6 +37,7 @@ export interface Register {
   username: string
   email: string
   code: string
+  gender: 'male' | 'female'
 }
 //注册响应数据
 export interface resRegister {

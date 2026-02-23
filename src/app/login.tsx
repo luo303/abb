@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image
+  Image,
+  ActivityIndicator
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
@@ -27,16 +28,19 @@ export default function LoginScreen() {
   const token = useSelector((state: any) => state.user.token)
   const rememberMe = useSelector((state: any) => state.user.rememberMe)
   const [activeTab, setActiveTab] = useState('account')
-  const [countdown, setCountdown] = useState(0)
 
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
+
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
 
   const [agree, setAgree] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const { showMessage } = useMessage()
+  const [countdown, setCountdown] = useState(0)
+  const [isCodeLoading, setIsCodeLoading] = useState(false)
 
   // 重定向到首页
   useEffect(() => {
@@ -57,6 +61,10 @@ export default function LoginScreen() {
       showMessage('请先同意用户协议')
       return
     }
+
+    if (isLoading) return
+
+    setIsLoading(true)
 
     if (activeTab === 'account') {
       if (!account || !password) {
@@ -81,6 +89,8 @@ export default function LoginScreen() {
       } catch (error) {
         showMessage('登录失败，请稍后重试')
         console.error('登录失败：', error)
+      } finally {
+        setIsLoading(false)
       }
     } else {
       // 邮箱验证码登录逻辑
@@ -106,11 +116,14 @@ export default function LoginScreen() {
       } catch (error) {
         showMessage('登录失败，请稍后重试')
         console.error('登录失败：', error)
+      } finally {
+        setIsLoading(false)
       }
     }
   }
   //邮箱验证码
   const handleGetCode = async () => {
+    if (isCodeLoading) return
     if (!email) {
       showMessage('请输入邮箱')
       return
@@ -124,6 +137,7 @@ export default function LoginScreen() {
     }
     if (countdown > 0) return
     try {
+      setIsCodeLoading(true)
       const res: resLoginCode = await apiLoginCode({
         email
       })
@@ -145,6 +159,8 @@ export default function LoginScreen() {
     } catch (error) {
       showMessage('获取验证码失败，请稍后重试')
       console.error('获取验证码失败：', error)
+    } finally {
+      setIsCodeLoading(false)
     }
   }
 
@@ -271,18 +287,22 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     style={styles.getCodeBtn}
                     onPress={handleGetCode}
-                    disabled={countdown > 0}
+                    disabled={countdown > 0 || isCodeLoading}
                   >
-                    <Text
-                      style={[
-                        styles.getCodeText,
-                        countdown > 0 && styles.getCodeTextDisabled
-                      ]}
-                    >
-                      {countdown > 0
-                        ? `${countdown}秒后重新获取`
-                        : '获取验证码'}
-                    </Text>
+                    {isCodeLoading ? (
+                      <ActivityIndicator color="#1f99b0" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.getCodeText,
+                          countdown > 0 && styles.getCodeTextDisabled
+                        ]}
+                      >
+                        {countdown > 0
+                          ? `${countdown}秒后重新获取`
+                          : '获取验证码'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -290,8 +310,20 @@ export default function LoginScreen() {
             </>
           )}
 
-          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-            <Text style={styles.loginBtnText}>登录</Text>
+          <TouchableOpacity
+            style={[
+              styles.loginBtn,
+              isLoading && { backgroundColor: '#99d6e5' }
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginBtnText}>登录</Text>
+            )}
           </TouchableOpacity>
 
           {/* 用户协议和隐私授权 */}

@@ -292,7 +292,9 @@ export default function PartnerChat() {
               <Ionicons name="heart" size={28} color="#fff" />
             </View>
             <Text style={styles.addPartnerTitle}>绑定另一半</Text>
-            <Text style={styles.addPartnerSubtitle}>输入账号密码即可绑定</Text>
+            <Text style={styles.addPartnerSubtitle}>
+              共享宝宝数据，实现实时聊天
+            </Text>
           </View>
 
           <View style={styles.addPartnerCard}>

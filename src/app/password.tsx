@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
@@ -35,6 +36,7 @@ export default function PasswordScreen() {
   // 加载状态
   const [isLoading, setIsLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const [isCodeLoading, setIsCodeLoading] = useState(false)
 
   // 表单输入变化处理
   const handleInputChange = (key: string, value: string) => {
@@ -57,8 +59,9 @@ export default function PasswordScreen() {
       showMessage('请输入有效的邮箱地址')
       return
     }
-    if (countdown > 0) return
+    if (isCodeLoading || countdown > 0) return
     try {
+      setIsCodeLoading(true)
       const res = await apiResetPasswordCode({
         email: formData.email
       })
@@ -80,6 +83,8 @@ export default function PasswordScreen() {
     } catch (error) {
       showMessage('获取验证码失败，请稍后重试')
       console.log(error)
+    } finally {
+      setIsCodeLoading(false)
     }
   }
 
@@ -169,6 +174,7 @@ export default function PasswordScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入注册邮箱"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.email}
                   onChangeText={value => handleInputChange('email', value)}
                   keyboardType="email-address"
@@ -183,6 +189,7 @@ export default function PasswordScreen() {
                   <TextInput
                     style={[styles.input, { flex: 1, marginBottom: 0 }]}
                     placeholder="请输入验证码"
+                    placeholderTextColor="#9CA3AF"
                     value={formData.code}
                     onChangeText={value => handleInputChange('code', value)}
                     keyboardType="number-pad"
@@ -191,16 +198,20 @@ export default function PasswordScreen() {
                   <TouchableOpacity
                     style={styles.getCodeBtn}
                     onPress={handleGetCode}
-                    disabled={countdown > 0 || isLoading}
+                    disabled={countdown > 0 || isCodeLoading || isLoading}
                   >
-                    <Text
-                      style={[
-                        styles.getCodeText,
-                        countdown > 0 && styles.getCodeTextDisabled
-                      ]}
-                    >
-                      {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
-                    </Text>
+                    {isCodeLoading ? (
+                      <ActivityIndicator color="#1f99b0" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.getCodeText,
+                          countdown > 0 && styles.getCodeTextDisabled
+                        ]}
+                      >
+                        {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -210,6 +221,7 @@ export default function PasswordScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="请输入新密码（至少6位）"
+                  placeholderTextColor="#9CA3AF"
                   value={formData.password}
                   onChangeText={value => handleInputChange('password', value)}
                   secureTextEntry
@@ -225,9 +237,11 @@ export default function PasswordScreen() {
                 onPress={handleResetPassword}
                 disabled={isLoading}
               >
-                <Text style={styles.submitBtnText}>
-                  {isLoading ? '提交中...' : '确认重置'}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitBtnText}>确认重置</Text>
+                )}
               </TouchableOpacity>
             </View>
           </ScrollView>

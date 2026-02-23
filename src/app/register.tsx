@@ -7,13 +7,14 @@ import {
   ScrollView,
   Image,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons'
 import { apiRegister, apiRegisterCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
@@ -30,7 +31,7 @@ export default function RegisterScreen() {
     password: string
     username: string
     code: string
-    gender: string
+    gender: 'male' | 'female'
   }>({
     account: '',
     email: '',
@@ -44,6 +45,7 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [agree, setAgree] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const [isCodeLoading, setIsCodeLoading] = useState(false)
   // 表单输入变化处理
   const handleInputChange = (key: string, value: string) => {
     setFormData({
@@ -106,12 +108,13 @@ export default function RegisterScreen() {
   }
   //获取验证码
   const GetCode = async () => {
-    if (countdown > 0) return
+    if (isCodeLoading || countdown > 0) return
     if (!formData.email) {
       showMessage('请输入邮箱')
       return
     }
     try {
+      setIsCodeLoading(true)
       const res = await apiRegisterCode({
         email: formData.email
       })
@@ -134,6 +137,8 @@ export default function RegisterScreen() {
     } catch (error) {
       showMessage('获取验证码失败，请稍后重试')
       console.log(error)
+    } finally {
+      setIsCodeLoading(false)
     }
   }
   // 注册处理函数
@@ -229,6 +234,58 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.inputGroup}>
+                <Text style={styles.label}>性别</Text>
+                <View style={styles.genderContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      formData.gender === 'male' && styles.genderButtonActive
+                    ]}
+                    onPress={() => handleInputChange('gender', 'male')}
+                    disabled={isLoading}
+                  >
+                    <Ionicons
+                      name="male"
+                      size={20}
+                      color={formData.gender === 'male' ? '#fff' : '#666'}
+                    />
+                    <Text
+                      style={[
+                        styles.genderText,
+                        formData.gender === 'male' && styles.genderTextActive
+                      ]}
+                    >
+                      男
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      formData.gender === 'female' &&
+                        styles.genderButtonActiveFemale
+                    ]}
+                    onPress={() => handleInputChange('gender', 'female')}
+                    disabled={isLoading}
+                  >
+                    <Ionicons
+                      name="female"
+                      size={20}
+                      color={formData.gender === 'female' ? '#fff' : '#666'}
+                    />
+                    <Text
+                      style={[
+                        styles.genderText,
+                        formData.gender === 'female' && styles.genderTextActive
+                      ]}
+                    >
+                      女
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
                 <Text style={styles.label}>邮箱</Text>
                 <TextInput
                   style={styles.input}
@@ -258,16 +315,20 @@ export default function RegisterScreen() {
                   <TouchableOpacity
                     style={styles.getCodeBtn}
                     onPress={() => GetCode()}
-                    disabled={countdown > 0}
+                    disabled={countdown > 0 || isCodeLoading}
                   >
-                    <Text
-                      style={[
-                        styles.getCodeText,
-                        countdown > 0 && styles.getCodeTextDisabled
-                      ]}
-                    >
-                      {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
-                    </Text>
+                    {isCodeLoading ? (
+                      <ActivityIndicator color="#1f99b0" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.getCodeText,
+                          countdown > 0 && styles.getCodeTextDisabled
+                        ]}
+                      >
+                        {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -280,9 +341,11 @@ export default function RegisterScreen() {
                 onPress={handleRegister}
                 disabled={isLoading}
               >
-                <Text style={styles.loginBtnText}>
-                  {isLoading ? '注册中...' : '注册'}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.loginBtnText}>注册</Text>
+                )}
               </TouchableOpacity>
 
               {/* 用户协议和隐私授权 */}
@@ -454,6 +517,36 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: '#1f99b0'
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  genderButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 25,
+    backgroundColor: '#F5F7FA',
+    borderWidth: 1,
+    borderColor: 'transparent'
+  },
+  genderButtonActive: {
+    backgroundColor: '#1f99b0'
+  },
+  genderButtonActiveFemale: {
+    backgroundColor: '#f9739b'
+  },
+  genderText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: '#666'
+  },
+  genderTextActive: {
+    color: '#fff',
+    fontWeight: '600'
   },
   footer: {
     alignItems: 'center',

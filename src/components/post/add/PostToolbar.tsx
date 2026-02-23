@@ -179,6 +179,7 @@ export default function PostToolbar({
                 <TextInput
                   style={styles.customTagInput}
                   placeholder="输入自定义话题"
+                  placeholderTextColor="#9CA3AF"
                   value={customTagInput}
                   onChangeText={setCustomTagInput}
                   onSubmitEditing={addCustomTag}
