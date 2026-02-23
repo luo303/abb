@@ -111,7 +111,13 @@ const innerConnect = () => {
     }
 
     const type = payload?.type || payload?.event
-    if (rawText === 'pong' || type === 'pong') {
+    if (
+      rawText === 'pong' ||
+      type === 'pong' ||
+      rawText === 'ping' ||
+      type === 'ping' ||
+      type === 'heartbeat'
+    ) {
       return
     }
 
