@@ -102,18 +102,38 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   // 解析 content 的函数
   const parseContent = () => {
     try {
-      // 尝试解析 content
-      const parsed = JSON.parse(data.content)
+      // 检查 content 是否已经是对象
+      if (typeof data.content === 'object' && data.content.text) {
+        return {
+          success: true,
+          text: data.content.text || '',
+          images: data.content.images || []
+        }
+      }
+      // 尝试解析 content 字符串
+      if (typeof data.content === 'string') {
+        const parsed = JSON.parse(data.content)
+        return {
+          success: true,
+          text: parsed.text || '',
+          images: parsed.images || []
+        }
+      }
+      // 解析失败，返回原始 content
       return {
-        success: true,
-        text: parsed.text || '',
-        images: parsed.images || []
+        success: false,
+        text:
+          data.cleanedContent ||
+          (typeof data.content === 'string' ? data.content : ''),
+        images: []
       }
     } catch (error) {
       // 解析失败，返回原始 content
       return {
         success: false,
-        text: data.cleanedContent || data.content,
+        text:
+          data.cleanedContent ||
+          (typeof data.content === 'string' ? data.content : ''),
         images: []
       }
     }

@@ -69,8 +69,17 @@ export default function Home() {
   const filteredPosts = posts.filter(post => {
     if (!isSearching) return true
     const searchContent = searchText.toLowerCase()
+
+    // 处理 content 字段，无论是字符串还是对象
+    let contentText = ''
+    if (typeof post.content === 'string') {
+      contentText = post.content
+    } else if (typeof post.content === 'object' && post.content.text) {
+      contentText = post.content.text
+    }
+
     return (
-      post.content.toLowerCase().includes(searchContent) ||
+      contentText.toLowerCase().includes(searchContent) ||
       (post.author_name &&
         post.author_name.toLowerCase().includes(searchContent)) ||
       (post.author_city &&

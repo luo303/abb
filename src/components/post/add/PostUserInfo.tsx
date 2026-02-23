@@ -1,22 +1,30 @@
 import React from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import { useSelector } from 'react-redux'
+import { RootState } from '../../../store'
 
 export default function PostUserInfo() {
-  // 从 Redux 获取用户信息，如果没有则使用默认值
-  const user = useSelector((state: any) => state.user.userInfo) || {
-    nickname: '稚慧宝用户',
-    avatar: 'https://via.placeholder.com/100'
-  }
+  // 从 Redux 获取用户信息
+  const userInfo = useSelector((state: RootState) => state.user.userInfo)
 
-  const avatarSource =
-    typeof user.avatar === 'string' ? { uri: user.avatar } : user.avatar
+  // 获取用户名，优先使用 username，其次 account，最后使用默认值
+  const userName = userInfo?.username || userInfo?.account || '稚慧宝用户'
+
+  // 获取头像，使用默认头像作为兜底
+  const avatarUrl = userInfo?.avatar
 
   return (
     <View style={styles.container}>
-      <Image source={avatarSource} style={styles.avatar} />
+      <Image
+        source={
+          avatarUrl
+            ? { uri: avatarUrl }
+            : require('../../../assets/testAvatar.png')
+        }
+        style={styles.avatar}
+      />
       <View style={styles.info}>
-        <Text style={styles.nickname}>{user.nickname}</Text>
+        <Text style={styles.nickname}>{userName}</Text>
         <Text style={styles.subtitle}>分享宝宝的成长瞬间</Text>
       </View>
     </View>

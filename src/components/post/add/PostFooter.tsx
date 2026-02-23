@@ -9,8 +9,10 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, CommonActions } from '@react-navigation/native'
+import { useAppDispatch } from '@/hooks/redux'
 import { createPost } from '@/api/home'
 import { uploadFile } from '@/api/upload'
+import request from '@/utils/request'
 import {
   MOCK_FALLBACK_IMAGE,
   MOCK_CURRENT_USER,
@@ -19,6 +21,8 @@ import {
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
 import { prepareImagesForUpload } from '@/utils/image'
+import { addNewPost } from '@/store/modules/PostStore'
+import { NavigationProps } from '@/types/navigation'
 
 export interface PostData {
   content: string
@@ -34,7 +38,8 @@ export interface PostFooterProps {
 
 export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
   const insets = useSafeAreaInsets()
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProps>()
+  const dispatch = useAppDispatch()
   const [isPublishing, setIsPublishing] = useState(false)
   const isPublishingRef = useRef(false)
   const { showMessage } = useMessage()
@@ -53,14 +58,12 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
 
       // 处理图片：格式转换和压缩
       if (processedImages.length > 0) {
-        console.log('Processing images before upload...')
         const preparedImages = await prepareImagesForUpload(processedImages, {
           maxSize: 2 * 1024 * 1024, // 2MB 限制
           quality: 0.8, // 80% 质量
           targetFormat: 'jpeg' // 转换为 JPEG 格式
         })
         processedImages = preparedImages.map(img => img.uri)
-        console.log('Image processing completed')
       }
 
       // 2. 上传图片（如果有）
@@ -104,35 +107,48 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         validNetworkUrls.push(...uploadedImageUrls)
       }
 
+      // 封装content为JSON字符串格式
+      const contentObj = {
+        text: postData.content,
+        images: validNetworkUrls
+      }
+      const jsonContent = JSON.stringify(contentObj)
+
       // 构造请求数据
       const payload = {
-        content: postData.content,
+        content: jsonContent,
         images: validNetworkUrls,
         tags: postData.tags,
         isPublic: postData.isPublic ? 1 : 0,
         status: 'published' as const // 状态：发布
       }
 
-      // 发送 POST 请求
-      const response = await createPost(payload)
+      // 发送 POST 请求创建帖子
+      const createResponse = await createPost(payload)
+      const postId = createResponse.data.post_id || '1011' // 确保获取到post_id
+
+      // 调用发布接口 POST /post/{post_id}/publish
+      try {
+        await request.post(`/post/${postId}/publish`)
+      } catch (error) {
+        console.warn(
+          'Publish API call failed, continuing with local logic:',
+          error
+        )
+      }
 
       // 构造完整的帖子对象用于前端展示
-      // 在 Mock 演示模式下，优先使用本地图片，因为 Mock 上传接口返回的 URL 通常是固定的假图
-      // 只有当本地没有图片时（例如纯文本贴），才尝试使用网络返回的图片
-      const displayImages =
-        postData.images.length > 0 ? postData.images : validNetworkUrls
-
       const newPost: PostItem = {
-        post_id: response.data.post_id || Date.now().toString(),
+        post_id: postId,
         author_id: MOCK_CURRENT_USER.author_id,
         author_avatar: MOCK_CURRENT_USER.author_avatar,
         author_name: MOCK_CURRENT_USER.author_name,
         baby_age_text: MOCK_CURRENT_USER.baby_age_text,
         ctime: Date.now(),
         author_city: '未知位置',
-        content: payload.content,
+        content: contentObj, // 直接使用解析后的对象
         tags: payload.tags,
-        images: displayImages,
+        images: validNetworkUrls,
         like_count: 0,
         dislike_count: 0,
         collect_count: 0,
@@ -142,6 +158,9 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 将新帖子真正添加到 Mock 数据列表中，确保刷新后依然存在
       addMockPost(newPost)
 
+      // 更新Redux状态
+      dispatch(addNewPost(newPost))
+
       // 触发成功回调
       if (onSuccess) {
         onSuccess()
@@ -150,7 +169,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 提示发布成功
       showMessage('发布成功！')
 
-      // 使用 reset 重置路由栈，确保用户无法返回发布页
+      // 使用 reset 重置路由栈，确保用户无法返回发布页，直接跳转到首页并传递新帖子
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -159,12 +178,19 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
               name: 'Tabs',
               params: {
                 screen: 'Home',
-                params: { newPost }
+                params: {
+                  newPost
+                }
               }
             }
           ]
         })
       )
+
+      // 延迟一下再跳转到详情页，确保路由栈已经重置
+      setTimeout(() => {
+        navigation.navigate('PostDetail', { id: postId })
+      }, 100)
     } catch (error) {
       console.error('Publish failed:', error)
       Alert.alert('提示', '发布失败，请稍后重试')

@@ -7,7 +7,7 @@ export interface PostItem {
   author_province?: string
   author_city?: string
   title?: string
-  content: string
+  content: string | { text: string; images: string[] }
   content_preview?: string
   status?: string
   like_count: number
