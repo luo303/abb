@@ -9,20 +9,17 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, CommonActions } from '@react-navigation/native'
-import { useAppDispatch } from '@/hooks/redux'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { createPost } from '@/api/home'
 import { uploadFile } from '@/api/upload'
 import request from '@/utils/request'
-import {
-  MOCK_FALLBACK_IMAGE,
-  MOCK_CURRENT_USER,
-  addMockPost
-} from '@/data/mock/homePosts'
+import { MOCK_FALLBACK_IMAGE, addMockPost } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
 import { prepareImagesForUpload } from '@/utils/image'
 import { addNewPost } from '@/store/modules/PostStore'
 import { NavigationProps } from '@/types/navigation'
+import { RootState } from '@/store'
 
 export interface PostData {
   content: string
@@ -43,6 +40,9 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
   const [isPublishing, setIsPublishing] = useState(false)
   const isPublishingRef = useRef(false)
   const { showMessage } = useMessage()
+
+  // 从 Redux store 获取用户信息
+  const userInfo = useAppSelector((state: RootState) => state.user.userInfo)
 
   const isPublishDisabled = !postData.content.trim() || isPublishing
 
@@ -140,12 +140,14 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 构造完整的帖子对象用于前端展示
       const newPost: PostItem = {
         post_id: postId,
-        author_id: MOCK_CURRENT_USER.author_id,
-        author_avatar: MOCK_CURRENT_USER.author_avatar,
-        author_name: MOCK_CURRENT_USER.author_name,
-        baby_age_text: MOCK_CURRENT_USER.baby_age_text,
+        author_id: userInfo?.user_id || 'user_123456',
+        author_avatar: userInfo?.avatar
+          ? { uri: userInfo.avatar }
+          : require('../../../assets/testAvatar.png'),
+        author_name: userInfo?.username || userInfo?.account || '稚慧宝用户',
+        baby_age_text: '一名宝爸/宝妈',
         ctime: Date.now(),
-        author_city: '未知位置',
+        author_city: userInfo?.city || '未知位置',
         content: contentObj, // 直接使用解析后的对象
         tags: payload.tags,
         images: validNetworkUrls,

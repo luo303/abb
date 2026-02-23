@@ -113,18 +113,13 @@ export default function PostToolbar({
           </View>
           <Text style={styles.toolText}>添加话题</Text>
           <View style={styles.tagsContainer}>
-            {selectedTags.length > 0 ? (
-              selectedTags.slice(0, 2).map(tag => (
-                <Text key={tag} style={styles.tag}>
-                  #{tag}
-                </Text>
-              ))
-            ) : (
-              <>
-                <Text style={styles.tag}>#宝宝日常</Text>
-                <Text style={styles.tag}>#成长记录</Text>
-              </>
-            )}
+            {selectedTags.length > 0
+              ? selectedTags.slice(0, 2).map(tag => (
+                  <Text key={tag} style={styles.tag}>
+                    #{tag}
+                  </Text>
+                ))
+              : null}
             {selectedTags.length > 2 && (
               <Text style={styles.tag}>+{selectedTags.length - 2}</Text>
             )}
