@@ -147,6 +147,7 @@ export default function AddPostScreen() {
               />
               <ImageUploader
                 images={images}
+                pendingImages={pendingImages}
                 onAddImage={handleAddImage}
                 onRemoveImage={handleRemoveImage}
               />

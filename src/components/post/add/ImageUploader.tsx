@@ -1,22 +1,49 @@
 import React from 'react'
-import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native'
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  ActivityIndicator
+} from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 
+interface ImageItem {
+  uri: string
+  status: 'uploading' | 'done' | 'error'
+  url?: string
+}
+
 interface ImageUploaderProps {
   images: string[]
+  pendingImages: ImageItem[]
   onAddImage: () => void
   onRemoveImage: (index: number) => void
 }
 
 export default function ImageUploader({
   images,
+  pendingImages,
   onAddImage,
   onRemoveImage
 }: ImageUploaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
+        {/* 显示待上传的图片 */}
+        {pendingImages
+          .filter(img => img.status === 'uploading')
+          .map((img, index) => (
+            <View key={`pending-${index}`} style={styles.imageWrapper}>
+              <Image source={{ uri: img.uri }} style={styles.image} />
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="small" color="#f43f5e" />
+              </View>
+            </View>
+          ))}
+        {/* 显示已上传的图片 */}
         {images.map((uri, index) => (
           <View key={index} style={styles.imageWrapper}>
             <Image source={{ uri }} style={styles.image} />
@@ -29,7 +56,8 @@ export default function ImageUploader({
             </TouchableOpacity>
           </View>
         ))}
-        {images.length < 9 && (
+        {/* 显示添加按钮 */}
+        {images.length + pendingImages.length < 9 && (
           <TouchableOpacity onPress={onAddImage} activeOpacity={0.7}>
             <LinearGradient
               colors={['#fff1f2', '#ffe4e6']}
@@ -77,6 +105,14 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
     zIndex: 1
   },
   addButton: {
