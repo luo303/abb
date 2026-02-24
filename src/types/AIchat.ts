@@ -22,6 +22,7 @@ export interface HistoryItem {
   session_id: string
   session_title: string
   session_date: string
+  isPinned?: boolean // 是否置顶
 }
 
 /**

@@ -24,7 +24,8 @@ import {
   resetSession,
   removeHistoryItem,
   togglePublicEnabled,
-  togglePrivateEnabled
+  togglePrivateEnabled,
+  togglePin
 } from '../../store/modules/ChatStore'
 import { HistoryItem } from '../../types/AIchat'
 import { useMessage } from '../Message'
@@ -63,6 +64,14 @@ export default function HistoryDrawerContent(
     if (!activeItem) return
     // @ts-ignore
     dispatch(removeHistoryItem(activeItem.session_id))
+    handleCloseMenu()
+    props.navigation.closeDrawer()
+  }
+
+  const handlePin = () => {
+    if (!activeItem) return
+    // @ts-ignore
+    dispatch(togglePin(activeItem.session_id))
     handleCloseMenu()
     props.navigation.closeDrawer()
   }
@@ -142,43 +151,66 @@ export default function HistoryDrawerContent(
       </View>
 
       <ScrollView style={styles.content}>
-        {items.map(item => {
-          const isActive = item.session_id === currentConversationId
-          return (
-            <TouchableOpacity
-              key={item.session_id}
-              style={[styles.historyItem, isActive && styles.activeHistoryItem]}
-              activeOpacity={0.7}
-              onLongPress={() => handleLongPress(item)}
-              onPress={() => handleItemPress(item)}
-            >
-              <AntDesign
-                name="message"
-                size={16}
-                color={isActive ? '#1890ff' : '#666'}
-                style={styles.icon}
-              />
-              <View style={styles.itemContent}>
-                <Text
-                  style={[styles.itemTitle, isActive && styles.activeItemText]}
-                  numberOfLines={1}
-                >
-                  {item.session_title}
-                </Text>
-                <Text
-                  style={[styles.itemDate, isActive && styles.activeItemText]}
-                >
-                  {item.session_date}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )
-        })}
+        {[...items]
+          .sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1
+            if (!a.isPinned && b.isPinned) return 1
+            return 0
+          })
+          .map(item => {
+            const isActive = item.session_id === currentConversationId
+            return (
+              <TouchableOpacity
+                key={item.session_id}
+                style={[
+                  styles.historyItem,
+                  isActive && styles.activeHistoryItem
+                ]}
+                activeOpacity={0.7}
+                onLongPress={() => handleLongPress(item)}
+                onPress={() => handleItemPress(item)}
+              >
+                <View style={styles.iconContainer}>
+                  <AntDesign
+                    name="message"
+                    size={16}
+                    color={isActive ? '#1890ff' : '#666'}
+                  />
+                  {item.isPinned && (
+                    <AntDesign
+                      name="pushpin"
+                      size={12}
+                      color="#1890ff"
+                      style={styles.pinIcon}
+                    />
+                  )}
+                </View>
+                <View style={styles.itemContent}>
+                  <Text
+                    style={[
+                      styles.itemTitle,
+                      isActive && styles.activeItemText
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.session_title}
+                  </Text>
+                  <Text
+                    style={[styles.itemDate, isActive && styles.activeItemText]}
+                  >
+                    {item.session_date}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )
+          })}
       </ScrollView>
       <HistoryActionModal
         visible={menuVisible}
+        isPinned={activeItem?.isPinned || false}
         onClose={handleCloseMenu}
         onDelete={handleDelete}
+        onPin={handlePin}
       />
     </SafeAreaView>
   )
@@ -240,6 +272,17 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 12
+  },
+  iconContainer: {
+    marginRight: 12,
+    position: 'relative'
+  },
+  pinIcon: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#fff',
+    borderRadius: 6
   },
   itemContent: {
     flex: 1

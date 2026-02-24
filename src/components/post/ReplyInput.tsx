@@ -55,18 +55,18 @@ export default function ReplyInput({
       animationType="fade"
       onRequestClose={onDismiss}
     >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onDismiss}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardContainer}
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={onDismiss}
         >
           <TouchableOpacity
             activeOpacity={1}
-            onPress={e => e.stopPropagation()} // 阻止点击输入框区域关闭Modal
+            onPress={e => e.stopPropagation()}
             style={styles.inputContainer}
           >
             <TextInput
@@ -87,8 +87,8 @@ export default function ReplyInput({
               <Text style={styles.sendText}>发送</Text>
             </TouchableOpacity>
           </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -98,9 +98,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end'
-  },
-  keyboardContainer: {
-    width: '100%'
   },
   inputContainer: {
     backgroundColor: '#fff',
