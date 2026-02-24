@@ -126,7 +126,12 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
 
       // 发送 POST 请求创建帖子
       const createResponse = await createPost(payload)
-      const postId = createResponse.data.post_id || '1011' // 确保获取到post_id
+      // 严格获取 response.data.post_id
+      const postId = createResponse.data.post_id
+
+      if (!postId) {
+        throw new Error('Failed to get post_id from createPost response')
+      }
 
       // 调用发布接口 POST /post/{post_id}/publish
       try {
@@ -149,7 +154,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         author_province: userInfo?.province || '',
         author_city: userInfo?.city || '未知位置',
         title: postData.title || '',
-        baby_age_text: '一名宝爸/宝妈',
+        baby_age_text: userInfo?.baby_age_text || '稚慧宝用户',
         ctime: Date.now(),
         content: contentObj, // 直接使用解析后的对象
         tags: payload.tags,
