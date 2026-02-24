@@ -1,7 +1,10 @@
 import store from '@/store'
 import { baseURL } from '@/utils/request'
 //文件上传
-export const uploadFile = async (uri: string) => {
+export const uploadFile = async (
+  uri: string,
+  options?: { signal?: AbortSignal }
+) => {
   const formData = new FormData()
   const filename = uri.split('/').pop() || 'image.jpg'
   const match = /\.(\w+)$/.exec(filename)
@@ -22,7 +25,8 @@ export const uploadFile = async (uri: string) => {
     headers: {
       Authorization: `Bearer ${token}`
     },
-    body: formData
+    body: formData,
+    signal: options?.signal
   })
 
   const json = await response.json()

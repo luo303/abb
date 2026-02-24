@@ -4,10 +4,12 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Alert
 } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
+import { uploadFile } from '@/api/upload'
 
 // 导入子组件
 import AddPostHeader from '@/components/post/add/AddPostHeader'
@@ -17,12 +19,20 @@ import PostToolbar from '@/components/post/add/PostToolbar'
 import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
 
+// 图片信息接口
+interface ImageItem {
+  uri: string
+  status: 'uploading' | 'done' | 'error'
+  url?: string
+}
+
 export default function AddPostScreen() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
+  const [pendingImages, setPendingImages] = useState<ImageItem[]>([])
 
   // 从本地相册添加图片
   const handleAddImage = async () => {
@@ -54,7 +64,50 @@ export default function AddPostScreen() {
 
     if (!result.canceled) {
       const newUris = result.assets.map(item => item.uri) // 使用 map 方法将每张图片的 uri 提取出来
-      setImages([...images, ...newUris]) // 合并新图片到图片数组中
+
+      // 添加到待上传列表
+      const newImageItems: ImageItem[] = newUris.map(uri => ({
+        uri,
+        status: 'uploading'
+      }))
+      setPendingImages(prev => [...prev, ...newImageItems])
+
+      // 对每个新图片进行上传
+      newImageItems.forEach(async img => {
+        try {
+          const response = await uploadFile(img.uri)
+
+          let url = ''
+          if (typeof response.data === 'string') {
+            url = response.data
+          } else if (response.data && typeof response.data.url === 'string') {
+            url = response.data.url
+          } else {
+            console.warn('Unknown upload response format:', response)
+            url = typeof response.data === 'string' ? response.data : ''
+          }
+
+          if (url) {
+            // 更新待上传列表
+            setPendingImages(prev =>
+              prev.map(p =>
+                p.uri === img.uri ? { ...p, status: 'done', url } : p
+              )
+            )
+            // 添加到已上传列表
+            setImages(prev => [...prev, url])
+          } else {
+            throw new Error('Invalid upload response')
+          }
+        } catch (error) {
+          console.warn('Image upload failed:', error)
+          // 更新为错误状态
+          setPendingImages(prev =>
+            prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
+          )
+          Alert.alert('提示', '图片上传失败，请重试')
+        }
+      })
     }
   }
 

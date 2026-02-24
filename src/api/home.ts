@@ -62,10 +62,13 @@ export interface CreatePostResponse {
 }
 
 export const createPost = async (
-  data: CreatePostParams
+  data: CreatePostParams,
+  options?: { signal?: AbortSignal }
 ): Promise<CreatePostResponse> => {
   try {
-    const res = await request.post('/post/newPost', data)
+    const res = await request.post('/post/newPost', data, {
+      signal: options?.signal
+    })
     // 检查响应是否包含错误码（部分 Mock 服务即使 HTTP 200 也会返回业务错误码）
     const response = res as unknown as CreatePostResponse
     if (response && response.code !== 0 && response.code !== 200) {
