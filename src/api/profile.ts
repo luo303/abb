@@ -38,6 +38,7 @@ export interface UserMeResponse {
   ctime?: number
   utime?: number
   partner_id?: string
+  baby_age_text?: string
 }
 
 export const getUserMeReq = () => {

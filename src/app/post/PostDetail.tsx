@@ -22,7 +22,9 @@ import { useAppSelector, useAppDispatch } from '@/hooks/redux'
 import {
   fetchPostDetail,
   updatePostStats,
-  toggleFollow
+  toggleFollow,
+  syncPostDetailToList,
+  clearCurrentPost
 } from '@/store/modules/PostStore'
 import {
   getPostComments,
@@ -61,8 +63,15 @@ export default function PostDetail() {
 
   // 加载帖子详情
   useEffect(() => {
+    // 清空之前的帖子数据，确保每次进入都是“白屏加载”状态
+    dispatch(clearCurrentPost())
     if (postId) {
       dispatch(fetchPostDetail(postId))
+    }
+
+    // 卸载时清空状态
+    return () => {
+      dispatch(clearCurrentPost())
     }
   }, [dispatch, postId])
 

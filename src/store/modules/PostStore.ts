@@ -100,16 +100,20 @@ const postSlice = createSlice({
       }>
     ) => {
       const { postId, stats } = action.payload
+      const stringPostId = String(postId)
 
       // 更新详情页数据
-      if (state.currentPost && state.currentPost.post_id === String(postId)) {
+      if (
+        state.currentPost &&
+        String(state.currentPost.post_id) === stringPostId
+      ) {
         state.currentPost = { ...state.currentPost, ...stats }
       }
 
       // 更新列表页数据
       state.postList = state.postList.map(post => {
-        if (post.post_id === String(postId)) {
-          console.log('已同步更新首页列表中的点赞数，ID: ' + postId)
+        if (String(post.post_id) === stringPostId) {
+          console.log('已同步更新首页列表中的点赞数，ID: ' + stringPostId)
           return { ...post, ...stats }
         }
         return post
@@ -132,6 +136,13 @@ const postSlice = createSlice({
           ...state.currentPost,
           is_followed: !state.currentPost.is_followed
         }
+      }
+    },
+    syncPostDetailToList: (state, action: PayloadAction<any>) => {
+      const postId = String(action.payload.post_id)
+      const index = state.postList.findIndex(p => String(p.post_id) === postId)
+      if (index !== -1) {
+        state.postList[index] = { ...state.postList[index], ...action.payload }
       }
     },
     addNewPost: (state, action: PayloadAction<PostItem>) => {
@@ -177,15 +188,25 @@ const postSlice = createSlice({
                 if (typeof post.content === 'string') {
                   try {
                     const parsedContent = JSON.parse(post.content)
-                    if (parsedContent) {
+                    if (parsedContent && typeof parsedContent === 'object') {
                       return {
                         ...post,
                         content: parsedContent,
                         images: parsedContent.images || []
                       }
+                    } else {
+                      // 如果解析结果不是对象，使用默认显示方案
+                      return {
+                        ...post,
+                        content: { text: post.content, images: [] }
+                      }
                     }
                   } catch (parseError) {
-                    // 如果解析失败，保持原 content 不变
+                    // 如果解析失败，使用默认显示方案
+                    return {
+                      ...post,
+                      content: { text: post.content, images: [] }
+                    }
                   }
                 } else if (
                   typeof post.content === 'object' &&
@@ -196,9 +217,20 @@ const postSlice = createSlice({
                     ...post,
                     images: post.content.images || []
                   }
+                } else {
+                  // 其他情况，使用默认显示方案
+                  return {
+                    ...post,
+                    content: { text: String(post.content), images: [] }
+                  }
+                }
+              } else {
+                // 如果 content 为空，使用默认显示方案
+                return {
+                  ...post,
+                  content: { text: '', images: [] }
                 }
               }
-              return post
             }) || []
           state.postList = parsedPostList
           state.page = 1
@@ -226,15 +258,25 @@ const postSlice = createSlice({
                 if (typeof post.content === 'string') {
                   try {
                     const parsedContent = JSON.parse(post.content)
-                    if (parsedContent) {
+                    if (parsedContent && typeof parsedContent === 'object') {
                       return {
                         ...post,
                         content: parsedContent,
                         images: parsedContent.images || []
                       }
+                    } else {
+                      // 如果解析结果不是对象，使用默认显示方案
+                      return {
+                        ...post,
+                        content: { text: post.content, images: [] }
+                      }
                     }
                   } catch (parseError) {
-                    // 如果解析失败，保持原 content 不变
+                    // 如果解析失败，使用默认显示方案
+                    return {
+                      ...post,
+                      content: { text: post.content, images: [] }
+                    }
                   }
                 } else if (
                   typeof post.content === 'object' &&
@@ -245,9 +287,20 @@ const postSlice = createSlice({
                     ...post,
                     images: post.content.images || []
                   }
+                } else {
+                  // 其他情况，使用默认显示方案
+                  return {
+                    ...post,
+                    content: { text: String(post.content), images: [] }
+                  }
+                }
+              } else {
+                // 如果 content 为空，使用默认显示方案
+                return {
+                  ...post,
+                  content: { text: '', images: [] }
                 }
               }
-              return post
             }) || []
 
           // 过滤重复数据
@@ -275,6 +328,8 @@ const postSlice = createSlice({
       .addCase(fetchPostDetail.pending, state => {
         state.loading = true
         state.error = null
+        // 清空旧的详情数据，防止“先看到上一条”的闪烁现象
+        state.currentPost = null
       })
       .addCase(fetchPostDetail.fulfilled, (state, action) => {
         state.loading = false
@@ -286,15 +341,25 @@ const postSlice = createSlice({
               if (typeof postData.content === 'string') {
                 try {
                   const parsedContent = JSON.parse(postData.content)
-                  if (parsedContent) {
+                  if (parsedContent && typeof parsedContent === 'object') {
                     postData = {
                       ...postData,
                       content: parsedContent,
                       images: parsedContent.images || []
                     }
+                  } else {
+                    // 如果解析结果不是对象，使用默认显示方案
+                    postData = {
+                      ...postData,
+                      content: { text: postData.content, images: [] }
+                    }
                   }
                 } catch (parseError) {
-                  // 如果解析失败，保持原 content 不变
+                  // 如果解析失败，使用默认显示方案
+                  postData = {
+                    ...postData,
+                    content: { text: String(postData.content), images: [] }
+                  }
                 }
               } else if (
                 typeof postData.content === 'object' &&
@@ -305,9 +370,29 @@ const postSlice = createSlice({
                   ...postData,
                   images: postData.content.images || []
                 }
+              } else {
+                // 其他情况，使用默认显示方案
+                postData = {
+                  ...postData,
+                  content: { text: String(postData.content), images: [] }
+                }
+              }
+            } else {
+              // 如果 content 为空，使用默认显示方案
+              postData = {
+                ...postData,
+                content: { text: '', images: [] }
               }
             }
             state.currentPost = postData
+            // 同步详情页数据到首页列表
+            const postId = String(postData.post_id)
+            const index = state.postList.findIndex(
+              p => String(p.post_id) === postId
+            )
+            if (index !== -1) {
+              state.postList[index] = { ...state.postList[index], ...postData }
+            }
           }
         } else {
           state.error = action.payload?.message || '未知错误'
@@ -325,6 +410,7 @@ export const {
   clearCurrentPost,
   updatePostStats,
   toggleFollow,
-  addNewPost
+  addNewPost,
+  syncPostDetailToList
 } = postSlice.actions
 export default postSlice.reducer
