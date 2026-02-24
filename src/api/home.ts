@@ -166,6 +166,50 @@ export const getPostComments = async (
   return res as unknown as CommentListResponse
 }
 
+export interface CommentLikeResponse {
+  code: number
+  message: string
+  data: any | null
+}
+
+export const likeComment = async (
+  comment_id: string
+): Promise<CommentLikeResponse> => {
+  const res = await request.post(`/post/comments/${comment_id}/like`)
+  return res as unknown as CommentLikeResponse
+}
+
+export const unlikeComment = async (
+  comment_id: string
+): Promise<CommentLikeResponse> => {
+  const res = await request.delete(`/post/comments/${comment_id}/like`)
+  return res as unknown as CommentLikeResponse
+}
+
+export interface CreateCommentRequest {
+  parent_id: string
+  content: string
+}
+
+export interface CreateCommentData {
+  comment_id: string
+  message: string
+}
+
+export interface CreateCommentResponse {
+  code: number
+  message: string
+  data: CreateCommentData
+}
+
+export const createPostComment = async (
+  post_id: string,
+  data: CreateCommentRequest
+): Promise<CreateCommentResponse> => {
+  const res = await request.post(`/post/${post_id}/comments`, data)
+  return res as unknown as CreateCommentResponse
+}
+
 export const getPostCommentReplies = async (
   post_id: string,
   comment_id: string,

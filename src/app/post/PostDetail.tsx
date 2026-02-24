@@ -19,6 +19,7 @@ import DoubleTapLike from '../../components/post/DoubleTapLike'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
 import { useAppSelector, useAppDispatch } from '@/hooks/redux'
+import { UserMeResponse } from '@/api/profile'
 import {
   fetchPostDetail,
   updatePostStats,
@@ -27,7 +28,10 @@ import {
 import {
   getPostComments,
   getPostCommentReplies,
-  CommentApiItem
+  CommentApiItem,
+  likeComment,
+  unlikeComment,
+  createPostComment
 } from '@/api/home'
 
 type PostDetailRouteProp = RouteProp<
@@ -44,6 +48,9 @@ export default function PostDetail() {
   const { currentPost, loading: isLoading } = useAppSelector(
     state => state.post
   )
+  const userInfo = useAppSelector(
+    state => state.user.userInfo
+  ) as UserMeResponse | null
 
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
@@ -94,7 +101,12 @@ export default function PostDetail() {
         }
         const parents = res.data.items
         const list: Comment[] = []
+        const seenParentIds = new Set<string>()
         for (const item of parents) {
+          if (seenParentIds.has(item.comment_id)) {
+            continue
+          }
+          seenParentIds.add(item.comment_id)
           let replies: Comment[] = []
           if (item.reply_count && item.reply_count > 0) {
             replies = await fetchRepliesTree(postId, item.comment_id)
@@ -149,17 +161,18 @@ export default function PostDetail() {
 
   const mapApiItemToComment = (item: CommentApiItem, replies: Comment[]) => {
     return {
-      id: item.comment_id,
-      avatar: item.avatar
-        ? { uri: item.avatar }
-        : require('../../assets/testAvatar.png'),
-      nickname: item.username || '稚慧宝用户',
+      comment_id: item.comment_id,
+      user_id: item.user_id,
+      username: item.username || '稚慧宝用户',
+      avatar: item.avatar,
       content: item.content,
-      time: formatDate(item.ctime),
-      likes: item.like_count,
-      isLiked: item.has_liked,
+      like_count: item.like_count,
+      reply_count: item.reply_count,
+      ctime: item.ctime,
+      utime: item.utime,
+      has_liked: item.has_liked,
       replies
-    } as Comment
+    }
   }
 
   const fetchRepliesTree = async (
@@ -167,6 +180,7 @@ export default function PostDetail() {
     parentCommentId: string
   ): Promise<Comment[]> => {
     const allItems: CommentApiItem[] = []
+    const seenIds = new Set<string>()
     let page = 1
     let hasMore = true
 
@@ -179,7 +193,11 @@ export default function PostDetail() {
       if (res.code !== 0 || !res.data) {
         break
       }
-      allItems.push(...res.data.items)
+      for (const item of res.data.items) {
+        if (seenIds.has(item.comment_id)) continue
+        seenIds.add(item.comment_id)
+        allItems.push(item)
+      }
       hasMore = res.data.has_more
       page = res.data.page + 1
     }
@@ -195,7 +213,45 @@ export default function PostDetail() {
     return result
   }
 
-  // 处理帖子点赞
+  const findCommentById = (
+    items: Comment[],
+    targetId: string
+  ): Comment | null => {
+    for (const item of items) {
+      if (item.comment_id === targetId) return item
+      if (item.replies && item.replies.length > 0) {
+        const found = findCommentById(item.replies, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  const updateCommentLikeState = (
+    items: Comment[],
+    targetId: string,
+    isLikedBefore: boolean
+  ): Comment[] => {
+    return items.map(item => {
+      if (item.comment_id === targetId) {
+        const currentLikes = item.like_count || 0
+        const newLikes = currentLikes + (isLikedBefore ? -1 : 1)
+        return {
+          ...item,
+          like_count: newLikes < 0 ? 0 : newLikes,
+          has_liked: !isLikedBefore
+        }
+      }
+      if (item.replies && item.replies.length > 0) {
+        return {
+          ...item,
+          replies: updateCommentLikeState(item.replies, targetId, isLikedBefore)
+        }
+      }
+      return item
+    })
+  }
+
   const handleLikePost = () => {
     if (!currentPost) return
 
@@ -232,13 +288,11 @@ export default function PostDetail() {
     }
   }
 
-  // 处理双击点赞
   const handleDoubleTapLike = () => {
     if (isLiked) return
     handleLikePost()
   }
 
-  // 处理帖子踩
   const handleDislikePost = () => {
     if (!currentPost) return
 
@@ -274,7 +328,6 @@ export default function PostDetail() {
     }
   }
 
-  // 处理帖子收藏
   const handleFavoritePost = () => {
     if (!currentPost) return
     const newIsFavorited = !isFavorited
@@ -296,7 +349,6 @@ export default function PostDetail() {
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
   }
 
-  // 处理关注作者
   const handleFollowAuthor = () => {
     if (!currentPost) return
     const newIsFollowing = !isFollowing
@@ -305,24 +357,31 @@ export default function PostDetail() {
     showMessage(newIsFollowing ? '关注成功' : '取消关注')
   }
 
-  // ... 评论相关逻辑保持不变 ...
   const handleLikeComment = (id: string) => {
-    setComments(prev =>
-      prev.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              likes: item.isLiked ? item.likes! - 1 : item.likes! + 1,
-              isLiked: !item.isLiked
-            }
-          : item
-      )
-    )
+    const target = findCommentById(comments, id)
+    if (!target) return
+
+    const prevIsLiked = !!target.has_liked
+
+    setComments(prev => updateCommentLikeState(prev, id, prevIsLiked))
+    ;(async () => {
+      try {
+        if (prevIsLiked) {
+          await unlikeComment(id)
+        } else {
+          await likeComment(id)
+        }
+      } catch (error) {
+        console.error('评论点赞接口失败：', error)
+        setComments(prev => updateCommentLikeState(prev, id, !prevIsLiked))
+        showMessage('操作失败，请稍后重试')
+      }
+    })()
   }
 
   const handleReply = (comment: Comment) => {
     setReplyTarget(comment)
-    setReplyPlaceholder(`回复 ${comment.nickname}：`)
+    setReplyPlaceholder(`回复 ${comment.username}：`)
     setInputVisible(true)
   }
 
@@ -333,24 +392,32 @@ export default function PostDetail() {
   }
 
   const handleSend = (text: string) => {
-    if (!text.trim()) return
+    const content = text.trim()
+    if (!content || !postId) return
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      avatar: require('../../assets/icon.png'),
-      nickname: '我',
-      content: text,
-      time: '刚刚',
-      location: '北京',
-      likes: 0,
-      isLiked: false,
-      replies: []
+    const parentId = replyTarget ? replyTarget.comment_id : ''
+    const tempId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const now = Date.now()
+
+    const apiItem: CommentApiItem = {
+      comment_id: tempId,
+      user_id: userInfo?.user_id || '',
+      username: userInfo?.username || userInfo?.account || '稚慧宝用户',
+      avatar: userInfo?.avatar || '',
+      content,
+      like_count: 0,
+      reply_count: 0,
+      ctime: now,
+      utime: now,
+      has_liked: false
     }
+
+    const newComment: Comment = mapApiItemToComment(apiItem, [])
 
     if (replyTarget) {
       const addReply = (items: Comment[]): Comment[] => {
         return items.map(item => {
-          if (item.id === replyTarget.id) {
+          if (item.comment_id === replyTarget.comment_id) {
             return {
               ...item,
               replies: [...(item.replies || []), newComment]
@@ -377,8 +444,63 @@ export default function PostDetail() {
         )
       }
     }
-    showMessage('评论成功')
+
     setInputVisible(false)
+    ;(async () => {
+      try {
+        const res = await createPostComment(postId, {
+          parent_id: parentId,
+          content
+        })
+
+        if (res.code !== 0 || !res.data) {
+          throw new Error(res.message || '评论失败')
+        }
+
+        const serverId = res.data.comment_id
+
+        const replaceId = (items: Comment[]): Comment[] => {
+          return items.map(item => {
+            if (item.comment_id === tempId) {
+              return {
+                ...item,
+                comment_id: serverId
+              }
+            }
+            if (item.replies && item.replies.length > 0) {
+              return {
+                ...item,
+                replies: replaceId(item.replies)
+              }
+            }
+            return item
+          })
+        }
+
+        setComments(prev => replaceId(prev))
+      } catch (error) {
+        const removeTemp = (items: Comment[]): Comment[] => {
+          const result: Comment[] = []
+          for (const item of items) {
+            if (item.comment_id === tempId) {
+              continue
+            }
+            if (item.replies && item.replies.length > 0) {
+              result.push({
+                ...item,
+                replies: removeTemp(item.replies)
+              })
+            } else {
+              result.push(item)
+            }
+          }
+          return result
+        }
+
+        setComments(prev => removeTemp(prev))
+        showMessage('评论失败，请稍后重试')
+      }
+    })()
   }
 
   if (isLoading) {
@@ -456,9 +578,9 @@ export default function PostDetail() {
           </View>
         ) : (
           <View style={styles.commentsList}>
-            {comments.map(comment => (
+            {comments.map((comment, index) => (
               <CommentItem
-                key={`comment-${comment.id}`}
+                key={`comment-${comment.comment_id}-${index}`}
                 comment={comment}
                 onLike={handleLikeComment}
                 onReply={handleReply}

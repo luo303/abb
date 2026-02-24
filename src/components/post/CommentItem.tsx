@@ -1,8 +1,21 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
 import { CommentItemProps, Comment } from '@/types/post'
+
+const formatTimeLabel = (timestamp?: number) => {
+  if (!timestamp) return ''
+  const diff = Date.now() - timestamp
+  if (diff < 60 * 1000) {
+    return '刚刚'
+  }
+  const date = new Date(timestamp)
+  const y = date.getFullYear()
+  const m = (date.getMonth() + 1).toString().padStart(2, '0')
+  const d = date.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 const ReplyItem = ({
   comment,
@@ -23,28 +36,19 @@ const ReplyItem = ({
         <Text style={styles.replyText}>
           {parentNickname ? (
             <>
-              <Text style={styles.replyNickname}>{comment.nickname}</Text>
+              <Text style={styles.replyNickname}>{comment.username}</Text>
               <Text style={styles.reply}>&nbsp;&nbsp;回复&nbsp;&nbsp;</Text>
               <Text style={styles.replyNickname}>{parentNickname}</Text>
               <Text>：{comment.content}</Text>
             </>
           ) : (
             <>
-              <Text style={styles.replyNickname}>{comment.nickname}:</Text>
+              <Text style={styles.replyNickname}>{comment.username}:</Text>
               {comment.content}
             </>
           )}
         </Text>
       </TouchableOpacity>
-
-      {comment.replies?.map(reply => (
-        <ReplyItem
-          key={reply.id}
-          comment={reply}
-          parentNickname={comment.nickname}
-          onReply={onReply}
-        />
-      ))}
     </>
   )
 }
@@ -54,12 +58,48 @@ export default function CommentItem({
   onLike,
   onReply
 }: CommentItemProps) {
+  const flatReplies = useMemo(() => {
+    const result: { node: Comment; parentNickname?: string }[] = []
+
+    const traverse = (items: Comment[], parentNickname?: string) => {
+      for (const item of items) {
+        result.push({
+          node: item,
+          parentNickname
+        })
+
+        if (item.replies && item.replies.length > 0) {
+          traverse(item.replies, item.username)
+        }
+      }
+    }
+
+    if (comment.replies && comment.replies.length > 0) {
+      traverse(comment.replies, undefined)
+    }
+
+    result.sort((a, b) => {
+      const at = a.node.ctime || 0
+      const bt = b.node.ctime || 0
+      return at - bt
+    })
+
+    return result
+  }, [comment.replies])
+
   return (
     <View style={styles.container}>
-      <Image source={comment.avatar} style={styles.avatar} />
+      <Image
+        source={
+          comment.avatar
+            ? { uri: comment.avatar }
+            : require('@/assets/testAvatar.png')
+        }
+        style={styles.avatar}
+      />
 
       <View style={styles.contentContainer}>
-        <Text style={styles.nickname}>{comment.nickname}</Text>
+        <Text style={styles.nickname}>{comment.username}</Text>
 
         <TouchableOpacity
           style={styles.content}
@@ -67,17 +107,16 @@ export default function CommentItem({
           activeOpacity={0.7}
         >
           <Text>{comment.content}</Text>
-          <Text style={styles.metaText}>
-            {comment.time} {comment.location}
-          </Text>
+          <Text style={styles.metaText}>{formatTimeLabel(comment.ctime)}</Text>
         </TouchableOpacity>
 
-        {comment.replies && comment.replies.length > 0 && (
+        {flatReplies.length > 0 && (
           <View style={styles.repliesContainer}>
-            {comment.replies.map(reply => (
+            {flatReplies.map(({ node, parentNickname }, index) => (
               <ReplyItem
-                key={`sub-reply-${reply.id}`}
-                comment={reply}
+                key={`sub-reply-${node.comment_id}-${index}`}
+                comment={node}
+                parentNickname={parentNickname}
                 onReply={onReply}
               />
             ))}
@@ -87,15 +126,15 @@ export default function CommentItem({
 
       <TouchableOpacity
         style={styles.likeContainer}
-        onPress={() => onLike && onLike(comment.id)}
+        onPress={() => onLike && onLike(comment.comment_id)}
       >
         <AntDesign
           name="heart"
           size={14}
-          color={comment.isLiked ? '#ff4d4f' : '#999'}
+          color={comment.has_liked ? '#ff4d4f' : '#999'}
         />
         <Text style={styles.likeCount}>
-          {comment.likes! > 0 ? comment.likes : ''}
+          {comment.like_count! > 0 ? comment.like_count : ''}
         </Text>
       </TouchableOpacity>
     </View>
