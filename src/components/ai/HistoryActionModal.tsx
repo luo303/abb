@@ -4,17 +4,25 @@ import { Feather, Octicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 interface Props {
   visible: boolean
+  isPinned: boolean
   onClose: () => void
   onDelete: () => void
+  onPin: () => void
 }
 
 export default function HistoryActionModal({
   visible,
+  isPinned,
   onClose,
-  onDelete
+  onDelete,
+  onPin
 }: Props) {
   const handleDeletePress = () => {
     onDelete()
+  }
+
+  const handlePinPress = () => {
+    onPin()
   }
 
   const handleCancelPress = () => {
@@ -40,19 +48,17 @@ export default function HistoryActionModal({
           <TouchableOpacity
             style={styles.actionItem}
             activeOpacity={0.7}
-            onPress={onClose}
+            onPress={handlePinPress}
           >
-            <Feather name="edit-2" size={20} color="#fff" style={styles.icon} />
-            <Text style={styles.actionText}>重命名</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionItem}
-            activeOpacity={0.7}
-            onPress={onClose}
-          >
-            <Octicons name="pin" size={20} color="#fff" style={styles.icon} />
-            <Text style={styles.actionText}>置顶</Text>
+            <Octicons
+              name="pin"
+              size={20}
+              color={isPinned ? '#1890ff' : '#fff'}
+              style={styles.icon}
+            />
+            <Text style={[styles.actionText, isPinned && { color: '#1890ff' }]}>
+              {isPinned ? '取消置顶' : '置顶'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity

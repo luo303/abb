@@ -165,13 +165,8 @@ export default function ChatScreen() {
 
   // 监听会话ID变化，停止语音播放，并中断可能的进行中的请求
   useEffect(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      abortControllerRef.current = null
-    }
     Speech.stop()
     updateSpeakingIndex(null)
-    setIsStreaming(false)
   }, [currentConversationId])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
@@ -206,6 +201,8 @@ export default function ChatScreen() {
       sessionId = uuidv4()
       // @ts-ignore - Thunk action type issue
       await dispatch(createNewSession(sessionId))
+      // 必须等待一下以确保 Redux 状态更新，或者直接使用我们刚生成的 sessionId
+      // createNewSession 是异步的，它会更新 currentConversationId
     }
 
     // 如果是新会话，sessionId 已经更新，但 Redux 中的 currentConversationId 可能还没更新完（异步）

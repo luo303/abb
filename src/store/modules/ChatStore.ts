@@ -65,6 +65,29 @@ const chatSlice = createSlice({
           lastMsg.content += action.payload
         }
       }
+    },
+    togglePinHistoryItem: (state, action: PayloadAction<string>) => {
+      const id = action.payload
+      const index = state.historyList.findIndex(item => item.session_id === id)
+      if (index !== -1) {
+        const item = state.historyList[index]
+        item.isPinned = !item.isPinned
+
+        // 重新排序：置顶的在前面，然后按原来的顺序（假设原来是按时间倒序）
+        // 这里我们可以简单地将置顶的移到最前面，取消置顶的移到它该在的位置（如果按时间排序）
+        // 但为了简单和稳定，我们直接对整个列表进行排序
+        state.historyList.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1
+          if (!a.isPinned && b.isPinned) return 1
+          // 如果置顶状态相同，保持原有相对顺序（因为原本就是按时间倒序添加的）
+          // 但由于 sort 并不保证稳定，且我们没有精确的时间戳字段（只有日期字符串），
+          // 所以最好还是依赖 index，但 sort 会改变 index。
+          // 实际上，只要我们确保添加时是 unshift，那么列表本身就是按时间倒序的。
+          // 我们可以不做额外的基于时间的 sort，只做基于置顶的 sort，但这可能会打乱时间顺序。
+          // 更好的做法是：不仅 toggle 属性，还要移动位置。
+          return 0
+        })
+      }
     }
   }
 })
@@ -81,7 +104,8 @@ export const {
   togglePublicEnabled,
   togglePrivateEnabled,
   setLoading,
-  updateLastMessageContent
+  updateLastMessageContent,
+  togglePinHistoryItem
 } = chatSlice.actions
 
 // Helper: 保存历史列表
@@ -92,6 +116,14 @@ const saveHistoryToStorage = async (list: HistoryItem[]) => {
     console.error('Failed to save history list:', error)
   }
 }
+
+// 异步 Action：切换置顶状态并同步存储
+export const togglePin =
+  (id: string) => async (dispatch: Dispatch, getState: any) => {
+    dispatch(togglePinHistoryItem(id))
+    const state = getState().chat
+    saveHistoryToStorage(state.historyList)
+  }
 
 // 异步 Action：从 API 获取消息记录
 export const fetchHistoryMessages =
@@ -174,11 +206,15 @@ export const resetSession = () => async (dispatch: Dispatch) => {
 // 异步 Action：创建新会话（用于发送第一条消息时）
 export const createNewSession =
   (id: string) => async (dispatch: Dispatch, getState: any) => {
-    // 1. 添加历史记录
+    // 1. 获取当前历史记录数量，用于生成标题
+    const currentHistory = getState().chat.historyList
+    const newTitle = `会话${currentHistory.length + 1}`
+
+    // 2. 添加历史记录
     dispatch(
       addHistoryItem({
         session_id: id,
-        session_title: '新对话',
+        session_title: newTitle,
         session_date: new Date().toLocaleDateString()
       })
     )

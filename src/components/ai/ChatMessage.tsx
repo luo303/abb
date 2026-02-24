@@ -4,7 +4,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
@@ -80,7 +81,7 @@ export default function ChatMessage({
             ))}
           </ScrollView>
         )}
-        {message.content && (
+        {(message.content || (message.role === 'assistant' && isTyping)) && (
           <View
             style={[
               styles.contentWrapper,
@@ -91,7 +92,7 @@ export default function ChatMessage({
               <Text style={[styles.text, styles.userText]}>
                 {message.content}
               </Text>
-            ) : (
+            ) : message.content ? (
               <Markdown
                 style={{
                   body: {
@@ -105,10 +106,15 @@ export default function ChatMessage({
               >
                 {message.content}
               </Markdown>
+            ) : (
+              <View style={styles.loadingBlock}>
+                <ActivityIndicator size="small" color="#1f99b0" />
+                <Text style={styles.loadingText}>AI正在思考...</Text>
+              </View>
             )}
           </View>
         )}
-        {message.role === 'assistant' && !isTyping && (
+        {message.role === 'assistant' && !isTyping && message.content ? (
           <View style={styles.aiFooter}>
             <TouchableOpacity
               onPress={handleCopy}
@@ -129,7 +135,7 @@ export default function ChatMessage({
               />
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
       </View>
 
       <ImageViewing
@@ -218,5 +224,15 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 4
+  },
+  loadingBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4
+  },
+  loadingText: {
+    marginLeft: 8,
+    color: '#999',
+    fontSize: 14
   }
 })
