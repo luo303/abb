@@ -118,3 +118,69 @@ export const getPostDetail = async (
     throw error
   }
 }
+
+export interface CommentApiItem {
+  comment_id: string
+  user_id: string
+  username: string
+  avatar: string
+  content: string
+  like_count: number
+  reply_count: number
+  ctime: number
+  utime: number
+  has_liked: boolean
+}
+
+export interface CommentListData {
+  items: CommentApiItem[]
+  page: number
+  page_size: number
+  has_more: boolean
+}
+
+export interface CommentListResponse {
+  code: number
+  message: string
+  data: CommentListData
+}
+
+export interface CommentListParams {
+  page?: number
+  page_size?: number
+  strategy?: string
+}
+
+export const getPostComments = async (
+  post_id: string,
+  params: CommentListParams = {}
+): Promise<CommentListResponse> => {
+  const { page = 1, page_size = 10, strategy = 'ctime' } = params
+  const res = await request.get(`/post/${post_id}/comments`, {
+    params: {
+      page,
+      page_size,
+      strategy
+    }
+  })
+  return res as unknown as CommentListResponse
+}
+
+export const getPostCommentReplies = async (
+  post_id: string,
+  comment_id: string,
+  params: CommentListParams = {}
+): Promise<CommentListResponse> => {
+  const { page = 1, page_size = 10, strategy = 'ctime' } = params
+  const res = await request.get(
+    `/post/${post_id}/comments/${comment_id}/replies`,
+    {
+      params: {
+        page,
+        page_size,
+        strategy
+      }
+    }
+  )
+  return res as unknown as CommentListResponse
+}

@@ -16,7 +16,6 @@ import CommentItem from '../../components/post/CommentItem'
 import PostFooter from '../../components/post/PostFooter'
 import ReplyInput from '../../components/post/ReplyInput'
 import DoubleTapLike from '../../components/post/DoubleTapLike'
-import { MOCK_COMMENTS } from '@/data/mock/homePosts'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
 import { useAppSelector, useAppDispatch } from '@/hooks/redux'
@@ -25,6 +24,11 @@ import {
   updatePostStats,
   toggleFollow
 } from '@/store/modules/PostStore'
+import {
+  getPostComments,
+  getPostCommentReplies,
+  CommentApiItem
+} from '@/api/home'
 
 type PostDetailRouteProp = RouteProp<
   { params: { id: string; post_id: string } },
@@ -46,7 +50,8 @@ export default function PostDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
 
   const [isFollowing, setIsFollowing] = useState(false)
-  const [comments, setComments] = useState(MOCK_COMMENTS)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false)
   const [isInputVisible, setInputVisible] = useState(false)
   const [replyPlaceholder, setReplyPlaceholder] = useState('说点什么...')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
@@ -70,6 +75,48 @@ export default function PostDetail() {
       setIsFollowing(currentPost.is_followed || false)
     }
   }, [currentPost?.post_id])
+
+  useEffect(() => {
+    if (!postId) return
+    let isActive = true
+
+    const fetchCommentsTree = async () => {
+      setIsCommentsLoading(true)
+      try {
+        const res = await getPostComments(postId, {
+          page: 1,
+          page_size: 10,
+          strategy: 'ctime'
+        })
+        if (!isActive) return
+        if (res.code !== 0 || !res.data) {
+          return
+        }
+        const parents = res.data.items
+        const list: Comment[] = []
+        for (const item of parents) {
+          let replies: Comment[] = []
+          if (item.reply_count && item.reply_count > 0) {
+            replies = await fetchRepliesTree(postId, item.comment_id)
+            if (!isActive) return
+          }
+          list.push(mapApiItemToComment(item, replies))
+        }
+        setComments(list)
+      } catch (error) {
+        if (!isActive) return
+        console.error('获取评论失败：', error)
+      } finally {
+        if (isActive) setIsCommentsLoading(false)
+      }
+    }
+
+    fetchCommentsTree()
+
+    return () => {
+      isActive = false
+    }
+  }, [postId])
 
   // 处理显示数据：头像和图片
   const displayAvatar = useMemo(() => {
@@ -98,6 +145,54 @@ export default function PostDetail() {
     return `${date.getFullYear()}-${(date.getMonth() + 1)
       .toString()
       .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+  }
+
+  const mapApiItemToComment = (item: CommentApiItem, replies: Comment[]) => {
+    return {
+      id: item.comment_id,
+      avatar: item.avatar
+        ? { uri: item.avatar }
+        : require('../../assets/testAvatar.png'),
+      nickname: item.username || '稚慧宝用户',
+      content: item.content,
+      time: formatDate(item.ctime),
+      likes: item.like_count,
+      isLiked: item.has_liked,
+      replies
+    } as Comment
+  }
+
+  const fetchRepliesTree = async (
+    targetPostId: string,
+    parentCommentId: string
+  ): Promise<Comment[]> => {
+    const allItems: CommentApiItem[] = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await getPostCommentReplies(targetPostId, parentCommentId, {
+        page,
+        page_size: 10,
+        strategy: 'ctime'
+      })
+      if (res.code !== 0 || !res.data) {
+        break
+      }
+      allItems.push(...res.data.items)
+      hasMore = res.data.has_more
+      page = res.data.page + 1
+    }
+
+    const result: Comment[] = []
+    for (const item of allItems) {
+      let children: Comment[] = []
+      if (item.reply_count && item.reply_count > 0) {
+        children = await fetchRepliesTree(targetPostId, item.comment_id)
+      }
+      result.push(mapApiItemToComment(item, children))
+    }
+    return result
   }
 
   // 处理帖子点赞
@@ -348,24 +443,29 @@ export default function PostDetail() {
           </View>
         </View>
 
-        <View style={styles.tipContainer}>
-          <View style={styles.tipIcon} />
-          <Text style={styles.tipText}>优秀回帖将会被优先展示</Text>
-          <View style={styles.uIcon}>
-            <Text style={styles.uText}>U</Text>
+        {isCommentsLoading ? (
+          <View style={styles.commentsLoading}>
+            <ActivityIndicator size="small" color="#f43f5e" />
+            <Text style={{ color: '#999', marginTop: 8 }}>加载评论中...</Text>
           </View>
-        </View>
-
-        <View style={styles.commentsList}>
-          {comments.map(comment => (
-            <CommentItem
-              key={`comment-${comment.id}`}
-              comment={comment}
-              onLike={handleLikeComment}
-              onReply={handleReply}
-            />
-          ))}
-        </View>
+        ) : comments.length === 0 ? (
+          <View style={styles.commentsEmpty}>
+            <Text style={styles.commentsEmptyText}>
+              还没有评论，来做第一个吧
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.commentsList}>
+            {comments.map(comment => (
+              <CommentItem
+                key={`comment-${comment.id}`}
+                comment={comment}
+                onLike={handleLikeComment}
+                onReply={handleReply}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {/* 底部常驻栏 */}
@@ -481,5 +581,18 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     paddingBottom: 20
+  },
+  commentsLoading: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  commentsEmpty: {
+    paddingVertical: 20,
+    alignItems: 'center'
+  },
+  commentsEmptyText: {
+    color: '#999',
+    fontSize: 13
   }
 })
