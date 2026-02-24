@@ -54,58 +54,14 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
     isPublishingRef.current = true
 
     try {
-      // 1. 处理图片（如果有）
-      let processedImages = postData.images || []
+      // 图片已经在选择时上传完成，直接使用上传后的 URL
+      const validNetworkUrls = postData.images || []
 
-      // 处理图片：格式转换和压缩
-      if (processedImages.length > 0) {
-        const preparedImages = await prepareImagesForUpload(processedImages, {
-          maxSize: 2 * 1024 * 1024, // 2MB 限制
-          quality: 0.8, // 80% 质量
-          targetFormat: 'jpeg' // 转换为 JPEG 格式
-        })
-        processedImages = preparedImages.map(img => img.uri)
-      }
-
-      // 2. 上传图片（如果有）
-      let uploadedImageUrls: string[] = []
-      // 保存有效的网络图片URL
-      const validNetworkUrls: string[] = []
-
-      if (processedImages.length > 0) {
-        // 并发上传所有图片
-        const uploadPromises = processedImages.map(uri =>
-          uploadFile(uri).catch(err => {
-            console.warn('Image upload failed:', err)
-            return null
-          })
-        )
-        const results = await Promise.all(uploadPromises)
-
-        // 提取返回的 URL
-        uploadedImageUrls = results
-          .map((res: any) => {
-            if (!res) return ''
-
-            // 兼容多种可能的返回结构
-            if (res.data && res.data.url) return res.data.url
-            if (res.url) return res.url
-            if (typeof res.data === 'string') return res.data
-            // 如果后端返回 code 0，也认为成功
-            if (res.code === 0 && res.data) {
-              // 有些接口直接把 url 放在 data 里，有些放在 data.url
-              return typeof res.data === 'string'
-                ? res.data
-                : res.data.url || ''
-            }
-            // Mock 环境兜底
-            if (res.code === 200) return MOCK_FALLBACK_IMAGE
-
-            return ''
-          })
-          .filter((url: string) => !!url) // 显式声明类型
-
-        validNetworkUrls.push(...uploadedImageUrls)
+      // 检查图片 URL 是否合法
+      for (const url of validNetworkUrls) {
+        if (typeof url !== 'string' || !url.startsWith('http')) {
+          throw new Error(`Invalid image URL: ${url}`)
+        }
       }
 
       // 封装content为JSON字符串格式
@@ -136,11 +92,8 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 调用发布接口 POST /post/{post_id}/publish
       try {
         await request.post(`/post/${postId}/publish`)
-      } catch (error) {
-        console.warn(
-          'Publish API call failed, continuing with local logic:',
-          error
-        )
+      } catch {
+        // 静默处理发布接口失败，继续本地逻辑
       }
 
       // 构造完整的帖子对象用于前端展示
