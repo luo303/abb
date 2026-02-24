@@ -6,16 +6,19 @@ import { PostListResponse, PostDetailResponse } from '@/types/home'
  * 获取首页社区帖子列表
  * @param page 页码
  * @param pageSize 每页数量
+ * @param strategy 排序策略
  */
 export const getHomePosts = async (
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  strategy?: string
 ): Promise<PostListResponse> => {
   try {
     const res = await request.get('/post', {
       params: {
         page,
-        page_size: pageSize
+        page_size: pageSize,
+        strategy
       }
     })
     return res as unknown as PostListResponse
@@ -25,7 +28,14 @@ export const getHomePosts = async (
     // 纯 Mock 模式：直接返回本地数据
     const start = (page - 1) * pageSize
     const end = start + pageSize
-    const list = MOCK_POSTS.slice(start, end)
+    let list = MOCK_POSTS.slice(start, end)
+
+    // 根据策略排序
+    if (strategy === 'hot') {
+      list.sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
+    } else if (strategy === 'ctime') {
+      list.sort((a, b) => (b.ctime || 0) - (a.ctime || 0))
+    }
 
     return {
       code: 200,

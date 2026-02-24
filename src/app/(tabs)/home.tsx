@@ -189,7 +189,13 @@ export default function Home() {
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await dispatch(fetchPostList({ page: 1 }))
+      let strategy: string | undefined
+      if (activeTab === '热门') {
+        strategy = 'hot'
+      } else if (activeTab === '推荐' || activeTab === '关注') {
+        strategy = 'ctime'
+      }
+      await dispatch(fetchPostList({ page: 1, strategy }))
     } catch (error) {
       console.error('Refresh failed:', error)
     } finally {
@@ -199,8 +205,14 @@ export default function Home() {
 
   // 初始化时加载数据
   useEffect(() => {
-    dispatch(fetchPostList({ page: 1 }))
-  }, [dispatch])
+    let strategy: string | undefined
+    if (activeTab === '热门') {
+      strategy = 'hot'
+    } else if (activeTab === '推荐' || activeTab === '关注') {
+      strategy = 'ctime'
+    }
+    dispatch(fetchPostList({ page: 1, strategy }))
+  }, [dispatch, activeTab])
 
   // 首次进入首页时获取一次用户信息（如果 Redux 中还没有）
   useEffect(() => {

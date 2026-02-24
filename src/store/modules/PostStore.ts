@@ -44,12 +44,12 @@ export const fetchPostDetail = createAsyncThunk<PostDetailResponse, string>(
 // 获取帖子列表
 export const fetchPostList = createAsyncThunk<
   PostListResponse,
-  { page?: number; pageSize?: number }
+  { page?: number; pageSize?: number; strategy?: string }
 >(
   'post/fetchPostList',
-  async ({ page = 1, pageSize = 10 }, { rejectWithValue }) => {
+  async ({ page = 1, pageSize = 10, strategy }, { rejectWithValue }) => {
     try {
-      const response = await getHomePosts(page, pageSize)
+      const response = await getHomePosts(page, pageSize, strategy)
       return response
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -60,12 +60,12 @@ export const fetchPostList = createAsyncThunk<
 // 加载更多帖子
 export const loadMorePosts = createAsyncThunk<
   PostListResponse,
-  { page: number; pageSize?: number }
+  { page: number; pageSize?: number; strategy?: string }
 >(
   'post/loadMorePosts',
-  async ({ page, pageSize = 10 }, { rejectWithValue }) => {
+  async ({ page, pageSize = 10, strategy }, { rejectWithValue }) => {
     try {
-      const response = await getHomePosts(page, pageSize)
+      const response = await getHomePosts(page, pageSize, strategy)
       return response
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -167,8 +167,14 @@ const postSlice = createSlice({
           newPost.images = newPost.content.images || newPost.images
         }
       }
-      // 将新帖子插入到列表首位
-      state.postList.unshift(newPost)
+      // 检查是否已存在，避免重复添加
+      const existingPostIndex = state.postList.findIndex(
+        p => p.post_id === newPost.post_id
+      )
+      if (existingPostIndex === -1) {
+        // 将新帖子插入到列表首位
+        state.postList.unshift(newPost)
+      }
     }
   },
   extraReducers: builder => {
