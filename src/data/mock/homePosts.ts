@@ -1,5 +1,4 @@
 import { TabooItem } from '@/types/taboo'
-import { Comment } from '../../types/post'
 import { PostItem } from '@/types/home'
 
 // 默认回退图片

@@ -1,14 +1,16 @@
 //帖子相关的数据类型
 export interface Comment {
-  id: string //评论id
-  avatar: any //评论用户头像
-  nickname: string //评论用户昵称
-  content: string //评论内容
-  time: string //评论时间
-  location?: string //评论用户位置
-  likes?: number //评论点赞数
-  isLiked?: boolean //是否点赞
-  replies: Comment[] //子评论列表
+  comment_id: string
+  user_id: string
+  username: string
+  avatar: string
+  content: string
+  like_count: number
+  reply_count: number
+  ctime: number
+  utime: number
+  has_liked: boolean
+  replies: Comment[]
 }
 
 export interface CommentItemProps {
