@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
-import { View, Platform, Dimensions } from 'react-native'
+import { View, Platform, Dimensions, Alert } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { FontAwesome, AntDesign } from '@expo/vector-icons'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
@@ -12,6 +12,12 @@ import { LinearGradient } from 'expo-linear-gradient'
 import HomeScreen from './home'
 import GrowthRecordScreen from './growthRecord'
 import ProfileScreen from './profile'
+
+// 导入 API
+import { getUserMeReq } from '../../api/profile'
+
+// 导入 Redux action
+import { clearToken } from '../../store/modules/userStore'
 
 import { NavigationProps } from '../../types/navigation'
 
@@ -80,17 +86,43 @@ const CustomTabBarBackground = () => {
 export default function TabsLayout() {
   const navigation = useNavigation<NavigationProps>()
   const token = useSelector((state: any) => state.user.token)
+  const dispatch = useDispatch()
   const insets = useSafeAreaInsets()
 
-  //路由鉴权：如果没有token，重定向到登录页
+  // 路由鉴权：如果没有token，重定向到登录页
+  // 同时检查 /me 接口，用户不存在时清空 token 并跳转登录页
   useEffect(() => {
-    if (!token) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }]
-      })
+    const checkUserExists = async () => {
+      if (!token) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }]
+        })
+        return
+      }
+
+      try {
+        await getUserMeReq()
+        // 用户存在，正常进入应用
+      } catch (error: any) {
+        // 检查是否是"用户不存在"的错误，且 code 为 -1
+        if (
+          error.response?.data?.code === -1 &&
+          error.response?.data?.message === '用户不存在'
+        ) {
+          // 清空 token
+          dispatch(clearToken())
+          // 跳转登录页
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }]
+          })
+        }
+      }
     }
-  }, [token, navigation])
+
+    checkUserExists()
+  }, [token, navigation, dispatch])
 
   return (
     <Tab.Navigator

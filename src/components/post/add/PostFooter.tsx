@@ -17,7 +17,7 @@ import { MOCK_FALLBACK_IMAGE, addMockPost } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
 import { prepareImagesForUpload } from '@/utils/image'
-import { addNewPost } from '@/store/modules/PostStore'
+import { addNewPost, fetchPostList } from '@/store/modules/PostStore'
 import { NavigationProps } from '@/types/navigation'
 import { RootState } from '@/store'
 
@@ -45,10 +45,22 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
   // 从 Redux store 获取用户信息
   const userInfo = useAppSelector((state: RootState) => state.user.userInfo)
 
-  const isPublishDisabled = !postData.content.trim() || isPublishing
+  const isPublishDisabled =
+    !postData.content.trim() || !postData.title?.trim() || isPublishing
 
   const handlePublish = async () => {
     if (isPublishing || isPublishingRef.current) return
+
+    // 表单检查
+    if (!postData.title || !postData.title.trim()) {
+      Alert.alert('提示', '请输入帖子标题')
+      return
+    }
+
+    if (!postData.content || !postData.content.trim()) {
+      Alert.alert('提示', '请输入帖子内容')
+      return
+    }
 
     setIsPublishing(true)
     isPublishingRef.current = true
@@ -77,7 +89,8 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         images: validNetworkUrls,
         tags: postData.tags,
         isPublic: postData.isPublic ? 1 : 0,
-        status: 'published' as const // 状态：发布
+        status: 'draft' as const, // 状态：草稿
+        title: postData.title // 帖子标题
       }
 
       // 发送 POST 请求创建帖子
@@ -90,10 +103,13 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       }
 
       // 调用发布接口 POST /post/{post_id}/publish
-      try {
-        await request.post(`/post/${postId}/publish`)
-      } catch {
-        // 静默处理发布接口失败，继续本地逻辑
+      const publishResponse = (await request.post(
+        `/post/${postId}/publish`
+      )) as { code: number; message: string }
+
+      // 确保发布请求成功（code: 0）
+      if (publishResponse.code !== 0) {
+        throw new Error('发布失败: ' + publishResponse.message)
       }
 
       // 构造完整的帖子对象用于前端展示
@@ -124,6 +140,13 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 更新Redux状态
       dispatch(addNewPost(newPost))
 
+      // 调用 fetchPostList 刷新首页数据，传入 strategy=ctime
+      try {
+        await dispatch(fetchPostList({ page: 1, strategy: 'ctime' })).unwrap()
+      } catch (error) {
+        console.warn('Failed to refresh post list:', error)
+      }
+
       // 触发成功回调
       if (onSuccess) {
         onSuccess()
@@ -132,28 +155,8 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 提示发布成功
       showMessage('发布成功！')
 
-      // 使用 reset 重置路由栈，确保用户无法返回发布页，直接跳转到首页并传递新帖子
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'Tabs',
-              params: {
-                screen: 'Home',
-                params: {
-                  newPost
-                }
-              }
-            }
-          ]
-        })
-      )
-
-      // 延迟一下再跳转到详情页，确保路由栈已经重置
-      setTimeout(() => {
-        navigation.navigate('PostDetail', { post_id: postId })
-      }, 100)
+      // 执行 navigation.goBack() 返回上一页
+      navigation.goBack()
     } catch (error) {
       console.error('Publish failed:', error)
       Alert.alert('提示', '发布失败，请稍后重试')

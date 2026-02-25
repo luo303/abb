@@ -59,6 +59,7 @@ export interface CreatePostParams {
   tags: string[]
   isPublic: number // 1: 公开, 0: 私密
   status: 'published' | 'draft' // 状态：发布或草稿
+  title?: string // 帖子标题
 }
 
 export interface CreatePostResponse {

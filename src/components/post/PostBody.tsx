@@ -41,6 +41,15 @@ export default function PostBody({
     if (typeof content === 'object') {
       return content.text || ''
     }
+    // 尝试解析字符串形式的 JSON
+    try {
+      const parsed = JSON.parse(content)
+      if (parsed && typeof parsed === 'object' && parsed.text) {
+        return parsed.text
+      }
+    } catch (error) {
+      // 解析失败，返回原始字符串
+    }
     return content || ''
   }
 
@@ -51,6 +60,20 @@ export default function PostBody({
       content.images.length > 0
     ) {
       return content.images
+    }
+    // 尝试解析字符串形式的 JSON
+    try {
+      const parsed = JSON.parse(content)
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        parsed.images &&
+        parsed.images.length > 0
+      ) {
+        return parsed.images
+      }
+    } catch (error) {
+      // 解析失败，返回传入的 images
     }
     return images
   }
