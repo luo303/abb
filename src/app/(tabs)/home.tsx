@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons } from '@expo/vector-icons'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -34,6 +35,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { fetchPostList, loadMorePosts } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../../api/profile'
 import { setUserInfo } from '../../store/modules/userStore'
+import { searchPosts } from '@/api/post'
 
 /**
  * 首页组件
@@ -49,6 +51,10 @@ export default function Home() {
   const [localPosts, setLocalPosts] = useState<PostItem[]>([])
   const [activeTab, setActiveTab] = useState('推荐')
   const [refreshing, setRefreshing] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchResults, setSearchResults] = useState<PostItem[]>([])
+  const [searchPage, setSearchPage] = useState(1)
+  const [searchHasMore, setSearchHasMore] = useState(true)
 
   // 使用 Redux store
   const dispatch = useAppDispatch()
@@ -70,27 +76,101 @@ export default function Home() {
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
 
-  // 搜索过滤逻辑
-  const filteredPosts = posts.filter(post => {
-    if (!isSearching) return true
-    const searchContent = searchText.toLowerCase()
+  // 搜索处理函数
+  const handleSearch = React.useCallback(
+    async (text: string) => {
+      // 增加请求锁，防止重叠请求
+      if (searchLoading) return
 
-    // 处理 content 字段，无论是字符串还是对象
-    let contentText = ''
-    if (typeof post.content === 'string') {
-      contentText = post.content
-    } else if (typeof post.content === 'object' && post.content.text) {
-      contentText = post.content.text
+      const keyword = text.trim()
+
+      // 当搜索框内容为空时，重置搜索状态并切回首页推荐列表
+      if (!keyword) {
+        setSearchText('')
+        setSearchLoading(false)
+        setSearchPage(1)
+        setSearchResults([])
+        setSearchHasMore(true)
+        return
+      }
+
+      setSearchText(keyword)
+      setSearchLoading(true)
+      setSearchPage(1)
+      // 修复分页重置逻辑：先设置 has_more 为 false，防止列表为空时自动触发 onEndReached
+      setSearchHasMore(false)
+      setSearchResults([])
+
+      try {
+        // 传递正确的参数给 searchPosts 函数
+        const response = await searchPosts(keyword, 1, 10, undefined, 'time')
+
+        // 处理错误情况
+        if (response.code === -1 || response.message.includes('用户不存在')) {
+          // 跳转到登录页前清空所有搜索状态
+          setSearchText('')
+          setSearchLoading(false)
+          setSearchPage(1)
+          setSearchResults([])
+          setSearchHasMore(true)
+          // 跳转到登录页
+          navigation.navigate('Login')
+          return
+        }
+
+        if (response.code === 200 && response.data) {
+          const items = response.data.items || []
+          setSearchResults(items)
+          // 如果没有结果，直接设置 has_more 为 false，防止无限加载
+          setSearchHasMore(
+            items.length > 0 && (response.data.has_more || false)
+          )
+        }
+      } catch (error) {
+        console.error('Search failed:', error)
+      } finally {
+        setSearchLoading(false)
+      }
+    },
+    [navigation, searchLoading]
+  )
+
+  // 加载更多搜索结果
+  const loadMoreSearchResults = React.useCallback(async () => {
+    if (!isSearching || searchLoading || !searchHasMore) return
+
+    setSearchLoading(true)
+    try {
+      const nextPage = searchPage + 1
+      // 传递正确的参数给 searchPosts 函数
+      const response = await searchPosts(
+        searchText,
+        nextPage,
+        10,
+        undefined,
+        'time'
+      )
+
+      if (response.code === 200 && response.data) {
+        const items = response.data.items || []
+        setSearchResults(prev => [...prev, ...items])
+        // 如果没有更多结果，设置 has_more 为 false
+        setSearchHasMore(items.length > 0 && (response.data.has_more || false))
+        setSearchPage(nextPage)
+      }
+    } catch (error) {
+      console.error('Load more search results failed:', error)
+    } finally {
+      setSearchLoading(false)
     }
+  }, [isSearching, searchLoading, searchHasMore, searchPage, searchText])
 
-    return (
-      contentText.toLowerCase().includes(searchContent) ||
-      (post.author_name &&
-        post.author_name.toLowerCase().includes(searchContent)) ||
-      (post.author_city &&
-        post.author_city.toLowerCase().includes(searchContent))
-    )
-  })
+  // 搜索结果
+  const filteredPosts = isSearching
+    ? Array.isArray(searchResults)
+      ? searchResults
+      : []
+    : posts
 
   // 根据标签栏筛选和排序帖子
   const sortedPosts =
@@ -163,7 +243,7 @@ export default function Home() {
       -1,
       true
     )
-  })
+  }, [])
 
   // 滚动到社区模块
   const handleScrollToCommunity = () => {
@@ -354,9 +434,11 @@ export default function Home() {
     if (isSearching) {
       return (
         <View style={styles.communitySection}>
-          {filteredPosts.length === 0 && (
-            <View style={{ padding: 20, alignItems: 'center' }}>
-              <Text style={{ color: '#999' }}>未找到相关内容</Text>
+          {!searchLoading && filteredPosts.length === 0 && (
+            <View style={styles.emptyStateContainer}>
+              <Ionicons name="search-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyStateTitle}>暂无相关帖子</Text>
+              <Text style={styles.emptyStateSubtitle}>换个关键词试试吧</Text>
             </View>
           )}
         </View>
@@ -378,7 +460,25 @@ export default function Home() {
 
   // 渲染列表尾部
   const ListFooterComponent = () => {
-    if (isSearching) return null
+    if (isSearching) {
+      return (
+        <View>
+          {searchLoading && searchResults.length === 0 && (
+            <View style={{ padding: 10, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#f43f5e" />
+              <Text style={{ color: '#999', fontSize: 12 }}>搜索中...</Text>
+            </View>
+          )}
+          {!searchLoading && !searchHasMore && searchResults.length > 0 && (
+            <View style={{ padding: 10, alignItems: 'center' }}>
+              <Text style={{ color: '#ccc', fontSize: 12 }}>
+                - 没有更多搜索结果了 -
+              </Text>
+            </View>
+          )}
+        </View>
+      )
+    }
 
     // 关注标签的空状态提示
     if (activeTab === '关注' && sortedPosts.length === 0) {
@@ -506,7 +606,7 @@ export default function Home() {
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           {/* 搜索栏固定位置，不参与滚动 */}
           <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
-            <HomeSearchBar onSearch={setSearchText} />
+            <HomeSearchBar onSearch={handleSearch} />
           </View>
 
           {/* 固定的社区标题栏（使用动画实现平滑过渡） */}
@@ -557,7 +657,9 @@ export default function Home() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             onEndReached={() => {
-              if (!isSearching && hasMore && !isLoadingMore) {
+              if (isSearching) {
+                loadMoreSearchResults()
+              } else if (hasMore && !isLoadingMore) {
                 dispatch(loadMorePosts({ page: page + 1 }))
               }
             }}

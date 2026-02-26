@@ -99,8 +99,8 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     return img
   }
 
-  // 解析 content 的函数
-  const parseContent = () => {
+  // 解析 content 的函数，使用 useMemo 缓存结果
+  const parsedContent = React.useMemo(() => {
     try {
       // 检查 content 是否已经是对象
       if (typeof data.content === 'object' && data.content.text) {
@@ -137,16 +137,14 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         images: []
       }
     }
-  }
-
-  const parsedContent = parseContent()
+  }, [data.content, data.cleanedContent])
 
   /**
    * 获取文章图片的函数
    * 优先级顺序为：解析出的 images > 提取的 imageUrls > 数据中的 images > 封面图
    * @returns {Array} 返回图片URL数组，如果没有图片则返回空数组
    */
-  const getPostImages = () => {
+  const displayImages = React.useMemo(() => {
     // 优先使用解析出的 images
     if (parsedContent.success && parsedContent.images.length > 0) {
       return parsedContent.images
@@ -164,9 +162,8 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
       return [data.cover]
     }
     return []
-  }
+  }, [parsedContent, data.imageUrls, data.images, data.cover])
 
-  const displayImages = getPostImages()
   const displayContent = parsedContent.text
 
   const handlePress = () => {

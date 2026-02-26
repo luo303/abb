@@ -43,9 +43,11 @@ export default function PostBody({
     }
     // 尝试解析字符串形式的 JSON
     try {
-      const parsed = JSON.parse(content)
-      if (parsed && typeof parsed === 'object' && parsed.text) {
-        return parsed.text
+      if (typeof content === 'string') {
+        const parsed = JSON.parse(content)
+        if (parsed && typeof parsed === 'object' && parsed.text) {
+          return parsed.text
+        }
       }
     } catch (error) {
       // 解析失败，返回原始字符串
@@ -63,14 +65,16 @@ export default function PostBody({
     }
     // 尝试解析字符串形式的 JSON
     try {
-      const parsed = JSON.parse(content)
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        parsed.images &&
-        parsed.images.length > 0
-      ) {
-        return parsed.images
+      if (typeof content === 'string') {
+        const parsed = JSON.parse(content)
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          parsed.images &&
+          parsed.images.length > 0
+        ) {
+          return parsed.images
+        }
       }
     } catch (error) {
       // 解析失败，返回传入的 images
@@ -79,7 +83,7 @@ export default function PostBody({
   }
 
   const displayContent = getContentText()
-  const displayImages = getContentImages()
+  const displayImages: (string | any)[] = getContentImages()
 
   // 格式化图片数据供 ImageViewing 使用
   const formattedImages = displayImages.map(img =>

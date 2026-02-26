@@ -23,6 +23,11 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
     onSearch(searchText)
   }
 
+  const handleClear = () => {
+    setSearchText('')
+    onSearch('')
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.searchBox}>
@@ -43,6 +48,11 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#999" />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={handleSearch} activeOpacity={0.8}>
           <LinearGradient
             colors={['#ff9a9e', '#f43f5e']}
@@ -115,6 +125,11 @@ const styles = StyleSheet.create({
     color: '#333',
     height: '100%',
     paddingLeft: 12
+  },
+  clearButton: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   searchButton: {
     paddingHorizontal: 20,
