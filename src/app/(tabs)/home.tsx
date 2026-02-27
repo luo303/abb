@@ -36,6 +36,7 @@ import { fetchPostList, loadMorePosts } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../../api/profile'
 import { setUserInfo } from '../../store/modules/userStore'
 import { searchPosts } from '@/api/post'
+import { fetchBabies, fetchBabyProfile } from '@/store/modules/BabyStore'
 
 /**
  * 首页组件
@@ -58,12 +59,13 @@ export default function Home() {
 
   // 使用 Redux store
   const dispatch = useAppDispatch()
-  const { postList, loading, hasMore, isLoadingMore, page } = useAppSelector(
+  const { postList, hasMore, isLoadingMore, page } = useAppSelector(
     state => state.post
   )
   const userInfo = useAppSelector(
     state => state.user.userInfo
   ) as UserMeResponse | null
+  const babyState = useAppSelector(state => state.baby)
 
   // 合并展示的数据
   // 优先使用 postList 的数据（因为它是经过详情页更新后的最新状态）
@@ -319,6 +321,23 @@ export default function Home() {
       isActive = false
     }
   }, [dispatch, userInfo])
+
+  useEffect(() => {
+    if (babyState.currentBabyDetail) return
+    if (babyState.currentBabyId) {
+      dispatch(fetchBabyProfile(babyState.currentBabyId))
+      return
+    }
+    dispatch(fetchBabies()).then(action => {
+      // @ts-ignore
+      if (fetchBabies.fulfilled.match(action) && action.payload?.code === 0) {
+        const id = action.payload?.data?.babies?.[0]?.baby_id
+        if (id) {
+          dispatch(fetchBabyProfile(id))
+        }
+      }
+    })
+  }, [dispatch])
 
   // 顶部背景动画样式
   const headerBackgroundStyle = useAnimatedStyle(() => {

@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
+import { LogBox } from 'react-native'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -27,7 +28,10 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
 import PartnerChat from './(tabs)/PartnerChat'
-
+// 忽略特定的日志警告
+LogBox.ignoreLogs([
+  'Unsupported top level event type "topSvgLayout" dispatched'
+])
 const Stack = createNativeStackNavigator()
 
 export default function Layout() {
