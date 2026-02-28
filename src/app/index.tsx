@@ -16,6 +16,7 @@ import AddPostScreen from './post/AddPost'
 import AddMilestoneScreen from './milestone/AddMilestone'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
+import MyPostsScreen from './profile/MyPosts'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
@@ -146,6 +147,11 @@ export default function Layout() {
                 name="EditProfile"
                 component={EditProfileScreen}
                 options={{ title: '编辑资料' }}
+              />
+              <Stack.Screen
+                name="MyPosts"
+                component={MyPostsScreen}
+                options={{ title: '我的帖子' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

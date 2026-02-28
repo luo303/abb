@@ -63,6 +63,33 @@ export interface GrowthCurveResponse {
   items: GrowthCurveItem[]
 }
 
+export interface BabyPhotoItem {
+  photo_id: string
+  link: string
+  ctime: number
+}
+
+export interface BabyPhotoListData {
+  items: BabyPhotoItem[]
+  page: number
+  page_size: number
+  has_more: boolean
+}
+
+export interface BabyPhotoListResponse {
+  code: number
+  message: string
+  data?: BabyPhotoListData
+}
+
+export interface BabyPhotoUploadResponse {
+  code: number
+  message: string
+  data?: {
+    items: BabyPhotoItem[]
+  }
+}
+
 export const addBabyReq = (data: BabyData) => {
   return request.post('/baby/newBaby', data)
 }
@@ -85,4 +112,30 @@ export const getGrowthCurveReq = (params: GrowthCurveParams) => {
   return request.get('/baby/growthCurve', {
     params
   })
+}
+
+export const getBabyPhotoListReq = async (
+  baby_id: string,
+  page = 1,
+  pageSize = 10
+): Promise<BabyPhotoListResponse> => {
+  const res = await request.get('/baby/photo/list', {
+    params: {
+      baby_id,
+      page,
+      page_size: pageSize
+    }
+  })
+  return res as unknown as BabyPhotoListResponse
+}
+
+export const uploadBabyPhotosReq = async (
+  baby_id: string,
+  links: string[]
+): Promise<BabyPhotoUploadResponse> => {
+  const res = await request.post('/baby/photo/upload', {
+    baby_id,
+    links
+  })
+  return res as unknown as BabyPhotoUploadResponse
 }

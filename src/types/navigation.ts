@@ -18,6 +18,7 @@ export type RootStackParamList = {
   EditProfile: undefined
   VaccineDetail: { url: string; title: string }
   AddMilestone: undefined
+  MyPosts: undefined
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>

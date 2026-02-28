@@ -92,7 +92,10 @@ export default function Profile() {
         {/* 下方内容区域 */}
         <View style={styles.contentContainer}>
           <InfoCard userInfo={userInfo} />
-          <ActionMenu onLogout={handleLogout} />
+          <ActionMenu
+            onLogout={handleLogout}
+            onMyPosts={() => navigation.navigate('MyPosts')}
+          />
         </View>
       </ScrollView>
     </View>
