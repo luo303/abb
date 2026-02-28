@@ -1,30 +1,16 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import BaseGrowthChart from './BaseGrowthChart'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
 import DataDescription from './DataDescription'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
-import { fetchGrowthCurve } from '../../../store/modules/BabyStore'
 
 export default function CurveHeadChart() {
   const [timeRange, setTimeRange] = useState<TimeRange>('day')
-  const dispatch = useDispatch<any>()
-  const { growthCurve, currentBabyId, currentBabyDetail } = useSelector(
+  const { growthCurve, currentBabyDetail } = useSelector(
     (state: RootState) => state.baby
   )
-
-  useEffect(() => {
-    if (currentBabyId && growthCurve.head.length === 0) {
-      dispatch(
-        fetchGrowthCurve({
-          baby_id: currentBabyId,
-          metric: 'head_circumference',
-          group_by: 'day'
-        })
-      )
-    }
-  }, [dispatch, currentBabyId, growthCurve.head.length])
 
   const babyGrowthData = useMemo(() => {
     if (!currentBabyDetail || !growthCurve.head.length) return []

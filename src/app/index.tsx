@@ -16,7 +16,6 @@ import AddPostScreen from './post/AddPost'
 import AddMilestoneScreen from './milestone/AddMilestone'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
-import TabooScreen from './(HomeNavGrid)/Taboo'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
@@ -95,11 +94,6 @@ export default function Layout() {
                 name="PostDetail"
                 component={PostDetail}
                 options={{ title: '帖子详情' }}
-              />
-              <Stack.Screen
-                name="Taboo"
-                component={TabooScreen}
-                options={{ title: '查忌口' }}
               />
               <Stack.Screen
                 name="DailyRecord"

@@ -1,30 +1,24 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import BaseGrowthChart from './BaseGrowthChart'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
 import DataDescription from './DataDescription'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
-import { fetchGrowthCurve } from '../../../store/modules/BabyStore'
 
-export default function CurveHeightChart() {
-  const [timeRange, setTimeRange] = useState<TimeRange>('day')
-  const dispatch = useDispatch<any>()
-  const { growthCurve, currentBabyId, currentBabyDetail } = useSelector(
+interface CurveHeightChartProps {
+  compact?: boolean
+  initialRange?: TimeRange
+}
+
+export default function CurveHeightChart({
+  compact = false,
+  initialRange = 'day'
+}: CurveHeightChartProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>(initialRange)
+  const { growthCurve, currentBabyDetail } = useSelector(
     (state: RootState) => state.baby
   )
-
-  useEffect(() => {
-    if (currentBabyId && growthCurve.height.length === 0) {
-      dispatch(
-        fetchGrowthCurve({
-          baby_id: currentBabyId,
-          metric: 'height',
-          group_by: 'day'
-        })
-      )
-    }
-  }, [dispatch, currentBabyId, growthCurve.height.length])
 
   const babyGrowthData = useMemo(() => {
     if (!currentBabyDetail || !growthCurve.height.length) return []
@@ -123,7 +117,9 @@ export default function CurveHeightChart() {
 
   return (
     <>
-      <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+      {!compact && (
+        <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+      )}
       <BaseGrowthChart
         title="身高发育曲线"
         unit="cm"
@@ -132,9 +128,10 @@ export default function CurveHeightChart() {
         babyData={babyData}
         yMin={yMin}
         yMax={yMax}
+        showDataZoomSlider={!compact}
         // 使用默认颜色：标准数据蓝线，宝宝数据红线
       />
-      <DataDescription type="height" />
+      {!compact && <DataDescription type="height" />}
     </>
   )
 }

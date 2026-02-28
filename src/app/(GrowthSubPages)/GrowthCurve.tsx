@@ -26,7 +26,7 @@ export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [activeTab, setActiveTab] = useState('record') // record, height, weight, head
-  const { currentBabyId, babiesList } = useSelector(
+  const { currentBabyId, babiesList, growthCurve } = useSelector(
     (state: RootState) => state.baby
   )
   const hasBaby = !!currentBabyId || (babiesList && babiesList.length > 0)
@@ -34,28 +34,40 @@ export default function GrowthCurveScreen() {
 
   useEffect(() => {
     if (!currentBabyId) return
-    dispatch(
-      fetchGrowthCurve({
-        baby_id: currentBabyId,
-        metric: 'height',
-        group_by: 'day'
-      })
-    )
-    dispatch(
-      fetchGrowthCurve({
-        baby_id: currentBabyId,
-        metric: 'weight',
-        group_by: 'day'
-      })
-    )
-    dispatch(
-      fetchGrowthCurve({
-        baby_id: currentBabyId,
-        metric: 'head_circumference',
-        group_by: 'day'
-      })
-    )
-  }, [dispatch])
+    if (
+      growthCurve.height.length === 0 ||
+      growthCurve.weight.length === 0 ||
+      growthCurve.head.length === 0
+    ) {
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'height',
+          group_by: 'day'
+        })
+      )
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'weight',
+          group_by: 'day'
+        })
+      )
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'head_circumference',
+          group_by: 'day'
+        })
+      )
+    }
+  }, [
+    dispatch,
+    currentBabyId,
+    growthCurve.height.length,
+    growthCurve.weight.length,
+    growthCurve.head.length
+  ])
 
   // 表单状态
   const [height, setHeight] = useState('')
