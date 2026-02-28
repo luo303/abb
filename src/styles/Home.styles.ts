@@ -5,7 +5,7 @@ const { width } = Dimensions.get('window')
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: '#ffe4e6'
   },
   headerBackgroundContainer: {
     position: 'absolute',
