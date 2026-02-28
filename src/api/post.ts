@@ -120,3 +120,24 @@ export const searchPosts = async (
     }
   }
 }
+
+/**
+ * 获取当前用户帖子列表
+ * @param page 页码
+ * @param pageSize 每页数量
+ * @param strategy 排序策略
+ */
+export const getMyPosts = async (
+  page = 1,
+  pageSize = 10,
+  strategy?: string
+): Promise<PostListResponse> => {
+  const res = await request.get('/post/mine', {
+    params: {
+      page,
+      page_size: pageSize,
+      strategy
+    }
+  })
+  return res as unknown as PostListResponse
+}

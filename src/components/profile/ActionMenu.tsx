@@ -11,7 +11,13 @@ interface ActionItemProps {
   IconComponent?: any
 }
 
-export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
+export default function ActionMenu({
+  onLogout,
+  onMyPosts
+}: {
+  onLogout: () => void
+  onMyPosts: () => void
+}) {
   return (
     <View style={styles.wrapper}>
       <LinearGradient
@@ -26,6 +32,7 @@ export default function ActionMenu({ onLogout }: { onLogout: () => void }) {
             icon="comment-text-outline"
             label="我的帖子"
             color="#f97316"
+            onPress={onMyPosts}
           />
           <ActionItem
             icon="user-switch"
