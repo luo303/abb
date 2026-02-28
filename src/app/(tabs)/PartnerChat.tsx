@@ -296,6 +296,11 @@ export default function PartnerChat() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
         style={styles.container}
       >
+        <View style={styles.bindBackground}>
+          <View style={styles.bindBlobTop} />
+          <View style={styles.bindBlobBottom} />
+        </View>
+
         <View style={styles.addPartnerContainer}>
           <View style={styles.addPartnerHeader}>
             <View style={styles.heroCircle}>
@@ -340,7 +345,7 @@ export default function PartnerChat() {
               disabled={isBinding}
             >
               <Text style={styles.addButtonText}>
-                {isBinding ? '绑定中...' : '立即绑定'}
+                {isBinding ? '绑定中..' : '立即绑定'}
               </Text>
             </TouchableOpacity>
             <Text style={styles.addPartnerFootnote}>
@@ -423,7 +428,7 @@ export default function PartnerChat() {
             style={styles.chatInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="发消息..."
+            placeholder="发消息.."
             placeholderTextColor="#9CA3AF"
             multiline
             maxLength={200}
@@ -473,66 +478,88 @@ const styles = StyleSheet.create({
     flex: 1
   },
   // 绑定样式
+  bindBackground: {
+    ...StyleSheet.absoluteFillObject
+  },
+  bindBlobTop: {
+    position: 'absolute',
+    top: -90,
+    right: -40,
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    backgroundColor: '#FFE6EB'
+  },
+  bindBlobBottom: {
+    position: 'absolute',
+    bottom: -120,
+    left: -60,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#FCEFF1'
+  },
   addPartnerContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 32
+    paddingHorizontal: 22,
+    paddingTop: 30,
+    paddingBottom: 16
   },
   addPartnerHeader: {
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 24
   },
   heroCircle: {
-    marginBottom: 12,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    marginBottom: 14,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#FF6B6B',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#FF6B6B',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 7
   },
   addPartnerTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4
+    color: '#1F2937'
   },
   addPartnerSubtitle: {
     fontSize: 13,
-    color: '#6B7280'
+    color: '#6B7280',
+    marginTop: 6
   },
   addPartnerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#F1F1F4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    borderColor: '#EEF0F4',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 4
+    shadowRadius: 18,
+    elevation: 5
   },
   addPartnerHint: {
     fontSize: 12,
     color: '#9CA3AF',
-    marginBottom: 6
+    marginBottom: 8
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    backgroundColor: '#F6F7FB',
-    borderRadius: 12,
+    height: 46,
+    backgroundColor: '#F7F8FC',
+    borderRadius: 14,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#EEF0F4',
-    marginBottom: 14
+    borderColor: '#E9ECF3',
+    marginBottom: 16
   },
   addPartnerInput: {
     flex: 1,
@@ -542,16 +569,16 @@ const styles = StyleSheet.create({
   },
   addButton: {
     width: '100%',
-    height: 48,
+    height: 50,
     backgroundColor: '#FF6B6B',
-    borderRadius: 14,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#FF6B6B',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5
+    shadowOpacity: 0.32,
+    shadowRadius: 10,
+    elevation: 6
   },
   addButtonDisabled: {
     backgroundColor: '#FFCACA'
@@ -562,7 +589,7 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   addPartnerFootnote: {
-    marginTop: 10,
+    marginTop: 12,
     textAlign: 'center',
     fontSize: 12,
     color: '#9CA3AF'

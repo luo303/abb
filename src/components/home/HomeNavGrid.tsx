@@ -1,7 +1,11 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import {
+  MaterialCommunityIcons,
+  MaterialIcons,
+  Ionicons
+} from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
 
@@ -16,11 +20,11 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
       style={styles.navContainer}
     >
       <NavItem
-        icon="food-off"
-        label="查忌口"
+        icon="chart-line"
+        label="成长记录"
         library="MaterialCommunityIcons"
         color="#FF8A65" // 暖橙色
-        onPress={() => navigation.navigate('Taboo')}
+        onPress={() => navigation.navigate('GrowthCurve')}
       />
       <NavItem
         icon="pencil"
@@ -37,11 +41,11 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
         onPress={() => navigation.navigate('VaccineRecord')}
       />
       <NavItem
-        icon="book-open-page-variant"
-        label="宝宝故事"
-        library="MaterialCommunityIcons"
-        color="#BA68C8" // 浅紫色
-        onPress={() => navigation.navigate('BabyStories')}
+        icon="book-outline"
+        label="大事记"
+        library="Ionicons"
+        color="#F59E0B"
+        onPress={() => navigation.navigate('AddMilestone')}
       />
     </LinearGradient>
   )
@@ -51,7 +55,11 @@ export default HomeNavGrid
 
 const NavItem = ({ icon, label, library, color, onPress }: any) => {
   const IconComponent =
-    library === 'MaterialIcons' ? MaterialIcons : MaterialCommunityIcons
+    library === 'MaterialIcons'
+      ? MaterialIcons
+      : library === 'Ionicons'
+        ? Ionicons
+        : MaterialCommunityIcons
   return (
     <TouchableOpacity
       style={styles.navItem}

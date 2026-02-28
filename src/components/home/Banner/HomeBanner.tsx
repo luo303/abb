@@ -22,11 +22,6 @@ const RAW_DATA = [
   },
   {
     id: '2',
-    imageSource: require('../../../assets/poster_cjk.png'),
-    targetPage: 'Taboo'
-  },
-  {
-    id: '3',
     imageSource: require('../../../assets/poster_community.png'),
     targetPage: 'scrollToCommunity'
   }

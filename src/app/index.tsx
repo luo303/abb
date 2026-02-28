@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
+import { LogBox } from 'react-native'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -12,10 +13,9 @@ import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
+import AddMilestoneScreen from './milestone/AddMilestone'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
-import TabooScreen from './(HomeNavGrid)/Taboo'
-import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
@@ -27,7 +27,10 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
 import PartnerChat from './(tabs)/PartnerChat'
-
+// 忽略特定的日志警告
+LogBox.ignoreLogs([
+  'Unsupported top level event type "topSvgLayout" dispatched'
+])
 const Stack = createNativeStackNavigator()
 
 export default function Layout() {
@@ -93,16 +96,6 @@ export default function Layout() {
                 options={{ title: '帖子详情' }}
               />
               <Stack.Screen
-                name="Taboo"
-                component={TabooScreen}
-                options={{ title: '查忌口' }}
-              />
-              <Stack.Screen
-                name="BabyStories"
-                component={BabyStoriesScreen}
-                options={{ title: '宝宝故事' }}
-              />
-              <Stack.Screen
                 name="DailyRecord"
                 component={DailyRecordScreen}
                 options={{ title: '日常记录' }}
@@ -137,6 +130,11 @@ export default function Layout() {
               <Stack.Screen
                 name="AddPost"
                 component={AddPostScreen}
+                options={{ headerShown: false, presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="AddMilestone"
+                component={AddMilestoneScreen}
                 options={{ headerShown: false, presentation: 'modal' }}
               />
               <Stack.Screen

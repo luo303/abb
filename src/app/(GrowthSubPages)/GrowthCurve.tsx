@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -18,11 +18,56 @@ import CurveRecordForm from '../../components/growth/curve/CurveRecordForm'
 import CurveHeightChart from '../../components/growth/curve/CurveHeightChart'
 import CurveWeightChart from '../../components/growth/curve/CurveWeightChart'
 import CurveHeadChart from '../../components/growth/curve/CurveHeadChart'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState } from '../../store'
+import { fetchGrowthCurve } from '../../store/modules/BabyStore'
 
 export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [activeTab, setActiveTab] = useState('record') // record, height, weight, head
+  const { currentBabyId, babiesList, growthCurve } = useSelector(
+    (state: RootState) => state.baby
+  )
+  const hasBaby = !!currentBabyId || (babiesList && babiesList.length > 0)
+  const dispatch = useDispatch<any>()
+
+  useEffect(() => {
+    if (!currentBabyId) return
+    if (
+      growthCurve.height.length === 0 ||
+      growthCurve.weight.length === 0 ||
+      growthCurve.head.length === 0
+    ) {
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'height',
+          group_by: 'day'
+        })
+      )
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'weight',
+          group_by: 'day'
+        })
+      )
+      dispatch(
+        fetchGrowthCurve({
+          baby_id: currentBabyId,
+          metric: 'head_circumference',
+          group_by: 'day'
+        })
+      )
+    }
+  }, [
+    dispatch,
+    currentBabyId,
+    growthCurve.height.length,
+    growthCurve.weight.length,
+    growthCurve.head.length
+  ])
 
   // 表单状态
   const [height, setHeight] = useState('')
@@ -57,10 +102,20 @@ export default function GrowthCurveScreen() {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={
+            hasBaby ? styles.scrollContent : styles.scrollContentEmpty
+          }
           showsVerticalScrollIndicator={false}
         >
-          {activeTab === 'record' && (
+          {!hasBaby && (
+            <View style={styles.emptyState}>
+              <Ionicons name="bag-outline" size={48} color="#c5d9ff" />
+              <Text style={[styles.emptyText, { marginTop: 12 }]}>
+                暂无宝宝信息，添加宝宝后可查看成长曲线
+              </Text>
+            </View>
+          )}
+          {hasBaby && activeTab === 'record' && (
             <CurveRecordForm
               height={height}
               setHeight={setHeight}
@@ -73,61 +128,65 @@ export default function GrowthCurveScreen() {
             />
           )}
 
-          {activeTab === 'height' && <CurveHeightChart />}
-          {activeTab === 'weight' && <CurveWeightChart />}
-          {activeTab === 'head' && <CurveHeadChart />}
+          {hasBaby && activeTab === 'height' && <CurveHeightChart />}
+          {hasBaby && activeTab === 'weight' && <CurveWeightChart />}
+          {hasBaby && activeTab === 'head' && <CurveHeadChart />}
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* 底部按钮 */}
       {activeTab === 'record' ? (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              !isFormValid && styles.saveButtonDisabled
-            ]}
-            disabled={!isFormValid}
-          >
-            <Text
+        hasBaby && (
+          <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+            <TouchableOpacity
               style={[
-                styles.saveButtonText,
-                !isFormValid && styles.saveButtonTextDisabled
+                styles.saveButton,
+                !isFormValid && styles.saveButtonDisabled
               ]}
+              disabled={!isFormValid}
             >
-              {isFormValid ? '保存记录' : '请填写数据'}
-            </Text>
-            {isFormValid && (
-              <Ionicons
-                name="arrow-forward"
-                size={20}
-                color="#fff"
-                style={{ marginLeft: 8 }}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  !isFormValid && styles.saveButtonTextDisabled
+                ]}
+              >
+                {isFormValid ? '保存记录' : '请填写数据'}
+              </Text>
+              {isFormValid && (
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color="#fff"
+                  style={{ marginLeft: 8 }}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        )
       ) : (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-          <TouchableOpacity
-            style={styles.aiButton}
-            onPress={() => {
-              navigation.goBack()
-              // @ts-ignore
-              navigation.navigate('AIAssistant')
-            }}
-          >
-            <View style={styles.aiButtonContent}>
-              <Ionicons name="sparkles" size={20} color="#fff" />
-              <Text style={styles.aiButtonText}>AI 智能分析</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color="#fff"
-                style={{ marginLeft: 4 }}
-              />
-            </View>
-          </TouchableOpacity>
+          {hasBaby ? (
+            <TouchableOpacity
+              style={styles.aiButton}
+              onPress={() => {
+                navigation.goBack()
+                // @ts-ignore
+                navigation.navigate('AIAssistant')
+              }}
+            >
+              <View style={styles.aiButtonContent}>
+                <Ionicons name="sparkles" size={20} color="#fff" />
+                <Text style={styles.aiButtonText}>AI 智能分析</Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color="#fff"
+                  style={{ marginLeft: 4 }}
+                />
+              </View>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </View>
@@ -143,6 +202,12 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
+    paddingBottom: 100
+  },
+  scrollContentEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingBottom: 100
   },
   footer: {

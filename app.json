@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./src/assets/icon.jpg",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "abb",
     "splash": {
       "image": "./src/assets/splash.png",
@@ -27,7 +26,6 @@
         "resizeMode": "cover",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",

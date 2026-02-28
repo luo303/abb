@@ -15,7 +15,11 @@ import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useDispatch, useSelector } from 'react-redux'
-import { addBaby, resetBabyState } from '../../store/modules/BabyStore'
+import {
+  addBaby,
+  resetBabyState,
+  fetchBabyProfile
+} from '../../store/modules/BabyStore'
 import { Ionicons } from '@expo/vector-icons'
 import { RootState } from '../../store'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -80,6 +84,10 @@ export default function AddBabyScreen() {
       const resultAction = await dispatch(addBaby(babyData))
       if (addBaby.fulfilled.match(resultAction)) {
         if (resultAction.payload?.code === 0) {
+          // 获取并存储详细信息
+          if (resultAction.payload.data?.baby_id) {
+            await dispatch(fetchBabyProfile(resultAction.payload.data.baby_id))
+          }
           showMessage('宝宝创建成功')
           setTimeout(() => {
             dispatch(resetBabyState())

@@ -6,27 +6,33 @@ interface PostInputProps {
   onTitleChange?: (text: string) => void
   value: string
   onChangeText: (text: string) => void
+  titlePlaceholder?: string
+  placeholder?: string
+  expand?: boolean
 }
 
 export default function PostInput({
   title = '',
   onTitleChange,
   value,
-  onChangeText
+  onChangeText,
+  titlePlaceholder = '给帖子起个标题...',
+  placeholder = '记录宝宝成长的每一个瞬间...',
+  expand = false
 }: PostInputProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, expand && { flex: 1 }]}>
       <TextInput
         style={styles.titleInput}
-        placeholder="给帖子起个标题..."
+        placeholder={titlePlaceholder}
         value={title}
         onChangeText={onTitleChange}
         placeholderTextColor="#fda4af"
         maxLength={50}
       />
       <TextInput
-        style={styles.input}
-        placeholder="记录宝宝成长的每一个瞬间..."
+        style={[styles.input, expand && { flex: 1, minHeight: undefined }]}
+        placeholder={placeholder}
         multiline
         value={value}
         onChangeText={onChangeText}

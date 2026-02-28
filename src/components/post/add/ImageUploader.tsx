@@ -29,6 +29,9 @@ export default function ImageUploader({
   onAddImage,
   onRemoveImage
 }: ImageUploaderProps) {
+  const uploadingCount = pendingImages.filter(
+    img => img.status === 'uploading'
+  ).length
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
@@ -57,7 +60,7 @@ export default function ImageUploader({
           </View>
         ))}
         {/* 显示添加按钮 */}
-        {images.length + pendingImages.length < 9 && (
+        {images.length + uploadingCount < 9 && (
           <TouchableOpacity onPress={onAddImage} activeOpacity={0.7}>
             <LinearGradient
               colors={['#fff1f2', '#ffe4e6']}

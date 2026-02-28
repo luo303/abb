@@ -17,6 +17,7 @@ interface BaseGrowthChartProps {
   yMax: number
   standardColor?: string
   babyColor?: string
+  showDataZoomSlider?: boolean
 }
 
 export default function BaseGrowthChart({
@@ -28,7 +29,8 @@ export default function BaseGrowthChart({
   yMin,
   yMax,
   standardColor = '#5470C6', // 默认蓝色
-  babyColor = '#EE6666' // 默认红色
+  babyColor = '#EE6666', // 默认红色
+  showDataZoomSlider = true
 }: BaseGrowthChartProps) {
   // 从主题色提取的值
   const THEME_BLUE = '#3b66f5' // 标准范围颜色
@@ -43,15 +45,27 @@ export default function BaseGrowthChart({
   const safeStandardData = standardData || []
   const safeBabyData = babyData || []
 
-  // 使用标准数据的label作为 x 轴
-  const labels = safeStandardData.map(d => d.label)
-  const standardValues = safeStandardData.map(d => d.value)
+  // 组合标准与宝宝数据的 label，保证至少能用宝宝数据渲染
+  const standardLabelSet = (safeStandardData || []).map(d => String(d.label))
+  const babyLabelSet = (safeBabyData || []).map(d => String(d.label))
+  const labels = Array.from(
+    new Set([...standardLabelSet, ...babyLabelSet])
+  ).sort((a, b) => Number(a) - Number(b))
 
-  // 映射宝宝数据到对应的label，没有数据的label填 null
-  const babyValues = labels.map(l => {
-    const point = safeBabyData.find(d => d.label === l)
-    return point ? point.value : null
-  })
+  // 构建映射，便于按统一的 labels 输出数值
+  const standardMap = new Map<string, number>()
+  for (const d of safeStandardData) {
+    standardMap.set(String(d.label), d.value)
+  }
+  const babyMap = new Map<string, number>()
+  for (const d of safeBabyData) {
+    babyMap.set(String(d.label), d.value)
+  }
+
+  const standardValues = labels.map(l =>
+    standardMap.has(l) ? standardMap.get(l) : null
+  )
+  const babyValues = labels.map(l => (babyMap.has(l) ? babyMap.get(l) : null))
 
   // 计算默认显示的缩放比例（如果数据点超过8个，则只显示最后8个）
   const MAX_VISIBLE_POINTS = 8
@@ -68,6 +82,7 @@ export default function BaseGrowthChart({
   // 获取最新的宝宝数据值
   const lastBabyValue = babyValues.filter(v => v !== null).pop()
 
+  const gridBottom = showDataZoomSlider ? '18%' : '8%'
   const chartHtml = `
     <html>
       <head>
@@ -106,7 +121,7 @@ export default function BaseGrowthChart({
                 top: '25%',
                 left: '3%',
                 right: '12%',
-                bottom: '18%',
+                bottom: '${gridBottom}',
                 containLabel: true
               },
               title: {
@@ -143,7 +158,9 @@ export default function BaseGrowthChart({
                   zoomLock: false,
                   moveOnMouseWheel: true,
                   moveOnMouseMove: true
-                },
+                }${
+                  showDataZoomSlider
+                    ? `,
                 {
                   type: 'slider',
                   xAxisIndex: 0,
@@ -166,6 +183,8 @@ export default function BaseGrowthChart({
                     shadowOffsetY: 1
                   },
                   textStyle: { color: '#999' }
+                }`
+                    : ''
                 }
               ],
               tooltip: {
