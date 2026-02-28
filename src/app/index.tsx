@@ -22,6 +22,7 @@ import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
 import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
 import DiaryScreen from './(GrowthSubPages)/Diary'
+import FeedingRecordScreen from './FeedingRecordScreen'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -146,6 +147,11 @@ export default function Layout() {
                 name="EditProfile"
                 component={EditProfileScreen}
                 options={{ title: '编辑资料' }}
+              />
+              <Stack.Screen
+                name="FeedingRecord"
+                component={FeedingRecordScreen}
+                options={{ headerShown: false }}
               />
             </Stack.Navigator>
           </NavigationContainer>
