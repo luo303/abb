@@ -23,6 +23,7 @@ export default function DailyRecordScreen() {
   const [statistics, setStatistics] = useState<Statistics>({
     feedingCount: 0,
     feedingVolume: 0,
+    sleepCount: 0,
     sleepDuration: 0,
     diaperCount: 0
   })
@@ -34,26 +35,20 @@ export default function DailyRecordScreen() {
 
     // 计算统计数据
     let feedingCount = 0
-    let feedingVolume = 0
-    let sleepDuration = 0
+    let feedingVolume = 0 // 保留字段但不使用
+    let sleepCount = 0
+    let sleepDuration = 0 // 以小时为单位，保留小数
     let diaperCount = 0
 
     records.forEach(record => {
       switch (record.type) {
         case 'feeding':
           feedingCount++
-          // 提取喂养量（假设格式为"奶粉 Xml"或"母乳 X分钟"）
-          const milkMatch = record.details.match(/奶粉\s*(\d+)ml/)
-          if (milkMatch) {
-            feedingVolume += parseInt(milkMatch[1])
-          }
           break
         case 'sleep':
-          // 提取睡眠时长（假设格式为"睡眠时长：X小时"）
-          const sleepMatch = record.details.match(/睡眠时长：(\d+(\.\d+)?)小时/)
-          if (sleepMatch) {
-            sleepDuration += parseFloat(sleepMatch[1])
-          }
+          sleepCount++
+          // 为每个睡眠记录设置默认时长为 1.5 小时（1小时30分钟）
+          sleepDuration += 1.5
           break
         case 'diaper':
           diaperCount++
@@ -64,6 +59,7 @@ export default function DailyRecordScreen() {
     setStatistics({
       feedingCount,
       feedingVolume,
+      sleepCount,
       sleepDuration,
       diaperCount
     })
@@ -88,13 +84,13 @@ export default function DailyRecordScreen() {
   }
 
   // 目标值设置
-  const feedingTarget = 1000 // 每日喂养目标1000ml
+  const feedingTarget = 8 // 每日喂养目标8次
   const sleepTarget = 12 // 每日睡眠目标12小时
   const diaperTarget = 8 // 每日换尿布目标8次
 
   // 计算百分比
   const feedingPercent = Math.min(
-    Math.round((statistics.feedingVolume / feedingTarget) * 100),
+    Math.round((statistics.feedingCount / feedingTarget) * 100),
     100
   )
   const sleepPercent = Math.min(
@@ -108,7 +104,23 @@ export default function DailyRecordScreen() {
 
   // 处理无数据情况
   const getDisplayValue = (value: number, unit: string) => {
-    return value === 0 ? '--' : `${value}${unit}`
+    if (value === 0) {
+      return '--'
+    }
+
+    // 对于睡眠时长，显示为小时和分钟格式
+    if (unit === 'h') {
+      const hours = Math.floor(value)
+      const minutes = Math.round((value - hours) * 60)
+      if (minutes === 0) {
+        return `${hours}h`
+      } else {
+        return `${hours}h${minutes}m`
+      }
+    }
+
+    // 对于其他单位，保持原格式
+    return `${value}${unit}`
   }
 
   // 切换到前一天
@@ -189,7 +201,7 @@ export default function DailyRecordScreen() {
           <View style={styles.dashboardCard}>
             <DashboardRing
               type="feeding"
-              value={getDisplayValue(statistics.feedingVolume, 'ml')}
+              value={getDisplayValue(statistics.feedingCount, '次')}
               percent={currentRecords.length > 0 ? feedingPercent : 0}
               onPress={() => handleActionPress('feeding')}
             />

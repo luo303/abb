@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native'
+import React, { useEffect, useRef } from 'react'
+import { View, StyleSheet, ViewStyle, Animated } from 'react-native'
 import Svg, { Circle, G, LinearGradient, Stop } from 'react-native-svg'
 
 interface BabyProgressRingProps {
@@ -30,8 +30,38 @@ export default function BabyProgressRing({
   // 计算圆环参数
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (percent / 100) * circumference
   const center = size / 2
+
+  // 创建动画值
+  const animatedValue = useRef(new Animated.Value(0)).current
+
+  // 当组件挂载或 percent 变化时，启动动画
+  useEffect(() => {
+    // 先将动画值设置为0
+    animatedValue.setValue(0)
+    // 然后启动动画到目标值
+    const animation = Animated.timing(animatedValue, {
+      toValue: percent,
+      duration: 1000,
+      useNativeDriver: false
+    })
+
+    animation.start()
+
+    // 清理函数，确保组件卸载时动画被停止
+    return () => {
+      animation.stop()
+    }
+  }, [percent, animatedValue])
+
+  // 计算动画的 strokeDashoffset
+  const strokeDashoffset = animatedValue.interpolate({
+    inputRange: [0, 100],
+    outputRange: [
+      circumference,
+      circumference - (percent / 100) * circumference
+    ]
+  })
 
   return (
     <View style={[styles.container, { width: size, height: size }, style]}>
@@ -79,7 +109,7 @@ export default function BabyProgressRing({
             fill="none"
           />
           {/* 进度圆环 */}
-          <Circle
+          <AnimatedCircle
             cx={center}
             cy={center}
             r={radius}
@@ -99,6 +129,9 @@ export default function BabyProgressRing({
     </View>
   )
 }
+
+// 创建 AnimatedCircle 组件
+const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
 const styles = StyleSheet.create({
   container: {

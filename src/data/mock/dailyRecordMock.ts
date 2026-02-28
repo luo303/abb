@@ -7,7 +7,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '1',
       type: 'feeding',
       time: '07:20',
-      details: '母乳 15分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -15,7 +15,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '2',
       type: 'diaper',
       time: '08:45',
-      details: '便便 黄色',
+      details: '便便',
       icon: 'baby-carriage',
       name: '换尿布'
     },
@@ -23,7 +23,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '3',
       type: 'sleep',
       time: '10:15',
-      details: '睡眠时长：1.5小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -31,7 +31,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '4',
       type: 'feeding',
       time: '12:30',
-      details: '奶粉 180ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -47,7 +47,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '6',
       type: 'sleep',
       time: '15:30',
-      details: '睡眠时长：2小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -55,7 +55,39 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '7',
       type: 'feeding',
       time: '18:00',
-      details: '母乳 20分钟',
+      details: '母乳',
+      icon: 'baby-bottle',
+      name: '喂养记录'
+    },
+    {
+      id: '8',
+      type: 'feeding',
+      time: '20:30',
+      details: '奶粉',
+      icon: 'baby-bottle',
+      name: '喂养记录'
+    },
+    {
+      id: '9',
+      type: 'diaper',
+      time: '21:15',
+      details: '便便',
+      icon: 'baby-carriage',
+      name: '换尿布'
+    },
+    {
+      id: '10',
+      type: 'sleep',
+      time: '22:00',
+      details: '睡眠时长',
+      icon: 'weather-night',
+      name: '睡眠记录'
+    },
+    {
+      id: '11',
+      type: 'feeding',
+      time: '23:30',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     }
@@ -65,7 +97,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '8',
       type: 'feeding',
       time: '06:45',
-      details: '奶粉 160ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -73,7 +105,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '9',
       type: 'diaper',
       time: '09:20',
-      details: '便便 绿色',
+      details: '便便',
       icon: 'baby-carriage',
       name: '换尿布'
     },
@@ -81,7 +113,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '10',
       type: 'sleep',
       time: '11:00',
-      details: '睡眠时长：1.5小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -89,7 +121,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '11',
       type: 'feeding',
       time: '13:45',
-      details: '母乳 15分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -107,7 +139,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '13',
       type: 'feeding',
       time: '08:00',
-      details: '奶粉 170ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -115,7 +147,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '14',
       type: 'sleep',
       time: '09:30',
-      details: '睡眠时长：2.5小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -123,7 +155,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '15',
       type: 'diaper',
       time: '12:15',
-      details: '便便 黄色',
+      details: '便便',
       icon: 'baby-carriage',
       name: '换尿布'
     },
@@ -131,7 +163,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '16',
       type: 'feeding',
       time: '14:00',
-      details: '母乳 20分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -139,7 +171,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '17',
       type: 'sleep',
       time: '16:30',
-      details: '睡眠时长：1小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -157,7 +189,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '19',
       type: 'feeding',
       time: '07:30',
-      details: '奶粉 150ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -165,7 +197,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '20',
       type: 'diaper',
       time: '09:15',
-      details: '便便 黄色',
+      details: '便便',
       icon: 'baby-carriage',
       name: '换尿布'
     },
@@ -173,7 +205,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '21',
       type: 'sleep',
       time: '10:45',
-      details: '睡眠时长：2小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -181,7 +213,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '22',
       type: 'feeding',
       time: '13:30',
-      details: '母乳 15分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     }
@@ -191,7 +223,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '23',
       type: 'sleep',
       time: '08:30',
-      details: '睡眠时长：3小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -199,7 +231,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '24',
       type: 'feeding',
       time: '11:45',
-      details: '奶粉 180ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -215,7 +247,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '26',
       type: 'sleep',
       time: '15:00',
-      details: '睡眠时长：1.5小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -223,7 +255,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '27',
       type: 'feeding',
       time: '17:30',
-      details: '母乳 20分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     }
@@ -233,7 +265,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '28',
       type: 'feeding',
       time: '06:30',
-      details: '母乳 15分钟',
+      details: '母乳',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -241,7 +273,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '29',
       type: 'diaper',
       time: '08:45',
-      details: '便便 绿色',
+      details: '便便',
       icon: 'baby-carriage',
       name: '换尿布'
     },
@@ -249,7 +281,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '30',
       type: 'sleep',
       time: '10:00',
-      details: '睡眠时长：2小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     },
@@ -257,7 +289,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '31',
       type: 'feeding',
       time: '12:30',
-      details: '奶粉 160ml',
+      details: '奶粉',
       icon: 'baby-bottle',
       name: '喂养记录'
     },
@@ -273,7 +305,7 @@ const dailyRecordMock: Record<string, RecordItem[]> = {
       id: '33',
       type: 'sleep',
       time: '16:00',
-      details: '睡眠时长：1.5小时',
+      details: '睡眠时长',
       icon: 'weather-night',
       name: '睡眠记录'
     }

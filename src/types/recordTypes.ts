@@ -15,6 +15,7 @@ export interface RecordItem {
 export interface Statistics {
   feedingCount: number
   feedingVolume: number
+  sleepCount: number
   sleepDuration: number
   diaperCount: number
 }
