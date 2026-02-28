@@ -17,7 +17,8 @@ export const openDatePicker = (
   value: Date,
   onChange: (event: DateTimePickerEvent, date?: Date) => void,
   mode: 'date' | 'time' = 'date',
-  maximumDate?: Date
+  maximumDate?: Date,
+  minimumDate?: Date
 ): boolean => {
   if (Platform.OS === 'android') {
     DateTimePickerAndroid.open({
@@ -25,7 +26,8 @@ export const openDatePicker = (
       onChange,
       mode,
       is24Hour: true,
-      maximumDate
+      maximumDate,
+      minimumDate
     })
     return true
   }

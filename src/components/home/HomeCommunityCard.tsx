@@ -31,6 +31,7 @@ interface HomeCommunityCardProps {
 
 export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
+  const [avatarLoadError, setAvatarLoadError] = React.useState(false)
 
   // 图片组件，处理加载和错误状态
   const PostImage = ({ item }: { item: any }) => {
@@ -98,6 +99,10 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     }
     return img
   }
+
+  React.useEffect(() => {
+    setAvatarLoadError(false)
+  }, [data.author_avatar])
 
   // 解析 content 的函数，使用 useMemo 缓存结果
   const parsedContent = React.useMemo(() => {
@@ -190,8 +195,13 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         {/* 用户信息行 */}
         <View style={styles.userInfoRow}>
           <Image
-            source={getImageSource(data.author_avatar)}
+            source={
+              avatarLoadError
+                ? require('@/assets/testAvatar.png')
+                : getImageSource(data.author_avatar)
+            }
             style={styles.avatar}
+            onError={() => setAvatarLoadError(true)}
           />
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{data.author_name}</Text>

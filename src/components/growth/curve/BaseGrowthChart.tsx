@@ -67,15 +67,20 @@ export default function BaseGrowthChart({
   )
   const babyValues = labels.map(l => (babyMap.has(l) ? babyMap.get(l) : null))
 
-  // 计算默认显示的缩放比例（如果数据点超过8个，则只显示最后8个）
-  const MAX_VISIBLE_POINTS = 8
+  // 小数据量维持旧逻辑（最多显示 8 个点），大数据量改为显示总数的 1/4（向上取整）
+  const LEGACY_VISIBLE_POINTS = 8
+  const QUARTER_SWITCH_THRESHOLD = LEGACY_VISIBLE_POINTS * 4 // 32
+  const defaultVisiblePoints =
+    labels.length > QUARTER_SWITCH_THRESHOLD
+      ? Math.max(1, Math.ceil(labels.length / 4))
+      : LEGACY_VISIBLE_POINTS
   let startZoom = 0
   let endZoom = 100
 
-  if (labels.length > MAX_VISIBLE_POINTS) {
-    // 默认显示最后 MAX_VISIBLE_POINTS 个点
-    // startZoom 计算公式： (1 - MAX_VISIBLE_POINTS / 总数) * 100
-    startZoom = Math.floor((1 - MAX_VISIBLE_POINTS / labels.length) * 100)
+  if (labels.length > defaultVisiblePoints) {
+    // 默认显示最后 defaultVisiblePoints 个点
+    // startZoom 计算公式： (1 - 可见点数 / 总数) * 100
+    startZoom = Math.floor((1 - defaultVisiblePoints / labels.length) * 100)
     endZoom = 100
   }
 

@@ -22,6 +22,9 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker'
 import { openDatePicker } from '@/utils/datePicker'
 import { uploadFile } from '@/api/upload'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, RootState } from '@/store'
+import { fetchBabyProfile } from '@/store/modules/BabyStore'
 
 interface ImageItem {
   uri: string
@@ -30,6 +33,14 @@ interface ImageItem {
 }
 
 export default function AddMilestoneScreen() {
+  const dispatch = useDispatch<AppDispatch>()
+  const { currentBabyId, currentBabyDetail } = useSelector(
+    (state: RootState) => state.baby
+  )
+  const birthdayMinDate = currentBabyDetail?.birthday
+    ? new Date(currentBabyDetail.birthday)
+    : undefined
+
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
@@ -37,18 +48,36 @@ export default function AddMilestoneScreen() {
   const [eventTime, setEventTime] = useState<number | null>(null)
   const [showPicker, setShowPicker] = useState(false)
 
+  React.useEffect(() => {
+    if (!currentBabyId) return
+    if (!currentBabyDetail || currentBabyDetail.baby_id !== currentBabyId) {
+      dispatch(fetchBabyProfile(currentBabyId))
+    }
+  }, [currentBabyId, currentBabyDetail, dispatch])
+
   const handlePickTime = () => setShowPicker(true)
 
   const onTimeChange = (_: DateTimePickerEvent, selected?: Date) => {
-    if (selected) setEventTime(selected.getTime())
+    if (selected) {
+      const selectedTime = selected.getTime()
+      if (birthdayMinDate && selectedTime < birthdayMinDate.getTime()) {
+        setEventTime(birthdayMinDate.getTime())
+        return
+      }
+      setEventTime(selectedTime)
+    }
   }
 
   const showDate = () => {
+    const baseDate = eventTime ? new Date(eventTime) : new Date()
+    const initialDate =
+      birthdayMinDate && baseDate < birthdayMinDate ? birthdayMinDate : baseDate
     const handled = openDatePicker(
-      eventTime ? new Date(eventTime) : new Date(),
+      initialDate,
       onTimeChange,
       'date',
-      new Date()
+      new Date(),
+      birthdayMinDate
     )
     if (!handled) {
       setShowPicker(true)
@@ -161,9 +190,17 @@ export default function AddMilestoneScreen() {
                   <DateTimePicker
                     mode="date"
                     display="spinner"
-                    value={eventTime ? new Date(eventTime) : new Date()}
+                    value={
+                      eventTime
+                        ? new Date(eventTime)
+                        : birthdayMinDate && birthdayMinDate > new Date()
+                          ? birthdayMinDate
+                          : new Date()
+                    }
                     onChange={onTimeChange}
                     style={{ width: '100%', height: 150 }}
+                    minimumDate={birthdayMinDate}
+                    maximumDate={new Date()}
                   />
                 </View>
               )}

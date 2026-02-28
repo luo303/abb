@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
@@ -12,16 +12,22 @@ export default function PostUserInfo() {
 
   // 获取头像，使用默认头像作为兜底
   const avatarUrl = userInfo?.avatar
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
+
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [avatarUrl])
 
   return (
     <View style={styles.container}>
       <Image
         source={
-          avatarUrl
+          avatarUrl && !avatarLoadError
             ? { uri: avatarUrl }
             : require('../../../assets/testAvatar.png')
         }
         style={styles.avatar}
+        onError={() => setAvatarLoadError(true)}
       />
       <View style={styles.info}>
         <Text style={styles.nickname}>{userName}</Text>

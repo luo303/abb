@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
   Platform,
   KeyboardAvoidingView
 } from 'react-native'
@@ -20,17 +21,29 @@ import CurveWeightChart from '../../components/growth/curve/CurveWeightChart'
 import CurveHeadChart from '../../components/growth/curve/CurveHeadChart'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store'
-import { fetchGrowthCurve } from '../../store/modules/BabyStore'
+import {
+  fetchGrowthCurve,
+  fetchBabyProfile,
+  upsertGrowthRecord
+} from '../../store/modules/BabyStore'
+import { useMessage } from '../../components/Message'
 
 export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [activeTab, setActiveTab] = useState('record') // record, height, weight, head
-  const { currentBabyId, babiesList, growthCurve } = useSelector(
-    (state: RootState) => state.baby
-  )
+  const { currentBabyId, currentBabyDetail, babiesList, growthCurve } =
+    useSelector((state: RootState) => state.baby)
   const hasBaby = !!currentBabyId || (babiesList && babiesList.length > 0)
   const dispatch = useDispatch<any>()
+  const { showMessage } = useMessage()
+
+  useEffect(() => {
+    if (!currentBabyId) return
+    if (!currentBabyDetail || currentBabyDetail.baby_id !== currentBabyId) {
+      dispatch(fetchBabyProfile(currentBabyId))
+    }
+  }, [dispatch, currentBabyId, currentBabyDetail])
 
   useEffect(() => {
     if (!currentBabyId) return
@@ -74,6 +87,7 @@ export default function GrowthCurveScreen() {
   const [weight, setWeight] = useState('')
   const [headCircumference, setHeadCircumference] = useState('')
   const [date, setDate] = useState<number>(Date.now())
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 检查表单是否已填写（所有项都必须填写）
   const isFormValid = height && weight && headCircumference
@@ -84,6 +98,83 @@ export default function GrowthCurveScreen() {
     { key: 'weight', label: '体重曲线' },
     { key: 'head', label: '头围曲线' }
   ]
+
+  const handleSaveRecord = async () => {
+    if (!currentBabyId || isSubmitting) return
+
+    const parsedHeight = Number(height)
+    const parsedWeight = Number(weight)
+    const parsedHead = Number(headCircumference)
+
+    if (
+      Number.isNaN(parsedHeight) ||
+      Number.isNaN(parsedWeight) ||
+      Number.isNaN(parsedHead)
+    ) {
+      showMessage('请输入有效的数值')
+      return
+    }
+
+    if (parsedHeight <= 0 || parsedWeight <= 0 || parsedHead <= 0) {
+      showMessage('数值需大于 0')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const resultAction = await dispatch(
+        upsertGrowthRecord({
+          baby_id: currentBabyId,
+          record_time: date,
+          height: parsedHeight,
+          weight: parsedWeight,
+          head_circumference: parsedHead,
+          remark: ''
+        })
+      )
+
+      if (upsertGrowthRecord.fulfilled.match(resultAction)) {
+        if (resultAction.payload?.code === 0) {
+          showMessage(resultAction.payload.data?.message || '保存成功')
+          setHeight('')
+          setWeight('')
+          setHeadCircumference('')
+
+          await Promise.all([
+            dispatch(
+              fetchGrowthCurve({
+                baby_id: currentBabyId,
+                metric: 'height',
+                group_by: 'day'
+              })
+            ),
+            dispatch(
+              fetchGrowthCurve({
+                baby_id: currentBabyId,
+                metric: 'weight',
+                group_by: 'day'
+              })
+            ),
+            dispatch(
+              fetchGrowthCurve({
+                baby_id: currentBabyId,
+                metric: 'head_circumference',
+                group_by: 'day'
+              })
+            )
+          ])
+        } else {
+          showMessage(resultAction.payload?.message || '保存失败')
+        }
+      } else {
+        showMessage((resultAction.payload as string) || '保存失败')
+      }
+    } catch {
+      Alert.alert('提示', '保存失败，请稍后重试')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -125,6 +216,7 @@ export default function GrowthCurveScreen() {
               setHeadCircumference={setHeadCircumference}
               date={date}
               onDateChange={setDate}
+              minDate={currentBabyDetail?.birthday}
             />
           )}
 
@@ -141,19 +233,25 @@ export default function GrowthCurveScreen() {
             <TouchableOpacity
               style={[
                 styles.saveButton,
-                !isFormValid && styles.saveButtonDisabled
+                (!isFormValid || isSubmitting) && styles.saveButtonDisabled
               ]}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
+              onPress={handleSaveRecord}
             >
               <Text
                 style={[
                   styles.saveButtonText,
-                  !isFormValid && styles.saveButtonTextDisabled
+                  (!isFormValid || isSubmitting) &&
+                    styles.saveButtonTextDisabled
                 ]}
               >
-                {isFormValid ? '保存记录' : '请填写数据'}
+                {isSubmitting
+                  ? '保存中...'
+                  : isFormValid
+                    ? '保存记录'
+                    : '请填写数据'}
               </Text>
-              {isFormValid && (
+              {isFormValid && !isSubmitting && (
                 <Ionicons
                   name="arrow-forward"
                   size={20}

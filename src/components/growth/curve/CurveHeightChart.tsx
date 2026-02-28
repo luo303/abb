@@ -36,12 +36,32 @@ export default function CurveHeightChart({
       .sort((a, b) => a.day - b.day)
   }, [growthCurve.height, currentBabyDetail])
 
+  const hasBabyHistory = babyGrowthData.length > 0
+
   const { standardData, babyData, xAxisName } = useMemo(() => {
     let xAxisName = '天'
     let baby: any[] = []
 
-    if (babyGrowthData.length === 0) {
-      return { standardData: [], babyData: [], xAxisName }
+    if (!hasBabyHistory) {
+      if (timeRange === 'day') {
+        const standard = STANDARD_GROWTH_DATA.height.map(item => ({
+          label: item.day,
+          value: item.male
+        }))
+        return { standardData: standard, babyData: [], xAxisName: '天' }
+      }
+      const period = timeRange === 'week' ? 7 : 30
+      xAxisName = timeRange === 'week' ? '周' : '月'
+      const standard = STANDARD_GROWTH_DATA.height
+        .filter(item => {
+          const day = Number(item.day)
+          return day >= period && day % period === 0
+        })
+        .map(item => ({
+          label: (Number(item.day) / period).toString(),
+          value: item.male
+        }))
+      return { standardData: standard, babyData: [], xAxisName }
     }
 
     if (timeRange === 'day') {
@@ -94,7 +114,7 @@ export default function CurveHeightChart({
       })
 
     return { standardData: standard, babyData: baby, xAxisName }
-  }, [timeRange, babyGrowthData])
+  }, [timeRange, babyGrowthData, hasBabyHistory])
 
   const { yMin, yMax } = useMemo(() => {
     const values = [

@@ -177,13 +177,13 @@ export default function GrowthRecord() {
   )
   const heightText = currentBabyDetail?.height
     ? `${currentBabyDetail.height} cm`
-    : '身高--'
+    : '--'
   const weightText = currentBabyDetail?.weight
     ? `${currentBabyDetail.weight} kg`
-    : '体重--'
+    : '--'
   const headText = currentBabyDetail?.head_circumference
     ? `${currentBabyDetail.head_circumference} cm`
-    : '头围--'
+    : '--'
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 顶部背景装饰 */}

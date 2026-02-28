@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '@/types/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/store'
-import { fetchBabies } from '@/store/modules/BabyStore'
+import { fetchBabies, fetchBabyProfile } from '@/store/modules/BabyStore'
 import VaccineCard from '@/components/vaccine/VaccineCard'
 import {
   getVaccineListReq,
@@ -31,9 +31,12 @@ export default function VaccineRecordScreen() {
   const navigation = useNavigation<NavigationProps>()
   const dispatch = useDispatch<AppDispatch>()
   const { showMessage } = useMessage()
-  const currentBabyId = useSelector(
-    (state: RootState) => state.baby.currentBabyId
+  const { currentBabyId, currentBabyDetail } = useSelector(
+    (state: RootState) => state.baby
   )
+  const birthdayMinDate = currentBabyDetail?.birthday
+    ? new Date(currentBabyDetail.birthday)
+    : undefined
 
   const [filter, setFilter] = useState<FilterType>('all')
   const [vaccines, setVaccines] = useState<VaccineItem[]>([])
@@ -102,6 +105,13 @@ export default function VaccineRecordScreen() {
     }
   }, [currentBabyId, dispatch])
 
+  useEffect(() => {
+    if (!currentBabyId) return
+    if (!currentBabyDetail || currentBabyDetail.baby_id !== currentBabyId) {
+      dispatch(fetchBabyProfile(currentBabyId))
+    }
+  }, [currentBabyId, currentBabyDetail, dispatch])
+
   // 进入页面或切换 Filter 时获取数据
   useEffect(() => {
     fetchVaccineList()
@@ -123,7 +133,11 @@ export default function VaccineRecordScreen() {
   // 确认iOS日期选择
   const confirmIOSDate = () => {
     if (targetIdRef.current) {
-      updateVaccineStatus(targetIdRef.current, true, selectedDate)
+      const finalDate =
+        birthdayMinDate && selectedDate < birthdayMinDate
+          ? birthdayMinDate
+          : selectedDate
+      updateVaccineStatus(targetIdRef.current, true, finalDate)
     }
     setShowIOSPicker(false)
     targetIdRef.current = null
@@ -201,9 +215,17 @@ export default function VaccineRecordScreen() {
     // 接种，需要选择日期
     targetIdRef.current = id
     const now = new Date()
-    setSelectedDate(now)
+    const initialDate =
+      birthdayMinDate && now < birthdayMinDate ? birthdayMinDate : now
+    setSelectedDate(initialDate)
 
-    const handled = openDatePicker(now, handleDateChange, 'date', now)
+    const handled = openDatePicker(
+      initialDate,
+      handleDateChange,
+      'date',
+      new Date(),
+      birthdayMinDate
+    )
     if (!handled) {
       setShowIOSPicker(true)
     }
@@ -213,14 +235,17 @@ export default function VaccineRecordScreen() {
   const handleDateClick = (id: string, date?: number) => {
     targetIdRef.current = id
     // 如果已有日期，使用该日期初始化；否则使用当前日期
-    const initialDate = date ? new Date(date) : new Date()
+    const baseDate = date ? new Date(date) : new Date()
+    const initialDate =
+      birthdayMinDate && baseDate < birthdayMinDate ? birthdayMinDate : baseDate
     setSelectedDate(initialDate)
 
     const handled = openDatePicker(
       initialDate,
       handleDateChange,
       'date',
-      new Date()
+      new Date(),
+      birthdayMinDate
     )
     if (!handled) {
       setShowIOSPicker(true)
@@ -318,6 +343,8 @@ export default function VaccineRecordScreen() {
               onChange={handleDateChange}
               style={styles.iosPicker}
               locale="zh-CN"
+              minimumDate={birthdayMinDate}
+              maximumDate={new Date()}
             />
           </View>
         </View>

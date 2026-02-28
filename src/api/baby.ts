@@ -63,6 +63,20 @@ export interface GrowthCurveResponse {
   items: GrowthCurveItem[]
 }
 
+export interface UpsertGrowthRecordParams {
+  baby_id: string
+  record_time: number
+  height: number
+  weight: number
+  head_circumference: number
+  remark: string
+}
+
+export interface UpsertGrowthRecordResponse {
+  record_id: string
+  message: string
+}
+
 export interface BabyPhotoItem {
   photo_id: string
   link: string
@@ -112,6 +126,10 @@ export const getGrowthCurveReq = (params: GrowthCurveParams) => {
   return request.get('/baby/growthCurve', {
     params
   })
+}
+
+export const upsertGrowthRecordReq = (data: UpsertGrowthRecordParams) => {
+  return request.post('/baby/growthRecords', data)
 }
 
 export const getBabyPhotoListReq = async (

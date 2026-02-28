@@ -6,17 +6,22 @@ export type TimeRange = 'day' | 'week' | 'month'
 interface TimeRangeSelectorProps {
   value: TimeRange
   onChange: (value: TimeRange) => void
+  ranges?: TimeRange[]
 }
 
 export default function TimeRangeSelector({
   value,
-  onChange
+  onChange,
+  ranges
 }: TimeRangeSelectorProps) {
-  const options: { label: string; value: TimeRange }[] = [
+  const allOptions: { label: string; value: TimeRange }[] = [
     { label: '天', value: 'day' },
     { label: '周', value: 'week' },
     { label: '月', value: 'month' }
   ]
+  const options = ranges
+    ? allOptions.filter(option => ranges.includes(option.value))
+    : allOptions
 
   return (
     <View style={styles.container}>

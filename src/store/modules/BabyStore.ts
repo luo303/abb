@@ -12,7 +12,10 @@ import {
   BabyProfile,
   GrowthCurveParams,
   GrowthCurveResponse,
-  GrowthCurveItem
+  GrowthCurveItem,
+  UpsertGrowthRecordParams,
+  UpsertGrowthRecordResponse,
+  upsertGrowthRecordReq
 } from '../../api/baby'
 
 interface BabyState {
@@ -86,6 +89,18 @@ export const fetchGrowthCurve = createAsyncThunk<
     console.log(response)
 
     return response as unknown as ApiResponse<GrowthCurveResponse>
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || error.message)
+  }
+})
+
+export const upsertGrowthRecord = createAsyncThunk<
+  ApiResponse<UpsertGrowthRecordResponse>,
+  UpsertGrowthRecordParams
+>('baby/upsertGrowthRecord', async (params, { rejectWithValue }) => {
+  try {
+    const response = await upsertGrowthRecordReq(params)
+    return response as unknown as ApiResponse<UpsertGrowthRecordResponse>
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || error.message)
   }
@@ -184,6 +199,21 @@ const babySlice = createSlice({
         }
       })
       .addCase(fetchGrowthCurve.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      // Upsert Growth Record
+      .addCase(upsertGrowthRecord.pending, state => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(upsertGrowthRecord.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload?.code !== 0) {
+          state.error = action.payload?.message || '保存成长记录失败'
+        }
+      })
+      .addCase(upsertGrowthRecord.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string
       })

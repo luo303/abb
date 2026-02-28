@@ -22,6 +22,7 @@ interface CurveRecordFormProps {
   setHeadCircumference: (text: string) => void
   date: number
   onDateChange: (date: number) => void
+  minDate?: number
 }
 
 export default function CurveRecordForm({
@@ -32,12 +33,14 @@ export default function CurveRecordForm({
   headCircumference,
   setHeadCircumference,
   date,
-  onDateChange
+  onDateChange,
+  minDate
 }: CurveRecordFormProps) {
   const [showDatePicker, setShowDatePicker] = useState(false)
 
   // 转换时间戳为 Date 对象
   const dateObj = new Date(date)
+  const minDateObj = typeof minDate === 'number' ? new Date(minDate) : undefined
 
   // 格式化日期 YYYY-MM-DD
   const formatDate = (d: Date) => {
@@ -54,7 +57,12 @@ export default function CurveRecordForm({
     selectedDate?: Date
   ) => {
     if (event.type === 'set' && selectedDate) {
-      onDateChange(selectedDate.getTime())
+      const selectedTime = selectedDate.getTime()
+      if (typeof minDate === 'number' && selectedTime < minDate) {
+        onDateChange(minDate)
+        return
+      }
+      onDateChange(selectedTime)
     }
   }
 
@@ -63,7 +71,8 @@ export default function CurveRecordForm({
       dateObj,
       handleDateChange,
       currentMode,
-      new Date()
+      new Date(),
+      minDateObj
     )
     if (!handled) {
       setShowDatePicker(!showDatePicker)
@@ -99,6 +108,7 @@ export default function CurveRecordForm({
             style={styles.datePicker}
             locale="zh-CN"
             maximumDate={new Date()}
+            minimumDate={minDateObj}
           />
         </View>
       )}

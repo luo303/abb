@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
@@ -58,6 +58,12 @@ export default function CommentItem({
   onLike,
   onReply
 }: CommentItemProps) {
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
+
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [comment.avatar])
+
   const flatReplies = useMemo(() => {
     const result: { node: Comment; parentNickname?: string }[] = []
 
@@ -91,11 +97,12 @@ export default function CommentItem({
     <View style={styles.container}>
       <Image
         source={
-          comment.avatar
+          !avatarLoadError && comment.avatar
             ? { uri: comment.avatar }
             : require('@/assets/testAvatar.png')
         }
         style={styles.avatar}
+        onError={() => setAvatarLoadError(true)}
       />
 
       <View style={styles.contentContainer}>

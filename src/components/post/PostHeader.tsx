@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 
 interface PostHeaderProps {
@@ -16,10 +16,27 @@ export default function PostHeader({
   isFollowing = false,
   onFollow
 }: PostHeaderProps) {
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
+
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [avatar])
+
+  const avatarSource = useMemo(() => {
+    if (avatarLoadError) {
+      return require('@/assets/testAvatar.png')
+    }
+    return avatar || require('@/assets/testAvatar.png')
+  }, [avatar, avatarLoadError])
+
   return (
     <View style={styles.container}>
       <View style={styles.userInfo}>
-        <Image source={avatar} style={styles.avatar} />
+        <Image
+          source={avatarSource}
+          style={styles.avatar}
+          onError={() => setAvatarLoadError(true)}
+        />
         <View style={styles.textContainer}>
           <Text style={styles.nickname}>{nickname}</Text>
           {description && <Text style={styles.description}>{description}</Text>}
