@@ -3,14 +3,13 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
-import Animated from 'react-native-reanimated'
+
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import HomeSearchBar from '@/components/home/search/HomeSearchBar'
@@ -25,7 +24,6 @@ import { useHomeData } from '@/hooks/useHomeData'
 import { useHomeSearch } from '@/hooks/useHomeSearch'
 import { useHomeAnimations } from '@/hooks/useHomeAnimations'
 import { styles } from '@/styles/Home.styles'
-import { PostItem } from '@/types/home'
 
 export default function Home() {
   const navigation = useNavigation()
@@ -58,16 +56,15 @@ export default function Home() {
 
   const {
     handleScroll,
-    stickyHeaderAnimatedStyle,
-    headerBackgroundStyle,
     measureSearchBar,
-    measureCommunityHeader
+    measureCommunityHeader,
+    stickyProgress
   } = useHomeAnimations()
 
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
 
-  // 使用 useMemo 计算排序后的帖子，只有当业务数据变化时才重新计算
+  // 使用 useMemo 计算排序后的帖子
   const sortedPosts = useMemo(() => {
     const filtered = isSearching
       ? Array.isArray(searchResults)
@@ -75,27 +72,19 @@ export default function Home() {
         : []
       : posts
 
-    // 根据标签栏筛选和排序帖子
     return activeTab === '关注'
       ? [...filtered]
           .filter(post => post.is_followed === true)
           .sort((a, b) => {
-            // 关注标签下按照发布时间排序
-            if (a.ctime && b.ctime) {
-              return b.ctime - a.ctime
-            }
+            if (a.ctime && b.ctime) return b.ctime - a.ctime
             return Math.random() - 0.5
           })
       : [...filtered].sort((a, b) => {
           switch (activeTab) {
             case '推荐':
-              // 按照发布时间排序（如果有ctime字段），否则随机排序
-              if (a.ctime && b.ctime) {
-                return b.ctime - a.ctime
-              }
+              if (a.ctime && b.ctime) return b.ctime - a.ctime
               return Math.random() - 0.5
             case '热门':
-              // 按照点赞数由高到低排序
               return (b.like_count || 0) - (a.like_count || 0)
             default:
               return 0
@@ -103,27 +92,74 @@ export default function Home() {
         })
   }, [isSearching, searchResults, posts, activeTab])
 
-  // 使用 useMemo 锁定列表数据，只有当排序后的帖子变化时才重新计算
+  // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
   const flatListData = useMemo(() => {
-    if (isSearching) return sortedPosts
-    return sortedPosts.map(post => ({
-      type: 'post',
-      id: post.post_id || `unknown-${Math.random()}`,
-      data: post
-    }))
+    if (isSearching) {
+      return [
+        { type: 'search-header', id: '__search_header__' },
+        ...sortedPosts.map((post: any, i: number) => ({
+          type: 'post',
+          id: post.post_id || `unknown-${i}`,
+          data: post
+        }))
+      ]
+    }
+
+    return [
+      { type: 'header', id: '__header__' }, // index 0：顶部内容
+      { type: 'tabs', id: '__tabs__' }, // index 1：Tab 栏（吸顶）
+      ...sortedPosts.map((post: any) => ({
+        type: 'post',
+        id: post.post_id || `unknown-${Math.random()}`,
+        data: post
+      }))
+    ]
   }, [isSearching, sortedPosts])
 
   // 渲染 FlatList 项
   const renderItem = useCallback(
     ({ item }: { item: any }) => {
-      if (isSearching) {
+      // 搜索模式下的头部
+      if (item.type === 'search-header') {
         return (
-          <View style={{ marginBottom: 12 }}>
-            <HomeCommunityCard data={item} />
+          <View style={styles.communitySection}>
+            <SearchEmptyState isLoading={searchLoading} />
           </View>
         )
       }
 
+      // 顶部轮播图等 Header 区域
+      if (item.type === 'header') {
+        return <MemoHeaderSections style={styles.topSection} />
+      }
+
+      // ✅ Tab 标签栏（吸顶项）
+      // 底层透明，Animated.View 叠加渐变背景随吸顶进度淡入
+      // 吸顶前：背景透明（视觉与顶部渐变区域连贯）
+      // 标签栏：使用动态背景透明度效果，与首页背景颜色一致
+      if (item.type === 'tabs') {
+        return (
+          <View style={localStyles.tabsWrapper}>
+            {/* 渐变背景：与首页背景颜色一致 */}
+            <LinearGradient
+              colors={['#fff1f2', '#ffe4e6']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Tab 内容层 */}
+            <View ref={communityHeaderRef} onLayout={measureCommunityHeader}>
+              <StickyTabHeader
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
+            </View>
+          </View>
+        )
+      }
+
+      // 普通帖子
       if (item.type === 'post') {
         return (
           <View style={{ marginBottom: 12 }}>
@@ -134,38 +170,17 @@ export default function Home() {
 
       return null
     },
-    [isSearching]
+    [
+      isSearching,
+      searchLoading,
+      activeTab,
+      setActiveTab,
+      measureCommunityHeader
+    ]
   )
-
-  // 使用 useCallback 锁定 Header，防止 FlatList 每次都重挂载 Header
-  const renderHeader = useCallback(() => {
-    if (isSearching) {
-      return (
-        <View style={styles.communitySection}>
-          <SearchEmptyState isLoading={searchLoading} />
-        </View>
-      )
-    }
-
-    return (
-      <View>
-        <MemoHeaderSections style={styles.topSection} />
-        <View ref={communityHeaderRef} onLayout={measureCommunityHeader}>
-          <StickyTabHeader activeTab={activeTab} onTabChange={setActiveTab} />
-        </View>
-      </View>
-    )
-  }, [
-    isSearching,
-    searchLoading,
-    activeTab,
-    setActiveTab,
-    measureCommunityHeader
-  ])
 
   // 滚动到社区模块
   const handleScrollToCommunity = useCallback(() => {
-    // 滚动到社区标题栏位置，确保吸顶效果完全显示
     communityHeaderRef.current?.measure((x, y, width, height, pageX, pageY) => {
       flatListRef.current?.scrollToOffset({
         offset: pageY - insets.top,
@@ -174,19 +189,12 @@ export default function Home() {
     })
   }, [insets.top])
 
-  // 监听路由参数，如果有新发布的帖子，添加到列表头部
+  // 监听路由参数，添加新帖子
   useEffect(() => {
-    // 检查 route.params 是否存在，避免 undefined 错误
     if (route.params && route.params.newPost) {
-      // 更新本地帖子列表
       addNewPost(route.params.newPost)
-
-      // 清除参数
       // @ts-ignore
       navigation.setParams({ newPost: null })
-
-      // 自动滚动到社区模块顶部，确保用户看到新帖子
-      // 使用 setTimeout 确保渲染完成后滚动
       setTimeout(() => {
         handleScrollToCommunity()
       }, 300)
@@ -215,7 +223,6 @@ export default function Home() {
       )
     }
 
-    // 关注标签的空状态提示
     if (activeTab === '关注' && sortedPosts.length === 0) {
       return <FollowEmptyState onGoToRecommend={() => setActiveTab('推荐')} />
     }
@@ -263,72 +270,28 @@ export default function Home() {
             end={{ x: 0.5, y: 1 }}
             style={[styles.headerGradient, { height: 280 + insets.top }]}
           />
-          <View style={styles.headerCurve} />
-          <Animated.View
-            style={[
-              {
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0
-              },
-              { backgroundColor: '#fff' },
-              headerBackgroundStyle
-            ]}
-          />
         </View>
 
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          {/* 搜索栏固定位置，不参与滚动 */}
+          {/* 搜索栏固定，不参与滚动 */}
           <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
             <HomeSearchBar onSearch={handleSearch} />
           </View>
 
-          {/* 固定的社区标题栏（使用动画实现平滑过渡） */}
-          {!isSearching && (
-            <Animated.View
-              style={[styles.stickyHeader, stickyHeaderAnimatedStyle]}
-            >
-              <LinearGradient
-                colors={['#fff1f2', '#ffe4e6']}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0
-                }}
-              />
-              <View style={{ zIndex: 1 }}>
-                <StickyTabHeader
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                />
-              </View>
-            </Animated.View>
-          )}
-
-          {/* 使用 FlatList 实现滚动 */}
+          {/* FlatList：stickyHeaderIndices={[1]} 让 tabs 项原生吸顶 */}
           <FlatList
             ref={flatListRef}
             style={styles.container}
-            contentContainerStyle={[{ paddingBottom: 150 }]}
+            contentContainerStyle={{ paddingBottom: 150 }}
             showsVerticalScrollIndicator={false}
             data={flatListData}
-            keyExtractor={(item, index) => {
-              if (isSearching) {
-                return item.post_id || `post-${index}`
-              }
-              return item.id || `item-${index}`
-            }}
+            keyExtractor={(item, index) => item.id || `item-${index}`}
             renderItem={renderItem}
             initialNumToRender={5}
             maxToRenderPerBatch={10}
             windowSize={21}
-            ListHeaderComponent={renderHeader}
+            // ✅ 非搜索模式下，index=1 的 tabs 项吸顶
+            stickyHeaderIndices={isSearching ? [] : [1]}
             ListFooterComponent={ListFooterComponent}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -346,8 +309,6 @@ export default function Home() {
                 onRefresh={handleRefresh}
                 colors={['#f43f5e']}
                 tintColor="#f43f5e"
-                // 关键：将刷新圆圈向下偏移，偏移量大约是轮播图的一半高度
-                // 这样圆圈会悬浮在轮播图上方刷新，而不会把轮播图往下顶，视觉上更稳
                 progressViewOffset={100}
               />
             }
@@ -357,3 +318,11 @@ export default function Home() {
     </HomeScrollToContext.Provider>
   )
 }
+
+const localStyles = StyleSheet.create({
+  tabsWrapper: {
+    overflow: 'hidden',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22
+  }
+})

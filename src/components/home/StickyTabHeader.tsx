@@ -89,12 +89,12 @@ export default function StickyTabHeader({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 8,
-    marginTop: 15,
-    shadowColor: '#f43f5e',
+    paddingHorizontal: 16,
+    marginTop: 0,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 3,
     zIndex: 10
   },
