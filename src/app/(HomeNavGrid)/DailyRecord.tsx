@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { View, StyleSheet, ScrollView, Platform } from 'react-native'
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  TouchableOpacity,
+  Text
+} from 'react-native'
 import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import dayjs from 'dayjs'
@@ -20,6 +27,7 @@ export default function DailyRecordScreen() {
     dayjs().format('YYYY-MM-DD')
   )
   const [currentRecords, setCurrentRecords] = useState<RecordItem[]>([])
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const [statistics, setStatistics] = useState<Statistics>({
     feedingCount: 0,
     feedingVolume: 0,
@@ -77,6 +85,11 @@ export default function DailyRecordScreen() {
 
   // 处理日期选择器确认
   const handleDatePickerConfirm = (event: any, date?: Date) => {
+    // Android需要手动关闭picker
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false)
+    }
+
     if (date) {
       const selectedDate = dayjs(date).format('YYYY-MM-DD')
       setSelectedDate(selectedDate)
@@ -163,15 +176,37 @@ export default function DailyRecordScreen() {
               color="#f43f5e"
             />
           </Button>
+
           <View style={styles.datePickerContainer}>
-            <DateTimePicker
-              value={new Date(selectedDate)}
-              mode="date"
-              display="default"
-              maximumDate={new Date()}
-              onChange={handleDatePickerConfirm}
-            />
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                value={new Date(selectedDate)}
+                mode="date"
+                display="default"
+                maximumDate={new Date()}
+                onChange={handleDatePickerConfirm}
+              />
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.dateTextContainer}
+                >
+                  <Text style={styles.dateText}>{selectedDate}</Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(selectedDate)}
+                    mode="date"
+                    display="default"
+                    maximumDate={new Date()}
+                    onChange={handleDatePickerConfirm}
+                  />
+                )}
+              </>
+            )}
           </View>
+
           <Button
             type="ghost"
             size="large"
@@ -257,7 +292,19 @@ const styles = StyleSheet.create({
   },
   datePickerContainer: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dateTextContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333'
   },
   dateNavigation: {
     flexDirection: 'row',
