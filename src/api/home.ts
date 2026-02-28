@@ -58,7 +58,7 @@ export interface CreatePostParams {
   images: string[]
   tags: string[]
   isPublic: number // 1: 公开, 0: 私密
-  status: 'published' | 'draft' // 状态：发布或草稿
+  status: 'published' | 'draft' | 'milestone' // 状态：发布或草稿或大事记
   title?: string // 帖子标题
 }
 

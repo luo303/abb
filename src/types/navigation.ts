@@ -10,7 +10,6 @@ export type RootStackParamList = {
   Taboo: undefined
   DailyRecord: undefined
   VaccineRecord: undefined
-  BabyStories: undefined
   Album: undefined
   GrowthCurve: undefined
   Diary: undefined
@@ -19,6 +18,7 @@ export type RootStackParamList = {
   AddBaby: undefined
   EditProfile: undefined
   VaccineDetail: { url: string; title: string }
+  AddMilestone: undefined
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>

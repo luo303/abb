@@ -37,11 +37,11 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
         onPress={() => navigation.navigate('VaccineRecord')}
       />
       <NavItem
-        icon="book-open-page-variant"
-        label="宝宝故事"
+        icon="star-outline"
+        label="大事记"
         library="MaterialCommunityIcons"
-        color="#BA68C8" // 浅紫色
-        onPress={() => navigation.navigate('BabyStories')}
+        color="#F59E0B"
+        onPress={() => navigation.navigate('AddMilestone')}
       />
     </LinearGradient>
   )

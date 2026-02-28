@@ -4,7 +4,11 @@ import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-export default function AddPostHeader() {
+export default function AddPostHeader({
+  title = '发布帖子'
+}: {
+  title?: string
+}) {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
 
@@ -16,7 +20,7 @@ export default function AddPostHeader() {
       >
         <Ionicons name="close-outline" size={28} color="#333" />
       </TouchableOpacity>
-      <Text style={styles.title}>发布帖子</Text>
+      <Text style={styles.title}>{title}</Text>
       <View style={{ width: 38 }} />
     </View>
   )

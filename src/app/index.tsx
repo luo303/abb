@@ -13,10 +13,10 @@ import PasswordScreen from './password'
 import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
+import AddMilestoneScreen from './milestone/AddMilestone'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
 import TabooScreen from './(HomeNavGrid)/Taboo'
-import BabyStoriesScreen from './(HomeNavGrid)/BabyStories'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
@@ -102,11 +102,6 @@ export default function Layout() {
                 options={{ title: '查忌口' }}
               />
               <Stack.Screen
-                name="BabyStories"
-                component={BabyStoriesScreen}
-                options={{ title: '宝宝故事' }}
-              />
-              <Stack.Screen
                 name="DailyRecord"
                 component={DailyRecordScreen}
                 options={{ title: '日常记录' }}
@@ -141,6 +136,11 @@ export default function Layout() {
               <Stack.Screen
                 name="AddPost"
                 component={AddPostScreen}
+                options={{ headerShown: false, presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="AddMilestone"
+                component={AddMilestoneScreen}
                 options={{ headerShown: false, presentation: 'modal' }}
               />
               <Stack.Screen
