@@ -1,6 +1,5 @@
 import React from 'react'
-import { Text, StyleSheet, View } from 'react-native'
-import { InputItem } from '@ant-design/react-native'
+import { Text, StyleSheet, View, TextInput } from 'react-native'
 
 interface AmountInputProps {
   value: string
@@ -44,15 +43,16 @@ const AmountInput: React.FC<AmountInputProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.labelText}>{getLabel(type)}</Text>
-      <InputItem
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        keyboardType="numeric"
-        style={styles.inputItem}
-        extra={<Text style={styles.unitText}>{getUnit(type)}</Text>}
-        last
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder={placeholder}
+          keyboardType="numeric"
+          style={styles.inputItem}
+        />
+        <Text style={styles.unitText}>{getUnit(type)}</Text>
+      </View>
     </View>
   )
 }
@@ -62,15 +62,24 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 16
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
   inputItem: {
-    paddingVertical: 8,
-    borderBottomWidth: 0,
-    width: '100%'
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    fontSize: 16,
+    color: '#333'
   },
   unitText: {
-    fontSize: 14,
-    color: '#999',
-    marginLeft: 8
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 12
   },
   labelText: {
     fontSize: 14,
