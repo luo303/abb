@@ -11,70 +11,98 @@ const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
   selectedType,
   onTypeChange
 }) => {
-  const getIconName = (type: '奶粉' | '母乳' | '辅食') => {
+  // 根据选中类型获取按钮颜色
+  const getButtonColor = (type: '奶粉' | '母乳' | '辅食'): string => {
     switch (type) {
       case '奶粉':
-        return 'baby-bottle'
+        return '#b45309' // 深奶黄色
       case '母乳':
-        return 'water'
+        return '#e11d48' // 深珊瑚粉
       case '辅食':
-        return 'food'
+        return '#166534' // 深苹果绿
       default:
-        return 'baby-bottle'
+        return '#333333'
     }
   }
+
+  // 获取当前选中类型的颜色
+  const currentColor = getButtonColor(selectedType)
 
   return (
     <View style={styles.tabContainer}>
       <TouchableOpacity
-        style={[styles.tab, selectedType === '奶粉' && styles.activeTab]}
+        style={[
+          styles.tab,
+          selectedType === '奶粉' && [
+            styles.activeTab,
+            { backgroundColor: currentColor, shadowColor: currentColor }
+          ]
+        ]}
         onPress={() => onTypeChange('奶粉')}
       >
-        <MaterialCommunityIcons
-          name={getIconName('奶粉')}
-          size={24}
-          color={selectedType === '奶粉' ? '#fff' : '#f43f5e'}
-        />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name="baby-bottle"
+            size={24}
+            color={selectedType === '奶粉' ? '#fff' : currentColor}
+          />
+        </View>
         <Text
           style={[
             styles.tabText,
-            selectedType === '奶粉' && styles.activeTabText
+            selectedType === '奶粉' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >
           奶粉
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.tab, selectedType === '母乳' && styles.activeTab]}
+        style={[
+          styles.tab,
+          selectedType === '母乳' && [
+            styles.activeTab,
+            { backgroundColor: currentColor, shadowColor: currentColor }
+          ]
+        ]}
         onPress={() => onTypeChange('母乳')}
       >
-        <MaterialCommunityIcons
-          name={getIconName('母乳')}
-          size={24}
-          color={selectedType === '母乳' ? '#fff' : '#f43f5e'}
-        />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name="water"
+            size={24}
+            color={selectedType === '母乳' ? '#fff' : currentColor}
+          />
+        </View>
         <Text
           style={[
             styles.tabText,
-            selectedType === '母乳' && styles.activeTabText
+            selectedType === '母乳' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >
           母乳
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.tab, selectedType === '辅食' && styles.activeTab]}
+        style={[
+          styles.tab,
+          selectedType === '辅食' && [
+            styles.activeTab,
+            { backgroundColor: currentColor, shadowColor: currentColor }
+          ]
+        ]}
         onPress={() => onTypeChange('辅食')}
       >
-        <MaterialCommunityIcons
-          name={getIconName('辅食')}
-          size={24}
-          color={selectedType === '辅食' ? '#fff' : '#f43f5e'}
-        />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name="food"
+            size={24}
+            color={selectedType === '辅食' ? '#fff' : currentColor}
+          />
+        </View>
         <Text
           style={[
             styles.tabText,
-            selectedType === '辅食' && styles.activeTabText
+            selectedType === '辅食' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >
           辅食
@@ -109,8 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   activeTab: {
-    backgroundColor: '#f43f5e',
-    shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -124,6 +150,13 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#fff',
     fontWeight: 'bold'
+  },
+
+  iconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 })
 
