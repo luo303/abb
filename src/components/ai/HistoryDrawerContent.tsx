@@ -141,7 +141,10 @@ export default function HistoryDrawerContent(
         <TouchableOpacity
           style={styles.actionButton}
           activeOpacity={0.7}
-          onPress={handleNewChat}
+          onPress={() => {
+            props.navigation.navigate('KnowledgeUpload')
+            props.navigation.closeDrawer()
+          }}
         >
           <View style={styles.actionIconContainer}>
             <Ionicons name="cloud-upload-outline" size={16} color="black" />

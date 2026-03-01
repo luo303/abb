@@ -24,6 +24,7 @@ import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
 import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
+import KnowledgeUploadScreen from './KnowledgeUpload'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -153,6 +154,11 @@ export default function Layout() {
                 name="FeedingRecord"
                 component={FeedingRecordScreen}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="KnowledgeUpload"
+                component={KnowledgeUploadScreen}
+                options={{ title: '上传知识库' }}
               />
               <Stack.Screen
                 name="MyPosts"
