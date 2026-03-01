@@ -1,4 +1,5 @@
 import { NavigationProp } from '@react-navigation/native'
+import { GrowthAnalysisPayload } from '@/api/ai'
 
 export type RootStackParamList = {
   Login: undefined
@@ -11,6 +12,7 @@ export type RootStackParamList = {
   VaccineRecord: undefined
   Album: undefined
   GrowthCurve: undefined
+  GrowthAnalysis: { growthAnalysis: GrowthAnalysisPayload }
   Diary: undefined
   PostDetail: { post_id: string }
   AddPost: undefined

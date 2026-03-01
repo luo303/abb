@@ -22,6 +22,7 @@ import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
 import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
+import GrowthAnalysisScreen from './(GrowthSubPages)/GrowthAnalysis'
 import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
 import KnowledgeUploadScreen from './KnowledgeUpload'
@@ -124,6 +125,11 @@ export default function Layout() {
                 name="GrowthCurve"
                 component={GrowthCurveScreen}
                 options={{ title: '成长曲线' }}
+              />
+              <Stack.Screen
+                name="GrowthAnalysis"
+                component={GrowthAnalysisScreen}
+                options={{ title: 'AI 智能分析' }}
               />
               <Stack.Screen
                 name="Diary"
