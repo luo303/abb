@@ -54,12 +54,8 @@ export default function Home() {
     loadMoreSearchResults
   } = useHomeSearch()
 
-  const {
-    handleScroll,
-    measureSearchBar,
-    measureCommunityHeader,
-    stickyProgress
-  } = useHomeAnimations()
+  const { handleScroll, measureSearchBar, measureCommunityHeader } =
+    useHomeAnimations()
 
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
@@ -170,13 +166,7 @@ export default function Home() {
 
       return null
     },
-    [
-      isSearching,
-      searchLoading,
-      activeTab,
-      setActiveTab,
-      measureCommunityHeader
-    ]
+    [searchLoading, activeTab, setActiveTab, measureCommunityHeader]
   )
 
   // 滚动到社区模块

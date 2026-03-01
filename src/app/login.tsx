@@ -13,7 +13,6 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
 
 import { useEffect, useState } from 'react'
-import { AntDesign } from '@expo/vector-icons'
 import { setToken, setRememberMe } from '../store/modules/userStore'
 import { apiLogin, apiLoginCode } from '../api/auth'
 import { resLogin, resLoginCode } from '../api/type'
@@ -246,9 +245,7 @@ export default function LoginScreen() {
                       rememberMe && styles.checkboxChecked
                     ]}
                   >
-                    {rememberMe && (
-                      <AntDesign name="check" size={12} color="#fff" />
-                    )}
+                    {rememberMe && <View style={styles.checkMark} />}
                   </View>
                   <Text style={styles.optionText}>记住我</Text>
                 </TouchableOpacity>
@@ -338,7 +335,7 @@ export default function LoginScreen() {
                   agree && styles.checkboxRoundChecked
                 ]}
               >
-                {agree && <AntDesign name="check" size={10} color="#fff" />}
+                {agree && <View style={styles.checkMarkRound} />}
               </View>
             </TouchableOpacity>
             <Text style={styles.agreementText}>
@@ -493,6 +490,26 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     backgroundColor: '#1f99b0',
     borderColor: '#1f99b0'
+  },
+  checkMark: {
+    width: 8,
+    height: 4,
+    backgroundColor: 'transparent',
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderLeftColor: '#fff',
+    borderBottomColor: '#fff',
+    transform: [{ rotate: '-45deg' }]
+  },
+  checkMarkRound: {
+    width: 6,
+    height: 3,
+    backgroundColor: 'transparent',
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderLeftColor: '#fff',
+    borderBottomColor: '#fff',
+    transform: [{ rotate: '-45deg' }]
   },
   optionText: {
     fontSize: 13,

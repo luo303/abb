@@ -10,9 +10,9 @@ import {
 import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import dayjs from 'dayjs'
-import { Toast, Button } from '@ant-design/react-native'
+import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigationHelper } from '../../utils/navigation'
 
 // 导入日常记录组件
 import DashboardRing from '../../components/DailyRecord/DashboardRing'
@@ -24,7 +24,7 @@ import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
 import mockData from '../../data/mock/dailyRecordMock'
 
 export default function DailyRecordScreen() {
-  const navigation = useNavigation()
+  const { navigateToRecord } = useNavigationHelper()
   const [selectedDate, setSelectedDate] = useState<string>(
     dayjs().format('YYYY-MM-DD')
   )
@@ -77,16 +77,7 @@ export default function DailyRecordScreen() {
 
   // 处理底部按钮点击
   const handleActionPress = (type: RecordType) => {
-    if (type === 'feeding') {
-      navigation.navigate('FeedingRecord' as never)
-    } else {
-      const typeMap = {
-        feeding: '喂养',
-        sleep: '睡眠',
-        diaper: '换尿布'
-      }
-      Toast.info(`跳转至${typeMap[type]}记录表单`)
-    }
+    navigateToRecord(type)
   }
 
   // 处理日期选择器确认

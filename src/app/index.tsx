@@ -24,6 +24,9 @@ import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
 import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
+import SleepRecordScreen from './(HomeNavGrid)/daily-record/sleep'
+import SleepManualInputScreen from './(HomeNavGrid)/daily-record/manual'
+
 import KnowledgeUploadScreen from './KnowledgeUpload'
 
 // 导入弹框组件
@@ -155,6 +158,17 @@ export default function Layout() {
                 component={FeedingRecordScreen}
                 options={{ headerShown: false }}
               />
+              <Stack.Screen
+                name="SleepRecord"
+                component={SleepRecordScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="SleepManualInput"
+                component={SleepManualInputScreen}
+                options={{ headerShown: false }}
+              />
+
               <Stack.Screen
                 name="KnowledgeUpload"
                 component={KnowledgeUploadScreen}
