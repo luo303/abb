@@ -18,6 +18,7 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    resetChatState: () => initialState,
     togglePublicEnabled: state => {
       state.search_public = !state.search_public
     },
@@ -93,6 +94,7 @@ const chatSlice = createSlice({
 })
 
 export const {
+  resetChatState,
   addMessage,
   setMessages,
   clearMessages,
@@ -200,6 +202,16 @@ export const resetSession = () => async (dispatch: Dispatch) => {
     await SecureStore.deleteItemAsync('currentConversationId')
   } catch (error) {
     console.error('Failed to reset chat session:', error)
+  }
+}
+
+export const clearAllChatData = () => async (dispatch: Dispatch) => {
+  dispatch(resetChatState())
+  try {
+    await SecureStore.deleteItemAsync(STORAGE_KEY_HISTORY)
+    await SecureStore.deleteItemAsync('currentConversationId')
+  } catch (error) {
+    console.error('Failed to clear chat data:', error)
   }
 }
 

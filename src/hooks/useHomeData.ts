@@ -3,7 +3,11 @@ import { useAppDispatch, useAppSelector } from './redux'
 import { fetchPostList, loadMorePosts } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../api/profile'
 import { setUserInfo } from '../store/modules/userStore'
-import { fetchBabies, fetchBabyProfile } from '../store/modules/BabyStore'
+import {
+  fetchBabies,
+  fetchBabyProfile,
+  loadCurrentBabyId
+} from '../store/modules/BabyStore'
 import { PostItem } from '../types/home'
 
 export function useHomeData() {
@@ -62,19 +66,14 @@ export function useHomeData() {
   // 获取宝宝信息
   useEffect(() => {
     if (babyState.currentBabyDetail) return
+    if (!babyState.currentBabyId) {
+      dispatch(loadCurrentBabyId())
+    }
     if (babyState.currentBabyId) {
       dispatch(fetchBabyProfile(babyState.currentBabyId))
       return
     }
-    dispatch(fetchBabies()).then(action => {
-      // @ts-ignore
-      if (fetchBabies.fulfilled.match(action) && action.payload?.code === 0) {
-        const id = action.payload?.data?.babies?.[0]?.baby_id
-        if (id) {
-          dispatch(fetchBabyProfile(id))
-        }
-      }
-    })
+    dispatch(fetchBabies())
   }, [dispatch, babyState.currentBabyId, babyState.currentBabyDetail])
 
   // 下拉刷新处理函数

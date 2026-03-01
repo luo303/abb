@@ -17,6 +17,7 @@ import {
   UpsertGrowthRecordResponse,
   upsertGrowthRecordReq
 } from '../../api/baby'
+import * as SecureStore from 'expo-secure-store'
 
 interface BabyState {
   loading: boolean
@@ -30,6 +31,8 @@ interface BabyState {
     head: GrowthCurveItem[]
   }
 }
+
+const STORAGE_KEY_CURRENT_BABY_ID = 'current_baby_id'
 
 const initialState: BabyState = {
   loading: false,
@@ -131,6 +134,7 @@ const babySlice = createSlice({
   name: 'baby',
   initialState,
   reducers: {
+    resetBabyAll: () => initialState,
     resetBabyState: state => {
       state.loading = false
       state.error = null
@@ -278,7 +282,38 @@ const babySlice = createSlice({
   }
 })
 
+export const loadCurrentBabyId = () => async (dispatch: any, getState: any) => {
+  try {
+    const savedId = await SecureStore.getItemAsync(STORAGE_KEY_CURRENT_BABY_ID)
+    if (!savedId) return
+    if (getState().baby.currentBabyId) return
+    dispatch(setCurrentBabyId(savedId))
+  } catch (error) {
+    console.error('Failed to load current baby id:', error)
+  }
+}
+
+export const setCurrentBabyIdPersist =
+  (id: string) => async (dispatch: any) => {
+    dispatch(setCurrentBabyId(id))
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEY_CURRENT_BABY_ID, id)
+    } catch (error) {
+      console.error('Failed to save current baby id:', error)
+    }
+  }
+
+export const clearAllBabyData = () => async (dispatch: any) => {
+  dispatch(resetBabyAll())
+  try {
+    await SecureStore.deleteItemAsync(STORAGE_KEY_CURRENT_BABY_ID)
+  } catch (error) {
+    console.error('Failed to clear current baby id:', error)
+  }
+}
+
 export const {
+  resetBabyAll,
   resetBabyState,
   clearCurrentBabyId,
   setCurrentBabyId,

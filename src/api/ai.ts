@@ -4,17 +4,22 @@ import * as SecureStore from 'expo-secure-store'
 import { ApiResponse } from './profile'
 
 const AI_URL =
-  'https://misapprehensive-overcontritely-roxy.ngrok-free.dev/api/common/ai/chat/stream'
+  'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api/common/ai/chat/stream'
+const GROWTH_ANALYSIS_URL =
+  'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api/common/ai/growth/analysis'
 
 //基本ai对话
 export const SendMessage = async (data: AiRequest, signal?: AbortSignal) => {
-  const token = SecureStore.getItem('token')
+  const token = await SecureStore.getItemAsync('token')
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
   return fetch(AI_URL, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify(data),
     signal
   })
@@ -27,46 +32,53 @@ export const SendMessageStream = (
   signal?: AbortSignal
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const token = SecureStore.getItem('token')
-    const xhr = new XMLHttpRequest()
-    let lastReadIndex = 0
+    SecureStore.getItemAsync('token')
+      .then(token => {
+        const xhr = new XMLHttpRequest()
+        let lastReadIndex = 0
 
-    xhr.open('POST', AI_URL)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.open('POST', AI_URL)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        }
 
-    if (signal) {
-      signal.onabort = () => {
-        xhr.abort()
-        const error = new Error('Aborted')
-        error.name = 'AbortError'
+        if (signal) {
+          signal.onabort = () => {
+            xhr.abort()
+            const error = new Error('Aborted')
+            error.name = 'AbortError'
+            reject(error)
+          }
+        }
+
+        xhr.onprogress = () => {
+          // 鑾峰彇鏂板鐨勯儴鍒?
+          const currIndex = xhr.responseText.length
+          if (currIndex > lastReadIndex) {
+            const chunk = xhr.responseText.substring(lastReadIndex, currIndex)
+            lastReadIndex = currIndex
+            onMessage(chunk)
+          }
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve()
+          } else {
+            reject(new Error(`HTTP Error: ${xhr.status}`))
+          }
+        }
+
+        xhr.onerror = () => {
+          reject(new Error('Network request failed'))
+        }
+
+        xhr.send(JSON.stringify(data))
+      })
+      .catch(error => {
         reject(error)
-      }
-    }
-
-    xhr.onprogress = () => {
-      // 获取新增的部分
-      const currIndex = xhr.responseText.length
-      if (currIndex > lastReadIndex) {
-        const chunk = xhr.responseText.substring(lastReadIndex, currIndex)
-        lastReadIndex = currIndex
-        onMessage(chunk)
-      }
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve()
-      } else {
-        reject(new Error(`HTTP Error: ${xhr.status}`))
-      }
-    }
-
-    xhr.onerror = e => {
-      reject(new Error('Network request failed'))
-    }
-
-    xhr.send(JSON.stringify(data))
+      })
   })
 }
 
@@ -89,9 +101,84 @@ export const uploadKnowledge = async (
   throw err
 }
 
+export type GrowthAnalysisMetric = 'height' | 'weight' | 'head_circumference'
+export type GrowthAnalysisUnit = 'cm' | 'kg'
+export interface GrowthAnalysisItem {
+  time: number
+  value: number
+}
+export interface GrowthAnalysisPayload {
+  birthday: number
+  metric: GrowthAnalysisMetric
+  unit: GrowthAnalysisUnit
+  items: GrowthAnalysisItem[]
+}
+
+export const SendGrowthAnalysisStream = (
+  data: GrowthAnalysisPayload,
+  onMessage: (chunk: string) => void,
+  signal?: AbortSignal
+): Promise<void> => {
+  console.log(1, data)
+
+  return new Promise((resolve, reject) => {
+    SecureStore.getItemAsync('token')
+      .then(token => {
+        const xhr = new XMLHttpRequest()
+        let lastReadIndex = 0
+
+        xhr.open('POST', GROWTH_ANALYSIS_URL)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        }
+
+        if (signal) {
+          signal.onabort = () => {
+            xhr.abort()
+            const error = new Error('Aborted')
+            error.name = 'AbortError'
+            reject(error)
+          }
+        }
+
+        xhr.onprogress = () => {
+          const currIndex = xhr.responseText.length
+          if (currIndex > lastReadIndex) {
+            const chunk = xhr.responseText.substring(lastReadIndex, currIndex)
+            lastReadIndex = currIndex
+            onMessage(chunk)
+          }
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve()
+          } else {
+            reject(new Error(`HTTP Error: ${xhr.status}`))
+          }
+        }
+
+        xhr.onerror = () => {
+          reject(new Error('Network request failed'))
+        }
+
+        xhr.send(JSON.stringify(data))
+      })
+      .catch(error => {
+        reject(error)
+      })
+  })
+}
+
 //获取会话记录
 export const GetSessionMessages = async (session_id: string) => {
   console.log(`获取会话记录${session_id}`)
 
-  return request.get(`/common/ai/chat/history?session_id=${session_id}`)
+  const res = await request.get(
+    `/common/ai/chat/history?session_id=${session_id}`
+  )
+  console.log(res)
+
+  return res
 }

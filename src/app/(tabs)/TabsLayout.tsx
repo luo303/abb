@@ -17,7 +17,7 @@ import ProfileScreen from './profile'
 import { getUserMeReq } from '../../api/profile'
 
 // 导入 Redux action
-import { clearToken } from '../../store/modules/userStore'
+import { logoutAndClearAll } from '../../store/modules/userStore'
 
 import { NavigationProps } from '../../types/navigation'
 
@@ -111,7 +111,7 @@ export default function TabsLayout() {
           error.response?.data?.message === '用户不存在'
         ) {
           // 清空 token
-          dispatch(clearToken())
+          dispatch(logoutAndClearAll())
           // 跳转登录页
           navigation.reset({
             index: 0,

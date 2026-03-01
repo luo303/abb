@@ -18,7 +18,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
 import {
   fetchBabies,
-  setCurrentBabyId,
+  setCurrentBabyIdPersist,
   fetchBabyProfile
 } from '../../store/modules/BabyStore'
 import {
@@ -175,7 +175,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
               onBlur={() => setIsFocus(false)}
               onChange={item => {
                 setValue(item.baby_id)
-                dispatch(setCurrentBabyId(item.baby_id))
+                dispatch(setCurrentBabyIdPersist(item.baby_id))
                 dispatch(fetchBabyProfile(item.baby_id))
                 setIsFocus(false)
               }}

@@ -2,6 +2,10 @@ import { createSlice } from '@reduxjs/toolkit'
 //expo提供的手机本地持久化存储，相当于localStorage
 import * as SecureStore from 'expo-secure-store'
 import { UserMeResponse } from '../../api/profile'
+import { resetPostState } from './PostStore'
+import { clearAllChatData } from './ChatStore'
+import { clearAllBabyData } from './BabyStore'
+import { removePartner } from './PartnerStore'
 
 interface UserState {
   token: string
@@ -47,4 +51,13 @@ export const {
   setUserInfo,
   clearUserInfo
 } = userSlice.actions
+
+export const logoutAndClearAll = () => async (dispatch: any) => {
+  dispatch(clearToken())
+  dispatch(clearUserInfo())
+  dispatch(resetPostState())
+  dispatch(clearAllChatData())
+  dispatch(clearAllBabyData())
+  dispatch(removePartner())
+}
 export default userSlice.reducer

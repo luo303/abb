@@ -28,6 +28,11 @@ import {
   applyGrowthRecordLocal
 } from '../../store/modules/BabyStore'
 import { useMessage } from '../../components/Message'
+import {
+  GrowthAnalysisPayload,
+  GrowthAnalysisMetric,
+  GrowthAnalysisUnit
+} from '../../api/ai'
 
 export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
@@ -36,6 +41,7 @@ export default function GrowthCurveScreen() {
   const { currentBabyId, currentBabyDetail, babiesList } = useSelector(
     (state: RootState) => state.baby
   )
+  const growthCurve = useSelector((state: RootState) => state.baby.growthCurve)
   const hasBaby = !!currentBabyId || (babiesList && babiesList.length > 0)
   const dispatch = useDispatch<any>()
   const { showMessage } = useMessage()
@@ -246,9 +252,36 @@ export default function GrowthCurveScreen() {
             <TouchableOpacity
               style={styles.aiButton}
               onPress={() => {
-                navigation.goBack()
+                if (!currentBabyDetail) {
+                  showMessage('未获取到宝宝信息')
+                  return
+                }
+                let metric: GrowthAnalysisMetric = 'height'
+                let unit: GrowthAnalysisUnit = 'cm'
+                let items: { time: number; value: number }[] = []
+                if (activeTab === 'height') {
+                  metric = 'height'
+                  unit = 'cm'
+                  items = growthCurve.height
+                } else if (activeTab === 'weight') {
+                  metric = 'weight'
+                  unit = 'kg'
+                  items = growthCurve.weight
+                } else {
+                  metric = 'head_circumference'
+                  unit = 'cm'
+                  items = growthCurve.head
+                }
+                const payload: GrowthAnalysisPayload = {
+                  birthday: currentBabyDetail.birthday!,
+                  metric,
+                  unit,
+                  items
+                }
                 // @ts-ignore
-                navigation.navigate('AIAssistant')
+                navigation.navigate('GrowthAnalysis', {
+                  growthAnalysis: payload
+                })
               }}
             >
               <View style={styles.aiButtonContent}>

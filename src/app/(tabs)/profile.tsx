@@ -7,7 +7,7 @@ import {
   useFocusEffect
 } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { clearToken, setUserInfo } from '../../store/modules/userStore'
+import { logoutAndClearAll, setUserInfo } from '../../store/modules/userStore'
 import { RootStackParamList } from '../../types/navigation'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../../api/profile'
@@ -60,7 +60,7 @@ export default function Profile() {
   )
 
   const handleLogout = () => {
-    dispatch(clearToken())
+    dispatch(logoutAndClearAll())
     navigation.reset({
       index: 0,
       routes: [{ name: 'Login' }]
