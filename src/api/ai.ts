@@ -1,6 +1,7 @@
 import request from '@/utils/request'
 import { AiRequest } from '@/types/AIchat'
 import * as SecureStore from 'expo-secure-store'
+import { ApiResponse } from './profile'
 
 const AI_URL =
   'https://misapprehensive-overcontritely-roxy.ngrok-free.dev/api/common/ai/chat/stream'
@@ -67,6 +68,25 @@ export const SendMessageStream = (
 
     xhr.send(JSON.stringify(data))
   })
+}
+
+export type UploadKnowledgePayload = {
+  space_type: 'public' | 'private'
+  content: string
+}
+
+export const uploadKnowledge = async (
+  data: UploadKnowledgePayload
+): Promise<ApiResponse<null>> => {
+  const res = (await request.post(
+    '/common/ai/knowledge/upload',
+    data
+  )) as ApiResponse<null>
+  if (res?.code === 0) return res
+  const err = new Error(res?.message || '上传失败')
+  // @ts-ignore 附加后端自定义code便于上层判别
+  err.code = res?.code
+  throw err
 }
 
 //获取会话记录

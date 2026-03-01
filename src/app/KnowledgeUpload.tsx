@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { LinearGradient } from 'expo-linear-gradient'
+import { uploadKnowledge } from '@/api/ai'
+import { useMessage } from '@/components/Message'
 
 interface PickedFileInfo {
   name?: string
@@ -40,11 +41,14 @@ const isSupportedFile = (file: PickedFileInfo) => {
 }
 
 const KnowledgeUploadScreen = () => {
-  const insets = useSafeAreaInsets()
   const [fileInfo, setFileInfo] = useState<PickedFileInfo | null>(null)
   const [content, setContent] = useState<string>('')
+  const [rawContent, setRawContent] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [spaceType, setSpaceType] = useState<'public' | 'private'>('private')
+  const { showMessage } = useMessage()
   const contentPlaceholder = useMemo(
     () => (fileInfo ? '暂无内容' : '请选择文件开始解析'),
     [fileInfo]
@@ -94,6 +98,7 @@ const KnowledgeUploadScreen = () => {
 
       setFileInfo(picked)
       setContent(display)
+      setRawContent(raw)
     } catch (err: any) {
       setError(err?.message || '读取文件失败')
     } finally {
@@ -101,9 +106,37 @@ const KnowledgeUploadScreen = () => {
     }
   }
 
+  const handleUpload = async () => {
+    if (loading || uploading) return
+    if (!fileInfo || !rawContent) {
+      setError('请先选择文件')
+      return
+    }
+    setError('')
+    setUploading(true)
+    try {
+      await uploadKnowledge({
+        space_type: spaceType,
+        content: rawContent
+      })
+      showMessage('上传成功')
+      setFileInfo(null)
+      setContent('')
+      setRawContent('')
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || err?.message || '上传失败，请稍后重试'
+      setError(msg)
+      showMessage(msg)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleClear = () => {
     setFileInfo(null)
     setContent('')
+    setRawContent('')
     setError('')
   }
 
@@ -127,35 +160,84 @@ const KnowledgeUploadScreen = () => {
           </View>
           <Text style={styles.title}>上传知识库</Text>
           <Text style={styles.subtitle}>选择文件并解析展示内容</Text>
+          <View style={styles.selectorRow}>
+            <TouchableOpacity
+              style={[
+                styles.selectorOption,
+                spaceType === 'private' && styles.selectorOptionActive
+              ]}
+              activeOpacity={0.85}
+              onPress={() => setSpaceType('private')}
+              disabled={loading || uploading}
+            >
+              <Text
+                style={[
+                  styles.selectorText,
+                  spaceType === 'private' && styles.selectorTextActive
+                ]}
+              >
+                私人知识库
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.selectorOption,
+                spaceType === 'public' && styles.selectorOptionActive
+              ]}
+              activeOpacity={0.85}
+              onPress={() => setSpaceType('public')}
+              disabled={loading || uploading}
+            >
+              <Text
+                style={[
+                  styles.selectorText,
+                  spaceType === 'public' && styles.selectorTextActive
+                ]}
+              >
+                公共知识库
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {spaceType === 'public' ? (
+            <View style={styles.tipsBanner}>
+              <Text style={styles.tipsText}>
+                提示：公共知识库仅管理员可上传，普通用户请选择私人知识库
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.actions}>
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.primaryButton,
-                loading && styles.buttonDisabled
+                (loading || uploading) && styles.buttonDisabled
               ]}
-              onPress={handlePickFile}
+              onPress={fileInfo ? handleUpload : handlePickFile}
               activeOpacity={0.85}
-              disabled={loading}
+              disabled={loading || uploading}
             >
-              {loading ? (
+              {loading || uploading ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator size="small" color="#0b1220" />
-                  <Text style={styles.primaryButtonText}>读取中...</Text>
+                  <Text style={styles.primaryButtonText}>
+                    {loading ? '读取中...' : '上传中...'}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.primaryButtonText}>选择文件</Text>
+                <Text style={styles.primaryButtonText}>
+                  {fileInfo ? '上传' : '选择文件'}
+                </Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.secondaryButton,
-                loading && styles.buttonDisabled
+                (loading || uploading) && styles.buttonDisabled
               ]}
               onPress={handleClear}
               activeOpacity={0.85}
-              disabled={loading}
+              disabled={loading || uploading}
             >
               <Text style={styles.secondaryButtonText}>清空</Text>
             </TouchableOpacity>
@@ -283,6 +365,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 14
+  },
+  selectorRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    padding: 6,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)'
+  },
+  selectorOption: {
+    flex: 1,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent'
+  },
+  selectorOptionActive: {
+    backgroundColor: '#7dd3fc'
+  },
+  selectorText: {
+    color: '#c7d2fe',
+    fontWeight: '600',
+    fontSize: 13
+  },
+  selectorTextActive: {
+    color: '#0b1220'
+  },
+  tipsBanner: {
+    marginTop: 10,
+    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(250, 204, 21, 0.35)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10
+  },
+  tipsText: {
+    color: '#fde68a',
+    fontSize: 12,
+    fontWeight: '600'
   },
   button: {
     flex: 1,
