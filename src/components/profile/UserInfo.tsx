@@ -16,7 +16,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { NavigationProps } from '../../types/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
-import { fetchBabies, setCurrentBabyId } from '../../store/modules/BabyStore'
+import {
+  fetchBabies,
+  setCurrentBabyId,
+  fetchBabyProfile
+} from '../../store/modules/BabyStore'
 import {
   UserMeResponse,
   UpdateAvatarResponse,
@@ -172,6 +176,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
               onChange={item => {
                 setValue(item.baby_id)
                 dispatch(setCurrentBabyId(item.baby_id))
+                dispatch(fetchBabyProfile(item.baby_id))
                 setIsFocus(false)
               }}
               renderLeftIcon={() => {

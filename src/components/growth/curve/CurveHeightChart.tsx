@@ -9,11 +9,15 @@ import { RootState } from '../../../store'
 interface CurveHeightChartProps {
   compact?: boolean
   initialRange?: TimeRange
+  headlineValue?: number
+  showStandardWhenNoHistory?: boolean
 }
 
 export default function CurveHeightChart({
   compact = false,
-  initialRange = 'day'
+  initialRange = 'day',
+  headlineValue,
+  showStandardWhenNoHistory = true
 }: CurveHeightChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(initialRange)
   const { growthCurve, currentBabyDetail } = useSelector(
@@ -26,8 +30,7 @@ export default function CurveHeightChart({
     const origin = currentBabyDetail.birthday
     return growthCurve.height
       .map(item => {
-        const diffTime = item.time - origin
-        const day = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+        const day = getDayDiff(origin, item.time)
         return {
           day: Math.max(0, day),
           value: item.value
@@ -43,6 +46,9 @@ export default function CurveHeightChart({
     let baby: any[] = []
 
     if (!hasBabyHistory) {
+      if (!showStandardWhenNoHistory) {
+        return { standardData: [], babyData: [], xAxisName }
+      }
       if (timeRange === 'day') {
         const standard = STANDARD_GROWTH_DATA.height.map(item => ({
           label: item.day,
@@ -114,7 +120,7 @@ export default function CurveHeightChart({
       })
 
     return { standardData: standard, babyData: baby, xAxisName }
-  }, [timeRange, babyGrowthData, hasBabyHistory])
+  }, [timeRange, babyGrowthData, hasBabyHistory, showStandardWhenNoHistory])
 
   const { yMin, yMax } = useMemo(() => {
     const values = [
@@ -146,6 +152,7 @@ export default function CurveHeightChart({
         xAxisName={xAxisName}
         standardData={standardData}
         babyData={babyData}
+        headlineValue={headlineValue}
         yMin={yMin}
         yMax={yMax}
         showDataZoomSlider={!compact}
@@ -154,4 +161,14 @@ export default function CurveHeightChart({
       {!compact && <DataDescription type="height" />}
     </>
   )
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+const getDayDiff = (startTime: number, endTime: number) => {
+  const start = new Date(startTime)
+  const end = new Date(endTime)
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
+  return Math.floor((end.getTime() - start.getTime()) / DAY_MS)
 }

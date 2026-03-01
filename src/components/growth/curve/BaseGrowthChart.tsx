@@ -13,6 +13,7 @@ interface BaseGrowthChartProps {
   xAxisName?: string // X轴名称，默认为"月龄"
   standardData: ChartPoint[]
   babyData: ChartPoint[]
+  headlineValue?: number | string
   yMin: number
   yMax: number
   standardColor?: string
@@ -26,6 +27,7 @@ export default function BaseGrowthChart({
   xAxisName = '月龄',
   standardData = [],
   babyData = [],
+  headlineValue,
   yMin,
   yMax,
   standardColor = '#5470C6', // 默认蓝色
@@ -86,6 +88,11 @@ export default function BaseGrowthChart({
 
   // 获取最新的宝宝数据值
   const lastBabyValue = babyValues.filter(v => v !== null).pop()
+  const displayHeadlineValue =
+    headlineValue ??
+    (lastBabyValue !== null && lastBabyValue !== undefined
+      ? lastBabyValue
+      : '--')
 
   const gridBottom = showDataZoomSlider ? '18%' : '8%'
   const chartHtml = `
@@ -130,7 +137,7 @@ export default function BaseGrowthChart({
                 containLabel: true
               },
               title: {
-                text: '{value|宝宝目前${title.replace('发育曲线', '')}} {num|${lastBabyValue || '--'}} {unit|${unit}}',
+                text: '{value|宝宝目前${title.replace('发育曲线', '')}} {num|${displayHeadlineValue}} {unit|${unit}}',
                 left: 'center',
                 top: '5%',
                 textStyle: { 

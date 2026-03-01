@@ -10,13 +10,13 @@ import type { ImageSourcePropType } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 
 // 导入组件
 import { NavigationProps } from '../../types/navigation'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { fetchGrowthCurve } from '@/store/modules/BabyStore'
+import { fetchBabyProfile, fetchGrowthCurve } from '@/store/modules/BabyStore'
 import CurveHeightChart from '../../components/growth/curve/CurveHeightChart'
 
 function Section({
@@ -132,15 +132,21 @@ export default function GrowthRecord() {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation<NavigationProps>()
   const dispatch = useAppDispatch()
-  const { currentBabyId, currentBabyDetail, babiesList } = useAppSelector(
-    state => state.baby
-  )
+  const { currentBabyId, currentBabyDetail, babiesList, growthCurve } =
+    useAppSelector(state => state.baby)
+  const activeBabyDetail =
+    currentBabyDetail && currentBabyDetail.baby_id === currentBabyId
+      ? currentBabyDetail
+      : null
+  const hasHeightHistory = growthCurve.height.length > 0
+  const hasWeightHistory = growthCurve.weight.length > 0
+  const hasHeadHistory = growthCurve.head.length > 0
   const [avatarLoadError, setAvatarLoadError] = useState(false)
   const babyAvatar =
-    currentBabyDetail?.avatar ||
+    activeBabyDetail?.avatar ||
     babiesList.find(item => item.baby_id === currentBabyId)?.avatar
   const babyName =
-    currentBabyDetail?.name ||
+    activeBabyDetail?.name ||
     babiesList.find(item => item.baby_id === currentBabyId)?.name ||
     '宝'
   const hasAvatar =
@@ -149,9 +155,16 @@ export default function GrowthRecord() {
     ? { uri: babyAvatar }
     : require('../../assets/testAvatar.png')
 
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [currentBabyId, babyAvatar])
+
   useFocusEffect(
     useCallback(() => {
       if (!currentBabyId) return
+      if (!activeBabyDetail) {
+        dispatch(fetchBabyProfile(currentBabyId))
+      }
       dispatch(
         fetchGrowthCurve({
           baby_id: currentBabyId,
@@ -173,17 +186,20 @@ export default function GrowthRecord() {
           group_by: 'day'
         })
       )
-    }, [dispatch, currentBabyId])
+    }, [dispatch, currentBabyId, activeBabyDetail])
   )
-  const heightText = currentBabyDetail?.height
-    ? `${currentBabyDetail.height} cm`
-    : '--'
-  const weightText = currentBabyDetail?.weight
-    ? `${currentBabyDetail.weight} kg`
-    : '--'
-  const headText = currentBabyDetail?.head_circumference
-    ? `${currentBabyDetail.head_circumference} cm`
-    : '--'
+  const heightText =
+    hasHeightHistory && activeBabyDetail?.height
+      ? `${activeBabyDetail.height} cm`
+      : '--'
+  const weightText =
+    hasWeightHistory && activeBabyDetail?.weight
+      ? `${activeBabyDetail.weight} kg`
+      : '--'
+  const headText =
+    hasHeadHistory && activeBabyDetail?.head_circumference
+      ? `${activeBabyDetail.head_circumference} cm`
+      : '--'
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 顶部背景装饰 */}
@@ -242,7 +258,13 @@ export default function GrowthRecord() {
             variant="full"
           >
             <View pointerEvents="none">
-              <CurveHeightChart compact initialRange="day" />
+              <CurveHeightChart
+                compact
+                initialRange="day"
+                headlineValue={
+                  hasHeightHistory ? activeBabyDetail?.height : undefined
+                }
+              />
             </View>
             <View style={styles.chartHintRow}>
               <Text style={styles.chartHintText}>

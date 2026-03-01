@@ -44,6 +44,26 @@ const initialState: BabyState = {
   }
 }
 
+const clearGrowthCurve = (state: BabyState) => {
+  state.growthCurve.height = []
+  state.growthCurve.weight = []
+  state.growthCurve.head = []
+}
+
+const upsertGrowthItem = (
+  list: GrowthCurveItem[],
+  time: number,
+  value: number
+) => {
+  const index = list.findIndex(item => item.time === time)
+  if (index >= 0) {
+    list[index] = { time, value }
+    return
+  }
+  list.push({ time, value })
+  list.sort((a, b) => a.time - b.time)
+}
+
 export const addBaby = createAsyncThunk<ApiResponse<AddBabyResponse>, BabyData>(
   'baby/addBaby',
   async (data: BabyData, { rejectWithValue }) => {
@@ -74,6 +94,7 @@ export const fetchBabyProfile = createAsyncThunk<
 >('baby/fetchBabyProfile', async (babyId, { rejectWithValue }) => {
   try {
     const response = await getBabyProfileReq(babyId)
+    console.log(response)
     return response as unknown as ApiResponse<BabyProfile>
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || error.message)
@@ -117,9 +138,37 @@ const babySlice = createSlice({
     },
     clearCurrentBabyId: state => {
       state.currentBabyId = null
+      state.currentBabyDetail = null
+      clearGrowthCurve(state)
     },
     setCurrentBabyId: (state, action: PayloadAction<string>) => {
+      if (state.currentBabyId === action.payload) return
       state.currentBabyId = action.payload
+      state.currentBabyDetail = null
+      clearGrowthCurve(state)
+    },
+    applyGrowthRecordLocal: (
+      state,
+      action: PayloadAction<UpsertGrowthRecordParams>
+    ) => {
+      const { baby_id, record_time, height, weight, head_circumference } =
+        action.payload
+      if (state.currentBabyId !== baby_id) return
+      upsertGrowthItem(state.growthCurve.height, record_time, height)
+      upsertGrowthItem(state.growthCurve.weight, record_time, weight)
+      upsertGrowthItem(state.growthCurve.head, record_time, head_circumference)
+      if (
+        state.currentBabyDetail &&
+        state.currentBabyDetail.baby_id === baby_id
+      ) {
+        state.currentBabyDetail = {
+          ...state.currentBabyDetail,
+          height,
+          weight,
+          head_circumference,
+          record_time
+        }
+      }
     }
   },
   extraReducers: builder => {
@@ -168,6 +217,10 @@ const babySlice = createSlice({
       })
       .addCase(fetchBabyProfile.fulfilled, (state, action) => {
         state.loading = false
+        const requestedBabyId = action.meta.arg
+        if (requestedBabyId !== state.currentBabyId) {
+          return
+        }
         if (action.payload?.code === 0) {
           state.currentBabyDetail = action.payload.data!
         } else {
@@ -185,8 +238,13 @@ const babySlice = createSlice({
       })
       .addCase(fetchGrowthCurve.fulfilled, (state, action) => {
         state.loading = false
+        const requestedBabyId = action.meta.arg.baby_id
+        if (requestedBabyId !== state.currentBabyId) {
+          return
+        }
         if (action.payload?.code === 0) {
-          const { metric, items } = action.payload.data!
+          const { items } = action.payload.data!
+          const metric = action.meta.arg.metric
           if (metric === 'height') {
             state.growthCurve.height = items
           } else if (metric === 'weight') {
@@ -220,6 +278,10 @@ const babySlice = createSlice({
   }
 })
 
-export const { resetBabyState, clearCurrentBabyId, setCurrentBabyId } =
-  babySlice.actions
+export const {
+  resetBabyState,
+  clearCurrentBabyId,
+  setCurrentBabyId,
+  applyGrowthRecordLocal
+} = babySlice.actions
 export default babySlice.reducer

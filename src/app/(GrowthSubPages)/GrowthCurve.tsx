@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 
 // 导入拆分后的组件
 import CurveTabs from '../../components/growth/curve/CurveTabs'
@@ -24,7 +24,8 @@ import { RootState } from '../../store'
 import {
   fetchGrowthCurve,
   fetchBabyProfile,
-  upsertGrowthRecord
+  upsertGrowthRecord,
+  applyGrowthRecordLocal
 } from '../../store/modules/BabyStore'
 import { useMessage } from '../../components/Message'
 
@@ -32,8 +33,9 @@ export default function GrowthCurveScreen() {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation()
   const [activeTab, setActiveTab] = useState('record') // record, height, weight, head
-  const { currentBabyId, currentBabyDetail, babiesList, growthCurve } =
-    useSelector((state: RootState) => state.baby)
+  const { currentBabyId, currentBabyDetail, babiesList } = useSelector(
+    (state: RootState) => state.baby
+  )
   const hasBaby = !!currentBabyId || (babiesList && babiesList.length > 0)
   const dispatch = useDispatch<any>()
   const { showMessage } = useMessage()
@@ -45,13 +47,9 @@ export default function GrowthCurveScreen() {
     }
   }, [dispatch, currentBabyId, currentBabyDetail])
 
-  useEffect(() => {
-    if (!currentBabyId) return
-    if (
-      growthCurve.height.length === 0 ||
-      growthCurve.weight.length === 0 ||
-      growthCurve.head.length === 0
-    ) {
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!currentBabyId) return
       dispatch(
         fetchGrowthCurve({
           baby_id: currentBabyId,
@@ -73,14 +71,8 @@ export default function GrowthCurveScreen() {
           group_by: 'day'
         })
       )
-    }
-  }, [
-    dispatch,
-    currentBabyId,
-    growthCurve.height.length,
-    growthCurve.weight.length,
-    growthCurve.head.length
-  ])
+    }, [dispatch, currentBabyId])
+  )
 
   // 表单状态
   const [height, setHeight] = useState('')
@@ -135,34 +127,20 @@ export default function GrowthCurveScreen() {
 
       if (upsertGrowthRecord.fulfilled.match(resultAction)) {
         if (resultAction.payload?.code === 0) {
-          showMessage(resultAction.payload.data?.message || '保存成功')
           setHeight('')
           setWeight('')
           setHeadCircumference('')
 
-          await Promise.all([
-            dispatch(
-              fetchGrowthCurve({
-                baby_id: currentBabyId,
-                metric: 'height',
-                group_by: 'day'
-              })
-            ),
-            dispatch(
-              fetchGrowthCurve({
-                baby_id: currentBabyId,
-                metric: 'weight',
-                group_by: 'day'
-              })
-            ),
-            dispatch(
-              fetchGrowthCurve({
-                baby_id: currentBabyId,
-                metric: 'head_circumference',
-                group_by: 'day'
-              })
-            )
-          ])
+          dispatch(
+            applyGrowthRecordLocal({
+              baby_id: currentBabyId,
+              record_time: date,
+              height: parsedHeight,
+              weight: parsedWeight,
+              head_circumference: parsedHead,
+              remark: ''
+            })
+          )
         } else {
           showMessage(resultAction.payload?.message || '保存失败')
         }
