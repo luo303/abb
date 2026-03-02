@@ -21,7 +21,7 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
     >
       <NavItem
         icon="chart-line"
-        label="成长记录"
+        label="成长曲线"
         library="MaterialCommunityIcons"
         color="#FF8A65" // 暖橙色
         onPress={() => navigation.navigate('GrowthCurve')}

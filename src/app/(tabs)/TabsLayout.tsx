@@ -111,7 +111,7 @@ export default function TabsLayout() {
           error.response?.data?.message === '用户不存在'
         ) {
           // 清空 token
-          dispatch(logoutAndClearAll())
+          await dispatch(logoutAndClearAll() as any)
           // 跳转登录页
           navigation.reset({
             index: 0,
@@ -171,7 +171,7 @@ export default function TabsLayout() {
           title: '成长记录',
           headerTitle: '成长记录',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="line-chart" size={24} color={color} />
+            <FontAwesome name="child" size={24} color={color} />
           )
         }}
       />
@@ -234,7 +234,7 @@ export default function TabsLayout() {
         options={{
           title: '另一半',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="heart" size={24} color={color} />
+            <AntDesign name="message" size={24} color={color} />
           )
         }}
       />
