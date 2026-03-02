@@ -13,10 +13,12 @@ interface ActionItemProps {
 
 export default function ActionMenu({
   onLogout,
-  onMyPosts
+  onMyPosts,
+  onMyFavorites
 }: {
   onLogout: () => void
   onMyPosts: () => void
+  onMyFavorites: () => void
 }) {
   return (
     <View style={styles.wrapper}>
@@ -27,7 +29,12 @@ export default function ActionMenu({
         style={styles.container}
       >
         <View style={styles.grid}>
-          <ActionItem icon="heart-outline" label="收藏" color="#ec4899" />
+          <ActionItem
+            icon="heart-outline"
+            label="收藏"
+            color="#ec4899"
+            onPress={onMyFavorites}
+          />
           <ActionItem
             icon="comment-text-outline"
             label="我的帖子"

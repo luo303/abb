@@ -141,3 +141,24 @@ export const getMyPosts = async (
   })
   return res as unknown as PostListResponse
 }
+
+/**
+ * 获取用户收藏帖子列表
+ * @param page 页码
+ * @param pageSize 每页数量
+ * @param strategy 排序策略
+ */
+export const getMyCollections = async (
+  page = 1,
+  pageSize = 10,
+  strategy?: string
+): Promise<PostListResponse> => {
+  const res = await request.get('/post/mine/collections', {
+    params: {
+      page,
+      page_size: pageSize,
+      strategy
+    }
+  })
+  return res as unknown as PostListResponse
+}

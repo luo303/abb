@@ -11,6 +11,7 @@ export type RootStackParamList = {
   DailyRecord: undefined
   VaccineRecord: undefined
   Album: undefined
+  MyFavorites: undefined
   GrowthCurve: undefined
   GrowthAnalysis: { growthAnalysis: GrowthAnalysisPayload }
   Diary: undefined

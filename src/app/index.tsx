@@ -17,6 +17,7 @@ import AddMilestoneScreen from './milestone/AddMilestone'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
 import MyPostsScreen from './profile/MyPosts'
+import MyFavoritesScreen from './profile/MyFavorites'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
 import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
@@ -184,6 +185,11 @@ export default function Layout() {
                 name="MyPosts"
                 component={MyPostsScreen}
                 options={{ title: '我的帖子' }}
+              />
+              <Stack.Screen
+                name="MyFavorites"
+                component={MyFavoritesScreen}
+                options={{ title: '我的收藏' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

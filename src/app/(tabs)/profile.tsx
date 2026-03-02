@@ -95,6 +95,7 @@ export default function Profile() {
           <ActionMenu
             onLogout={handleLogout}
             onMyPosts={() => navigation.navigate('MyPosts')}
+            onMyFavorites={() => navigation.navigate('MyFavorites')}
           />
         </View>
       </ScrollView>
