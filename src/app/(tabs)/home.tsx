@@ -177,17 +177,32 @@ export default function Home() {
     })
   }, [insets.top])
 
-  // 监听路由参数，添加新帖子
+  // 监听路由参数，添加新帖子或切换标签
   useEffect(() => {
-    if (route.params && route.params.newPost) {
-      addNewPost(route.params.newPost)
-      // @ts-ignore
-      navigation.setParams({ newPost: null })
-      setTimeout(() => {
-        handleScrollToCommunity()
-      }, 300)
+    if (route.params) {
+      // 处理新帖子参数
+      if (route.params.newPost) {
+        addNewPost(route.params.newPost)
+        // @ts-ignore
+        navigation.setParams({ newPost: null })
+        setTimeout(() => {
+          handleScrollToCommunity()
+        }, 300)
+      }
+      // 处理切换标签参数
+      if (route.params.activeTab) {
+        setActiveTab(route.params.activeTab)
+        // @ts-ignore
+        navigation.setParams({ activeTab: null })
+      }
     }
-  }, [route.params, addNewPost, navigation, handleScrollToCommunity])
+  }, [
+    route.params,
+    addNewPost,
+    navigation,
+    handleScrollToCommunity,
+    setActiveTab
+  ])
 
   // 渲染列表尾部
   const ListFooterComponent = useCallback(() => {

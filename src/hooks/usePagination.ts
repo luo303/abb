@@ -137,8 +137,12 @@ export function usePostList(): UsePostListReturn {
   // 使用 useMemo 处理数据，为每个帖子添加 imageUrls 和 cleanedContent 属性
   const processedPosts = useMemo(() => {
     return posts.map(post => {
-      const imageUrls = extractImageUrls(post.content)
-      const cleanedContent = cleanContent(post.content)
+      const contentToProcess =
+        typeof post.content === 'string'
+          ? post.content
+          : post.content?.text || ''
+      const imageUrls = extractImageUrls(contentToProcess)
+      const cleanedContent = cleanContent(contentToProcess)
       return {
         ...post,
         imageUrls,

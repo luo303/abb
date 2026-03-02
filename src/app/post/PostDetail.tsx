@@ -23,7 +23,9 @@ import { UserMeResponse } from '@/api/profile'
 import {
   fetchPostDetail,
   updatePostStats,
-  clearCurrentPost
+  clearCurrentPost,
+  addAuthorPostToFollowing,
+  toggleFollow as toggleFollowAction
 } from '@/store/modules/PostStore'
 import { toggleFollow } from '@/api/follow'
 import {
@@ -362,11 +364,22 @@ export default function PostDetail() {
     try {
       const newIsFollowing = !isFollowing
       setIsFollowing(newIsFollowing)
+
+      // 乐观更新：当关注作者时，将当前帖子添加到关注列表
+      if (newIsFollowing) {
+        dispatch(addAuthorPostToFollowing(currentPost))
+      }
+
+      // 更新 Redux 中的关注状态
+      dispatch(toggleFollowAction(currentPost.author_id as string))
+
       await toggleFollow(currentPost.author_id as string)
       showMessage(newIsFollowing ? '关注成功' : '取消关注')
     } catch (error) {
       console.error('关注操作失败:', error)
       setIsFollowing(prev => !prev)
+      // 失败时回滚 Redux 中的关注状态
+      dispatch(toggleFollowAction(currentPost.author_id as string))
       showMessage('操作失败，请稍后重试')
     }
   }
