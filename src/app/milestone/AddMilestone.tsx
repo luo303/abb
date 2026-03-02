@@ -142,14 +142,14 @@ export default function AddMilestoneScreen() {
 
   return (
     <View style={styles.container}>
-      <AddPostHeader title="记录大事记" />
+      <AddPostHeader title="大事记" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
           style={styles.content}
-          contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+          contentContainerStyle={{ paddingBottom: 0, flexGrow: 1 }}
         >
           <View style={styles.cardWrapper}>
             <LinearGradient
@@ -160,31 +160,36 @@ export default function AddMilestoneScreen() {
             >
               <PostUserInfo />
 
-              <TouchableOpacity style={styles.timeRow} onPress={showDate}>
-                <View style={styles.timeLeft}>
-                  <View style={styles.timeIconWrap}>
-                    <MaterialIcons name="event" size={18} color="#f43f5e" />
+              <LinearGradient
+                colors={['#ff9a9e', '#f43f5e']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.timeCta}
+              >
+                <TouchableOpacity
+                  style={styles.timeCtaInner}
+                  onPress={showDate}
+                >
+                  <View style={styles.ctaIcon}>
+                    <MaterialIcons name="event" size={20} color="#fff" />
                   </View>
-                  <Text style={styles.timeLabel}>时间</Text>
-                </View>
-                <View style={styles.timeRight}>
-                  <Text
-                    style={[
-                      styles.timeValue,
-                      !eventTime && styles.timeValuePlaceholder
-                    ]}
-                  >
-                    {eventTime
-                      ? new Date(eventTime).toLocaleDateString()
-                      : '点击选择时间'}
-                  </Text>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
-                    color="#9ca3af"
-                  />
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.ctaTextWrap}>
+                    <Text style={styles.ctaTitle}>选择时间</Text>
+                    <Text style={styles.ctaSubtitle}>
+                      {eventTime
+                        ? new Date(eventTime).toLocaleDateString()
+                        : '点击选择时间'}
+                    </Text>
+                  </View>
+                  <View style={styles.ctaArrow}>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={20}
+                      color="#fff"
+                    />
+                  </View>
+                </TouchableOpacity>
+              </LinearGradient>
               {Platform.OS === 'ios' && showPicker && (
                 <View style={styles.pickerWrap}>
                   <DateTimePicker
@@ -245,75 +250,85 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 15
+    padding: 15,
+    paddingBottom: 20
   },
   cardWrapper: {
     flexGrow: 1,
-    marginBottom: 15,
+    marginBottom: 0,
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
-    borderRadius: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     backgroundColor: '#fff'
   },
   cardGradient: {
     flex: 1,
-    borderRadius: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     paddingVertical: 5,
     borderWidth: 1,
     borderColor: '#fff'
   },
-  timeRow: {
+  timeCta: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 16,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5
+  },
+  timeCtaInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginHorizontal: 12,
-    marginTop: 8,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    paddingHorizontal: 16,
+    paddingVertical: 14
+  },
+  ctaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderWidth: 1,
-    borderColor: '#fecdd3',
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 3
-  },
-  timeLeft: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  timeRight: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  timeIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#fff1f2',
-    borderWidth: 1,
-    borderColor: '#fda4af',
+    borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8
+    marginRight: 12
   },
-  timeLabel: {
-    fontSize: 16,
-    color: '#222',
-    fontWeight: '600'
+  ctaTextWrap: {
+    flex: 1
   },
-  timeValue: {
+  ctaTitle: {
     fontSize: 14,
-    color: '#374151',
-    marginRight: 6
+    color: '#ffffff',
+    fontWeight: '700',
+    marginBottom: 2
   },
-  timeValuePlaceholder: {
-    color: '#9ca3af'
+  ctaSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500'
+  },
+  ctaArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10
   },
   pickerWrap: {
     marginHorizontal: 12,
