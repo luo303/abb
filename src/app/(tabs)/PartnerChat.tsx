@@ -20,7 +20,7 @@ import {
   TouchableWithoutFeedback
 } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, AntDesign } from '@expo/vector-icons'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -304,7 +304,7 @@ export default function PartnerChat() {
         <View style={styles.addPartnerContainer}>
           <View style={styles.addPartnerHeader}>
             <View style={styles.heroCircle}>
-              <Ionicons name="heart" size={28} color="#fff" />
+              <AntDesign name="message" size={28} color="#fff" />
             </View>
             <Text style={styles.addPartnerTitle}>绑定另一半</Text>
             <Text style={styles.addPartnerSubtitle}>

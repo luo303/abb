@@ -60,7 +60,7 @@ export default function Profile() {
   )
 
   const handleLogout = () => {
-    dispatch(logoutAndClearAll())
+    dispatch(logoutAndClearAll() as any)
     navigation.reset({
       index: 0,
       routes: [{ name: 'Login' }]

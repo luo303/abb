@@ -35,7 +35,7 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
       />
       <NavItem
         icon="needle"
-        label="疫苗记录"
+        label="疫苗接种"
         library="MaterialCommunityIcons"
         color="#81C784" // 浅绿色
         onPress={() => navigation.navigate('VaccineRecord')}
