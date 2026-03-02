@@ -1,6 +1,7 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Platform } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { RecordItem } from '../../types/recordTypes'
 
 interface RecordCardProps {
@@ -9,7 +10,12 @@ interface RecordCardProps {
 
 export default function RecordCard({ item }: RecordCardProps) {
   return (
-    <View style={styles.recordCard}>
+    <LinearGradient
+      colors={['#ffffff', '#fef5f5']}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.recordCard}
+    >
       <View style={styles.recordContent}>
         <View style={styles.recordInfo}>
           <View style={styles.iconContainer}>
@@ -26,27 +32,33 @@ export default function RecordCard({ item }: RecordCardProps) {
         </View>
         <View style={styles.recordTimeContainer}>
           <Text style={styles.recordTimeText}>{item.time}</Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={20}
+            color="#f43f5e"
+          />
         </View>
       </View>
-    </View>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
   recordCard: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+    ...(Platform.select({
+      ios: {
+        shadowColor: '#f43f5e',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 4
+      }
+    }) as any)
   },
   recordContent: {
     flexDirection: 'row',
@@ -64,7 +76,18 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: '#fff0f0',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    ...(Platform.select({
+      ios: {
+        shadowColor: '#f43f5e',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4
+      },
+      android: {
+        elevation: 3
+      }
+    }) as any)
   },
   recordTextInfo: {
     marginLeft: 12,
@@ -73,7 +96,7 @@ const styles = StyleSheet.create({
   recordName: {
     fontSize: 16,
     color: '#333',
-    fontWeight: '500'
+    fontWeight: '600'
   },
   recordDetails: {
     fontSize: 14,
@@ -87,7 +110,7 @@ const styles = StyleSheet.create({
   },
   recordTimeText: {
     fontSize: 16,
-    color: '#333',
-    fontWeight: '500'
+    color: '#f43f5e',
+    fontWeight: '600'
   }
 })

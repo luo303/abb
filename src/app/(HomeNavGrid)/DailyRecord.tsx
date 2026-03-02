@@ -5,13 +5,15 @@ import {
   ScrollView,
   Platform,
   TouchableOpacity,
-  Text
+  Text,
+  Animated
 } from 'react-native'
 import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import dayjs from 'dayjs'
 import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigationHelper } from '../../utils/navigation'
 
 // 导入日常记录组件
@@ -37,6 +39,7 @@ export default function DailyRecordScreen() {
     sleepDuration: 0,
     diaperCount: 0
   })
+  const animatedBackgroundValue = useState(new Animated.Value(0))[0]
 
   // 根据选中日期更新记录和统计
   useEffect(() => {
@@ -74,6 +77,39 @@ export default function DailyRecordScreen() {
       diaperCount
     })
   }, [selectedDate])
+
+  // 计算整体进度并更新背景颜色
+  useEffect(() => {
+    // 目标值设置
+    const feedingTarget = 8 // 每日喂养目标8次
+    const sleepTarget = 12 // 每日睡眠目标12小时
+    const diaperTarget = 8 // 每日换尿布目标8次
+
+    // 计算各项目进度
+    const feedingProgress = Math.min(
+      (statistics.feedingCount / feedingTarget) * 100,
+      100
+    )
+    const sleepProgress = Math.min(
+      (statistics.sleepDuration / sleepTarget) * 100,
+      100
+    )
+    const diaperProgress = Math.min(
+      (statistics.diaperCount / diaperTarget) * 100,
+      100
+    )
+
+    // 计算平均进度
+    const averageProgress =
+      (feedingProgress + sleepProgress + diaperProgress) / 3
+
+    // 启动背景颜色动画
+    Animated.timing(animatedBackgroundValue, {
+      toValue: averageProgress,
+      duration: 1000,
+      useNativeDriver: false
+    }).start()
+  }, [statistics, animatedBackgroundValue])
 
   // 处理底部按钮点击
   const handleActionPress = (type: RecordType) => {
@@ -150,9 +186,23 @@ export default function DailyRecordScreen() {
     }
   }
 
+  // 动态计算背景颜色
+  const animatedBackgroundColor = animatedBackgroundValue.interpolate({
+    inputRange: [0, 25, 50, 75, 100],
+    outputRange: ['#ffffff', '#ffeeee', '#ffdddd', '#ffcccc', '#ffaaaa']
+  })
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: '日常记录' }} />
+
+      {/* 动态背景颜色 */}
+      <Animated.View
+        style={[
+          styles.backgroundView,
+          { backgroundColor: animatedBackgroundColor }
+        ]}
+      />
 
       {/* 1. 日历Header - 保持固定 */}
       <View style={styles.calendarHeader}>
@@ -271,14 +321,20 @@ export default function DailyRecordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa' // 稍微浅一点的底色
+    backgroundColor: '#ffffff' // 默认白色背景
+  },
+  backgroundView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0
   },
   calendarHeader: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
     zIndex: 10 // 确保在 iOS 上层级正确
   },
   headerContent: {
@@ -295,13 +351,18 @@ const styles = StyleSheet.create({
   dateTextContainer: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3
   },
   dateText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333'
+    color: '#f43f5e'
   },
   dateNavigation: {
     flexDirection: 'row',
@@ -313,13 +374,15 @@ const styles = StyleSheet.create({
     color: '#f43f5e'
   },
   mainScroll: {
-    flex: 1
+    flex: 1,
+    zIndex: 1
   },
   dashboardContainer: {
-    padding: 16
+    padding: 16,
+    zIndex: 1
   },
   dashboardCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 24,
     padding: 20,
     flexDirection: 'row',
@@ -327,17 +390,18 @@ const styles = StyleSheet.create({
     // 阴影适配
     ...(Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: '#f43f5e',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.15,
         shadowRadius: 10
       },
       android: {
-        elevation: 4
+        elevation: 5
       }
     }) as any)
   },
   recordsListContainer: {
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
+    zIndex: 1
   }
 })

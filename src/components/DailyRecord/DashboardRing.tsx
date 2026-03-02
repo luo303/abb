@@ -56,8 +56,6 @@ export default function DashboardRing({
           size={100}
           strokeWidth={8}
           unfilledColor="#f0f0f0"
-          useGradient={true}
-          gradientColors={['#f43f5e', '#ef4444']}
           backgroundColor="#fff1f2"
           centerText={
             <View style={styles.progressContent}>
@@ -81,11 +79,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 8
+    marginHorizontal: 8,
+    paddingVertical: 12
   },
   ringContainer: {
     alignItems: 'center',
-    gap: 12
+    gap: 12,
+    padding: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)'
   },
   progressContent: {
     alignItems: 'center',
@@ -94,11 +96,13 @@ const styles = StyleSheet.create({
   ringValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 8
+    marginTop: 8,
+    color: '#f43f5e'
   },
   ringLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#f43f5e',
+    fontWeight: '600',
     marginTop: 4
   }
 })
