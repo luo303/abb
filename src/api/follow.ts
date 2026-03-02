@@ -1,0 +1,75 @@
+import request from '@/utils/request'
+import { FollowStatus, FollowingPost } from '@/types/follow'
+
+/**
+ * 关注/取消关注用户
+ * @param target_user_id 目标用户ID
+ * @returns 关注操作的响应
+ */
+export const toggleFollow = async (
+  target_user_id: string
+): Promise<FollowStatus> => {
+  try {
+    const res = (await request.post(
+      `/user/follow/${target_user_id}`
+    )) as FollowStatus
+
+    // 处理后端返回的非0状态码
+    if (res.code !== 0) {
+      throw new Error(res.message || '操作失败')
+    }
+
+    return res
+  } catch (error) {
+    console.error('关注操作失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 获取关注的帖子列表
+ * @param page 页码
+ * @param page_size 每页数量
+ * @returns 关注帖子列表
+ */
+export const getFollowingPosts = async (
+  page: number = 1,
+  page_size: number = 10
+): Promise<{
+  code: number
+  message: string
+  data: {
+    items: FollowingPost[]
+    page: number
+    page_size: number
+    has_more: boolean
+  }
+}> => {
+  try {
+    const res = (await request.get('/post/following', {
+      params: {
+        page,
+        page_size
+      }
+    })) as {
+      code: number
+      message: string
+      data: {
+        items: FollowingPost[]
+        page: number
+        page_size: number
+        has_more: boolean
+      }
+    }
+
+    // 处理后端返回的非0状态码
+    if (res.code !== 0) {
+      throw new Error(res.message || '获取关注帖子失败')
+    }
+
+    return res
+  } catch (error) {
+    console.error('获取关注帖子失败:', error)
+    throw error
+  }
+}

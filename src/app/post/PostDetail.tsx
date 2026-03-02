@@ -23,10 +23,9 @@ import { UserMeResponse } from '@/api/profile'
 import {
   fetchPostDetail,
   updatePostStats,
-  toggleFollow,
-  syncPostDetailToList,
   clearCurrentPost
 } from '@/store/modules/PostStore'
+import { toggleFollow } from '@/api/follow'
 import {
   getPostComments,
   getPostCommentReplies,
@@ -358,12 +357,18 @@ export default function PostDetail() {
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
   }
 
-  const handleFollowAuthor = () => {
+  const handleFollowAuthor = async () => {
     if (!currentPost) return
-    const newIsFollowing = !isFollowing
-    setIsFollowing(newIsFollowing)
-    dispatch(toggleFollow(currentPost.author_id))
-    showMessage(newIsFollowing ? '关注成功' : '取消关注')
+    try {
+      const newIsFollowing = !isFollowing
+      setIsFollowing(newIsFollowing)
+      await toggleFollow(currentPost.author_id as string)
+      showMessage(newIsFollowing ? '关注成功' : '取消关注')
+    } catch (error) {
+      console.error('关注操作失败:', error)
+      setIsFollowing(prev => !prev)
+      showMessage('操作失败，请稍后重试')
+    }
   }
 
   const handleLikeComment = (id: string) => {
