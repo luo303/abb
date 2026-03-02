@@ -16,6 +16,8 @@ import dayjs from 'dayjs'
 import { Ionicons } from '@expo/vector-icons'
 import ImageViewing from 'react-native-image-viewing'
 import * as ImagePicker from 'expo-image-picker'
+import { LinearGradient } from 'expo-linear-gradient'
+import TimelineNode from '@/components/common/TimelineNode'
 import { uploadFile } from '@/api/upload'
 import {
   BabyPhotoItem,
@@ -41,6 +43,7 @@ export default function AlbumScreen() {
   const [uploading, setUploading] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewIndex, setPreviewIndex] = useState(0)
+  const [viewMode, setViewMode] = useState<'year' | 'month' | 'day'>('day')
 
   const fetchPage = useCallback(
     async (targetPage: number, isRefresh = false) => {
@@ -83,16 +86,26 @@ export default function AlbumScreen() {
   const groupedPhotos = useMemo(() => {
     const sorted = [...photos].sort((a, b) => (b.ctime || 0) - (a.ctime || 0))
     const map = new Map<string, AlbumPhoto[]>()
+
     sorted.forEach(photo => {
-      const dayKey = dayjs(photo.ctime).format('YYYY-MM-DD')
-      if (!map.has(dayKey)) map.set(dayKey, [])
-      map.get(dayKey)!.push(photo)
+      let key = ''
+      if (viewMode === 'year') {
+        key = dayjs(photo.ctime).format('YYYY')
+      } else if (viewMode === 'month') {
+        key = dayjs(photo.ctime).format('YYYY-MM')
+      } else {
+        key = dayjs(photo.ctime).format('YYYY-MM-DD')
+      }
+
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(photo)
     })
+
     return Array.from(map.entries()).map(([date, items]) => ({
       date,
       items
     }))
-  }, [photos])
+  }, [photos, viewMode])
 
   const orderedPhotos = useMemo(
     () => groupedPhotos.flatMap(group => group.items),
@@ -203,36 +216,82 @@ export default function AlbumScreen() {
   }: {
     item: { date: string; items: AlbumPhoto[] }
   }) => (
-    <View style={styles.group}>
-      <Text style={styles.groupTitle}>{item.date}</Text>
-      <View style={styles.grid}>
-        {item.items.map(photo => (
-          <TouchableOpacity
-            key={photo.photo_id}
-            style={styles.gridItem}
-            activeOpacity={0.9}
-            onPress={() => {
-              const globalIndex = orderedPhotos.findIndex(
-                p => p.photo_id === photo.photo_id
-              )
-              setPreviewIndex(globalIndex >= 0 ? globalIndex : 0)
-              setPreviewVisible(true)
-            }}
-          >
-            <Image
-              source={{ uri: (photo.link || '').trim() }}
-              style={[
-                styles.image,
-                photo.status === 'uploading' && styles.uploadingImage
-              ]}
-            />
-            {photo.status === 'uploading' && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color="#fff" />
+    <View style={styles.groupContainer}>
+      {/* 左侧时间轴 */}
+      <TimelineNode />
+
+      {/* 右侧内容 */}
+      <View style={styles.groupContent}>
+        <View style={styles.groupHeader}>
+          {viewMode === 'day' && (
+            <>
+              <Text style={styles.groupDay}>
+                {dayjs(item.date).format('DD')}
+              </Text>
+              <View style={styles.groupMonthYear}>
+                <Text style={styles.groupMonth}>
+                  {dayjs(item.date).format('MM')}月
+                </Text>
+                <Text style={styles.groupYear}>
+                  {dayjs(item.date).format('YYYY')}
+                </Text>
               </View>
-            )}
-          </TouchableOpacity>
-        ))}
+            </>
+          )}
+          {viewMode === 'month' && (
+            <>
+              <Text style={styles.groupDay}>
+                {dayjs(item.date).format('MM')}
+              </Text>
+              <View style={styles.groupMonthYear}>
+                <Text style={styles.groupMonth}>月</Text>
+                <Text style={styles.groupYear}>
+                  {dayjs(item.date).format('YYYY')}
+                </Text>
+              </View>
+            </>
+          )}
+          {viewMode === 'year' && (
+            <>
+              <Text style={styles.groupDay}>
+                {dayjs(item.date).format('YYYY')}
+              </Text>
+              <View style={styles.groupMonthYear}>
+                <Text style={styles.groupMonth}>年</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.grid}>
+          {item.items.map(photo => (
+            <TouchableOpacity
+              key={photo.photo_id}
+              style={styles.gridItem}
+              activeOpacity={0.9}
+              onPress={() => {
+                const globalIndex = orderedPhotos.findIndex(
+                  p => p.photo_id === photo.photo_id
+                )
+                setPreviewIndex(globalIndex >= 0 ? globalIndex : 0)
+                setPreviewVisible(true)
+              }}
+            >
+              <Image
+                source={{ uri: (photo.link || '').trim() }}
+                style={[
+                  styles.image,
+                  photo.status === 'uploading' && styles.uploadingImage
+                ]}
+              />
+              {photo.status === 'uploading' && (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </View>
   )
@@ -246,6 +305,11 @@ export default function AlbumScreen() {
 
   return (
     <View style={styles.safeArea}>
+      <LinearGradient
+        colors={['#fff1f2', '#fff']}
+        style={StyleSheet.absoluteFill}
+      />
+
       <FlatList
         data={groupedPhotos}
         keyExtractor={item => item.date}
@@ -261,7 +325,7 @@ export default function AlbumScreen() {
           loading ? (
             <View style={styles.footerLoading}>
               <ActivityIndicator size="small" color="#f43f5e" />
-              <Text style={styles.footerText}>閸旂姾娴囨稉?..</Text>
+              <Text style={styles.footerText}>加载中...</Text>
             </View>
           ) : null
         }
@@ -274,6 +338,7 @@ export default function AlbumScreen() {
           />
         }
       />
+
       <ImageViewing
         images={orderedPhotos.map(item => ({
           uri: (item.link || '').trim()
@@ -285,22 +350,51 @@ export default function AlbumScreen() {
         doubleTapToZoomEnabled={true}
         keyExtractor={(_, index) => `album-preview-${index}`}
       />
-      <TouchableOpacity
-        style={[
-          styles.addButton,
-          { bottom: 24 + insets.bottom },
-          uploading && styles.addButtonDisabled
-        ]}
-        activeOpacity={0.9}
-        onPress={handleAddPhoto}
-        disabled={uploading}
-      >
-        {uploading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Ionicons name="add" size={28} color="#fff" />
-        )}
-      </TouchableOpacity>
+
+      {/* 底部功能区 */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={styles.bottomBarInner}>
+          {/* 左侧：维度切换 */}
+          <View style={styles.filterWrapper}>
+            {(['year', 'month', 'day'] as const).map(mode => (
+              <TouchableOpacity
+                key={mode}
+                style={[
+                  styles.filterItem,
+                  viewMode === mode && styles.filterItemActive
+                ]}
+                activeOpacity={0.8}
+                onPress={() => setViewMode(mode)}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    viewMode === mode && styles.filterTextActive
+                  ]}
+                >
+                  {mode === 'year' ? '年' : mode === 'month' ? '月' : '日'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* 右侧：添加按钮 */}
+          <TouchableOpacity
+            style={[styles.addButton, uploading && styles.addButtonDisabled]}
+            activeOpacity={0.9}
+            onPress={handleAddPhoto}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="add" size={24} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   )
 }
@@ -311,17 +405,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 0
+    paddingHorizontal: 20,
+    paddingTop: 20
   },
-  group: {
-    marginBottom: 18
+  groupContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    minHeight: 100
   },
-  groupTitle: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 10,
-    fontWeight: '600'
+  groupContent: {
+    flex: 1
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+    gap: 8
+  },
+  groupDay: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#333',
+    lineHeight: 32
+  },
+  groupMonthYear: {
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    marginBottom: 2
+  },
+  groupMonth: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 0
+  },
+  groupYear: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '500'
   },
   grid: {
     flexDirection: 'row',
@@ -329,8 +450,8 @@ const styles = StyleSheet.create({
     gap: 8
   },
   gridItem: {
-    width: (Dimensions.get('window').width - 16 * 2 - 8 * 2) / 3,
-    height: (Dimensions.get('window').width - 16 * 2 - 8 * 2) / 3,
+    width: (Dimensions.get('window').width - 20 * 2 - 24 - 12 - 8 * 2) / 3,
+    height: (Dimensions.get('window').width - 20 * 2 - 24 - 12 - 8 * 2) / 3,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#f1f5f9'
@@ -372,22 +493,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999'
   },
-  addButton: {
+  bottomBar: {
     position: 'absolute',
-    right: 24,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 16
+  },
+  bottomBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)', // 增加不透明度作为回退
+    borderRadius: 32,
+    padding: 6,
+    paddingRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8
+  },
+  divider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#e2e8f0',
+    marginHorizontal: 8
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#f43f5e',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6
+    shadowRadius: 8,
+    elevation: 4
   },
   addButtonDisabled: {
     opacity: 0.7
+  },
+  filterItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20
+  },
+  filterItemActive: {
+    backgroundColor: '#fff1f2'
+  },
+  filterWrapper: {
+    flexDirection: 'row',
+    borderRadius: 24
+  },
+  filterText: {
+    fontSize: 15,
+    color: '#64748b',
+    fontWeight: '500'
+  },
+  filterTextActive: {
+    color: '#f43f5e',
+    fontWeight: '600'
   }
 })

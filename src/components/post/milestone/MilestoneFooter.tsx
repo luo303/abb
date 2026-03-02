@@ -36,11 +36,9 @@ export default function MilestoneFooter({
 }: MilestoneFooterProps) {
   const insets = useSafeAreaInsets()
   const navigation = useNavigation<NavigationProps>()
-  const dispatch = useAppDispatch()
   const [isPublishing, setIsPublishing] = useState(false)
   const isPublishingRef = useRef(false)
   const { showMessage } = useMessage()
-  const userInfo = useAppSelector((state: RootState) => state.user.userInfo)
 
   const disabled =
     !data.title?.trim() ||
@@ -89,41 +87,7 @@ export default function MilestoneFooter({
         throw new Error('未获取到 post_id')
       }
 
-      // 与帖子一致，走发布接口
-      const publishResponse = (await request.post(
-        `/post/${postId}/publish`
-      )) as { code: number; message: string }
-      if (publishResponse.code !== 0) {
-        throw new Error('发布失败: ' + publishResponse.message)
-      }
-
-      // 本地构造对象用于刷新
-      const newPost: PostItem = {
-        post_id: postId,
-        author_id: userInfo?.user_id || 'user_123456',
-        author_avatar: userInfo?.avatar
-          ? { uri: userInfo.avatar }
-          : require('../../../assets/testAvatar.png'),
-        author_name: userInfo?.username || userInfo?.account || '稚慧宝用户',
-        author_province: userInfo?.province || '',
-        author_city: userInfo?.city || '未知位置',
-        title: payload.title,
-        baby_age_text: userInfo?.baby_age_text || '稚慧宝用户',
-        ctime: Date.now(),
-        content: contentObj,
-        tags: [],
-        images: data.images || [],
-        like_count: 0,
-        dislike_count: 0,
-        collect_count: 0,
-        comment_count: 0
-      }
-      dispatch(addNewPost(newPost))
-      try {
-        await dispatch(fetchPostList({ page: 1, strategy: 'ctime' })).unwrap()
-      } catch {}
-
-      showMessage('已记录大事记')
+      showMessage('已保存大事记')
       onSuccess?.()
       navigation.goBack()
     } catch (e) {

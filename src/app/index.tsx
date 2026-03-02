@@ -14,6 +14,7 @@ import TabsLayout from './(tabs)/TabsLayout'
 import PostDetail from './post/PostDetail'
 import AddPostScreen from './post/AddPost'
 import AddMilestoneScreen from './milestone/AddMilestone'
+import MilestoneListScreen from './milestone/MilestoneList'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
 import MyPostsScreen from './profile/MyPosts'
@@ -149,6 +150,11 @@ export default function Layout() {
                 name="AddMilestone"
                 component={AddMilestoneScreen}
                 options={{ headerShown: false, presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="MilestoneList"
+                component={MilestoneListScreen}
+                options={{ title: '大事记' }}
               />
               <Stack.Screen
                 name="AddBaby"

@@ -55,8 +55,6 @@ export default function AddMilestoneScreen() {
     }
   }, [currentBabyId, currentBabyDetail, dispatch])
 
-  const handlePickTime = () => setShowPicker(true)
-
   const onTimeChange = (_: DateTimePickerEvent, selected?: Date) => {
     if (selected) {
       const selectedTime = selected.getTime()
@@ -158,8 +156,6 @@ export default function AddMilestoneScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.cardGradient}
             >
-              <PostUserInfo />
-
               <LinearGradient
                 colors={['#ff9a9e', '#f43f5e']}
                 start={{ x: 0, y: 0 }}

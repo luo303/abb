@@ -287,7 +287,7 @@ export default function GrowthRecord() {
             accent="#ef4444"
             cta="写日记"
             icon="book-outline"
-            onPress={() => navigation.navigate('AddMilestone')}
+            onPress={() => navigation.navigate('MilestoneList')}
           />
         </View>
 

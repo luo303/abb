@@ -162,3 +162,24 @@ export const getMyCollections = async (
   })
   return res as unknown as PostListResponse
 }
+
+/**
+ * 获取用户大事记列表
+ * @param page 页码
+ * @param pageSize 每页数量
+ * @param strategy 排序策略
+ */
+export const getMyMilestones = async (
+  page = 1,
+  pageSize = 10,
+  strategy?: string
+): Promise<PostListResponse> => {
+  const res = await request.get('/post/mine/milestone', {
+    params: {
+      page,
+      page_size: pageSize,
+      strategy
+    }
+  })
+  return res as unknown as PostListResponse
+}
