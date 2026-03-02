@@ -14,9 +14,45 @@ interface TimePickerProps {
   value: Date
   onChange: (date: Date) => void
   label: string
+  type?: '奶粉' | '母乳' | '辅食'
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, label }) => {
+const TimePicker: React.FC<TimePickerProps> = ({
+  value,
+  onChange,
+  label,
+  type = '母乳'
+}) => {
+  // 根据类型获取颜色
+  const getColor = (type: '奶粉' | '母乳' | '辅食') => {
+    switch (type) {
+      case '奶粉':
+        return '#f43f5e'
+      case '母乳':
+        return '#e11d48'
+      case '辅食':
+        return '#b91c1c'
+      default:
+        return '#e11d48'
+    }
+  }
+
+  // 根据类型获取背景颜色
+  const getBackgroundColor = (type: '奶粉' | '母乳' | '辅食') => {
+    switch (type) {
+      case '奶粉':
+        return '#fff0f0'
+      case '母乳':
+        return '#fff5f5'
+      case '辅食':
+        return '#ffe6e6'
+      default:
+        return '#fff5f5'
+    }
+  }
+
+  const color = getColor(type)
+  const backgroundColor = getBackgroundColor(type)
   // 确保 value 是一个有效的 Date 对象
   const validDate =
     value instanceof Date && !isNaN(value.getTime()) ? value : new Date()
@@ -56,15 +92,18 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, label }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.timeLabel}>{label}</Text>
+      <Text style={[styles.timeLabel, { color: color }]}>{label}</Text>
       {Platform.OS === 'android' ? (
         <>
           <TouchableOpacity
-            style={styles.timeButton}
+            style={[
+              styles.timeButton,
+              { borderColor: color, backgroundColor: backgroundColor }
+            ]}
             onPress={openAndroidPicker}
             activeOpacity={0.8}
           >
-            <Text style={styles.timeButtonText}>
+            <Text style={[styles.timeButtonText, { color: color }]}>
               {validDate.toLocaleString()}
             </Text>
           </TouchableOpacity>
@@ -75,6 +114,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, label }) => {
           mode="datetime"
           display="default"
           onChange={handleDateChange}
+          textColor={color}
         />
       )}
     </View>

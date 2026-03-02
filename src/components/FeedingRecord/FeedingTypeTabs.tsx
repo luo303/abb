@@ -15,11 +15,11 @@ const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
   const getButtonColor = (type: '奶粉' | '母乳' | '辅食'): string => {
     switch (type) {
       case '奶粉':
-        return '#b45309' // 深奶黄色
+        return '#f43f5e' // 亮红色（奶粉）
       case '母乳':
         return '#e11d48' // 深珊瑚粉
       case '辅食':
-        return '#166534' // 深苹果绿
+        return '#b91c1c' // 深红色（辅食）
       default:
         return '#333333'
     }
@@ -50,6 +50,7 @@ const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
         <Text
           style={[
             styles.tabText,
+            { color: currentColor },
             selectedType === '奶粉' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >
@@ -76,6 +77,7 @@ const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
         <Text
           style={[
             styles.tabText,
+            { color: currentColor },
             selectedType === '母乳' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >
@@ -102,6 +104,7 @@ const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
         <Text
           style={[
             styles.tabText,
+            { color: currentColor },
             selectedType === '辅食' && [styles.activeTabText, { color: '#fff' }]
           ]}
         >

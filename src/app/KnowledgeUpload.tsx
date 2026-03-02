@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
   tipsText: {
-    color: '#fde68a',
+    color: '#fecdd3',
     fontSize: 12,
     fontWeight: '600'
   },
@@ -478,13 +478,13 @@ const styles = StyleSheet.create({
     color: '#111827'
   },
   sectionTag: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#fef2f2',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999
   },
   sectionTagText: {
-    color: '#166534',
+    color: '#e11d48',
     fontSize: 11,
     fontWeight: '600'
   },

@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9'
   },
   cardCompleted: {
-    backgroundColor: '#f0fdf4', // 极淡的绿色背景
-    borderColor: '#dcfce7'
+    backgroundColor: '#fff5f5', // 极淡的红色背景
+    borderColor: '#fecdd3'
   },
   cardPending: {
     backgroundColor: '#fff',

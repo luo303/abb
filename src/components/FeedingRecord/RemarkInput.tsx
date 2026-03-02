@@ -13,27 +13,60 @@ interface RemarkInputProps {
   onChange: (text: string) => void
   label: string
   placeholder: string
+  type?: '奶粉' | '母乳' | '辅食'
 }
 
 const RemarkInput: React.FC<RemarkInputProps> = ({
   value,
   onChange,
   label,
-  placeholder
+  placeholder,
+  type = '母乳'
 }) => {
   // 贴纸数据
   const stickers = [
-    { emoji: '🤢', text: '吐奶了' },
-    { emoji: '😀', text: '胃口好' },
-    { emoji: '🐢', text: '喝得慢' },
-    { emoji: '😴', text: '睡着了' }
+    { text: '吐奶了' },
+    { text: '胃口好' },
+    { text: '喝得慢' },
+    { text: '睡着了' }
   ]
+
+  // 根据类型获取颜色
+  const getTagColor = () => {
+    switch (type) {
+      case '奶粉':
+        return '#f43f5e'
+      case '母乳':
+        return '#e11d48'
+      case '辅食':
+        return '#b91c1c'
+      default:
+        return '#e11d48'
+    }
+  }
+
+  // 根据类型获取背景颜色
+  const getBackgroundColor = () => {
+    switch (type) {
+      case '奶粉':
+        return '#fff0f0'
+      case '母乳':
+        return '#fff5f5'
+      case '辅食':
+        return '#ffe6e6'
+      default:
+        return '#fff5f5'
+    }
+  }
 
   // 处理贴纸点击
   const handleStickerPress = (stickerText: string) => {
     const newRemark = value ? `${value} ${stickerText}` : stickerText
     onChange(newRemark)
   }
+
+  const tagColor = getTagColor()
+  const backgroundColor = getBackgroundColor()
 
   return (
     <View style={styles.remarkContainer}>
@@ -48,17 +81,24 @@ const RemarkInput: React.FC<RemarkInputProps> = ({
         {stickers.map((sticker, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.tag}
+            style={[
+              styles.tag,
+              { borderColor: tagColor, backgroundColor: backgroundColor }
+            ]}
             onPress={() => handleStickerPress(sticker.text)}
           >
-            <Text style={styles.tagEmoji}>{sticker.emoji}</Text>
-            <Text style={styles.tagText}>{sticker.text}</Text>
+            <Text style={[styles.tagText, { color: tagColor }]}>
+              {sticker.text}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <TextInput
-        style={styles.remarkInput}
+        style={[
+          styles.remarkInput,
+          { backgroundColor: backgroundColor, color: tagColor }
+        ]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
@@ -92,16 +132,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#f8f9fa',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#e2e8f0'
-  },
-  tagEmoji: {
-    fontSize: 16,
-    marginRight: 4
+    borderWidth: 1
   },
   tagText: {
-    fontSize: 14,
-    color: '#666'
+    fontSize: 14
   },
   remarkInput: {
     fontSize: 14,

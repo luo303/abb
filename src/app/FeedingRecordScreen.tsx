@@ -39,11 +39,11 @@ const FeedingRecordScreen = () => {
   ): [string, string] => {
     switch (type) {
       case '奶粉':
-        return ['#fff9e6', '#fff3cd'] // 浅奶黄色
+        return ['#fff0f0', '#ffb3b3'] // 浅红色（奶粉）
       case '母乳':
         return ['#fff5f5', '#fecdd3'] // 浅珊瑚粉
       case '辅食':
-        return ['#f0fdf4', '#bbf7d0'] // 浅苹果绿
+        return ['#ffe6e6', '#ff9999'] // 浅红色（辅食）
       default:
         return ['#ffffff', '#f8f9fa']
     }
@@ -53,11 +53,11 @@ const FeedingRecordScreen = () => {
   const getButtonColor = (type: '奶粉' | '母乳' | '辅食'): string => {
     switch (type) {
       case '奶粉':
-        return '#b45309' // 深奶黄色
+        return '#f43f5e' // 亮红色（奶粉）
       case '母乳':
         return '#e11d48' // 深珊瑚粉
       case '辅食':
-        return '#166534' // 深苹果绿
+        return '#b91c1c' // 深红色（辅食）
       default:
         return '#333333'
     }
@@ -69,9 +69,9 @@ const FeedingRecordScreen = () => {
       case '奶粉':
         return {
           title: '奶粉喂养提示',
-          color: '#b45309',
-          backgroundColor: '#fff9e6',
-          borderColor: '#fde68a',
+          color: '#f43f5e',
+          backgroundColor: '#fff0f0',
+          borderColor: '#ffb3b3',
           tips: [
             '• 奶粉喂养建议按照奶粉说明书的比例进行调配',
             '• 水温建议在40-50℃之间，避免破坏营养成分',
@@ -95,9 +95,9 @@ const FeedingRecordScreen = () => {
       case '辅食':
         return {
           title: '辅食添加提示',
-          color: '#166534',
-          backgroundColor: '#f0fdf4',
-          borderColor: '#bbf7d0',
+          color: '#b91c1c',
+          backgroundColor: '#ffe6e6',
+          borderColor: '#ff9999',
           tips: [
             '• 辅食添加应遵循由少到多、由稀到稠的原则',
             '• 首次添加建议从米粉开始，逐渐引入其他食物',
@@ -201,6 +201,7 @@ const FeedingRecordScreen = () => {
                 value={feedingTime}
                 onChange={setFeedingTime}
                 label="时间"
+                type={selectedType}
               />
             </View>
 
@@ -210,6 +211,7 @@ const FeedingRecordScreen = () => {
                 onChange={setRemark}
                 label="喂养状态"
                 placeholder="宝宝今天胃口怎么样？可以记录在这里哦..."
+                type={selectedType}
               />
             </View>
           </View>
@@ -279,9 +281,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(232, 232, 232, 0.8)'
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0
   },
   backButton: {
     padding: 8
@@ -347,11 +348,10 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
   footer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'transparent',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(232, 232, 232, 0.8)'
+    borderTopWidth: 0
   },
   saveButton: {
     backgroundColor: '#f43f5e',

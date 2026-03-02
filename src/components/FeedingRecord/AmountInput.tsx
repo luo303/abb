@@ -40,18 +40,52 @@ const AmountInput: React.FC<AmountInputProps> = ({
     }
   }
 
+  // 根据类型获取颜色
+  const getColor = (type: '奶粉' | '母乳' | '辅食') => {
+    switch (type) {
+      case '奶粉':
+        return '#f43f5e'
+      case '母乳':
+        return '#e11d48'
+      case '辅食':
+        return '#b91c1c'
+      default:
+        return '#e11d48'
+    }
+  }
+
+  // 根据类型获取背景颜色
+  const getBackgroundColor = (type: '奶粉' | '母乳' | '辅食') => {
+    switch (type) {
+      case '奶粉':
+        return '#fff0f0'
+      case '母乳':
+        return '#fff5f5'
+      case '辅食':
+        return '#ffe6e6'
+      default:
+        return '#fff5f5'
+    }
+  }
+
+  const color = getColor(type)
+  const backgroundColor = getBackgroundColor(type)
+
   return (
     <View style={styles.container}>
-      <Text style={styles.labelText}>{getLabel(type)}</Text>
+      <Text style={[styles.labelText, { color: color }]}>{getLabel(type)}</Text>
       <View style={styles.inputRow}>
         <TextInput
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
           keyboardType="numeric"
-          style={styles.inputItem}
+          style={[
+            styles.inputItem,
+            { color: color, backgroundColor: backgroundColor }
+          ]}
         />
-        <Text style={styles.unitText}>{getUnit(type)}</Text>
+        <Text style={[styles.unitText, { color: color }]}>{getUnit(type)}</Text>
       </View>
     </View>
   )
