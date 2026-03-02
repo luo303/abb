@@ -1,7 +1,6 @@
 import axios from 'axios'
 // import store from '../store'
 import * as SecureStore from 'expo-secure-store'
-import { clearToken } from '../store/modules/userStore'
 //创建axios实例
 const baseURL = 'https://m1.apifoxmock.com/m1/7571791-7309471-default' //云端mock地址
 const request = axios.create({
@@ -33,17 +32,19 @@ request.interceptors.response.use(
       ;(networkError as any).isNetworkError = true
       return Promise.reject(networkError)
     } else {
-      let msg = ''
       const status = error.response.status
       switch (status) {
         case 401:
-          msg = '登录失效'
-          // 动态导入 store 以处理 dispatch
-          const store = require('../store').default
-          store.dispatch(clearToken())
+          // 动态导入 store 和 clearToken 以处理 dispatch
+          import('../store').then(({ default: store }) => {
+            import('../store/modules/userStore').then(({ clearToken }) => {
+              store.dispatch(clearToken())
+            })
+          })
           break
         default:
-          msg = `${error.response.data.message}`
+          // 可以在这里添加日志记录或其他处理
+          break
       }
       return Promise.reject(error)
     }

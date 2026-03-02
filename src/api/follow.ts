@@ -14,8 +14,8 @@ export const toggleFollow = async (
       `/user/follow/${target_user_id}`
     )) as FollowStatus
 
-    // 处理后端返回的非0状态码
-    if (res.code !== 0) {
+    // 处理后端返回的非成功状态码
+    if (res.code !== 0 && res.code !== 200) {
       throw new Error(res.message || '操作失败')
     }
 
@@ -39,10 +39,10 @@ export const getFollowingPosts = async (
   code: number
   message: string
   data: {
-    items: FollowingPost[]
     page: number
     page_size: number
     has_more: boolean
+    items: FollowingPost[]
   }
 }> => {
   try {
@@ -55,15 +55,15 @@ export const getFollowingPosts = async (
       code: number
       message: string
       data: {
-        items: FollowingPost[]
         page: number
         page_size: number
         has_more: boolean
+        items: FollowingPost[]
       }
     }
 
-    // 处理后端返回的非0状态码
-    if (res.code !== 0) {
+    // 处理后端返回的非成功状态码
+    if (res.code !== 0 && res.code !== 200) {
       throw new Error(res.message || '获取关注帖子失败')
     }
 

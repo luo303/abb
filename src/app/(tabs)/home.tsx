@@ -69,12 +69,10 @@ export default function Home() {
       : posts
 
     return activeTab === '关注'
-      ? [...filtered]
-          .filter(post => post.is_followed === true)
-          .sort((a, b) => {
-            if (a.ctime && b.ctime) return b.ctime - a.ctime
-            return Math.random() - 0.5
-          })
+      ? [...filtered].sort((a, b) => {
+          if (a.ctime && b.ctime) return b.ctime - a.ctime
+          return Math.random() - 0.5
+        })
       : [...filtered].sort((a, b) => {
           switch (activeTab) {
             case '推荐':
