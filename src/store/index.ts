@@ -4,6 +4,7 @@ import chatReducer from './modules/ChatStore'
 import babyReducer from './modules/BabyStore'
 import partnerReducer from './modules/PartnerStore'
 import postReducer from './modules/PostStore'
+import diaperReducer from './modules/diaperStore'
 
 const store = configureStore({
   reducer: {
@@ -11,7 +12,8 @@ const store = configureStore({
     chat: chatReducer,
     baby: babyReducer,
     partner: partnerReducer,
-    post: postReducer
+    post: postReducer,
+    diaper: diaperReducer
   }
 })
 
