@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { getDiaperListByDateReq, DiaperListResponse } from '../../api/daily'
+import { getDiaperListByDateReq, DiaperListResponse } from '../../api/diaper'
 import { DiaperItem } from '../../types/diaper'
 
 interface DiaperState {
