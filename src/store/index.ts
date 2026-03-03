@@ -5,6 +5,9 @@ import babyReducer from './modules/BabyStore'
 import partnerReducer from './modules/PartnerStore'
 import postReducer from './modules/PostStore'
 import diaperReducer from './modules/diaperStore'
+import feedingReducer from './modules/feedingStore'
+import sleepReducer from './modules/sleepStore'
+import dailyReducer from './modules/dailyStore'
 
 const store = configureStore({
   reducer: {
@@ -13,7 +16,10 @@ const store = configureStore({
     baby: babyReducer,
     partner: partnerReducer,
     post: postReducer,
-    diaper: diaperReducer
+    diaper: diaperReducer,
+    feeding: feedingReducer,
+    sleep: sleepReducer,
+    daily: dailyReducer
   }
 })
 
