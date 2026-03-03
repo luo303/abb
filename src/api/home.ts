@@ -56,7 +56,8 @@ export const getHomePosts = async (
 export interface CreatePostParams {
   content: string
   images: string[]
-  tags: string[]
+  tag_ids: string[]
+  tags?: string[]
   isPublic: number // 1: 公开, 0: 私密
   status: 'published' | 'draft' | 'milestone' // 状态：发布或草稿或大事记
   title?: string // 帖子标题

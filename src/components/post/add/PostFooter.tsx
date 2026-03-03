@@ -86,6 +86,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         content: jsonContent,
         images: validNetworkUrls,
         tags: postData.tags,
+        tag_ids: postData.tags,
         isPublic: postData.isPublic ? 1 : 0,
         status: 'draft' as const, // 状态：草稿
         title: postData.title // 帖子标题

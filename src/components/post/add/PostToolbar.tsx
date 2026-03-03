@@ -6,35 +6,38 @@ import {
   StyleSheet,
   Alert,
   Modal,
-  ScrollView,
-  TextInput,
-  Keyboard
+  ScrollView
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Switch, Provider } from '@ant-design/react-native'
 
+interface Tag {
+  id: string
+  name: string
+}
+
 interface PostToolbarProps {
-  onTagsChange?: (tags: string[]) => void
+  onTagsChange?: (tagIds: string[]) => void
   onPrivacyChange?: (isPublic: boolean) => void
 }
 
-const TAGS = [
-  '宝宝日常',
-  '成长记录',
-  '育儿经验',
-  '亲子时光',
-  '辅食分享',
-  '绘本推荐',
-  '玩具测评',
-  '好物分享',
-  '宝宝穿搭',
-  '出行攻略',
-  '早教启蒙',
-  '睡眠引导',
-  '疾病护理',
-  '疫苗接种',
-  '情感交流'
+const TAGS: Tag[] = [
+  { id: 'tag_001', name: '宝宝日常' },
+  { id: 'tag_002', name: '成长记录' },
+  { id: 'tag_003', name: '育儿经验' },
+  { id: 'tag_004', name: '亲子时光' },
+  { id: 'tag_005', name: '辅食分享' },
+  { id: 'tag_006', name: '绘本推荐' },
+  { id: 'tag_007', name: '玩具测评' },
+  { id: 'tag_008', name: '好物分享' },
+  { id: 'tag_009', name: '宝宝穿搭' },
+  { id: 'tag_010', name: '出行攻略' },
+  { id: 'tag_011', name: '早教启蒙' },
+  { id: 'tag_012', name: '睡眠引导' },
+  { id: 'tag_013', name: '疾病护理' },
+  { id: 'tag_014', name: '疫苗接种' },
+  { id: 'tag_015', name: '情感交流' }
 ]
 
 const customTheme = {
@@ -55,38 +58,26 @@ export default function PostToolbar({
   onPrivacyChange
 }: PostToolbarProps) {
   const [showTagsModal, setShowTagsModal] = useState(false)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
-  const [customTagInput, setCustomTagInput] = useState('')
 
-  const toggleTag = (tag: string) => {
-    let newTags
-    if (selectedTags.includes(tag)) {
-      newTags = selectedTags.filter(t => t !== tag)
+  const toggleTag = (tagId: string) => {
+    let newTagIds
+    if (selectedTagIds.includes(tagId)) {
+      newTagIds = selectedTagIds.filter(id => id !== tagId)
     } else {
-      newTags = [...selectedTags, tag]
+      newTagIds = [...selectedTagIds, tagId]
     }
-    setSelectedTags(newTags)
+    setSelectedTagIds(newTagIds)
     if (onTagsChange) {
-      onTagsChange(newTags)
+      onTagsChange(newTagIds)
     }
   }
 
-  const addCustomTag = () => {
-    const trimmedTag = customTagInput.trim()
-    if (trimmedTag) {
-      if (!selectedTags.includes(trimmedTag)) {
-        const newTags = [...selectedTags, trimmedTag]
-        setSelectedTags(newTags)
-        if (onTagsChange) {
-          onTagsChange(newTags)
-        }
-        setCustomTagInput('')
-        Keyboard.dismiss()
-      } else {
-        Alert.alert('提示', '该话题已添加')
-      }
-    }
+  // Helper function to get tag name from ID
+  const getTagName = (tagId: string): string => {
+    const tag = TAGS.find(t => t.id === tagId)
+    return tag ? tag.name : ''
   }
 
   const handlePrivacyChange = (checked: boolean) => {
@@ -113,15 +104,15 @@ export default function PostToolbar({
           </View>
           <Text style={styles.toolText}>添加话题</Text>
           <View style={styles.tagsContainer}>
-            {selectedTags.length > 0
-              ? selectedTags.slice(0, 2).map(tag => (
-                  <Text key={tag} style={styles.tag}>
-                    #{tag}
+            {selectedTagIds.length > 0
+              ? selectedTagIds.slice(0, 2).map(tagId => (
+                  <Text key={tagId} style={styles.tag}>
+                    #{getTagName(tagId)}
                   </Text>
                 ))
               : null}
-            {selectedTags.length > 2 && (
-              <Text style={styles.tag}>+{selectedTags.length - 2}</Text>
+            {selectedTagIds.length > 2 && (
+              <Text style={styles.tag}>+{selectedTagIds.length - 2}</Text>
             )}
           </View>
           <Ionicons
@@ -148,17 +139,19 @@ export default function PostToolbar({
               </View>
 
               {/* 已选择的话题显示区域 */}
-              {selectedTags.length > 0 && (
+              {selectedTagIds.length > 0 && (
                 <View style={styles.selectedTagsContainer}>
                   <Text style={styles.selectedTagsTitle}>已选择的话题</Text>
                   <View style={styles.selectedTagsList}>
-                    {selectedTags.map(tag => (
+                    {selectedTagIds.map(tagId => (
                       <TouchableOpacity
-                        key={tag}
+                        key={tagId}
                         style={styles.selectedTagItem}
-                        onPress={() => toggleTag(tag)}
+                        onPress={() => toggleTag(tagId)}
                       >
-                        <Text style={styles.selectedTagText}>#{tag}</Text>
+                        <Text style={styles.selectedTagText}>
+                          #{getTagName(tagId)}
+                        </Text>
                         <Ionicons
                           name="close-circle"
                           size={16}
@@ -170,41 +163,25 @@ export default function PostToolbar({
                 </View>
               )}
 
-              <View style={styles.customTagInputContainer}>
-                <TextInput
-                  style={styles.customTagInput}
-                  placeholder="输入自定义话题"
-                  placeholderTextColor="#9CA3AF"
-                  value={customTagInput}
-                  onChangeText={setCustomTagInput}
-                  onSubmitEditing={addCustomTag}
-                  returnKeyType="done"
-                />
-                <TouchableOpacity
-                  style={styles.addTagButton}
-                  onPress={addCustomTag}
-                >
-                  <Text style={styles.addTagButtonText}>添加</Text>
-                </TouchableOpacity>
-              </View>
               <ScrollView contentContainerStyle={styles.tagsList}>
                 <View style={styles.tagsWrapper}>
                   {TAGS.map(tag => (
                     <TouchableOpacity
-                      key={tag}
+                      key={tag.id}
                       style={[
                         styles.tagItem,
-                        selectedTags.includes(tag) && styles.tagItemActive
+                        selectedTagIds.includes(tag.id) && styles.tagItemActive
                       ]}
-                      onPress={() => toggleTag(tag)}
+                      onPress={() => toggleTag(tag.id)}
                     >
                       <Text
                         style={[
                           styles.tagItemText,
-                          selectedTags.includes(tag) && styles.tagItemTextActive
+                          selectedTagIds.includes(tag.id) &&
+                            styles.tagItemTextActive
                         ]}
                       >
-                        #{tag}
+                        #{tag.name}
                       </Text>
                     </TouchableOpacity>
                   ))}

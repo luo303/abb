@@ -75,7 +75,7 @@ export default function MilestoneFooter({
       const payload = {
         content: jsonContent,
         images: data.images || [],
-        tags: [],
+        tag_ids: [],
         isPublic: 1,
         status: 'milestone' as const,
         title: data.title || ''
