@@ -7,7 +7,7 @@ interface FeedingTypeTabsProps {
   onTypeChange: (type: '奶粉' | '母乳' | '辅食') => void
 }
 
-const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
+export const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
   selectedType,
   onTypeChange
 }) => {

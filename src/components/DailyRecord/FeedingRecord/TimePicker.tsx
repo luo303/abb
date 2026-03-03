@@ -17,7 +17,7 @@ interface TimePickerProps {
   type?: '奶粉' | '母乳' | '辅食'
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({
+export const TimePicker: React.FC<TimePickerProps> = ({
   value,
   onChange,
   label,

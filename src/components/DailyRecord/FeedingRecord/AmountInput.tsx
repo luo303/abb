@@ -8,7 +8,7 @@ interface AmountInputProps {
   placeholder: string
 }
 
-const AmountInput: React.FC<AmountInputProps> = ({
+export const AmountInput: React.FC<AmountInputProps> = ({
   value,
   onChange,
   type,

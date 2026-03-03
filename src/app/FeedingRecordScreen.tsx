@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -8,14 +8,22 @@ import {
   DeviceEventEmitter
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState } from '../store'
+import {
+  addFeedingItem,
+  updateFeedingItem
+} from '../store/modules/feedingStore'
+import type { AppDispatch } from '../store'
+import { FeedingType } from '../types/feeding'
 import {
   FeedingTypeTabs,
   AmountInput,
   TimePicker,
   RemarkInput
-} from '@/components/DailyRecord/FeedingRecord'
+} from '../components/DailyRecord/FeedingRecord'
 
 interface FeedingRecord {
   type: '奶粉' | '母乳' | '辅食'
@@ -24,14 +32,54 @@ interface FeedingRecord {
   remark: string
 }
 
+interface RouteParams {
+  feed_id?: string
+}
+
 const FeedingRecordScreen = () => {
   const navigation = useNavigation()
+  const route = useRoute<RouteProp<Record<string, RouteParams>, string>>()
+  const feedId = route.params?.feed_id
+  const dispatch = useDispatch<AppDispatch>()
+  const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
+  const feedingList = useSelector(
+    (state: RootState) => state.feeding.feedingList
+  )
+
   const [selectedType, setSelectedType] = useState<'奶粉' | '母乳' | '辅食'>(
     '母乳'
   )
   const [amount, setAmount] = useState('')
   const [feedingTime, setFeedingTime] = useState(new Date())
   const [remark, setRemark] = useState('')
+
+  // 当feedId存在时，从feedingList中找到对应的记录并回显数据
+  useEffect(() => {
+    console.log('收到的路由参数:', route.params)
+    if (feedId) {
+      const feedingRecord = feedingList.find(item => item.feed_id === feedId)
+      if (feedingRecord) {
+        // 将feed_type转换为UI中的类型
+        let uiType: '奶粉' | '母乳' | '辅食' = '母乳'
+        switch (feedingRecord.feed_type) {
+          case 'formula':
+            uiType = '奶粉'
+            break
+          case 'breast':
+          case 'pump':
+            uiType = '母乳'
+            break
+          case 'food':
+            uiType = '辅食'
+            break
+        }
+        setSelectedType(uiType)
+        setAmount(feedingRecord.amount?.toString() || '')
+        setFeedingTime(new Date(feedingRecord.start_time))
+        setRemark(feedingRecord.remark || '')
+      }
+    }
+  }, [feedId, feedingList])
 
   // 根据喂养类型获取渐变色
   const getGradientColors = (
@@ -134,11 +182,60 @@ const FeedingRecordScreen = () => {
   }
 
   const handleSave = () => {
-    const record: FeedingRecord = {
-      type: selectedType,
-      amount,
-      time: formatDate(feedingTime),
-      remark
+    // 将UI中的喂养类型转换为FeedingType枚举
+    let feedType: FeedingType
+    switch (selectedType) {
+      case '奶粉':
+        feedType = FeedingType.FORMULA
+        break
+      case '母乳':
+        feedType = FeedingType.BREAST
+        break
+      case '辅食':
+        feedType = FeedingType.FOOD
+        break
+      default:
+        feedType = FeedingType.BREAST
+    }
+
+    const record = {
+      feed_type: feedType,
+      start_time: feedingTime.getTime(),
+      amount: amount ? Number(amount) : undefined,
+      duration: undefined, // 暂时设置为undefined，根据实际需求调整
+      remark,
+      summary_text: remark
+    }
+
+    // 调用Redux action保存数据
+    if (babyId) {
+      if (feedId) {
+        // 如果有feedId，说明是编辑模式，调用updateFeedingItem
+        const updatedRecord = {
+          feed_id: feedId,
+          baby_id: babyId,
+          feed_type: record.feed_type,
+          start_time: record.start_time,
+          amount: record.amount,
+          duration: record.duration,
+          remark: record.remark,
+          summary_text: record.summary_text
+        }
+        dispatch(updateFeedingItem(updatedRecord))
+      } else {
+        // 如果没有feedId，说明是新增模式，调用addFeedingItem
+        const newRecord = {
+          feed_id: `feed_${Date.now()}`,
+          baby_id: babyId,
+          feed_type: record.feed_type,
+          start_time: record.start_time,
+          amount: record.amount,
+          duration: record.duration,
+          remark: record.remark,
+          summary_text: record.summary_text
+        }
+        dispatch(addFeedingItem(newRecord))
+      }
     }
 
     // 这里可以添加保存逻辑，比如调用API

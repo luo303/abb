@@ -6,7 +6,8 @@ import {
   Platform,
   TouchableOpacity,
   Text,
-  Animated
+  Animated,
+  DeviceEventEmitter
 } from 'react-native'
 import { Stack, useNavigation } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -25,8 +26,12 @@ import EmptyState from '../../components/DailyRecord/EmptyState'
 // 导入类型定义和模拟数据
 import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
 import { DiaperItem } from '../../types/diaper'
+import { FeedingItem } from '../../types/feeding'
+import { SleepRecord } from '../../types/sleep'
 import mockData from '../../data/mock/dailyRecordMock'
 import { fetchDiaperList } from '../../store/modules/diaperStore'
+import { fetchFeedingList } from '../../store/modules/feedingStore'
+import { fetchSleepList } from '../../store/modules/sleepStore'
 import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
@@ -35,6 +40,10 @@ export default function DailyRecordScreen() {
   const dispatch = useDispatch<AppDispatch>()
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
   const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
+  const feedingList = useSelector(
+    (state: RootState) => state.feeding.feedingList
+  )
+  const sleepList = useSelector((state: RootState) => state.sleep.sleepList)
 
   const [selectedDate, setSelectedDate] = useState<string>(
     dayjs().format('YYYY-MM-DD')
@@ -54,8 +63,28 @@ export default function DailyRecordScreen() {
   useEffect(() => {
     if (babyId) {
       dispatch(fetchDiaperList(babyId))
+      dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+      dispatch(fetchSleepList({ babyId, date: selectedDate }))
     }
-  }, [babyId, dispatch])
+  }, [babyId, selectedDate, dispatch])
+
+  // 监听仪表盘刷新事件
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      'refreshDashboard',
+      () => {
+        if (babyId) {
+          dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+          dispatch(fetchDiaperList(babyId))
+          dispatch(fetchSleepList({ babyId, date: selectedDate }))
+        }
+      }
+    )
+
+    return () => {
+      subscription.remove()
+    }
+  }, [babyId, selectedDate, dispatch])
 
   // 根据选中日期更新记录和统计
   useEffect(() => {
@@ -100,14 +129,92 @@ export default function DailyRecordScreen() {
           time: item.change_time,
           details: description,
           icon: 'baby-carriage',
-          name: item.diaper_type.name,
-          title: item.diaper_type.name,
+          name: '尿布',
+          title: '尿布',
           description: description
         }
       })
 
+    // 从 feedingList 中筛选出当前日期的记录
+    const feedingRecords = feedingList
+      .filter(item => {
+        const itemDate = dayjs(item.start_time).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        // 固定图标为baby-bottom
+        const icon = 'baby-bottle'
+
+        // 将feed_type枚举值转换为中文名称
+        let feedTypeName = '喂养'
+        switch (item.feed_type) {
+          case 'breast':
+            feedTypeName = '母乳'
+            break
+          case 'pump':
+            feedTypeName = '泵奶'
+            break
+          case 'formula':
+            feedTypeName = '奶粉'
+            break
+          case 'food':
+            feedTypeName = '辅食'
+            break
+        }
+
+        // 构建副标题：喂养类型 + 时长或备注
+        let description = feedTypeName
+        if (item.duration) {
+          description += ` · ${item.duration}分钟`
+        } else if (item.remark) {
+          description += ` · ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
+        }
+
+        return {
+          id: item.feed_id,
+          type: 'feeding' as const,
+          time: item.start_time,
+          details: description,
+          icon: icon,
+          name: '喂养',
+          title: '喂养',
+          description: description
+        }
+      })
+
+    // 从 sleepList 中筛选出当前日期的记录
+    const sleepRecords = sleepList
+      .filter(item => {
+        const itemDate = dayjs(item.started_at).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        const durationMs = item.duration_ms || 0
+        const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
+        const durationMinutes = Math.floor(
+          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
+        )
+        const durationText = `${durationHours}h${durationMinutes}m`
+
+        return {
+          id: item.session_id,
+          type: 'sleep' as const,
+          time: item.started_at,
+          details: durationText,
+          icon: 'sleep',
+          name: '睡眠',
+          title: '睡眠',
+          description: durationText
+        }
+      })
+
     // 合并并按时间降序排序
-    const allRecords = [...mockRecords, ...diaperRecords].sort((a, b) => {
+    const allRecords = [
+      ...mockRecords,
+      ...diaperRecords,
+      ...feedingRecords,
+      ...sleepRecords
+    ].sort((a, b) => {
       const timeA =
         typeof a.time === 'string' ? new Date(a.time).getTime() : a.time
       const timeB =
@@ -147,7 +254,7 @@ export default function DailyRecordScreen() {
       sleepDuration,
       diaperCount
     })
-  }, [selectedDate, diaperList])
+  }, [selectedDate, diaperList, feedingList, sleepList])
 
   // 计算整体进度并更新背景颜色
   useEffect(() => {

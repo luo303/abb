@@ -16,7 +16,7 @@ interface RemarkInputProps {
   type?: '奶粉' | '母乳' | '辅食'
 }
 
-const RemarkInput: React.FC<RemarkInputProps> = ({
+export const RemarkInput: React.FC<RemarkInputProps> = ({
   value,
   onChange,
   label,

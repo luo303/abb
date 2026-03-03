@@ -1,4 +1,4 @@
-export enum FeedType {
+export enum FeedingType {
   FORMULA = 'formula',
   BREAST = 'breast',
   PUMP = 'pump',
@@ -14,7 +14,7 @@ export enum FeedSide {
 export interface FeedingItem {
   feed_id: string
   baby_id: string
-  feed_type: FeedType
+  feed_type: FeedingType
   start_time: number
   amount?: number
   side?: FeedSide
@@ -24,7 +24,7 @@ export interface FeedingItem {
 }
 
 export interface FeedingRecordRequest {
-  feed_type: FeedType
+  feed_type: FeedingType
   start_time: number
   amount?: number
   side?: FeedSide

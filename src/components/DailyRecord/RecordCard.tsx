@@ -11,18 +11,38 @@ import { LinearGradient } from 'expo-linear-gradient'
 import dayjs from 'dayjs'
 import { RecordItem } from '../../types/recordTypes'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 interface RecordCardProps {
   item: RecordItem
 }
 
+// 定义导航类型
+type RootStackParamList = {
+  DiaperForm: { diaper_id: string }
+  FeedingRecord: { feed_id: string }
+  SleepRecord: { session_id: string }
+}
+
+type RecordCardNavigationProp = NativeStackNavigationProp<RootStackParamList>
+
 export default function RecordCard({ item }: RecordCardProps) {
-  const navigation = useNavigation()
+  const navigation = useNavigation<RecordCardNavigationProp>()
 
   const handlePress = () => {
-    if (item.type === 'diaper' && item.id) {
-      // @ts-ignore - 暂时忽略类型错误，确保功能正常
-      navigation.navigate('DiaperForm', { diaper_id: item.id })
+    if (item.id) {
+      switch (item.type) {
+        case 'diaper':
+          navigation.navigate('DiaperForm', { diaper_id: item.id })
+          break
+        case 'feeding':
+          console.log('点击的喂养ID:', item.id)
+          navigation.navigate('FeedingRecord', { feed_id: item.id })
+          break
+        case 'sleep':
+          navigation.navigate('SleepRecord', { session_id: item.id })
+          break
+      }
     }
   }
 

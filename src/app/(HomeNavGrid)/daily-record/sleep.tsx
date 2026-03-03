@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector } from 'react-redux'
+import { useRoute, RouteProp } from '@react-navigation/native'
 import { RootState } from '../../../store'
 import { startSleep, getActiveSleep, endSleep } from '../../../api/sleep'
 import {
@@ -38,9 +39,18 @@ const formatTime = (seconds: number) => {
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
 }
 
+type RouteParams = {
+  SleepRecord: {
+    session_id?: string
+  }
+}
+
 const SleepRecordScreen = () => {
   const { goBack } = useNavigationHelper()
+  const route = useRoute<RouteProp<RouteParams, 'SleepRecord'>>()
+  const sessionId = route.params?.session_id
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
+  const sleepList = useSelector((state: RootState) => state.sleep.sleepList)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [showManualInput, setShowManualInput] = useState(false)
@@ -48,6 +58,22 @@ const SleepRecordScreen = () => {
   const [endTime, setEndTime] = useState(new Date())
   const sessionIdRef = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // 根据session_id回显数据
+  useEffect(() => {
+    if (sessionId && sleepList.length > 0) {
+      const sleepItem = sleepList.find(item => item.session_id === sessionId)
+      if (sleepItem) {
+        setStartTime(new Date(sleepItem.started_at))
+        setEndTime(new Date(sleepItem.ended_at))
+        // 计算睡眠时长（秒）
+        const durationSeconds = Math.floor((sleepItem.duration_ms || 0) / 1000)
+        setSeconds(durationSeconds)
+        // 显示手动记录表单
+        setShowManualInput(true)
+      }
+    }
+  }, [sessionId, sleepList])
 
   // 组件初始化日志
   console.log('SleepRecordScreen组件初始化')
