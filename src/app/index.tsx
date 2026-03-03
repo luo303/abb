@@ -29,6 +29,7 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
 import SleepRecordScreen from './(HomeNavGrid)/daily-record/sleep'
 import SleepManualInputScreen from './(HomeNavGrid)/daily-record/manual'
+import DiaperFormScreen from './DiaperFormScreen'
 
 import KnowledgeUploadScreen from './KnowledgeUpload'
 
@@ -179,6 +180,11 @@ export default function Layout() {
               <Stack.Screen
                 name="SleepManualInput"
                 component={SleepManualInputScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="DiaperForm"
+                component={DiaperFormScreen}
                 options={{ headerShown: false }}
               />
 

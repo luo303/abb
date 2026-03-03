@@ -22,7 +22,7 @@ export const useNavigationHelper = () => {
           navigation.navigate('SleepRecord')
           break
         case 'diaper':
-          Toast.info('跳转至换尿布记录表单')
+          navigation.navigate('DiaperForm')
           break
         default:
           break

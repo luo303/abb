@@ -6,25 +6,34 @@ export enum DiaperType {
 }
 
 export enum PeeColor {
+  MILKY_WHITE = 'milky_white',
+  PINK = 'pink',
+  NORMAL = 'normal',
   YELLOW = 'yellow',
-  TRANSPARENT = 'transparent',
-  DARK_YELLOW = 'dark_yellow',
-  OTHER = 'other'
+  RED = 'red',
+  DARK_TEA = 'dark_tea'
 }
 
 export enum PoopColor {
-  YELLOW = 'yellow',
+  DARK_GREEN = 'dark_green',
   GREEN = 'green',
+  YELLOW = 'yellow',
   BROWN = 'brown',
-  OTHER = 'other'
+  RED = 'red',
+  BLACK = 'black',
+  GREY_WHITE = 'grey_white'
 }
 
 export enum PoopConsistency {
   NORMAL = 'normal',
   PASTE = 'paste',
+  FOAM = 'foam',
+  MILK_CLOT = 'milk_clot',
+  FOOD_RESIDUE = 'food_residue',
+  EGG_LIKE = 'egg_like',
   WATERY = 'watery',
-  HARD = 'hard',
-  FOAM = 'foam'
+  SHEEP_DUNG = 'sheep_dung',
+  BLOODY = 'bloody'
 }
 
 export interface DiaperItem {

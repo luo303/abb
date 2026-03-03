@@ -15,7 +15,7 @@ import {
   AmountInput,
   TimePicker,
   RemarkInput
-} from '@/components/FeedingRecord'
+} from '@/components/DailyRecord/FeedingRecord'
 
 interface FeedingRecord {
   type: '奶粉' | '母乳' | '辅食'
