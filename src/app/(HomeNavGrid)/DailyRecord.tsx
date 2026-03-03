@@ -194,17 +194,31 @@ export default function DailyRecordScreen() {
         const durationMinutes = Math.floor(
           (durationMs % (1000 * 60 * 60)) / (1000 * 60)
         )
-        const durationText = `${durationHours}h${durationMinutes}m`
+
+        // 格式化开始时间和结束时间
+        const startTime = dayjs(item.started_at).format('HH:mm')
+        const endTime = dayjs(item.ended_at).format('HH:mm')
+
+        // 构建时长文本
+        let durationText = ''
+        if (durationHours > 0) {
+          durationText = `${durationHours}小时${durationMinutes}分`
+        } else {
+          durationText = `${durationMinutes}分`
+        }
+
+        // 构建副标题
+        const description = `${startTime} - ${endTime} · ${durationText}`
 
         return {
           id: item.session_id,
           type: 'sleep' as const,
           time: item.started_at,
-          details: durationText,
+          details: description,
           icon: 'sleep',
           name: '睡眠',
           title: '睡眠',
-          description: durationText
+          description: description
         }
       })
 
@@ -238,8 +252,17 @@ export default function DailyRecordScreen() {
           break
         case 'sleep':
           sleepCount++
-          // 为每个睡眠记录设置默认时长为 1.5 小时（1小时30分钟）
-          sleepDuration += 1.5
+          // 计算实际睡眠时长（从details中提取或使用默认值）
+          // 假设details格式为 "HH:MM - HH:MM · X小时X分"
+          const durationMatch = record.details?.match(/(\d+)小时(\d+)分/)
+          if (durationMatch) {
+            const hours = parseInt(durationMatch[1])
+            const minutes = parseInt(durationMatch[2])
+            sleepDuration += hours + minutes / 60
+          } else {
+            // 如果无法提取时长，使用默认值1.5小时
+            sleepDuration += 0
+          }
           break
         case 'diaper':
           diaperCount++
