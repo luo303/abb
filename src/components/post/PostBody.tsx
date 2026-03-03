@@ -11,7 +11,7 @@ import ImageViewing from 'react-native-image-viewing'
 
 interface PostBodyProps {
   title?: string
-  content: string | { text: string; images: string[] }
+  content: string
   tags?: string[]
   images?: any[]
   publishTime?: string
@@ -38,15 +38,12 @@ export default function PostBody({
 
   // 处理content，确保获取到正确的text和images
   const getContentText = () => {
-    if (typeof content === 'object') {
-      return content.text || ''
-    }
     // 尝试解析字符串形式的 JSON
     try {
       if (typeof content === 'string') {
         const parsed = JSON.parse(content)
-        if (parsed && typeof parsed === 'object' && parsed.text) {
-          return parsed.text
+        if (parsed && typeof parsed === 'object' && 'text' in parsed) {
+          return parsed.text || ''
         }
       }
     } catch (error) {
@@ -56,13 +53,6 @@ export default function PostBody({
   }
 
   const getContentImages = () => {
-    if (
-      typeof content === 'object' &&
-      content.images &&
-      content.images.length > 0
-    ) {
-      return content.images
-    }
     // 尝试解析字符串形式的 JSON
     try {
       if (typeof content === 'string') {
@@ -70,7 +60,8 @@ export default function PostBody({
         if (
           parsed &&
           typeof parsed === 'object' &&
-          parsed.images &&
+          'images' in parsed &&
+          Array.isArray(parsed.images) &&
           parsed.images.length > 0
         ) {
           return parsed.images

@@ -104,7 +104,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 调用发布接口 POST /post/{post_id}/publish
       const publishResponse = (await request.post(
         `/post/${postId}/publish`
-      )) as { code: number; message: string }
+      )) as any
 
       // 确保发布请求成功（code: 0）
       if (publishResponse.code !== 0) {
@@ -115,22 +115,25 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       const newPost: PostItem = {
         post_id: postId,
         author_id: userInfo?.user_id || 'user_123456',
-        author_avatar: userInfo?.avatar
-          ? { uri: userInfo.avatar }
-          : require('../../../assets/testAvatar.png'),
+        author_avatar: userInfo?.avatar || '',
         author_name: userInfo?.username || userInfo?.account || '稚慧宝用户',
         author_province: userInfo?.province || '',
         author_city: userInfo?.city || '未知位置',
         title: postData.title || '',
-        baby_age_text: userInfo?.baby_age_text || '稚慧宝用户',
-        ctime: Date.now(),
-        content: contentObj, // 直接使用解析后的对象
-        tags: payload.tags,
-        images: validNetworkUrls,
+        content: jsonContent, // 使用JSON字符串
+        content_preview: postData.content.substring(0, 100) || '',
+        status: 'published',
         like_count: 0,
         dislike_count: 0,
         collect_count: 0,
-        comment_count: 0
+        comment_count: 0,
+        ctime: Date.now(),
+        utime: Date.now(),
+        tags: payload.tags,
+        images: validNetworkUrls,
+        baby_age_year: 0,
+        baby_age_month: 0,
+        baby_age_text: userInfo?.baby_age_text || '稚慧宝用户'
       }
 
       // 将新帖子真正添加到 Mock 数据列表中，确保刷新后依然存在

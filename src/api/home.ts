@@ -14,15 +14,34 @@ export const getHomePosts = async (
   strategy?: string
 ): Promise<PostListResponse> => {
   try {
-    const res = await request.get('/post', {
+    // 构建完整URL用于调试
+    const url = `/post?page=${page}&page_size=${pageSize}${strategy ? `&strategy=${strategy}` : ''}`
+    console.log('首页请求URL:', url)
+
+    const res = (await request.get('/post', {
       params: {
-        page,
-        page_size: pageSize,
+        page: String(page),
+        page_size: String(pageSize),
         strategy
       }
-    })
-    return res as unknown as PostListResponse
-  } catch (error) {
+    })) as any
+    // 由于响应拦截器返回的是response.data，所以需要构建完整的响应结构
+    return {
+      code: res.code || 200,
+      message: res.message || 'success',
+      data: res.data || {
+        items: [],
+        page,
+        page_size: pageSize,
+        has_more: false
+      }
+    } as PostListResponse
+  } catch (error: any) {
+    console.error(
+      '首页请求失败详情:',
+      error.response?.status,
+      error.response?.data
+    )
     console.warn('Network request failed, falling back to mock data', error)
 
     // 纯 Mock 模式：直接返回本地数据

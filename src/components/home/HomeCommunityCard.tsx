@@ -107,21 +107,40 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   // 解析 content 的函数，使用 useMemo 缓存结果
   const parsedContent = React.useMemo(() => {
     try {
-      // 检查 content 是否已经是对象
-      if (typeof data.content === 'object' && data.content.text) {
-        return {
-          success: true,
-          text: data.content.text || '',
-          images: data.content.images || []
-        }
-      }
       // 尝试解析 content 字符串
       if (typeof data.content === 'string') {
-        const parsed = JSON.parse(data.content)
+        try {
+          const parsed = JSON.parse(data.content) as any
+          if (parsed && typeof parsed === 'object') {
+            // 如果解析成功，提取text和images
+            return {
+              success: true,
+              text: parsed.text || data.content,
+              images: Array.isArray(parsed.images) ? parsed.images : []
+            }
+          } else {
+            // 解析成功但不是对象，使用原始content
+            return {
+              success: false,
+              text: data.content,
+              images: []
+            }
+          }
+        } catch (parseError) {
+          // 解析失败，使用原始内容
+          return {
+            success: false,
+            text: data.content,
+            images: []
+          }
+        }
+      } else if (typeof data.content === 'object' && data.content !== null) {
+        // 如果content已经是对象，直接使用
+        const contentObj = data.content as { text?: string; images?: any[] }
         return {
           success: true,
-          text: parsed.text || '',
-          images: parsed.images || []
+          text: contentObj.text || '',
+          images: Array.isArray(contentObj.images) ? contentObj.images : []
         }
       }
       // 解析失败，返回原始 content

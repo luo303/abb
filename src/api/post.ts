@@ -47,12 +47,18 @@ export const searchPosts = async (
       let contentText = ''
       try {
         if (typeof post.content === 'string') {
-          const parsed = JSON.parse(post.content)
-          if (parsed && typeof parsed === 'object' && parsed.text) {
-            contentText = parsed.text
+          // 尝试解析JSON字符串
+          try {
+            const parsed = JSON.parse(post.content)
+            if (parsed && typeof parsed === 'object' && 'text' in parsed) {
+              contentText = parsed.text as string
+            } else {
+              contentText = post.content
+            }
+          } catch (parseError) {
+            // 解析失败，使用原始内容
+            contentText = post.content
           }
-        } else if (typeof post.content === 'object' && post.content.text) {
-          contentText = post.content.text
         }
       } catch (e) {
         // 解析失败，使用原始内容
@@ -88,10 +94,7 @@ export const searchPosts = async (
       author_province: post.author_province || '',
       author_city: post.author_city || '',
       title: post.title || '',
-      content:
-        typeof post.content === 'string'
-          ? post.content
-          : JSON.stringify(post.content),
+      content: post.content,
       content_preview:
         post.content_preview ||
         (typeof post.content === 'string'

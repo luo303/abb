@@ -18,6 +18,8 @@ request.interceptors.request.use(async (config: any) => {
   } catch (error) {
     console.warn('Error getting token:', error)
   }
+  // 打印完整URL
+  console.log('即将发送的完整URL:', config.baseURL + config.url)
   return config
 })
 //响应拦截器

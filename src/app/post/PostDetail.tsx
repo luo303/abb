@@ -567,7 +567,11 @@ export default function PostDetail() {
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
             title={currentPost.title}
-            content={currentPost.content}
+            content={
+              typeof currentPost.content === 'string'
+                ? currentPost.content
+                : JSON.stringify(currentPost.content)
+            }
             tags={currentPost.tags}
             images={displayImages}
             publishTime={formatDate(currentPost.ctime)}
