@@ -7,38 +7,62 @@ import {
   ScrollView
 } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { PoopConsistency } from '../../../types/diaper'
+import { PoopConsistency, Option } from '../../../types/diaper'
 
 interface PoopConsistencySelectorProps {
-  selectedConsistency: PoopConsistency | undefined
-  onSelectConsistency: (consistency: PoopConsistency) => void
+  selectedConsistency: Option | undefined
+  onSelectConsistency: (consistency: Option) => void
 }
 
 export const PoopConsistencySelector: React.FC<
   PoopConsistencySelectorProps
 > = ({ selectedConsistency, onSelectConsistency }) => {
   const consistencies = [
-    { value: PoopConsistency.NORMAL, label: '正常', icon: 'emoticon-poop' },
-    { value: PoopConsistency.PASTE, label: '膏状', icon: 'wave' },
-    { value: PoopConsistency.FOAM, label: '泡沫样', icon: 'chart-bubble' },
     {
-      value: PoopConsistency.MILK_CLOT,
+      value: { id: PoopConsistency.NORMAL, name: '正常' },
+      label: '正常',
+      icon: 'emoticon-poop'
+    },
+    {
+      value: { id: PoopConsistency.PASTE, name: '膏状' },
+      label: '膏状',
+      icon: 'wave'
+    },
+    {
+      value: { id: PoopConsistency.FOAM, name: '泡沫样' },
+      label: '泡沫样',
+      icon: 'chart-bubble'
+    },
+    {
+      value: { id: PoopConsistency.MILK_CLOT, name: '有奶瓣' },
       label: '有奶瓣',
       icon: 'filter-variant'
     },
     {
-      value: PoopConsistency.FOOD_RESIDUE,
+      value: { id: PoopConsistency.FOOD_RESIDUE, name: '有食物残渣' },
       label: '有食物残渣',
       icon: 'food'
     },
-    { value: PoopConsistency.EGG_LIKE, label: '蛋花样', icon: 'flare' },
-    { value: PoopConsistency.WATERY, label: '水样便', icon: 'water' },
     {
-      value: PoopConsistency.SHEEP_DUNG,
+      value: { id: PoopConsistency.EGG_LIKE, name: '蛋花样' },
+      label: '蛋花样',
+      icon: 'flare'
+    },
+    {
+      value: { id: PoopConsistency.WATERY, name: '水样便' },
+      label: '水样便',
+      icon: 'water'
+    },
+    {
+      value: { id: PoopConsistency.SHEEP_DUNG, name: '羊屎便' },
       label: '羊屎便',
       icon: 'dots-grid'
     },
-    { value: PoopConsistency.BLOODY, label: '含血便', icon: 'invert-colors' }
+    {
+      value: { id: PoopConsistency.BLOODY, name: '含血便' },
+      label: '含血便',
+      icon: 'invert-colors'
+    }
   ]
 
   return (
@@ -49,10 +73,10 @@ export const PoopConsistencySelector: React.FC<
     >
       {consistencies.map(item => (
         <TouchableOpacity
-          key={item.value}
+          key={item.value.id}
           style={[
             styles.consistencyButton,
-            selectedConsistency === item.value &&
+            selectedConsistency?.id === item.value.id &&
               styles.selectedConsistencyButton
           ]}
           onPress={() => onSelectConsistency(item.value)}
@@ -60,13 +84,15 @@ export const PoopConsistencySelector: React.FC<
           <MaterialCommunityIcons
             name={item.icon as any}
             size={24}
-            color={selectedConsistency === item.value ? '#fff' : '#f43f5e'}
+            color={
+              selectedConsistency?.id === item.value.id ? '#fff' : '#f43f5e'
+            }
             style={styles.consistencyIcon}
           />
           <Text
             style={[
               styles.consistencyLabel,
-              selectedConsistency === item.value &&
+              selectedConsistency?.id === item.value.id &&
                 styles.selectedConsistencyLabel
             ]}
           >

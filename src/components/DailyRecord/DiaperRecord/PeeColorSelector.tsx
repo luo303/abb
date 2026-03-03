@@ -6,11 +6,11 @@ import {
   StyleSheet,
   ScrollView
 } from 'react-native'
-import { PeeColor } from '../../../types/diaper'
+import { PeeColor, Option } from '../../../types/diaper'
 
 interface PeeColorSelectorProps {
-  selectedColor: PeeColor | undefined
-  onSelectColor: (color: PeeColor) => void
+  selectedColor: Option | undefined
+  onSelectColor: (color: Option) => void
 }
 
 export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
@@ -18,12 +18,36 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
   onSelectColor
 }) => {
   const colors = [
-    { value: PeeColor.MILKY_WHITE, label: '乳白色', color: '#FFF8DC' },
-    { value: PeeColor.PINK, label: '淡粉色', color: '#FFC0CB' },
-    { value: PeeColor.NORMAL, label: '正常', color: '#E6E6FA' },
-    { value: PeeColor.YELLOW, label: '黄色', color: '#FFD700' },
-    { value: PeeColor.RED, label: '红色', color: '#FF6347' },
-    { value: PeeColor.DARK_TEA, label: '深茶色', color: '#8B4513' }
+    {
+      value: { id: PeeColor.MILKY_WHITE, name: '乳白色' },
+      label: '乳白色',
+      color: '#FFF8DC'
+    },
+    {
+      value: { id: PeeColor.PINK, name: '淡粉色' },
+      label: '淡粉色',
+      color: '#FFC0CB'
+    },
+    {
+      value: { id: PeeColor.NORMAL, name: '正常' },
+      label: '正常',
+      color: '#E6E6FA'
+    },
+    {
+      value: { id: PeeColor.YELLOW, name: '黄色' },
+      label: '黄色',
+      color: '#FFD700'
+    },
+    {
+      value: { id: PeeColor.RED, name: '红色' },
+      label: '红色',
+      color: '#FF6347'
+    },
+    {
+      value: { id: PeeColor.DARK_TEA, name: '深茶色' },
+      label: '深茶色',
+      color: '#8B4513'
+    }
   ]
 
   return (
@@ -34,7 +58,7 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
     >
       {colors.map(item => (
         <TouchableOpacity
-          key={item.value}
+          key={item.value.id}
           style={styles.colorButton}
           onPress={() => onSelectColor(item.value)}
         >
@@ -42,10 +66,10 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
             style={[
               styles.colorCircle,
               { backgroundColor: item.color },
-              selectedColor === item.value && styles.selectedColorCircle
+              selectedColor?.id === item.value.id && styles.selectedColorCircle
             ]}
           >
-            {selectedColor === item.value && (
+            {selectedColor?.id === item.value.id && (
               <View style={styles.checkmark}>
                 <Text style={styles.checkmarkText}>✓</Text>
               </View>

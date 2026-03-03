@@ -3,29 +3,31 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   ScrollView,
-  Alert,
-  Platform
+  Platform,
+  KeyboardAvoidingView
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../store'
 import {
+  Option,
   DiaperType,
   PeeColor,
   PoopColor,
   PoopConsistency,
-  DiaperRecordRequest
+  DiaperRecordRequest,
+  DiaperItem
 } from '../types/diaper'
+import { addDiaperRecordReq, updateDiaperRecordReq } from '../api/diaper'
 import {
-  addDiaperRecordReq,
-  updateDiaperRecordReq,
-  deleteDiaperRecordReq
-} from '../api/diaper'
-import { fetchDiaperList } from '../store/modules/diaperStore'
+  fetchDiaperList,
+  addDiaperRecord,
+  updateDiaperRecord
+} from '../store/modules/diaperStore'
+import { useMessage } from '../components/Message'
 import { TimePicker } from '../components/DailyRecord/DiaperRecord/TimePicker'
 import { DiaperTypeSelector } from '../components/DailyRecord/DiaperRecord/DiaperTypeSelector'
 import { PeeColorSelector } from '../components/DailyRecord/DiaperRecord/PeeColorSelector'
@@ -41,6 +43,7 @@ const DiaperFormScreen = () => {
   const navigation = useNavigation()
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>()
   const dispatch = useDispatch<AppDispatch>()
+  const { showMessage } = useMessage()
 
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
   const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
@@ -48,16 +51,20 @@ const DiaperFormScreen = () => {
   const diaperId = route.params?.diaper_id
   const isEditMode = !!diaperId
 
-  const [selectedType, setSelectedType] = useState<DiaperType>(DiaperType.PEE)
-  const [selectedPeeColor, setSelectedPeeColor] = useState<
-    PeeColor | undefined
-  >(PeeColor.NORMAL)
+  const [selectedType, setSelectedType] = useState<Option>({
+    id: DiaperType.PEE,
+    name: '嘘嘘'
+  })
+  const [selectedPeeColor, setSelectedPeeColor] = useState<Option | undefined>({
+    id: PeeColor.NORMAL,
+    name: '正常'
+  })
   const [selectedPoopColor, setSelectedPoopColor] = useState<
-    PoopColor | undefined
-  >(PoopColor.YELLOW)
+    Option | undefined
+  >({ id: PoopColor.YELLOW, name: '黄色' })
   const [selectedPoopConsistency, setSelectedPoopConsistency] = useState<
-    PoopConsistency | undefined
-  >(PoopConsistency.NORMAL)
+    Option | undefined
+  >({ id: PoopConsistency.NORMAL, name: '正常' })
   const [selectedTime, setSelectedTime] = useState(new Date())
   const [remark, setRemark] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -68,9 +75,9 @@ const DiaperFormScreen = () => {
       const diaperItem = diaperList.find(item => item.diaper_id === diaperId)
       if (diaperItem) {
         setSelectedType(diaperItem.diaper_type)
-        setSelectedPeeColor(diaperItem.pee_color)
-        setSelectedPoopColor(diaperItem.poop_color)
-        setSelectedPoopConsistency(diaperItem.poop_consistency)
+        setSelectedPeeColor(diaperItem.pee_color || undefined)
+        setSelectedPoopColor(diaperItem.poop_color || undefined)
+        setSelectedPoopConsistency(diaperItem.poop_consistency || undefined)
         setSelectedTime(new Date(diaperItem.change_time))
         setRemark(diaperItem.remark || '')
       }
@@ -80,74 +87,99 @@ const DiaperFormScreen = () => {
   // 处理保存
   const handleSave = async () => {
     if (!babyId) {
-      Alert.alert('提示', '请先选择宝宝')
+      showMessage('请先选择宝宝')
       return
+    }
+
+    // 数据校验
+    if (
+      selectedType.id === DiaperType.POOP ||
+      selectedType.id === DiaperType.BOTH
+    ) {
+      if (!selectedPoopColor) {
+        showMessage('请选择便便颜色')
+        return
+      }
+      if (!selectedPoopConsistency) {
+        showMessage('请选择便便性状')
+        return
+      }
+    }
+
+    if (
+      selectedType.id === DiaperType.PEE ||
+      selectedType.id === DiaperType.BOTH
+    ) {
+      if (!selectedPeeColor) {
+        showMessage('请选择嘘嘘颜色')
+        return
+      }
     }
 
     setIsLoading(true)
     try {
       const requestData: DiaperRecordRequest = {
-        diaper_type: selectedType,
+        diaper_type: selectedType.id,
         change_time: selectedTime.getTime(),
         remark
       }
 
       // 根据类型添加相应的字段
-      if (selectedType === DiaperType.PEE || selectedType === DiaperType.BOTH) {
-        requestData.pee_color = selectedPeeColor
+      if (
+        selectedType.id === DiaperType.PEE ||
+        selectedType.id === DiaperType.BOTH
+      ) {
+        requestData.pee_color = selectedPeeColor?.id
       }
       if (
-        selectedType === DiaperType.POOP ||
-        selectedType === DiaperType.BOTH
+        selectedType.id === DiaperType.POOP ||
+        selectedType.id === DiaperType.BOTH
       ) {
-        requestData.poop_color = selectedPoopColor
-        requestData.poop_consistency = selectedPoopConsistency
+        requestData.poop_color = selectedPoopColor?.id
+        requestData.poop_consistency = selectedPoopConsistency?.id
       }
 
       if (isEditMode && diaperId) {
         // 编辑模式
+        const updatedRecord: DiaperItem = {
+          diaper_id: diaperId,
+          baby_id: babyId,
+          diaper_type: selectedType,
+          change_time: requestData.change_time,
+          pee_color: selectedPeeColor || null,
+          poop_color: selectedPoopColor || null,
+          poop_consistency: selectedPoopConsistency || null,
+          remark: requestData.remark
+        }
         await updateDiaperRecordReq(babyId, diaperId, requestData)
-        Alert.alert('成功', '记录已更新')
+        dispatch(updateDiaperRecord(updatedRecord))
+        showMessage('记录已更新')
       } else {
         // 新增模式
-        await addDiaperRecordReq(babyId, requestData)
-        Alert.alert('成功', '记录已保存')
+        const response = await addDiaperRecordReq(babyId, requestData)
+        // 假设返回的响应包含 diaper_id
+        const newRecord: DiaperItem = {
+          diaper_id: response?.data?.diaper_id || `diaper_${Date.now()}`,
+          baby_id: babyId,
+          diaper_type: selectedType,
+          change_time: requestData.change_time,
+          pee_color: selectedPeeColor || null,
+          poop_color: selectedPoopColor || null,
+          poop_consistency: selectedPoopConsistency || null,
+          remark: requestData.remark
+        }
+        dispatch(addDiaperRecord(newRecord))
+        showMessage('记录已保存')
       }
 
       // 刷新数据
       dispatch(fetchDiaperList(babyId))
       navigation.goBack()
     } catch (error) {
-      Alert.alert('错误', '保存失败，请重试')
+      showMessage('保存失败，请重试')
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // 处理删除
-  const handleDelete = () => {
-    if (!babyId || !diaperId) return
-
-    Alert.alert('确认删除', '确定要删除这条记录吗？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '删除',
-        style: 'destructive',
-        onPress: async () => {
-          setIsLoading(true)
-          try {
-            await deleteDiaperRecordReq(babyId, diaperId)
-            Alert.alert('成功', '记录已删除')
-            dispatch(fetchDiaperList(babyId))
-            navigation.goBack()
-          } catch (error) {
-            Alert.alert('错误', '删除失败，请重试')
-          } finally {
-            setIsLoading(false)
-          }
-        }
-      }
-    ])
   }
 
   return (
@@ -157,136 +189,142 @@ const DiaperFormScreen = () => {
       end={{ x: 0.5, y: 1 }}
       style={styles.container}
     >
-      {/* 顶部导航栏 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>换尿布</Text>
-        {isEditMode ? (
-          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Text style={styles.deleteButtonText}>删除记录</Text>
+      <KeyboardAvoidingView
+        behavior={undefined}
+        style={styles.keyboardAvoidingView}
+      >
+        {/* 顶部导航栏 */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-        ) : (
+          <Text style={styles.headerTitle}>换尿布</Text>
           <View style={styles.headerRight} />
-        )}
-      </View>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 时间选择卡片 */}
-        <LinearGradient
-          colors={['#ffffff', '#fff1f2']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.sectionTitle}>更换时间</Text>
-          <TimePicker
-            selectedTime={selectedTime}
-            onTimeChange={setSelectedTime}
-          />
-        </LinearGradient>
-
-        {/* 尿布状态选择卡片 */}
-        <LinearGradient
-          colors={['#ffffff', '#fff1f2']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Text style={styles.sectionTitle}>尿布状态</Text>
-          <DiaperTypeSelector
-            selectedType={selectedType}
-            onSelectType={setSelectedType}
-          />
-        </LinearGradient>
-
-        {/* 嘘嘘颜色选择卡片 */}
-        {(selectedType === DiaperType.PEE ||
-          selectedType === DiaperType.BOTH) && (
+          {/* 时间选择卡片 */}
           <LinearGradient
             colors={['#ffffff', '#fff1f2']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
           >
-            <Text style={styles.sectionTitle}>嘘嘘颜色</Text>
-            <PeeColorSelector
-              selectedColor={selectedPeeColor}
-              onSelectColor={setSelectedPeeColor}
+            <Text style={styles.sectionTitle}>更换时间</Text>
+            <TimePicker
+              selectedTime={selectedTime}
+              onTimeChange={setSelectedTime}
             />
           </LinearGradient>
-        )}
 
-        {/* 便便颜色选择卡片 */}
-        {(selectedType === DiaperType.POOP ||
-          selectedType === DiaperType.BOTH) && (
-          <>
+          {/* 尿布状态选择卡片 */}
+          <LinearGradient
+            colors={['#ffffff', '#fff1f2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Text style={styles.sectionTitle}>尿布状态</Text>
+            <DiaperTypeSelector
+              selectedType={selectedType}
+              onSelectType={setSelectedType}
+            />
+          </LinearGradient>
+
+          {/* 嘘嘘颜色选择卡片 */}
+          {(selectedType.id === DiaperType.PEE ||
+            selectedType.id === DiaperType.BOTH) && (
             <LinearGradient
               colors={['#ffffff', '#fff1f2']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.card}
             >
-              <Text style={styles.sectionTitle}>便便颜色</Text>
-              <PoopColorSelector
-                selectedColor={selectedPoopColor}
-                onSelectColor={setSelectedPoopColor}
+              <Text style={styles.sectionTitle}>嘘嘘颜色</Text>
+              <PeeColorSelector
+                selectedColor={selectedPeeColor}
+                onSelectColor={setSelectedPeeColor}
               />
             </LinearGradient>
+          )}
 
-            {/* 便便性状选择卡片 */}
-            <LinearGradient
-              colors={['#ffffff', '#fff1f2']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.card}
+          {/* 便便颜色选择卡片 */}
+          {(selectedType.id === DiaperType.POOP ||
+            selectedType.id === DiaperType.BOTH) && (
+            <>
+              <LinearGradient
+                colors={['#ffffff', '#fff1f2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.card}
+              >
+                <Text style={styles.sectionTitle}>便便颜色</Text>
+                <PoopColorSelector
+                  selectedColor={selectedPoopColor}
+                  onSelectColor={setSelectedPoopColor}
+                />
+              </LinearGradient>
+
+              {/* 便便性状选择卡片 */}
+              <LinearGradient
+                colors={['#ffffff', '#fff1f2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.card}
+              >
+                <Text style={styles.sectionTitle}>便便性状</Text>
+                <PoopConsistencySelector
+                  selectedConsistency={selectedPoopConsistency}
+                  onSelectConsistency={setSelectedPoopConsistency}
+                />
+              </LinearGradient>
+            </>
+          )}
+
+          {/* 备注输入卡片 */}
+          <LinearGradient
+            colors={['#ffffff', '#fff1f2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Text style={styles.sectionTitle}>添加备注</Text>
+            <RemarkInput value={remark} onChangeText={setRemark} />
+          </LinearGradient>
+
+          {/* 保存按钮 */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSave}
+              disabled={isLoading}
             >
-              <Text style={styles.sectionTitle}>便便性状</Text>
-              <PoopConsistencySelector
-                selectedConsistency={selectedPoopConsistency}
-                onSelectConsistency={setSelectedPoopConsistency}
-              />
-            </LinearGradient>
-          </>
-        )}
+              <Text style={styles.saveButtonText}>
+                {isLoading ? '保存中...' : '保存'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* 备注输入卡片 */}
-        <LinearGradient
-          colors={['#ffffff', '#fff1f2']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Text style={styles.sectionTitle}>添加备注</Text>
-          <RemarkInput value={remark} onChangeText={setRemark} />
-        </LinearGradient>
-
-        {/* 占位空间 */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      {/* 保存按钮 */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-          disabled={isLoading}
-        >
-          <Text style={styles.saveButtonText}>
-            {isLoading ? '保存中...' : '保存'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* 占位空间 */}
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1
+  },
+  keyboardAvoidingView: {
     flex: 1
   },
   header: {
@@ -314,12 +352,13 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 8,
-    width: 80,
+    width: 40,
     alignItems: 'flex-end'
   },
   deleteButtonText: {
     color: '#f43f5e',
-    fontSize: 14
+    fontSize: 12,
+    textAlign: 'right'
   },
   headerRight: {
     width: 40
@@ -350,10 +389,6 @@ const styles = StyleSheet.create({
     marginBottom: 12
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: 16,
     backgroundColor: 'transparent'
   },

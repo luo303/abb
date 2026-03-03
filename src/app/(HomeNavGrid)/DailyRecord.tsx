@@ -8,12 +8,13 @@ import {
   Text,
   Animated
 } from 'react-native'
-import { Stack } from 'expo-router'
+import { Stack, useNavigation } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import dayjs from 'dayjs'
 import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useSelector, useDispatch } from 'react-redux'
 import { useNavigationHelper } from '../../utils/navigation'
 
 // 导入日常记录组件
@@ -23,10 +24,18 @@ import EmptyState from '../../components/DailyRecord/EmptyState'
 
 // 导入类型定义和模拟数据
 import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
+import { DiaperItem } from '../../types/diaper'
 import mockData from '../../data/mock/dailyRecordMock'
+import { fetchDiaperList } from '../../store/modules/diaperStore'
+import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
   const { navigateToRecord } = useNavigationHelper()
+  const navigation = useNavigation()
+  const dispatch = useDispatch<AppDispatch>()
+  const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
+  const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
+
   const [selectedDate, setSelectedDate] = useState<string>(
     dayjs().format('YYYY-MM-DD')
   )
@@ -41,10 +50,72 @@ export default function DailyRecordScreen() {
   })
   const animatedBackgroundValue = useState(new Animated.Value(0))[0]
 
+  // 初始化数据
+  useEffect(() => {
+    if (babyId) {
+      dispatch(fetchDiaperList(babyId))
+    }
+  }, [babyId, dispatch])
+
   // 根据选中日期更新记录和统计
   useEffect(() => {
-    const records = mockData[selectedDate] || []
-    setCurrentRecords(records)
+    // 获取 mock 数据
+    const mockRecords = mockData[selectedDate] || []
+
+    // 从 diaperList 中筛选出当前日期的记录
+    const diaperRecords = diaperList
+      .filter(item => {
+        const itemDate = dayjs(item.change_time).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        // 构建描述文本
+        let description = ''
+        if (item.diaper_type.id === 'dry') {
+          // 如果是干爽类型，显示备注信息并适当省略，过滤掉换行符
+          if (item.remark) {
+            const cleanRemark = item.remark.replace(/\n/g, ' ').trim()
+            description =
+              cleanRemark.length > 10
+                ? cleanRemark.substring(0, 10) + '...'
+                : cleanRemark
+          }
+        } else {
+          // 其他类型显示颜色和性状信息
+          if (item.poop_color || item.poop_consistency) {
+            const parts = []
+            if (item.poop_color) {
+              parts.push(item.poop_color.name)
+            }
+            if (item.poop_consistency) {
+              parts.push(item.poop_consistency.name)
+            }
+            description = parts.join(' | ')
+          }
+        }
+
+        return {
+          id: item.diaper_id,
+          type: 'diaper' as const,
+          time: item.change_time,
+          details: description,
+          icon: 'baby-carriage',
+          name: item.diaper_type.name,
+          title: item.diaper_type.name,
+          description: description
+        }
+      })
+
+    // 合并并按时间降序排序
+    const allRecords = [...mockRecords, ...diaperRecords].sort((a, b) => {
+      const timeA =
+        typeof a.time === 'string' ? new Date(a.time).getTime() : a.time
+      const timeB =
+        typeof b.time === 'string' ? new Date(b.time).getTime() : b.time
+      return timeB - timeA
+    })
+
+    setCurrentRecords(allRecords)
 
     // 计算统计数据
     let feedingCount = 0
@@ -53,7 +124,7 @@ export default function DailyRecordScreen() {
     let sleepDuration = 0 // 以小时为单位，保留小数
     let diaperCount = 0
 
-    records.forEach(record => {
+    allRecords.forEach(record => {
       switch (record.type) {
         case 'feeding':
           feedingCount++
@@ -76,7 +147,7 @@ export default function DailyRecordScreen() {
       sleepDuration,
       diaperCount
     })
-  }, [selectedDate])
+  }, [selectedDate, diaperList])
 
   // 计算整体进度并更新背景颜色
   useEffect(() => {

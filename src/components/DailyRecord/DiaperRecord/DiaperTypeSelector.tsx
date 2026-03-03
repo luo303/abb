@@ -7,11 +7,11 @@ import {
   ScrollView
 } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { DiaperType } from '../../../types/diaper'
+import { DiaperType, Option } from '../../../types/diaper'
 
 interface DiaperTypeSelectorProps {
-  selectedType: DiaperType
-  onSelectType: (type: DiaperType) => void
+  selectedType: Option
+  onSelectType: (type: Option) => void
 }
 
 export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
@@ -19,10 +19,26 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
   onSelectType
 }) => {
   const types = [
-    { type: DiaperType.PEE, label: '嘘嘘', icon: 'water' },
-    { type: DiaperType.POOP, label: '便便', icon: 'emoticon-poop' },
-    { type: DiaperType.BOTH, label: '嘘嘘+便便', icon: 'opacity' },
-    { type: DiaperType.DRY, label: '干爽', icon: 'shield-check-outline' }
+    {
+      type: { id: DiaperType.PEE, name: '嘘嘘' },
+      label: '嘘嘘',
+      icon: 'water'
+    },
+    {
+      type: { id: DiaperType.POOP, name: '便便' },
+      label: '便便',
+      icon: 'emoticon-poop'
+    },
+    {
+      type: { id: DiaperType.BOTH, name: '嘘嘘+便便' },
+      label: '嘘嘘+便便',
+      icon: 'opacity'
+    },
+    {
+      type: { id: DiaperType.DRY, name: '干爽' },
+      label: '干爽',
+      icon: 'shield-check-outline'
+    }
   ]
 
   return (
@@ -33,23 +49,23 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
     >
       {types.map(item => (
         <TouchableOpacity
-          key={item.type}
+          key={item.type.id}
           style={[
             styles.typeButton,
-            selectedType === item.type && styles.selectedTypeButton
+            selectedType.id === item.type.id && styles.selectedTypeButton
           ]}
           onPress={() => onSelectType(item.type)}
         >
           <MaterialCommunityIcons
             name={item.icon as any}
             size={24}
-            color={selectedType === item.type ? '#fff' : '#f43f5e'}
+            color={selectedType.id === item.type.id ? '#fff' : '#f43f5e'}
             style={styles.typeIcon}
           />
           <Text
             style={[
               styles.typeLabel,
-              selectedType === item.type && styles.selectedTypeLabel
+              selectedType.id === item.type.id && styles.selectedTypeLabel
             ]}
           >
             {item.label}

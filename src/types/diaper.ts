@@ -1,3 +1,9 @@
+// 通用的选项类型
+export interface Option {
+  id: string
+  name: string
+}
+
 export enum DiaperType {
   PEE = 'pee',
   POOP = 'poop',
@@ -39,21 +45,21 @@ export enum PoopConsistency {
 export interface DiaperItem {
   diaper_id: string
   baby_id: string
-  diaper_type: DiaperType
+  diaper_type: Option
   change_time: number
-  pee_color?: PeeColor
-  poop_color?: PoopColor
-  poop_consistency?: PoopConsistency
+  pee_color?: Option | null
+  poop_color?: Option | null
+  poop_consistency?: Option | null
   remark?: string
   summary_text?: string
 }
 
 export interface DiaperRecordRequest {
-  diaper_type: DiaperType
+  diaper_type: string
   change_time: number
-  pee_color?: PeeColor
-  poop_color?: PoopColor
-  poop_consistency?: PoopConsistency
+  pee_color?: string
+  poop_color?: string
+  poop_consistency?: string
   remark?: string
   summary_text?: string
 }

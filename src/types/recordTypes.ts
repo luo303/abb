@@ -5,10 +5,13 @@ export type RecordType = 'feeding' | 'sleep' | 'diaper'
 export interface RecordItem {
   id: string
   type: RecordType
-  time: string
+  time: string | number
   details: string
   icon: string
   name: string
+  title?: string
+  description?: string
+  remark?: string
 }
 
 // 统计数据结构

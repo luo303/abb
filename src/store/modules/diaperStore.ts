@@ -52,6 +52,25 @@ const diaperSlice = createSlice({
       state.diaperList = []
       state.currentDate = getTodayDate()
       state.error = null
+    },
+    addDiaperRecord: (state, action: PayloadAction<DiaperItem>) => {
+      // 将新记录添加到列表开头
+      state.diaperList.unshift(action.payload)
+    },
+    updateDiaperRecord: (state, action: PayloadAction<DiaperItem>) => {
+      // 找到并更新对应的记录
+      const index = state.diaperList.findIndex(
+        item => item.diaper_id === action.payload.diaper_id
+      )
+      if (index !== -1) {
+        state.diaperList[index] = action.payload
+      }
+    },
+    deleteDiaperRecord: (state, action: PayloadAction<string>) => {
+      // 删除对应的记录
+      state.diaperList = state.diaperList.filter(
+        item => item.diaper_id !== action.payload
+      )
     }
   },
   extraReducers: builder => {
@@ -75,6 +94,12 @@ const diaperSlice = createSlice({
   }
 })
 
-export const { setCurrentDate, clearDiaperData } = diaperSlice.actions
+export const {
+  setCurrentDate,
+  clearDiaperData,
+  addDiaperRecord,
+  updateDiaperRecord,
+  deleteDiaperRecord
+} = diaperSlice.actions
 
 export default diaperSlice.reducer
