@@ -14,10 +14,6 @@ export const getHomePosts = async (
   strategy?: string
 ): Promise<PostListResponse> => {
   try {
-    // 构建完整URL用于调试
-    const url = `/post?page=${page}&page_size=${pageSize}${strategy ? `&strategy=${strategy}` : ''}`
-    console.log('首页请求URL:', url)
-
     const res = (await request.get('/post', {
       params: {
         page: String(page),

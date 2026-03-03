@@ -110,7 +110,8 @@ export const searchPosts = async (
       tags: post.tags || [],
       baby_age_year: post.baby_age_year || 0,
       baby_age_month: post.baby_age_month || 0,
-      baby_age_text: post.baby_age_text
+      baby_age_text: post.baby_age_text,
+      cover: post.cover || ''
     }))
 
     return {

@@ -1,3 +1,9 @@
+// 定义解析后的 content 类型
+export interface ParsedContent {
+  text?: string
+  images?: (string | any)[]
+}
+
 export interface PostItem {
   post_id: string
   id?: string // 兼容某些接口可能返回 id 而不是 post_id
@@ -7,8 +13,8 @@ export interface PostItem {
   author_province: string
   author_city: string
   title: string
-  content: string
-  content_preview: string
+  content: string | ParsedContent
+  content_preview?: string // 接口定义中无此字段
   status: string
   like_count: number
   dislike_count: number
@@ -20,7 +26,7 @@ export interface PostItem {
   baby_age_year: number
   baby_age_month: number
   baby_age_text: string
-  cover?: string
+  cover: string // 接口定义中为必填
   images?: (string | any)[] // 额外字段：用于轮播图
   imageUrls?: string[] // 额外字段：从 content 中提取的图片 URL 数组
   cleanedContent?: string // 额外字段：清洗后的纯文字内容
@@ -29,6 +35,7 @@ export interface PostItem {
   is_liked?: boolean // 额外字段：是否点赞
   is_disliked?: boolean // 额外字段：是否踩
   is_collected?: boolean // 额外字段：是否收藏
+  __isLocalAdded?: boolean // 额外字段：标记本地添加的帖子
 }
 
 // 首页获取帖子响应数据 - 使用Trae生成的类型结构

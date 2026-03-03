@@ -194,7 +194,6 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     // 优先使用 post_id，如果不存在则尝试使用 id
     const postId = data.post_id || data.id
     if (postId) {
-      console.log('点击帖子的 ID 为:', postId)
       navigation.navigate('PostDetail', { post_id: postId })
     }
   }
@@ -387,6 +386,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999'
   },
+
   postTitle: {
     fontSize: 16,
     fontWeight: '600',

@@ -2,7 +2,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import {
   PostItem,
   PostListResponse,
-  PostDetailResponse
+  PostDetailResponse,
+  ParsedContent
 } from '../../types/home'
 import { getPostDetail, getHomePosts } from '../../api/home'
 import { getFollowingPosts } from '../../api/follow'
@@ -12,7 +13,7 @@ const parsePostContent = (post: PostItem): PostItem => {
   if (post.content) {
     if (typeof post.content === 'string') {
       try {
-        const parsedContent = JSON.parse(post.content)
+        const parsedContent = JSON.parse(post.content) as ParsedContent
         if (parsedContent && typeof parsedContent === 'object') {
           return {
             ...post,
@@ -23,34 +24,41 @@ const parsePostContent = (post: PostItem): PostItem => {
           // 如果解析结果不是对象，使用默认显示方案
           return {
             ...post,
-            content: { text: post.content, images: [] }
+            content: { text: post.content, images: [] } as ParsedContent,
+            images: []
           }
         }
       } catch (parseError) {
         // 如果解析失败，使用默认显示方案
         return {
           ...post,
-          content: { text: post.content, images: [] }
+          content: { text: post.content, images: [] } as ParsedContent,
+          images: []
         }
       }
-    } else if (typeof post.content === 'object' && post.content.text) {
+    } else if (
+      typeof post.content === 'object' &&
+      (post.content as ParsedContent).text
+    ) {
       // content已经是对象，直接使用
       return {
         ...post,
-        images: post.content.images || []
+        images: (post.content as ParsedContent).images || []
       }
     } else {
       // 其他情况，使用默认显示方案
       return {
         ...post,
-        content: { text: String(post.content), images: [] }
+        content: { text: String(post.content), images: [] } as ParsedContent,
+        images: []
       }
     }
   } else {
     // 如果 content 为空，使用默认显示方案
     return {
       ...post,
-      content: { text: '', images: [] }
+      content: { text: '', images: [] } as ParsedContent,
+      images: []
     }
   }
 }
@@ -141,7 +149,8 @@ export const fetchFollowingPosts = createAsyncThunk<
   async ({ page = 1, pageSize = 10 }, { rejectWithValue }) => {
     try {
       const response = await getFollowingPosts(page, pageSize)
-      return response
+      // 类型断言，确保返回类型与 PostListResponse 匹配
+      return response as unknown as PostListResponse
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
@@ -157,7 +166,8 @@ export const loadMoreFollowingPosts = createAsyncThunk<
   async ({ page, pageSize = 10 }, { rejectWithValue }) => {
     try {
       const response = await getFollowingPosts(page, pageSize)
-      return response
+      // 类型断言，确保返回类型与 PostListResponse 匹配
+      return response as unknown as PostListResponse
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
     }
@@ -168,15 +178,15 @@ const postSlice = createSlice({
   name: 'post',
   initialState,
   reducers: {
-    resetPostState: state => {
+    resetPostState: (state: PostState) => {
       state.loading = false
       state.error = null
     },
-    clearCurrentPost: state => {
+    clearCurrentPost: (state: PostState) => {
       state.currentPost = null
     },
     updatePostStats: (
-      state,
+      state: PostState,
       action: PayloadAction<{
         postId: string
         stats: Partial<{
@@ -202,7 +212,7 @@ const postSlice = createSlice({
       }
 
       // 更新列表页数据
-      state.postList = state.postList.map(post => {
+      state.postList = state.postList.map((post: PostItem) => {
         if (String(post.post_id) === stringPostId) {
           console.log('已同步更新首页列表中的点赞数，ID: ' + stringPostId)
           return { ...post, ...stats }
@@ -210,7 +220,7 @@ const postSlice = createSlice({
         return post
       })
     },
-    toggleFollow: (state, action: PayloadAction<string>) => {
+    toggleFollow: (state: PostState, action: PayloadAction<string>) => {
       const authorId = action.payload
 
       // 检查当前帖子是否属于该作者，并且状态将变为已关注
@@ -221,7 +231,7 @@ const postSlice = createSlice({
         !currentPost.is_followed
 
       // 更新列表页中的关注状态
-      state.postList = state.postList.map(post => {
+      state.postList = state.postList.map((post: PostItem) => {
         if (post.author_id === authorId) {
           return { ...post, is_followed: !post.is_followed }
         }
@@ -251,20 +261,20 @@ const postSlice = createSlice({
         }
       }
     },
-    syncPostDetailToList: (state, action: PayloadAction<any>) => {
+    syncPostDetailToList: (state: PostState, action: PayloadAction<any>) => {
       const postId = String(action.payload.post_id)
       const index = state.postList.findIndex(p => String(p.post_id) === postId)
       if (index !== -1) {
         state.postList[index] = { ...state.postList[index], ...action.payload }
       }
     },
-    addNewPost: (state, action: PayloadAction<PostItem>) => {
+    addNewPost: (state: PostState, action: PayloadAction<PostItem>) => {
       // 确保content已被正确解析
       const newPost = { ...action.payload }
       if (newPost.content) {
         if (typeof newPost.content === 'string') {
           try {
-            const parsedContent = JSON.parse(newPost.content)
+            const parsedContent = JSON.parse(newPost.content) as ParsedContent
             if (parsedContent) {
               newPost.content = parsedContent
               newPost.images = parsedContent.images || newPost.images
@@ -274,10 +284,11 @@ const postSlice = createSlice({
           }
         } else if (
           typeof newPost.content === 'object' &&
-          newPost.content.text
+          (newPost.content as ParsedContent).text
         ) {
           // content已经是对象，直接使用
-          newPost.images = newPost.content.images || newPost.images
+          newPost.images =
+            (newPost.content as ParsedContent).images || newPost.images
         }
       }
       // 检查是否已存在，避免重复添加
@@ -290,7 +301,10 @@ const postSlice = createSlice({
       }
     },
     // 乐观更新：当关注作者时，将该作者的帖子插入到关注列表
-    addAuthorPostToFollowing: (state, action: PayloadAction<PostItem>) => {
+    addAuthorPostToFollowing: (
+      state: PostState,
+      action: PayloadAction<PostItem>
+    ) => {
       // 确保content已被正确解析
       const post = parsePostContent(action.payload)
 
@@ -299,19 +313,34 @@ const postSlice = createSlice({
         p => p.post_id === post.post_id
       )
       if (existingIndex === -1) {
+        // 为本地添加的帖子添加标记
+        const postWithLocalMark = {
+          ...post,
+          __isLocalAdded: true
+        }
         // 将帖子插入到关注列表首位
-        state.followingPosts.unshift(post)
+        state.followingPosts.unshift(postWithLocalMark)
       }
+    },
+    // 从关注列表中移除帖子
+    removeAuthorPostFromFollowing: (
+      state: PostState,
+      action: PayloadAction<string>
+    ) => {
+      const postId = action.payload
+      state.followingPosts = state.followingPosts.filter(
+        post => post.post_id !== postId
+      )
     }
   },
-  extraReducers: builder => {
+  extraReducers: (builder: any) => {
     builder
       // 获取帖子列表
-      .addCase(fetchPostList.pending, state => {
+      .addCase(fetchPostList.pending, (state: PostState) => {
         state.loading = true
         state.error = null
       })
-      .addCase(fetchPostList.fulfilled, (state, action) => {
+      .addCase(fetchPostList.fulfilled, (state: PostState, action: any) => {
         state.loading = false
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
@@ -326,16 +355,16 @@ const postSlice = createSlice({
           state.error = action.payload?.message || '未知错误'
         }
       })
-      .addCase(fetchPostList.rejected, (state, action) => {
+      .addCase(fetchPostList.rejected, (state: PostState, action: any) => {
         state.loading = false
         state.error = action.payload as string
       })
       // 加载更多帖子
-      .addCase(loadMorePosts.pending, state => {
+      .addCase(loadMorePosts.pending, (state: PostState) => {
         state.isLoadingMore = true
         state.error = null
       })
-      .addCase(loadMorePosts.fulfilled, (state, action) => {
+      .addCase(loadMorePosts.fulfilled, (state: PostState, action: any) => {
         state.isLoadingMore = false
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
@@ -345,9 +374,11 @@ const postSlice = createSlice({
             ) || []
 
           // 过滤重复数据
-          const existingIds = new Set(state.postList.map(p => p.post_id))
+          const existingIds = new Set(
+            state.postList.map((p: PostItem) => p.post_id)
+          )
           const uniqueNewItems = parsedPostList.filter(
-            p => !existingIds.has(p.post_id)
+            (p: PostItem) => !existingIds.has(p.post_id)
           )
 
           if (uniqueNewItems.length > 0) {
@@ -361,18 +392,18 @@ const postSlice = createSlice({
           state.error = action.payload?.message || '未知错误'
         }
       })
-      .addCase(loadMorePosts.rejected, (state, action) => {
+      .addCase(loadMorePosts.rejected, (state: PostState, action: any) => {
         state.isLoadingMore = false
         state.error = action.payload as string
       })
       // 获取帖子详情
-      .addCase(fetchPostDetail.pending, state => {
+      .addCase(fetchPostDetail.pending, (state: PostState) => {
         state.loading = true
         state.error = null
         // 清空旧的详情数据，防止“先看到上一条”的闪烁现象
         state.currentPost = null
       })
-      .addCase(fetchPostDetail.fulfilled, (state, action) => {
+      .addCase(fetchPostDetail.fulfilled, (state: PostState, action: any) => {
         state.loading = false
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           let postData = action.payload.data?.post
@@ -412,69 +443,100 @@ const postSlice = createSlice({
           state.error = action.payload?.message || '未知错误'
         }
       })
-      .addCase(fetchPostDetail.rejected, (state, action) => {
+      .addCase(fetchPostDetail.rejected, (state: PostState, action: any) => {
         state.loading = false
         state.error = action.payload as string
       })
       // 获取关注列表
-      .addCase(fetchFollowingPosts.pending, state => {
+      .addCase(fetchFollowingPosts.pending, (state: PostState) => {
         state.isFollowLoading = true
         state.error = null
       })
-      .addCase(fetchFollowingPosts.fulfilled, (state, action) => {
-        state.isFollowLoading = false
-        if (action.payload?.code === 0 || action.payload?.code === 200) {
-          // 统一对 content 字段进行 JSON.parse 解析
-          const parsedPostList =
-            action.payload.data?.items?.map((post: PostItem) =>
-              parsePostContent(post)
-            ) || []
-          state.followingPosts = parsedPostList
-          state.followPage = 1
-          state.followHasMore = action.payload.data?.has_more ?? false
-        } else {
-          state.error = action.payload?.message || '未知错误'
-        }
-      })
-      .addCase(fetchFollowingPosts.rejected, (state, action) => {
-        state.isFollowLoading = false
-        state.error = action.payload as string
-      })
-      // 加载更多关注帖子
-      .addCase(loadMoreFollowingPosts.pending, state => {
-        state.isFollowLoading = true
-        state.error = null
-      })
-      .addCase(loadMoreFollowingPosts.fulfilled, (state, action) => {
-        state.isFollowLoading = false
-        if (action.payload?.code === 0 || action.payload?.code === 200) {
-          // 统一对 content 字段进行 JSON.parse 解析
-          const parsedPostList =
-            action.payload.data?.items?.map((post: PostItem) =>
-              parsePostContent(post)
-            ) || []
+      .addCase(
+        fetchFollowingPosts.fulfilled,
+        (state: PostState, action: any) => {
+          state.isFollowLoading = false
+          if (action.payload?.code === 0 || action.payload?.code === 200) {
+            // 统一对 content 字段进行 JSON.parse 解析
+            const parsedPostList =
+              action.payload.data?.items?.map((post: PostItem) =>
+                parsePostContent(post)
+              ) || []
 
-          // 过滤重复数据
-          const existingIds = new Set(state.followingPosts.map(p => p.post_id))
-          const uniqueNewItems = parsedPostList.filter(
-            p => !existingIds.has(p.post_id)
-          )
+            // 合并本地添加的帖子，确保关注的帖子不会丢失
+            const existingIds = new Set(
+              parsedPostList.map((p: PostItem) => p.post_id)
+            )
+            const localAddedPosts = state.followingPosts
+              .filter((p: PostItem) => !existingIds.has(p.post_id))
+              // 移除本地添加的标记
+              .map((p: PostItem) => {
+                const { __isLocalAdded, ...postWithoutLocalMark } = p
+                return postWithoutLocalMark
+              })
 
-          if (uniqueNewItems.length > 0) {
-            state.followingPosts = [...state.followingPosts, ...uniqueNewItems]
-            state.followPage += 1
+            // 合并并去重，保持本地添加的帖子在前面
+            state.followingPosts = [...localAddedPosts, ...parsedPostList]
+            state.followPage = 1
             state.followHasMore = action.payload.data?.has_more ?? false
           } else {
-            state.followHasMore = false
+            state.error = action.payload?.message || '未知错误'
           }
-        } else {
-          state.error = action.payload?.message || '未知错误'
         }
+      )
+      .addCase(
+        fetchFollowingPosts.rejected,
+        (state: PostState, action: any) => {
+          state.isFollowLoading = false
+          state.error = action.payload as string
+        }
+      )
+      // 加载更多关注帖子
+      .addCase(loadMoreFollowingPosts.pending, (state: PostState) => {
+        state.isFollowLoading = true
+        state.error = null
       })
-      .addCase(loadMoreFollowingPosts.rejected, (state, action) => {
-        state.isFollowLoading = false
-        state.error = action.payload as string
-      })
+      .addCase(
+        loadMoreFollowingPosts.fulfilled,
+        (state: PostState, action: any) => {
+          state.isFollowLoading = false
+          if (action.payload?.code === 0 || action.payload?.code === 200) {
+            // 统一对 content 字段进行 JSON.parse 解析
+            const parsedPostList =
+              action.payload.data?.items?.map((post: PostItem) =>
+                parsePostContent(post)
+              ) || []
+
+            // 过滤重复数据
+            const existingIds = new Set(
+              state.followingPosts.map((p: PostItem) => p.post_id)
+            )
+            const uniqueNewItems = parsedPostList.filter(
+              (p: PostItem) => !existingIds.has(p.post_id)
+            )
+
+            if (uniqueNewItems.length > 0) {
+              state.followingPosts = [
+                ...state.followingPosts,
+                ...uniqueNewItems
+              ]
+              state.followPage += 1
+              state.followHasMore = action.payload.data?.has_more ?? false
+            } else {
+              state.followHasMore = false
+            }
+          } else {
+            state.error = action.payload?.message || '未知错误'
+          }
+        }
+      )
+      .addCase(
+        loadMoreFollowingPosts.rejected,
+        (state: PostState, action: any) => {
+          state.isFollowLoading = false
+          state.error = action.payload as string
+        }
+      )
   }
 })
 
@@ -483,8 +545,9 @@ export const {
   clearCurrentPost,
   updatePostStats,
   toggleFollow,
-  addNewPost,
   syncPostDetailToList,
-  addAuthorPostToFollowing
+  addNewPost,
+  addAuthorPostToFollowing,
+  removeAuthorPostFromFollowing
 } = postSlice.actions
 export default postSlice.reducer

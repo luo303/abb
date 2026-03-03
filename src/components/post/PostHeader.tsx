@@ -45,7 +45,15 @@ export default function PostHeader({
 
       <TouchableOpacity
         style={[styles.followBtn, isFollowing && styles.followingBtn]}
-        onPress={onFollow}
+        onPress={e => {
+          // 阻止事件冒泡，防止触发父组件的点击事件
+          if (e && e.stopPropagation) {
+            e.stopPropagation()
+          }
+          if (onFollow) {
+            onFollow()
+          }
+        }}
       >
         <Text style={[styles.followText, isFollowing && styles.followingText]}>
           {isFollowing ? '已关注' : '关注'}

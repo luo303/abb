@@ -2,7 +2,7 @@ import axios from 'axios'
 // import store from '../store'
 import * as SecureStore from 'expo-secure-store'
 //创建axios实例
-const baseURL = 'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api' //云端mock地址
+const baseURL = 'https://m1.apifoxmock.com/m1/7571791-7309471-default' //云端mock地址
 const request = axios.create({
   baseURL,
   timeout: 10000 //10s
@@ -18,8 +18,7 @@ request.interceptors.request.use(async (config: any) => {
   } catch (error) {
     console.warn('Error getting token:', error)
   }
-  // 打印完整URL
-  console.log('即将发送的完整URL:', config.baseURL + config.url)
+
   return config
 })
 //响应拦截器

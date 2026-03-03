@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
 import { LogBox } from 'react-native'
+import { initFollowingIds } from '../store/modules/FollowStore'
+import { useAppDispatch } from '../hooks/redux'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -42,11 +44,24 @@ LogBox.ignoreLogs([
 ])
 const Stack = createNativeStackNavigator()
 
+// 初始化组件，用于在应用启动时加载关注列表
+function AppInitializer() {
+  const dispatch = useAppDispatch()
+
+  useEffect(() => {
+    // 初始化关注列表
+    dispatch(initFollowingIds())
+  }, [dispatch])
+
+  return null
+}
+
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <MessageProvider>
+          <AppInitializer />
           <NavigationContainer>
             <Stack.Navigator
               initialRouteName={store.getState().user.token ? 'Tabs' : 'Login'}

@@ -25,9 +25,10 @@ import {
   updatePostStats,
   clearCurrentPost,
   addAuthorPostToFollowing,
-  toggleFollow as toggleFollowAction
+  removeAuthorPostFromFollowing
 } from '@/store/modules/PostStore'
 import { toggleFollow } from '@/api/follow'
+import { followUser, unfollowUser } from '@/store/modules/FollowStore'
 import {
   getPostComments,
   getPostCommentReplies,
@@ -58,8 +59,6 @@ export default function PostDetail() {
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
-
-  const [isFollowing, setIsFollowing] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [isCommentsLoading, setIsCommentsLoading] = useState(false)
   const [isInputVisible, setInputVisible] = useState(false)
@@ -68,6 +67,12 @@ export default function PostDetail() {
 
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
+
+  // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
+  const checkFollowStatus = useAppSelector(state => {
+    if (!currentPost) return false
+    return state.follow.followingIds.includes(currentPost.author_id)
+  })
 
   // 加载帖子详情
   useEffect(() => {
@@ -89,7 +94,6 @@ export default function PostDetail() {
       setIsLiked(currentPost.like_count > 0 && Math.random() > 0.5) // 模拟：随机初始状态
       setIsDisliked(false)
       setIsFavorited(false)
-      setIsFollowing(currentPost.is_followed || false)
     }
   }, [currentPost?.post_id])
 
@@ -359,31 +363,46 @@ export default function PostDetail() {
     showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
   }
 
+  // 防抖处理：防止连续快速点击
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false)
+
   const handleFollowAuthor = async () => {
-    if (!currentPost) return
+    if (!currentPost || isFollowingLoading) return
+
     try {
-      const newIsFollowing = !isFollowing
-      setIsFollowing(newIsFollowing)
+      setIsFollowingLoading(true)
+      const newIsFollowing = !checkFollowStatus
 
-      console.log('Author ID:', currentPost.author_id)
-      console.log('Author ID type:', typeof currentPost.author_id)
-
-      // 乐观更新：当关注作者时，将当前帖子添加到关注列表
+      // 乐观更新：更新FollowStore中的关注状态
       if (newIsFollowing) {
+        dispatch(followUser(currentPost.author_id as string))
+        // 同时将当前帖子添加到关注列表
         dispatch(addAuthorPostToFollowing(currentPost))
+      } else {
+        dispatch(unfollowUser(currentPost.author_id as string))
+        // 同时从关注列表中移除该帖子
+        dispatch(removeAuthorPostFromFollowing(currentPost.post_id))
       }
-
-      // 更新 Redux 中的关注状态
-      dispatch(toggleFollowAction(currentPost.author_id as string))
 
       await toggleFollow(currentPost.author_id as string)
       showMessage(newIsFollowing ? '关注成功' : '取消关注')
     } catch (error) {
       console.error('关注操作失败:', error)
-      setIsFollowing(prev => !prev)
-      // 失败时回滚 Redux 中的关注状态
-      dispatch(toggleFollowAction(currentPost.author_id as string))
+      // 失败时回滚状态
+      if (currentPost) {
+        const currentStatus = checkFollowStatus
+        if (currentStatus) {
+          dispatch(unfollowUser(currentPost.author_id as string))
+        } else {
+          dispatch(followUser(currentPost.author_id as string))
+        }
+      }
       showMessage('操作失败，请稍后重试')
+    } finally {
+      // 延迟一点时间，确保用户无法连续点击
+      setTimeout(() => {
+        setIsFollowingLoading(false)
+      }, 500)
     }
   }
 
@@ -561,7 +580,7 @@ export default function PostDetail() {
           avatar={displayAvatar}
           nickname={currentPost.author_name}
           description={currentPost.baby_age_text}
-          isFollowing={isFollowing}
+          isFollowing={checkFollowStatus}
           onFollow={handleFollowAuthor}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>

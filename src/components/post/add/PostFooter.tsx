@@ -131,6 +131,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         utime: Date.now(),
         tags: payload.tags,
         images: validNetworkUrls,
+        cover: validNetworkUrls[0] || '', // 使用第一张图片作为封面
         baby_age_year: 0,
         baby_age_month: 0,
         baby_age_text: userInfo?.baby_age_text || '稚慧宝用户'

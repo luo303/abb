@@ -50,7 +50,7 @@ export function useHomeData() {
   const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.post_id))
   const posts =
     activeTab === '关注'
-      ? [...followingPosts, ...uniqueLocalPosts]
+      ? followingPosts // 关注列表只显示API获取的关注帖子
       : [...postList, ...uniqueLocalPosts]
 
   // 初始化时加载数据
@@ -151,6 +151,15 @@ export function useHomeData() {
       return
     }
 
+    // 增加防抖：如果关注列表刚刚添加了新帖子，暂时不加载更多
+    if (activeTab === '关注' && followingPosts.length > 0) {
+      const lastPost = followingPosts[0]
+      // 检查帖子是否是刚刚添加的（通过检查是否有本地添加的标记）
+      if (lastPost && lastPost.__isLocalAdded) {
+        return
+      }
+    }
+
     try {
       if (activeTab === '关注') {
         const nextPage = followPage + 1
@@ -174,7 +183,8 @@ export function useHomeData() {
     showMessage,
     isFollowLoading,
     followHasMore,
-    followPage
+    followPage,
+    followingPosts
   ])
 
   // 添加新帖子
