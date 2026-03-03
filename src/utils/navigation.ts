@@ -34,13 +34,6 @@ export const useNavigationHelper = () => {
      */
     goBack: () => {
       navigation.goBack()
-    },
-
-    /**
-     * 跳转到手动睡眠记录页面
-     */
-    navigateToSleepManualInput: () => {
-      navigation.navigate('SleepManualInput')
     }
   }
 }

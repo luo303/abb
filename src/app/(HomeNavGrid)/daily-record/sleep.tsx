@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Alert,
+  StyleSheet,
+  Platform
+} from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
@@ -13,8 +21,10 @@ import { SleepSession, SleepRecord } from '../../../types/sleep'
 import { useNavigationHelper } from '../../../utils/navigation'
 import SleepClockDisplay from '../../../components/DailyRecord/sleep/SleepClockDisplay'
 import SleepActionButton from '../../../components/DailyRecord/sleep/SleepActionButton'
-import SleepManualEntry from '../../../components/DailyRecord/sleep/SleepManualEntry'
-import SleepDecorations from '../../../components/DailyRecord/sleep/SleepDecorations'
+import { Ionicons } from '@expo/vector-icons'
+import DateTimePicker, {
+  DateTimePickerAndroid
+} from '@react-native-community/datetimepicker'
 
 // 格式化秒数为 HH:MM:SS 格式
 const formatTime = (seconds: number) => {
@@ -29,10 +39,13 @@ const formatTime = (seconds: number) => {
 }
 
 const SleepRecordScreen = () => {
-  const { goBack, navigateToSleepManualInput } = useNavigationHelper()
+  const { goBack } = useNavigationHelper()
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [seconds, setSeconds] = useState(0)
+  const [showManualInput, setShowManualInput] = useState(false)
+  const [startTime, setStartTime] = useState(new Date())
+  const [endTime, setEndTime] = useState(new Date())
   const sessionIdRef = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -282,9 +295,64 @@ const SleepRecordScreen = () => {
     )
   }
 
-  // 手动记录
+  // 切换手动记录表单
   const handleManualRecord = () => {
-    navigateToSleepManualInput()
+    setShowManualInput(!showManualInput)
+  }
+
+  // 处理时间选择器变化
+  const handleTimeChange = (
+    event: any,
+    selectedDate?: Date,
+    type: 'start' | 'end' = 'start'
+  ) => {
+    if (selectedDate) {
+      if (type === 'start') {
+        setStartTime(selectedDate)
+      } else {
+        setEndTime(selectedDate)
+      }
+    }
+  }
+
+  // 提交手动记录
+  const handleSubmitManualRecord = () => {
+    if (!babyId) {
+      Alert.alert('提示', '请先选择宝宝')
+      return
+    }
+
+    // 处理跨天的情况
+    let adjustedEndTime = new Date(endTime)
+    if (adjustedEndTime < startTime) {
+      adjustedEndTime.setDate(adjustedEndTime.getDate() + 1)
+    }
+
+    // 计算睡眠时长
+    const durationMs = adjustedEndTime.getTime() - startTime.getTime()
+    const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
+    const durationMinutes = Math.floor(
+      (durationMs % (1000 * 60 * 60)) / (1000 * 60)
+    )
+
+    // 模拟API返回数据，用于测试
+    const sleepRecord: SleepRecord = {
+      session_id: `manual-session-${Date.now()}`,
+      started_at: startTime.getTime(),
+      ended_at: adjustedEndTime.getTime(),
+      duration_ms: durationMs
+    }
+
+    // 弹出提示
+    Alert.alert(
+      '睡眠已记录',
+      `睡眠时长 ${durationHours}小时${durationMinutes}分钟`
+    )
+
+    // 重置表单
+    setStartTime(new Date())
+    setEndTime(new Date())
+    setShowManualInput(false)
   }
 
   // 返回按钮
@@ -294,7 +362,15 @@ const SleepRecordScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#fff1f2', '#ffe4e6']}
+      colors={[
+        '#ffffff',
+        '#fff5f5',
+        '#ffe0e0',
+        '#ffd0d0',
+        '#ffc0c0',
+        '#fca5a5',
+        '#f472b6'
+      ]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={styles.container}
@@ -319,10 +395,63 @@ const SleepRecordScreen = () => {
       />
 
       {/* 手动记录按钮 */}
-      <SleepManualEntry onManualRecord={handleManualRecord} />
+      <TouchableOpacity
+        style={styles.manualButton}
+        onPress={handleManualRecord}
+      >
+        <Text style={styles.manualButtonText}>手动记录</Text>
+        <View
+          style={[
+            styles.arrowContainer,
+            showManualInput && styles.arrowRotated
+          ]}
+        >
+          <Ionicons name="chevron-forward" size={20} color="#f43f5e" />
+        </View>
+      </TouchableOpacity>
 
-      {/* 底部装饰 */}
-      <SleepDecorations />
+      {/* 底部占位视图，使按钮离底部更远 */}
+      <View style={styles.bottomSpacer} />
+
+      {/* 手动记录表单 - 弹窗样式 */}
+      {showManualInput && (
+        <TouchableWithoutFeedback onPress={() => setShowManualInput(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={e => e.stopPropagation()}>
+              <View style={styles.manualInputContainer}>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputLabel}>开始时间</Text>
+                  <DateTimePicker
+                    value={startTime}
+                    mode="time"
+                    display="default"
+                    onChange={(event, date) =>
+                      handleTimeChange(event, date, 'start')
+                    }
+                  />
+                </View>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputLabel}>结束时间</Text>
+                  <DateTimePicker
+                    value={endTime}
+                    mode="time"
+                    display="default"
+                    onChange={(event, date) =>
+                      handleTimeChange(event, date, 'end')
+                    }
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleSubmitManualRecord}
+                >
+                  <Text style={styles.submitButtonText}>提交记录</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      )}
     </LinearGradient>
   )
 }
@@ -355,6 +484,84 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 40
+  },
+  manualButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    paddingHorizontal: 64,
+    paddingVertical: 16,
+    borderRadius: 32,
+    marginHorizontal: 48,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3
+  },
+  manualButtonText: {
+    color: '#f43f5e',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  arrowContainer: {
+    marginLeft: 8
+  },
+  arrowRotated: {
+    transform: [{ rotate: '90deg' }]
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  },
+  manualInputContainer: {
+    backgroundColor: 'white',
+    marginHorizontal: 48,
+    padding: 20,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    width: '80%',
+    maxWidth: 400
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  inputLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginRight: 16
+  },
+
+  submitButton: {
+    backgroundColor: '#f43f5e',
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginTop: 8
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  bottomSpacer: {
+    height: 60
   }
 })
 
