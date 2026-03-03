@@ -115,11 +115,16 @@ export default function Home() {
     ({ item }: { item: any }) => {
       // 搜索模式下的头部
       if (item.type === 'search-header') {
-        return (
-          <View style={styles.communitySection}>
-            <SearchEmptyState isLoading={searchLoading} />
-          </View>
-        )
+        // 只有在搜索结果为空且不在加载时才显示空状态
+        if (!searchLoading && searchResults.length === 0) {
+          return (
+            <View style={styles.communitySection}>
+              <SearchEmptyState isLoading={searchLoading} />
+            </View>
+          )
+        }
+        // 否则返回空视图
+        return null
       }
 
       // 顶部轮播图等 Header 区域

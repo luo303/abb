@@ -365,6 +365,9 @@ export default function PostDetail() {
       const newIsFollowing = !isFollowing
       setIsFollowing(newIsFollowing)
 
+      console.log('Author ID:', currentPost.author_id)
+      console.log('Author ID type:', typeof currentPost.author_id)
+
       // 乐观更新：当关注作者时，将当前帖子添加到关注列表
       if (newIsFollowing) {
         dispatch(addAuthorPostToFollowing(currentPost))

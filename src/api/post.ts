@@ -20,8 +20,8 @@ export const searchPosts = async (
   try {
     const res = await request.get('/post/search', {
       params: {
-        page,
-        page_size: pageSize,
+        page: String(page),
+        page_size: String(pageSize),
         keyword,
         tag_id: tagId,
         strategy
@@ -31,6 +31,8 @@ export const searchPosts = async (
     if (!res || typeof res !== 'object') {
       throw new Error('Invalid response format')
     }
+
+    // 返回 API 响应，即使没有结果
     return res as unknown as PostListResponse
   } catch (error) {
     console.warn('Network request failed, falling back to mock data', error)

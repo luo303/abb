@@ -38,8 +38,24 @@ export function useHomeSearch() {
       setSearchResults([])
 
       try {
+        // 构建完整 URL 并打印
+        const params = new URLSearchParams({
+          page: '1',
+          page_size: '10',
+          keyword,
+          strategy: 'time'
+        })
+        const fullUrl = `/post/search?${params.toString()}`
+        console.log('搜索请求完整 URL:', fullUrl)
+        console.log('搜索请求参数:', {
+          keyword,
+          page: 1,
+          pageSize: 10,
+          strategy: 'time'
+        })
         // 传递正确的参数给 searchPosts 函数
         const response = await searchPosts(keyword, 1, 10, undefined, 'time')
+        console.log('搜索返回结果:', response)
 
         // 处理错误情况
         if (response.code === -1 || response.message.includes('用户不存在')) {
@@ -54,8 +70,10 @@ export function useHomeSearch() {
           return
         }
 
-        if (response.code === 200 && response.data) {
+        // 放宽 Response 校验，同时兼容 code: 0 和 200
+        if ((response.code === 200 || response.code === 0) && response.data) {
           const items = response.data.items || []
+          console.log('搜索结果数量:', items.length)
           setSearchResults(items)
           // 如果没有结果，直接设置 has_more 为 false，防止无限加载
           setSearchHasMore(
@@ -78,6 +96,15 @@ export function useHomeSearch() {
     setSearchLoading(true)
     try {
       const nextPage = searchPage + 1
+      // 构建完整 URL 并打印
+      const params = new URLSearchParams({
+        page: String(nextPage),
+        page_size: '10',
+        keyword: searchText,
+        strategy: 'time'
+      })
+      const fullUrl = `/post/search?${params.toString()}`
+      console.log('加载更多搜索请求完整 URL:', fullUrl)
       // 传递正确的参数给 searchPosts 函数
       const response = await searchPosts(
         searchText,
@@ -86,9 +113,12 @@ export function useHomeSearch() {
         undefined,
         'time'
       )
+      console.log('加载更多搜索返回结果:', response)
 
-      if (response.code === 200 && response.data) {
+      // 放宽 Response 校验，同时兼容 code: 0 和 200
+      if ((response.code === 200 || response.code === 0) && response.data) {
         const items = response.data.items || []
+        console.log('加载更多搜索结果数量:', items.length)
         setSearchResults(prev => [...prev, ...items])
         // 如果没有更多结果，设置 has_more 为 false
         setSearchHasMore(items.length > 0 && (response.data.has_more || false))
