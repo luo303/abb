@@ -31,6 +31,7 @@ export default function Home() {
   const insets = useSafeAreaInsets()
   const flatListRef = useRef<FlatList>(null)
   const communityHeaderRef = useRef<View>(null)
+  const isEndReachedRef = useRef(false)
 
   // 使用自定义 Hooks
   const {
@@ -60,7 +61,7 @@ export default function Home() {
   // 是否正在搜索
   const isSearching = searchText.trim().length > 0
 
-  // 使用 useMemo 计算排序后的帖子
+  // 使用 useMemo 计算帖子列表，移除前端排序，依赖后端返回排好序的数据
   const sortedPosts = useMemo(() => {
     const filtered = isSearching
       ? Array.isArray(searchResults)
@@ -68,23 +69,8 @@ export default function Home() {
         : []
       : posts
 
-    return activeTab === '关注'
-      ? [...filtered].sort((a, b) => {
-          if (a.ctime && b.ctime) return b.ctime - a.ctime
-          return Math.random() - 0.5
-        })
-      : [...filtered].sort((a, b) => {
-          switch (activeTab) {
-            case '推荐':
-              if (a.ctime && b.ctime) return b.ctime - a.ctime
-              return Math.random() - 0.5
-            case '热门':
-              return (b.like_count || 0) - (a.like_count || 0)
-            default:
-              return 0
-          }
-        })
-  }, [isSearching, searchResults, posts, activeTab])
+    return filtered
+  }, [isSearching, searchResults, posts])
 
   // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
   const flatListData = useMemo(() => {
@@ -209,6 +195,23 @@ export default function Home() {
     setActiveTab
   ])
 
+  // 处理列表到底部的逻辑，增加节流
+  const handleEndReached = useCallback(() => {
+    // 防止短时间内重复触发
+    if (isEndReachedRef.current) return
+    isEndReachedRef.current = true
+
+    setTimeout(() => {
+      isEndReachedRef.current = false
+    }, 1000) // 1秒内不重复触发
+
+    if (isSearching) {
+      loadMoreSearchResults()
+    } else {
+      loadMore()
+    }
+  }, [isSearching, loadMoreSearchResults, loadMore])
+
   // 渲染列表尾部
   const ListFooterComponent = useCallback(() => {
     if (isSearching) {
@@ -303,14 +306,8 @@ export default function Home() {
             ListFooterComponent={ListFooterComponent}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            onEndReached={() => {
-              if (isSearching) {
-                loadMoreSearchResults()
-              } else {
-                loadMore()
-              }
-            }}
-            onEndReachedThreshold={0.1}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.3}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

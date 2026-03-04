@@ -39,6 +39,7 @@ export function useHomeData() {
   const [activeTab, setActiveTab] = useState('推荐')
 
   const isMountedRef = useRef(true)
+  const isLockRef = useRef(false)
   const { showMessage } = useMessage()
 
   // 合并展示的数据
@@ -138,41 +139,39 @@ export function useHomeData() {
 
   // 加载更多
   const loadMore = useCallback(async () => {
-    // 优化加载锁：在 loadMore 开始时，先检查 isFollowLoading，如果为 true 直接 return
-    if (activeTab === '关注' && isFollowLoading) {
-      return
-    }
+    // 物理锁判断：只要有一个请求在跑，后续触发直接弹回
+    if (isLockRef.current) return
 
-    // 根据当前标签使用对应的状态，确保没有更多内容时不触发加载
-    if (
-      (activeTab === '关注' && !followHasMore) ||
-      (activeTab !== '关注' && (isLoadingMore || !hasMore))
-    ) {
-      return
-    }
+    const currentLoading =
+      activeTab === '关注' ? isFollowLoading : isLoadingMore
+    const currentHasMore = activeTab === '关注' ? followHasMore : hasMore
 
-    // 增加防抖：如果关注列表刚刚添加了新帖子，暂时不加载更多
-    if (activeTab === '关注' && followingPosts.length > 0) {
-      const lastPost = followingPosts[0]
-      // 检查帖子是否是刚刚添加的（通过检查是否有本地添加的标记）
-      if (lastPost && lastPost.__isLocalAdded) {
-        return
-      }
-    }
+    if (currentLoading || !currentHasMore) return
+
+    // 针对 Mock 的刹车逻辑
+    const currentPage = activeTab === '关注' ? followPage : page
+    if (activeTab !== '关注' && currentPage >= 5) return
+
+    // 🔒 上锁
+    isLockRef.current = true
 
     try {
       if (activeTab === '关注') {
-        const nextPage = followPage + 1
-        await dispatch(loadMoreFollowingPosts({ page: nextPage })).unwrap()
+        await dispatch(
+          loadMoreFollowingPosts({ page: followPage + 1 })
+        ).unwrap()
       } else {
-        await dispatch(loadMorePosts({ page: page + 1 })).unwrap()
+        let strategy = activeTab === '热门' ? 'hot' : 'ctime'
+        await dispatch(loadMorePosts({ page: page + 1, strategy })).unwrap()
       }
     } catch (error) {
-      // 增加日志：在 catch 块中打印出 res 的完整内容
       console.error('Load more failed:', error)
       if (activeTab === '关注') {
         showMessage('加载更多关注帖子失败，请稍后重试')
       }
+    } finally {
+      // 解锁
+      isLockRef.current = false
     }
   }, [
     dispatch,
@@ -183,8 +182,7 @@ export function useHomeData() {
     showMessage,
     isFollowLoading,
     followHasMore,
-    followPage,
-    followingPosts
+    followPage
   ])
 
   // 添加新帖子

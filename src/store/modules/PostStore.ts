@@ -350,7 +350,12 @@ const postSlice = createSlice({
             ) || []
           state.postList = parsedPostList
           state.page = 1
-          state.hasMore = action.payload.data?.has_more ?? false
+          // 强制数据量判定：如果返回的数据量不满一页，说明后面没货了
+          const pageSize = 10
+          const finalHasMore =
+            parsedPostList.length === pageSize &&
+            (action.payload.data?.has_more ?? false)
+          state.hasMore = finalHasMore
         } else {
           state.error = action.payload?.message || '未知错误'
         }
@@ -384,7 +389,14 @@ const postSlice = createSlice({
           if (uniqueNewItems.length > 0) {
             state.postList = [...state.postList, ...uniqueNewItems]
             state.page += 1
-            state.hasMore = action.payload.data?.has_more ?? false
+            // 强制数据量判定：如果返回的数据量不满一页，说明后面没货了
+            const pageSize = 10
+            // 针对 Mock 环境限流：增加页码上限
+            const finalHasMore =
+              uniqueNewItems.length === pageSize &&
+              (action.payload.data?.has_more ?? false) &&
+              state.page < 5
+            state.hasMore = finalHasMore
           } else {
             state.hasMore = false
           }
