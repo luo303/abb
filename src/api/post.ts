@@ -7,6 +7,23 @@ import {
 } from '@/types/post'
 import { ApiResponse } from './profile'
 
+export interface PostTagItem {
+  tag_id: string
+  name: string
+  description: string
+}
+
+export interface PostTagListResponse {
+  code: number
+  message: string
+  data: {
+    items: PostTagItem[]
+    page: number
+    page_size: number
+    has_more: boolean
+  }
+}
+
 /**
  * 搜索帖子
  * @param keyword 搜索关键词
@@ -38,6 +55,26 @@ export const searchPosts = async (
 
   // 返回 API 响应，即使没有结果
   return res as unknown as PostListResponse
+}
+
+/**
+ * 获取帖子话题列表
+ * @param page 页码
+ * @param pageSize 每页数量
+ */
+export const getPostTags = async (
+  page = 1,
+  pageSize = 10
+): Promise<PostTagListResponse> => {
+  const res = await request.get('/post/tags', {
+    params: {
+      page,
+      page_size: pageSize
+    }
+  })
+  console.log('get tags res:', res)
+
+  return res as unknown as PostTagListResponse
 }
 
 /**
@@ -111,6 +148,8 @@ export const createPost = async (
   data: CreatePostRequest
 ): Promise<CreatePostResponse> => {
   const res = await request.post('/post/newPost', data)
+  console.log('create post res:', res)
+
   return res.data
 }
 

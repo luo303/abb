@@ -15,50 +15,16 @@ import { publishPost } from '@/api/post'
 import { addMockPost } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
-import { addLocalPost, fetchPostList } from '@/store/modules/PostStore'
+import { addLocalPost } from '@/store/modules/PostStore'
 import { NavigationProps } from '@/types/navigation'
 import { RootState } from '@/store'
-
-// 标签数据（与 PostToolbar 保持一致）
-interface Tag {
-  id: string
-  name: string
-}
-
-const TAGS: Tag[] = [
-  { id: 'tag_001', name: '宝宝日常' },
-  { id: 'tag_002', name: '成长记录' },
-  { id: 'tag_003', name: '育儿经验' },
-  { id: 'tag_004', name: '亲子时光' },
-  { id: 'tag_005', name: '辅食分享' },
-  { id: 'tag_006', name: '绘本推荐' },
-  { id: 'tag_007', name: '玩具测评' },
-  { id: 'tag_008', name: '好物分享' },
-  { id: 'tag_009', name: '宝宝穿搭' },
-  { id: 'tag_010', name: '出行攻略' },
-  { id: 'tag_011', name: '早教启蒙' },
-  { id: 'tag_012', name: '睡眠引导' },
-  { id: 'tag_013', name: '疾病护理' },
-  { id: 'tag_014', name: '疫苗接种' },
-  { id: 'tag_015', name: '情感交流' }
-]
-
-// 根据标签 ID 获取标签名称
-const getTagName = (tagId: string): string => {
-  const tag = TAGS.find(t => t.id === tagId)
-  return tag ? tag.name : ''
-}
-
-// 将标签 ID 数组转换为标签名称数组
-const getTagNames = (tagIds: string[]): string[] => {
-  return tagIds.map(tagId => getTagName(tagId)).filter(name => name !== '')
-}
 
 export interface PostData {
   title?: string
   content: string
   images: string[]
-  tags: string[]
+  tags: string[] // 话题 tag_id 数组
+  tagNames?: string[] // 仅用于本地展示
   isPublic: boolean
 }
 
@@ -172,7 +138,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         comment_count: 0,
         ctime: Date.now(),
         utime: Date.now(),
-        tags: getTagNames(payload.tags),
+        tags: postData.tagNames?.length ? postData.tagNames : payload.tags,
         images: validNetworkUrls,
         cover: validNetworkUrls[0] || '', // 使用第一张图片作为封面
         baby_age_year: 0,

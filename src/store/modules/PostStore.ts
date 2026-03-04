@@ -9,6 +9,26 @@ import { getPostDetail, getHomePosts } from '../../api/home'
 import { getFollowingPosts } from '../../api/follow'
 import { createPost, publishPost } from '../../api/post'
 
+// 兼容新旧字段命名：统一维护一份交互状态，避免页面展示不一致
+const normalizePostInteractionFlags = (post: PostItem): PostItem => {
+  const isLike = post.is_like ?? post.is_liked ?? false
+  const isDislike = post.is_dislike ?? post.is_disliked ?? false
+  const isCollect = post.is_collect ?? post.is_collected ?? false
+  const isFollow = post.is_follow ?? post.is_followed ?? false
+
+  return {
+    ...post,
+    is_like: isLike,
+    is_liked: isLike,
+    is_dislike: isDislike,
+    is_disliked: isDislike,
+    is_collect: isCollect,
+    is_collected: isCollect,
+    is_follow: isFollow,
+    is_followed: isFollow
+  }
+}
+
 // 私有 Helper 函数：统一处理 content 字段的解析逻辑
 const parsePostContent = (post: PostItem): PostItem => {
   if (post.content) {
@@ -16,51 +36,51 @@ const parsePostContent = (post: PostItem): PostItem => {
       try {
         const parsedContent = JSON.parse(post.content) as ParsedContent
         if (parsedContent && typeof parsedContent === 'object') {
-          return {
+          return normalizePostInteractionFlags({
             ...post,
             content: parsedContent,
             images: parsedContent.images || []
-          }
+          })
         } else {
           // 如果解析结果不是对象，使用默认显示方案
-          return {
+          return normalizePostInteractionFlags({
             ...post,
             content: { text: post.content, images: [] } as ParsedContent,
             images: []
-          }
+          })
         }
       } catch (parseError) {
         // 如果解析失败，使用默认显示方案
-        return {
+        return normalizePostInteractionFlags({
           ...post,
           content: { text: post.content, images: [] } as ParsedContent,
           images: []
-        }
+        })
       }
     } else if (
       typeof post.content === 'object' &&
       (post.content as ParsedContent).text
     ) {
       // content已经是对象，直接使用
-      return {
+      return normalizePostInteractionFlags({
         ...post,
         images: (post.content as ParsedContent).images || []
-      }
+      })
     } else {
       // 其他情况，使用默认显示方案
-      return {
+      return normalizePostInteractionFlags({
         ...post,
         content: { text: String(post.content), images: [] } as ParsedContent,
         images: []
-      }
+      })
     }
   } else {
     // 如果 content 为空，使用默认显示方案
-    return {
+    return normalizePostInteractionFlags({
       ...post,
       content: { text: '', images: [] } as ParsedContent,
       images: []
-    }
+    })
   }
 }
 
@@ -106,6 +126,7 @@ export const fetchPostDetail = createAsyncThunk<PostDetailResponse, string>(
   async (postId: string, { rejectWithValue }) => {
     try {
       const response = await getPostDetail(postId)
+      console.log('raw post detail:', response)
       return response
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -229,10 +250,15 @@ const postSlice = createSlice({
           like_count: number
           dislike_count: number
           collect_count: number
+          is_collect?: boolean
           is_collected?: boolean
           comment_count: number
+          is_like?: boolean
           is_liked?: boolean
+          is_dislike?: boolean
           is_disliked?: boolean
+          is_follow?: boolean
+          is_followed?: boolean
         }>
       }>
     ) => {
@@ -244,14 +270,17 @@ const postSlice = createSlice({
         state.currentPost &&
         String(state.currentPost.post_id) === stringPostId
       ) {
-        state.currentPost = { ...state.currentPost, ...stats }
+        state.currentPost = normalizePostInteractionFlags({
+          ...state.currentPost,
+          ...stats
+        })
       }
 
       // 更新列表页数据
       state.postList = state.postList.map((post: PostItem) => {
         if (String(post.post_id) === stringPostId) {
           console.log('已同步更新首页列表中的点赞数，ID: ' + stringPostId)
-          return { ...post, ...stats }
+          return normalizePostInteractionFlags({ ...post, ...stats })
         }
         return post
       })
@@ -261,24 +290,34 @@ const postSlice = createSlice({
 
       // 检查当前帖子是否属于该作者，并且状态将变为已关注
       const currentPost = state.currentPost
+      const currentFollowState = !!(
+        currentPost?.is_follow ?? currentPost?.is_followed
+      )
       const willBeFollowed =
-        currentPost &&
+        !!currentPost &&
         currentPost.author_id === authorId &&
-        !currentPost.is_followed
+        !currentFollowState
 
       // 更新列表页中的关注状态
       state.postList = state.postList.map((post: PostItem) => {
         if (post.author_id === authorId) {
-          return { ...post, is_followed: !post.is_followed }
+          const nextFollowState = !(post.is_follow ?? post.is_followed ?? false)
+          return {
+            ...post,
+            is_follow: nextFollowState,
+            is_followed: nextFollowState
+          }
         }
         return post
       })
 
       // 更新详情页中的关注状态
       if (currentPost && currentPost.author_id === authorId) {
+        const nextFollowState = !currentFollowState
         state.currentPost = {
           ...currentPost,
-          is_followed: !currentPost.is_followed
+          is_follow: nextFollowState,
+          is_followed: nextFollowState
         }
       }
 
@@ -301,7 +340,10 @@ const postSlice = createSlice({
       const postId = String(action.payload.post_id)
       const index = state.postList.findIndex(p => String(p.post_id) === postId)
       if (index !== -1) {
-        state.postList[index] = { ...state.postList[index], ...action.payload }
+        state.postList[index] = normalizePostInteractionFlags({
+          ...state.postList[index],
+          ...action.payload
+        })
       }
     },
     addNewPost: (state: PostState, action: PayloadAction<PostItem>) => {
@@ -343,13 +385,15 @@ const postSlice = createSlice({
         newPost.content = { text: '', images: [] } as ParsedContent
         newPost.images = []
       }
+      const normalizedNewPost = parsePostContent(newPost)
+
       // 检查是否已存在，避免重复添加
       const existingPostIndex = state.postList.findIndex(
-        p => p.post_id === newPost.post_id
+        p => p.post_id === normalizedNewPost.post_id
       )
       if (existingPostIndex === -1) {
         // 将新帖子插入到列表首位
-        state.postList.unshift(newPost)
+        state.postList.unshift(normalizedNewPost)
       }
     },
     // 乐观更新：当关注作者时，将该作者的帖子插入到关注列表
@@ -490,15 +534,18 @@ const postSlice = createSlice({
               p => p.author_id === authorId
             )
             const isFollowedLocally =
+              existingPostInList?.is_follow ||
               existingPostInList?.is_followed ||
+              existingPostInFollowing?.is_follow ||
               existingPostInFollowing?.is_followed ||
               false
 
             // 统一对 content 字段进行 JSON.parse 解析
             postData = parsePostContent(postData)
 
-            // 确保接口返回的 is_followed: false 不会覆盖本地已关注的状态
+            // 确保接口返回的未关注状态不会覆盖本地已关注状态
             if (isFollowedLocally) {
+              postData.is_follow = true
               postData.is_followed = true
             }
 
@@ -509,7 +556,10 @@ const postSlice = createSlice({
               p => String(p.post_id) === postId
             )
             if (index !== -1) {
-              state.postList[index] = { ...state.postList[index], ...postData }
+              state.postList[index] = normalizePostInteractionFlags({
+                ...state.postList[index],
+                ...postData
+              })
             }
           }
         } else {

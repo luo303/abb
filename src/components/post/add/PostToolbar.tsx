@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   StyleSheet,
   Alert,
   Modal,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Switch, Provider } from '@ant-design/react-native'
+import { getPostTags } from '@/api/post'
 
 interface Tag {
   id: string
@@ -18,27 +20,9 @@ interface Tag {
 }
 
 interface PostToolbarProps {
-  onTagsChange?: (tagIds: string[]) => void
+  onTagsChange?: (tagIds: string[], tagNames: string[]) => void
   onPrivacyChange?: (isPublic: boolean) => void
 }
-
-const TAGS: Tag[] = [
-  { id: 'tag_001', name: '宝宝日常' },
-  { id: 'tag_002', name: '成长记录' },
-  { id: 'tag_003', name: '育儿经验' },
-  { id: 'tag_004', name: '亲子时光' },
-  { id: 'tag_005', name: '辅食分享' },
-  { id: 'tag_006', name: '绘本推荐' },
-  { id: 'tag_007', name: '玩具测评' },
-  { id: 'tag_008', name: '好物分享' },
-  { id: 'tag_009', name: '宝宝穿搭' },
-  { id: 'tag_010', name: '出行攻略' },
-  { id: 'tag_011', name: '早教启蒙' },
-  { id: 'tag_012', name: '睡眠引导' },
-  { id: 'tag_013', name: '疾病护理' },
-  { id: 'tag_014', name: '疫苗接种' },
-  { id: 'tag_015', name: '情感交流' }
-]
 
 const customTheme = {
   // 修改主色调为 App 主题色 (Warm Red)
@@ -58,8 +42,56 @@ export default function PostToolbar({
   onPrivacyChange
 }: PostToolbarProps) {
   const [showTagsModal, setShowTagsModal] = useState(false)
+  const [tags, setTags] = useState<Tag[]>([])
+  const [isTagsLoading, setIsTagsLoading] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchTags = async () => {
+      setIsTagsLoading(true)
+      try {
+        const pageSize = 20
+        let page = 1
+        let hasMore = true
+        const tagMap = new Map<string, Tag>()
+
+        while (hasMore) {
+          const res = await getPostTags(page, pageSize)
+          if (res.code !== 0 && res.code !== 200) {
+            throw new Error(res.message || '获取话题列表失败')
+          }
+          const items = res.data?.items || []
+          items.forEach(item => {
+            if (!tagMap.has(item.tag_id)) {
+              tagMap.set(item.tag_id, { id: item.tag_id, name: item.name })
+            }
+          })
+          hasMore = !!res.data?.has_more
+          page += 1
+        }
+
+        if (!cancelled) {
+          setTags(Array.from(tagMap.values()))
+        }
+      } catch {
+        if (!cancelled) {
+          Alert.alert('提示', '获取话题列表失败，请稍后重试')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsTagsLoading(false)
+        }
+      }
+    }
+
+    fetchTags()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const toggleTag = (tagId: string) => {
     let newTagIds
@@ -70,13 +102,14 @@ export default function PostToolbar({
     }
     setSelectedTagIds(newTagIds)
     if (onTagsChange) {
-      onTagsChange(newTagIds)
+      const names = newTagIds.map(id => getTagName(id)).filter(Boolean)
+      onTagsChange(newTagIds, names)
     }
   }
 
   // Helper function to get tag name from ID
   const getTagName = (tagId: string): string => {
-    const tag = TAGS.find(t => t.id === tagId)
+    const tag = tags.find(t => t.id === tagId)
     return tag ? tag.name : ''
   }
 
@@ -104,13 +137,15 @@ export default function PostToolbar({
           </View>
           <Text style={styles.toolText}>添加话题</Text>
           <View style={styles.tagsContainer}>
-            {selectedTagIds.length > 0
-              ? selectedTagIds.slice(0, 2).map(tagId => (
-                  <Text key={tagId} style={styles.tag}>
-                    #{getTagName(tagId)}
-                  </Text>
-                ))
-              : null}
+            {isTagsLoading ? (
+              <ActivityIndicator size="small" color="#f43f5e" />
+            ) : selectedTagIds.length > 0 ? (
+              selectedTagIds.slice(0, 2).map(tagId => (
+                <Text key={tagId} style={styles.tag}>
+                  #{getTagName(tagId)}
+                </Text>
+              ))
+            ) : null}
             {selectedTagIds.length > 2 && (
               <Text style={styles.tag}>+{selectedTagIds.length - 2}</Text>
             )}
@@ -140,53 +175,39 @@ export default function PostToolbar({
 
               <ScrollView contentContainerStyle={styles.tagsList}>
                 <View style={styles.tagsWrapper}>
-                  {TAGS.map(tag => (
-                    <TouchableOpacity
-                      key={tag.id}
-                      style={[
-                        styles.tagItem,
-                        selectedTagIds.includes(tag.id) && styles.tagItemActive
-                      ]}
-                      onPress={() => toggleTag(tag.id)}
-                    >
-                      <Text
+                  {isTagsLoading ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color="#f43f5e" />
+                      <Text style={styles.loadingText}>话题加载中...</Text>
+                    </View>
+                  ) : tags.length > 0 ? (
+                    tags.map(tag => (
+                      <TouchableOpacity
+                        key={tag.id}
                         style={[
-                          styles.tagItemText,
+                          styles.tagItem,
                           selectedTagIds.includes(tag.id) &&
-                            styles.tagItemTextActive
+                            styles.tagItemActive
                         ]}
+                        onPress={() => toggleTag(tag.id)}
                       >
-                        #{tag.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            styles.tagItemText,
+                            selectedTagIds.includes(tag.id) &&
+                              styles.tagItemTextActive
+                          ]}
+                        >
+                          #{tag.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.emptyText}>暂无可选话题</Text>
+                  )}
                 </View>
               </ScrollView>
 
-              {/* 已选择的话题显示区域 */}
-              {selectedTagIds.length > 0 && (
-                <View style={styles.selectedTagsContainer}>
-                  <Text style={styles.selectedTagsTitle}>已选择的话题</Text>
-                  <View style={styles.selectedTagsList}>
-                    {selectedTagIds.map(tagId => (
-                      <TouchableOpacity
-                        key={tagId}
-                        style={styles.selectedTagItem}
-                        onPress={() => toggleTag(tagId)}
-                      >
-                        <Text style={styles.selectedTagText}>
-                          #{getTagName(tagId)}
-                        </Text>
-                        <Ionicons
-                          name="close-circle"
-                          size={16}
-                          color="#f43f5e"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
               <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={() => setShowTagsModal(false)}
@@ -365,6 +386,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12
   },
+  loadingContainer: {
+    width: '100%',
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#999'
+  },
+  emptyText: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 13,
+    color: '#999',
+    paddingVertical: 20
+  },
   tagItem: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -428,35 +467,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold'
-  },
-  selectedTagsContainer: {
-    marginBottom: 16,
-    paddingHorizontal: 10
-  },
-  selectedTagsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8
-  },
-  selectedTagsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8
-  },
-  selectedTagItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#fff1f2',
-    borderWidth: 1,
-    borderColor: '#f43f5e',
-    gap: 6
-  },
-  selectedTagText: {
-    fontSize: 13,
-    color: '#f43f5e'
   }
 })

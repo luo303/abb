@@ -70,10 +70,16 @@ export default function PostDetail() {
   const { showMessage } = useMessage()
 
   // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
-  const checkFollowStatus = useAppSelector(state => {
+  const isFollowingFromStore = useAppSelector(state => {
     if (!currentPost) return false
     return state.follow.followingIds.includes(currentPost.author_id)
   })
+  const isFollowing = useMemo(() => {
+    const isFollowingFromApi = !!(
+      currentPost?.is_follow ?? currentPost?.is_followed
+    )
+    return isFollowingFromApi || isFollowingFromStore
+  }, [currentPost?.is_follow, currentPost?.is_followed, isFollowingFromStore])
 
   // 加载帖子详情
   useEffect(() => {
@@ -92,9 +98,9 @@ export default function PostDetail() {
   // 初始化交互状态（仅在 post 加载完成后执行一次）
   useEffect(() => {
     if (currentPost) {
-      setIsLiked(currentPost.like_count > 0 && Math.random() > 0.5) // 模拟：随机初始状态
-      setIsDisliked(false)
-      setIsFavorited(false)
+      setIsLiked(!!(currentPost.is_like ?? currentPost.is_liked))
+      setIsDisliked(!!(currentPost.is_dislike ?? currentPost.is_disliked))
+      setIsFavorited(!!(currentPost.is_collect ?? currentPost.is_collected))
     }
   }, [currentPost?.post_id])
 
@@ -288,7 +294,9 @@ export default function PostDetail() {
           stats: {
             like_count: newLikes,
             dislike_count: Math.max(0, currentPost.dislike_count - 1),
+            is_like: newIsLiked,
             is_liked: newIsLiked,
+            is_dislike: false,
             is_disliked: false
           }
         })
@@ -299,6 +307,7 @@ export default function PostDetail() {
           postId: currentPost.post_id,
           stats: {
             like_count: newLikes,
+            is_like: newIsLiked,
             is_liked: newIsLiked
           }
         })
@@ -308,9 +317,11 @@ export default function PostDetail() {
       try {
         setIsLikeLoading(true)
         if (newIsLiked) {
-          await likePost(currentPost.post_id)
+          const res = await likePost(currentPost.post_id)
+          console.log('like post res:', res)
         } else {
-          await unlikePost(currentPost.post_id)
+          const res = await unlikePost(currentPost.post_id)
+          console.log('unlike post res:', res)
         }
       } catch (error) {
         const rollbackLikes = newIsLiked
@@ -322,6 +333,7 @@ export default function PostDetail() {
             postId: currentPost.post_id,
             stats: {
               like_count: rollbackLikes,
+              is_like: !newIsLiked,
               is_liked: !newIsLiked
             }
           })
@@ -355,7 +367,9 @@ export default function PostDetail() {
           stats: {
             dislike_count: newDislikes,
             like_count: Math.max(0, currentPost.like_count - 1),
+            is_dislike: newIsDisliked,
             is_disliked: newIsDisliked,
+            is_like: false,
             is_liked: false
           }
         })
@@ -366,6 +380,7 @@ export default function PostDetail() {
           postId: currentPost.post_id,
           stats: {
             dislike_count: newDislikes,
+            is_dislike: newIsDisliked,
             is_disliked: newIsDisliked
           }
         })
@@ -387,6 +402,7 @@ export default function PostDetail() {
         postId: currentPost.post_id,
         stats: {
           collect_count: newFavorites,
+          is_collect: newIsFavorited,
           is_collected: newIsFavorited
         }
       })
@@ -411,6 +427,7 @@ export default function PostDetail() {
             postId: currentPost.post_id,
             stats: {
               collect_count: rollbackCount,
+              is_collect: !newIsFavorited,
               is_collected: !newIsFavorited
             }
           })
@@ -427,16 +444,32 @@ export default function PostDetail() {
 
   const handleFollowAuthor = async () => {
     if (!currentPost || isFollowingLoading) return
+    const newIsFollowing = !isFollowing
 
     try {
       setIsFollowingLoading(true)
-      const newIsFollowing = !checkFollowStatus
+
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: {
+            is_follow: newIsFollowing,
+            is_followed: newIsFollowing
+          }
+        })
+      )
 
       // 乐观更新：更新FollowStore中的关注状态
       if (newIsFollowing) {
         dispatch(followUser(currentPost.author_id as string))
         // 同时将当前帖子添加到关注列表
-        dispatch(addAuthorPostToFollowing(currentPost))
+        dispatch(
+          addAuthorPostToFollowing({
+            ...currentPost,
+            is_follow: true,
+            is_followed: true
+          })
+        )
       } else {
         dispatch(unfollowUser(currentPost.author_id as string))
         // 同时从关注列表中移除该帖子
@@ -448,14 +481,28 @@ export default function PostDetail() {
     } catch (error) {
       console.error('关注操作失败:', error)
       // 失败时回滚状态
-      if (currentPost) {
-        const currentStatus = checkFollowStatus
-        if (currentStatus) {
-          dispatch(unfollowUser(currentPost.author_id as string))
-        } else {
-          dispatch(followUser(currentPost.author_id as string))
-        }
+      if (newIsFollowing) {
+        dispatch(unfollowUser(currentPost.author_id as string))
+        dispatch(removeAuthorPostFromFollowing(currentPost.post_id))
+      } else {
+        dispatch(followUser(currentPost.author_id as string))
+        dispatch(
+          addAuthorPostToFollowing({
+            ...currentPost,
+            is_follow: true,
+            is_followed: true
+          })
+        )
       }
+      dispatch(
+        updatePostStats({
+          postId: currentPost.post_id,
+          stats: {
+            is_follow: !newIsFollowing,
+            is_followed: !newIsFollowing
+          }
+        })
+      )
       showMessage('操作失败，请稍后重试')
     } finally {
       // 延迟一点时间，确保用户无法连续点击
@@ -639,7 +686,7 @@ export default function PostDetail() {
           avatar={displayAvatar}
           nickname={currentPost.author_name}
           description={currentPost.baby_age_text}
-          isFollowing={checkFollowStatus}
+          isFollowing={isFollowing}
           onFollow={handleFollowAuthor}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>

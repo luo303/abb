@@ -44,7 +44,7 @@ import {
 export default function PartnerChat() {
   const dispatch = useDispatch()
   const navigation = useNavigation()
-  const { partnerId, messages } = useSelector(
+  const { partnerId, partnerName, messages } = useSelector(
     (state: RootState) => state.partner
   )
   const token = useSelector((state: RootState) => state.user.token)
@@ -57,7 +57,7 @@ export default function PartnerChat() {
   const [inputPartnerAccount, setInputPartnerAccount] = useState('')
   const [inputPartnerPassword, setInputPartnerPassword] = useState('')
   const [isBinding, setIsBinding] = useState(false)
-  const [isPartnerLoading, setIsPartnerLoading] = useState(false)
+  const [isPartnerLoading, setIsPartnerLoading] = useState(!partnerId)
 
   // 聊天输入
   const [inputText, setInputText] = useState('')
@@ -109,11 +109,12 @@ export default function PartnerChat() {
         const res = await fetchPartner()
         if (!isActive) return
         const serverPartnerId = res?.data?.partner_id
+        const serverPartnerUsername = res?.data?.partner_username
         if (res?.code === 0 && serverPartnerId) {
           dispatch(
             setPartner({
               id: serverPartnerId,
-              name: '另一半'
+              name: serverPartnerUsername || '另一半'
             })
           )
         }
@@ -189,18 +190,31 @@ export default function PartnerChat() {
   }, [closeSocket, dispatch])
 
   const connectSocket = useCallback(() => {
-    if (!partnerId || !token) return
+    if (!partnerId || !token) {
+      console.warn('[伴侣聊天] 跳过 connectSocket：缺少必要参数', {
+        hasPartnerId: !!partnerId,
+        hasToken: !!token
+      })
+      return
+    }
     const wsUrl = `${PARTNER_WS_BASE_URL}?token=${encodeURIComponent(
       token
     )}&user_id=${encodeURIComponent(partnerId)}`
+    console.log('[伴侣聊天] 调用 connectSocket', {
+      partnerId,
+      hasToken: !!token
+    })
     connectPartnerSocket(wsUrl, {
       onOpen: () => {
+        console.log('[伴侣聊天] socket 已连接')
         dispatch(setConnectionStatus(true))
       },
       onClose: () => {
+        console.log('[伴侣聊天] socket 已关闭')
         dispatch(setConnectionStatus(false))
       },
       onError: () => {
+        console.log('[伴侣聊天] socket 发生错误')
         dispatch(setConnectionStatus(false))
       },
       onMessage: handleIncomingMessage
@@ -217,6 +231,7 @@ export default function PartnerChat() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: partnerName || '另一半',
       headerRight: () =>
         partnerId ? (
           <TouchableOpacity
@@ -227,7 +242,7 @@ export default function PartnerChat() {
           </TouchableOpacity>
         ) : null
     })
-  }, [navigation, partnerId, handleUnbindPartner])
+  }, [navigation, partnerId, partnerName, handleUnbindPartner])
 
   const handleAddPartner = async () => {
     if (!inputPartnerAccount.trim() || !inputPartnerPassword.trim()) {
@@ -240,12 +255,15 @@ export default function PartnerChat() {
         account: inputPartnerAccount.trim(),
         password: inputPartnerPassword
       })
+      console.log(res)
+
       const serverPartnerId = res?.data?.partner_id
+      const serverPartnerUsername = res?.data?.partner_username
       if (res?.code === 0 && serverPartnerId) {
         dispatch(
           setPartner({
             id: serverPartnerId,
-            name: '另一半'
+            name: serverPartnerUsername || '另一半'
           })
         )
         setInputPartnerAccount('')
@@ -284,6 +302,10 @@ export default function PartnerChat() {
     }
     const ok = sendPartnerSocket(payload)
     if (!ok) {
+      console.warn('[伴侣聊天] 发送失败，准备重连', {
+        partnerId,
+        hasToken: !!token
+      })
       connectSocket()
       Alert.alert('提示', '连接已断开，正在尝试重新连接')
     }

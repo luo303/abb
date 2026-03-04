@@ -16,6 +16,9 @@ export interface FollowingPost {
   dislike_count: number
   collect_count: number
   comment_count: number
+  is_like?: boolean
+  is_dislike?: boolean
+  is_collect?: boolean
   ctime?: number
   utime?: number
   tags: string[]

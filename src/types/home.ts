@@ -31,6 +31,10 @@ export interface PostItem {
   imageUrls?: string[] // 额外字段：从 content 中提取的图片 URL 数组
   cleanedContent?: string // 额外字段：清洗后的纯文字内容
   location?: string // 额外字段：位置信息
+  is_like?: boolean // 接口字段：是否点赞
+  is_dislike?: boolean // 接口字段：是否不喜欢
+  is_collect?: boolean // 接口字段：是否收藏
+  is_follow?: boolean // 详情接口字段：是否关注作者
   is_followed?: boolean // 额外字段：是否关注作者
   is_liked?: boolean // 额外字段：是否点赞
   is_disliked?: boolean // 额外字段：是否踩

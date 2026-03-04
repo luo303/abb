@@ -198,6 +198,10 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     }
   }
 
+  const isLiked = data.is_like ?? data.is_liked ?? false
+  const isDisliked = data.is_dislike ?? data.is_disliked ?? false
+  const isCollected = data.is_collect ?? data.is_collected ?? false
+
   return (
     <TouchableOpacity
       style={styles.communityContainer}
@@ -288,27 +292,25 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
             <Ionicons
-              name={data.is_liked ? 'heart' : 'heart-outline'}
+              name={isLiked ? 'heart' : 'heart-outline'}
               size={20}
-              color={data.is_liked ? '#f43f5e' : '#f43f5e'}
+              color={isLiked ? '#f43f5e' : '#f43f5e'}
             />
             <Text style={styles.actionText}>{data.like_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons
-              name={
-                data.is_disliked ? 'heart-dislike' : 'heart-dislike-outline'
-              }
+              name={isDisliked ? 'heart-dislike' : 'heart-dislike-outline'}
               size={20}
-              color={data.is_disliked ? '#94a3b8' : '#94a3b8'}
+              color={isDisliked ? '#94a3b8' : '#94a3b8'}
             />
             <Text style={styles.actionText}>{data.dislike_count || 0}</Text>
           </View>
           <View style={styles.actionItem}>
             <Ionicons
-              name={data.is_collected ? 'star' : 'star-outline'}
+              name={isCollected ? 'star' : 'star-outline'}
               size={20}
-              color={data.is_collected ? '#f59e0b' : '#f59e0b'}
+              color={isCollected ? '#f59e0b' : '#f59e0b'}
             />
             <Text style={styles.actionText}>{data.collect_count || 0}</Text>
           </View>
