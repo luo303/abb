@@ -55,7 +55,7 @@ export const addSleepRecord = createAsyncThunk<
         return sleepRecord
       }
     } catch (error: any) {
-      // 由于是测试环境，API 调用可能失败，返回模拟数据
+      // API 调用失败，使用传入的参数创建一个有效的 SleepRecord 对象
       const duration_ms = ended_at - started_at
       const sleepRecord: SleepRecord = {
         session_id: session_id,
@@ -94,9 +94,16 @@ const sleepSlice = createSlice({
   initialState,
   reducers: {
     addSleepItem: (state, action: PayloadAction<SleepRecord>) => {
+      if (!Array.isArray(state.sleepList)) {
+        state.sleepList = []
+      }
       state.sleepList.unshift(action.payload)
     },
     updateSleepItem: (state, action: PayloadAction<SleepRecord>) => {
+      if (!Array.isArray(state.sleepList)) {
+        state.sleepList = []
+        return
+      }
       const index = state.sleepList.findIndex(
         item => item.session_id === action.payload.session_id
       )
@@ -105,6 +112,10 @@ const sleepSlice = createSlice({
       }
     },
     deleteSleepItem: (state, action: PayloadAction<string>) => {
+      if (!Array.isArray(state.sleepList)) {
+        state.sleepList = []
+        return
+      }
       state.sleepList = state.sleepList.filter(
         item => item.session_id !== action.payload
       )
@@ -135,6 +146,9 @@ const sleepSlice = createSlice({
       .addCase(addSleepRecord.fulfilled, (state, action) => {
         state.loading = false
         // 将新的睡眠记录添加到列表中
+        if (!Array.isArray(state.sleepList)) {
+          state.sleepList = []
+        }
         state.sleepList.unshift(action.payload)
       })
       .addCase(addSleepRecord.rejected, (state, action) => {
@@ -148,6 +162,10 @@ const sleepSlice = createSlice({
       .addCase(updateSleepRecord.fulfilled, (state, action) => {
         state.loading = false
         // 更新sleepList中的记录
+        if (!Array.isArray(state.sleepList)) {
+          state.sleepList = []
+          return
+        }
         const index = state.sleepList.findIndex(
           item => item.session_id === action.payload.session_id
         )

@@ -9,7 +9,7 @@ import { SleepSession, SleepRecord } from '../types/sleep'
 export const startSleep = async (babyId: string): Promise<SleepSession> => {
   const response = await request.post(`/baby/${babyId}/daily/sleep/start`)
   console.log('startSleep原始response:', JSON.stringify(response))
-  return response as unknown as SleepSession
+  return response.data as unknown as SleepSession
 }
 
 /**
@@ -19,7 +19,7 @@ export const startSleep = async (babyId: string): Promise<SleepSession> => {
  */
 export const getActiveSleep = async (babyId: string): Promise<SleepSession> => {
   const response = await request.get(`/baby/${babyId}/daily/sleep/active`)
-  return response as unknown as SleepSession
+  return response.data as unknown as SleepSession
 }
 
 /**
@@ -35,7 +35,7 @@ export const endSleep = async (
   const response = await request.post(`/baby/${babyId}/daily/sleep/stop`, {
     session_id
   })
-  return response as unknown as SleepRecord
+  return response.data as unknown as SleepRecord
 }
 
 /**
@@ -48,8 +48,11 @@ export const getSleepByDate = async (
   babyId: string,
   date: string
 ): Promise<SleepRecord[]> => {
+  const formattedDate = date.replace(/-/g, '')
+
   const response = await request.get(`/baby/${babyId}/daily/sleep/byDate`, {
-    params: { date }
+    params: { date: formattedDate }
   })
-  return response.items as unknown as SleepRecord[]
+  console.log('getSleepByDate response:', JSON.stringify(response))
+  return response.data?.items || []
 }

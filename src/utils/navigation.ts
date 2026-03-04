@@ -16,13 +16,19 @@ export const useNavigationHelper = () => {
     navigateToRecord: (type: RecordType) => {
       switch (type) {
         case 'feeding':
-          navigation.navigate('FeedingRecord')
+          navigation.navigate({
+            name: 'FeedingRecord'
+          })
           break
         case 'sleep':
-          navigation.navigate('SleepRecord')
+          navigation.navigate({
+            name: 'SleepRecord'
+          })
           break
         case 'diaper':
-          navigation.navigate('DiaperForm')
+          navigation.navigate({
+            name: 'DiaperForm'
+          })
           break
         default:
           break

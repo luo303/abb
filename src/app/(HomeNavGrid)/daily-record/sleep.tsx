@@ -63,6 +63,7 @@ const SleepRecordScreen = () => {
   const sessionIdRef = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
+  const startTimestampRef = useRef<number>(0)
 
   // 根据session_id回显数据
   useEffect(() => {
@@ -167,13 +168,10 @@ const SleepRecordScreen = () => {
     }
 
     try {
-      // 模拟API返回数据，用于测试
-      const sleepSession: SleepSession = {
-        session_id: `test-session-${Date.now()}`,
-        started_at: Date.now()
-      }
+      // 调用API开始睡眠记录
+      const sleepSession = await startSleep(babyId)
 
-      // 检查模拟数据
+      // 检查API返回数据
       if (
         !sleepSession ||
         !sleepSession.session_id ||
@@ -182,6 +180,9 @@ const SleepRecordScreen = () => {
         Alert.alert('操作失败', '请重试')
         return
       }
+
+      // 记录开始时间戳
+      startTimestampRef.current = Date.now()
 
       // 保存到本地缓存
       await saveOngoingTimer({
@@ -197,6 +198,7 @@ const SleepRecordScreen = () => {
       setSeconds(0)
       startTimer()
     } catch (error) {
+      console.error('开始睡眠记录失败:', error)
       Alert.alert('操作失败', '请重试')
     }
   }
@@ -219,33 +221,32 @@ const SleepRecordScreen = () => {
     // 停止定时器
     stopTimer()
 
+    // 使用时间戳计算时长
+    const now = Date.now()
+    const currentSeconds = Math.floor((now - startTimestampRef.current) / 1000)
+
     // 显示确认弹窗
     Alert.alert(
       '确认结束睡眠',
-      `当前睡眠时长：${formatTime(seconds)}，确定要结束吗？`,
+      `当前睡眠时长：${formatTime(currentSeconds)}，确定要结束吗？`,
       [
-        {
-          text: '取消',
-          style: 'cancel',
-          onPress: () => {
-            // 恢复定时器
-            startTimer()
-          }
-        },
+        { text: '取消', onPress: () => startTimer() },
         {
           text: '确定',
           onPress: async () => {
+            console.log('secondsRef.current:', secondsRef.current)
+            console.log('seconds state:', seconds)
+            console.log('最终使用的 currentSeconds:', currentSeconds)
+
             try {
               // 再次检查sessionId
               if (!sessionIdRef.current) {
                 throw new Error('sessionId为空')
               }
 
-              // 计算睡眠开始和结束时间
-              const currentSeconds =
-                secondsRef.current > 0 ? secondsRef.current : seconds
-              const started_at = Date.now() - currentSeconds * 1000
-              const ended_at = Date.now()
+              const started_at = startTimestampRef.current
+              const ended_at = now
+              const duration_ms = ended_at - started_at
 
               // 调用 addSleepRecord 异步 thunk
               dispatch(
@@ -257,20 +258,14 @@ const SleepRecordScreen = () => {
                 })
               )
                 .unwrap()
-                .then(async sleepRecord => {
-                  console.log('睡眠记录添加成功:', sleepRecord)
-
+                .then(async () => {
                   // 清除本地缓存
                   await clearOngoingTimer()
-
-                  // 计算睡眠时长
-                  const hours = Math.floor(seconds / 3600)
-                  const minutes = Math.floor((seconds % 3600) / 60)
 
                   // 弹出提示
                   Alert.alert(
                     '睡眠已记录',
-                    `睡眠时长 ${hours}小时${minutes}分钟`
+                    `睡眠时长 ${formatTime(currentSeconds)}`
                   )
 
                   // 重置状态
@@ -283,7 +278,7 @@ const SleepRecordScreen = () => {
                 })
                 .catch(error => {
                   console.error('添加睡眠记录失败:', error)
-                  Alert.alert('操作失败', '添加睡眠记录失败，请重试')
+                  Alert.alert('操作失败', '请重试')
                   // 恢复定时器
                   startTimer()
                 })

@@ -28,6 +28,7 @@ import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
 import { DiaperItem } from '../../types/diaper'
 import { FeedingItem } from '../../types/feeding'
 import { SleepRecord } from '../../types/sleep'
+import { NavigationProps } from '../../types/navigation'
 import mockData from '../../data/mock/dailyRecordMock'
 import { fetchDiaperList } from '../../store/modules/diaperStore'
 import { fetchFeedingList } from '../../store/modules/feedingStore'
@@ -37,7 +38,7 @@ import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
   const { navigateToRecord } = useNavigationHelper()
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProps>()
   const dispatch = useDispatch<AppDispatch>()
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
   const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
@@ -204,6 +205,7 @@ export default function DailyRecordScreen() {
         return itemDate === selectedDate
       })
       .map(item => {
+        console.log('sleep item:', JSON.stringify(item))
         const durationMs = item.duration_ms || 0
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
         const durationMinutes = Math.floor(
@@ -218,8 +220,12 @@ export default function DailyRecordScreen() {
         let durationText = ''
         if (durationHours > 0) {
           durationText = `${durationHours}小时${durationMinutes}分`
-        } else {
+        } else if (durationMinutes > 0) {
           durationText = `${durationMinutes}分`
+        } else {
+          // 不足1分钟时显示秒数
+          const durationSeconds = Math.floor(durationMs / 1000)
+          durationText = `${durationSeconds}秒`
         }
 
         // 构建副标题
