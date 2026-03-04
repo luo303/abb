@@ -5,6 +5,7 @@ import {
   CreatePostResponse,
   PublishPostResponse
 } from '@/types/post'
+import { ApiResponse } from './profile'
 
 /**
  * 搜索帖子
@@ -122,4 +123,35 @@ export const publishPost = async (
 ): Promise<PublishPostResponse> => {
   const res = await request.post(`/post/${postId}/publish`)
   return res.data
+}
+
+export const likePost = async (postId: string): Promise<ApiResponse<null>> => {
+  const res = await request.post(`/post/${postId}/like`)
+  return res as unknown as ApiResponse<null>
+}
+
+export const unlikePost = async (
+  postId: string
+): Promise<ApiResponse<null>> => {
+  const res = await request.delete(`/post/${postId}/like`)
+  return res as unknown as ApiResponse<null>
+}
+
+export interface CollectResponseData {
+  collection_id: string
+  message: string
+}
+
+export const collectPost = async (
+  postId: string
+): Promise<ApiResponse<CollectResponseData>> => {
+  const res = await request.post(`/post/${postId}/collect`)
+  return res as unknown as ApiResponse<CollectResponseData>
+}
+
+export const uncollectPost = async (
+  postId: string
+): Promise<ApiResponse<CollectResponseData>> => {
+  const res = await request.delete(`/post/${postId}/collect`)
+  return res as unknown as ApiResponse<CollectResponseData>
 }

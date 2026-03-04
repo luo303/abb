@@ -37,6 +37,7 @@ import {
   unlikeComment,
   createPostComment
 } from '@/api/home'
+import { likePost, unlikePost, collectPost, uncollectPost } from '@/api/post'
 
 type PostDetailRouteProp = RouteProp<
   { params: { id: string; post_id: string } },
@@ -266,11 +267,14 @@ export default function PostDetail() {
     })
   }
 
+  const [isLikeLoading, setIsLikeLoading] = useState(false)
+  const [isCollectLoading, setIsCollectLoading] = useState(false)
+
   const handleLikePost = () => {
     if (!currentPost) return
+    if (isLikeLoading) return
 
     const newIsLiked = !isLiked
-    // 简单的计数逻辑，实际应由后端返回
     const newLikes = newIsLiked
       ? currentPost.like_count + 1
       : Math.max(0, currentPost.like_count - 1)
@@ -300,6 +304,33 @@ export default function PostDetail() {
         })
       )
     }
+    ;(async () => {
+      try {
+        setIsLikeLoading(true)
+        if (newIsLiked) {
+          await likePost(currentPost.post_id)
+        } else {
+          await unlikePost(currentPost.post_id)
+        }
+      } catch (error) {
+        const rollbackLikes = newIsLiked
+          ? Math.max(0, newLikes - 1)
+          : newLikes + 1
+        setIsLiked(!newIsLiked)
+        dispatch(
+          updatePostStats({
+            postId: currentPost.post_id,
+            stats: {
+              like_count: rollbackLikes,
+              is_liked: !newIsLiked
+            }
+          })
+        )
+        showMessage('操作失败，请稍后重试')
+      } finally {
+        setIsLikeLoading(false)
+      }
+    })()
   }
 
   const handleDoubleTapLike = () => {
@@ -344,6 +375,7 @@ export default function PostDetail() {
 
   const handleFavoritePost = () => {
     if (!currentPost) return
+    if (isCollectLoading) return
     const newIsFavorited = !isFavorited
     const newFavorites = newIsFavorited
       ? currentPost.collect_count + 1
@@ -359,8 +391,35 @@ export default function PostDetail() {
         }
       })
     )
-
-    showMessage(newIsFavorited ? '收藏成功' : '取消收藏')
+    ;(async () => {
+      try {
+        setIsCollectLoading(true)
+        if (newIsFavorited) {
+          await collectPost(currentPost.post_id)
+          showMessage('收藏成功')
+        } else {
+          await uncollectPost(currentPost.post_id)
+          showMessage('取消收藏')
+        }
+      } catch (error) {
+        const rollbackCount = newIsFavorited
+          ? Math.max(0, newFavorites - 1)
+          : newFavorites + 1
+        setIsFavorited(!newIsFavorited)
+        dispatch(
+          updatePostStats({
+            postId: currentPost.post_id,
+            stats: {
+              collect_count: rollbackCount,
+              is_collected: !newIsFavorited
+            }
+          })
+        )
+        showMessage('操作失败，请稍后重试')
+      } finally {
+        setIsCollectLoading(false)
+      }
+    })()
   }
 
   // 防抖处理：防止连续快速点击
