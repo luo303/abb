@@ -15,7 +15,8 @@ import { RootState } from '../store'
 import {
   addFeedingItem,
   updateFeedingItem,
-  saveFeedingRecord
+  saveFeedingRecord,
+  updateFeedingRecord
 } from '../store/modules/feedingStore'
 import type { AppDispatch } from '../store'
 import { FeedingType } from '../types/feeding'
@@ -50,11 +51,6 @@ const FeedingRecordScreen = () => {
   const babyState = useSelector((state: RootState) => state.baby)
   const babyId = routeParams?.baby_id || reduxBabyId
 
-  // 添加日志确认babyId的值
-  console.log('currentBabyId:', reduxBabyId)
-  console.log('babyState:', babyState)
-  console.log('routeParams:', routeParams)
-  console.log('final babyId:', babyId)
   const feedingList = useSelector(
     (state: RootState) => state.feeding.feedingList
   )
@@ -224,22 +220,22 @@ const FeedingRecordScreen = () => {
     // 调用Redux action保存数据
     if (babyId) {
       if (feedId) {
-        // 如果有feedId，说明是编辑模式，调用updateFeedingItem
-        const updatedRecord = {
-          feeding_id: feedId,
-          baby_id: babyId,
-          feed_type: record.feed_type,
-          feed_time: record.start_time,
-          amount: record.amount,
-          duration: record.duration,
-          remark: record.remark,
-          summary_text: record.summary_text
+        // 如果有feedId，说明是编辑模式，调用updateFeedingRecord
+        try {
+          await dispatch(
+            updateFeedingRecord({ babyId, feedingId: feedId, data: record })
+          ).unwrap()
+          // 更新成功后，使用 showMessage 提示用户
+          showMessage('更新成功')
+          // 通知主页面刷新
+          DeviceEventEmitter.emit('refreshDashboard')
+          // 导航回上一页
+          navigation.goBack()
+        } catch (error) {
+          console.error('更新喂养记录失败:', error)
+          // 添加错误提示
+          showMessage('更新失败，请重试')
         }
-        dispatch(updateFeedingItem(updatedRecord))
-        // 通知主页面刷新
-        DeviceEventEmitter.emit('refreshDashboard')
-        // 导航回上一页
-        navigation.goBack()
       } else {
         // 乐观更新：先将记录添加到本地喂养列表中（使用临时 ID 并 unshift 到顶部）
         const newRecord = {

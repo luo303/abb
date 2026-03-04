@@ -67,13 +67,18 @@ export default function DailyRecordScreen() {
   })
   const animatedBackgroundValue = useState(new Animated.Value(0))[0]
 
-  // 初始化数据
+  // 初始化数据 - 添加防抖处理
   useEffect(() => {
     if (babyId) {
-      dispatch(fetchDiaperList(babyId))
-      dispatch(fetchFeedingList({ babyId, date: selectedDate }))
-      dispatch(fetchSleepList({ babyId, date: selectedDate }))
-      dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
+      // 防抖处理，避免快速切换日期时的重复请求
+      const timer = setTimeout(() => {
+        dispatch(fetchDiaperList(babyId))
+        dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+        dispatch(fetchSleepList({ babyId, date: selectedDate }))
+        dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
+      }, 300)
+
+      return () => clearTimeout(timer)
     }
   }, [babyId, selectedDate, dispatch])
 

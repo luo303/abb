@@ -214,11 +214,13 @@ const feedingSlice = createSlice({
       })
       .addCase(updateFeedingRecord.fulfilled, (state, action) => {
         state.loading = false
-        // 更新feedingList中的记录
+        state.error = null
+        // 使用请求时传入的feedingId精准定位记录
         const index = state.feedingList.findIndex(
           item => item.feeding_id === action.meta.arg.feedingId
         )
         if (index >= 0) {
+          // 用最新的表单数据全量覆盖旧记录，保持feeding_id不变
           state.feedingList[index] = {
             ...state.feedingList[index],
             feed_type: action.meta.arg.data.feed_type,
