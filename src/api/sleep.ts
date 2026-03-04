@@ -9,7 +9,12 @@ import { SleepSession, SleepRecord } from '../types/sleep'
 export const startSleep = async (babyId: string): Promise<SleepSession> => {
   const response = await request.post(`/baby/${babyId}/daily/sleep/start`)
   console.log('startSleep原始response:', JSON.stringify(response))
-  return response.data as unknown as SleepSession
+  const data = response.data as unknown as SleepSession
+  // 确保返回的时间戳是毫秒级的
+  if (typeof data.started_at === 'number') {
+    data.started_at = data.started_at * 1000
+  }
+  return data
 }
 
 /**
@@ -54,5 +59,30 @@ export const getSleepByDate = async (
     params: { date: formattedDate }
   })
   console.log('getSleepByDate response:', JSON.stringify(response))
-  return response.data?.items || []
+  console.log('items:', JSON.stringify(response.data?.items))
+
+  // 确保返回的时间戳是毫秒级的
+  const items = response.data?.items || []
+  return items.map((item: any) => {
+    console.log('Original sleep item:', JSON.stringify(item))
+    const startedAt = typeof item.started_at === 'number' ? item.started_at : 0
+    const endedAt = typeof item.ended_at === 'number' ? item.ended_at : 0
+
+    // 检查时间戳是否已经是毫秒级（大于1天的毫秒数）
+    const isStartedAtMs = startedAt > 86400000
+    const isEndedAtMs = endedAt > 86400000
+
+    console.log('Sleep timestamp info:', {
+      originalStartedAt: startedAt,
+      originalEndedAt: endedAt,
+      isStartedAtMs,
+      isEndedAtMs
+    })
+
+    return {
+      ...item,
+      started_at: isStartedAtMs ? startedAt : startedAt * 1000,
+      ended_at: isEndedAtMs ? endedAt : endedAt * 1000
+    }
+  })
 }

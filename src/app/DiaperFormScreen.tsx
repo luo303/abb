@@ -6,7 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  DeviceEventEmitter
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
@@ -34,6 +35,7 @@ import { PeeColorSelector } from '../components/DailyRecord/DiaperRecord/PeeColo
 import { PoopColorSelector } from '../components/DailyRecord/DiaperRecord/PoopColorSelector'
 import { PoopConsistencySelector } from '../components/DailyRecord/DiaperRecord/PoopConsistencySelector'
 import { RemarkInput } from '../components/DailyRecord/DiaperRecord/RemarkInput'
+import { generateTempId } from '../utils/idGenerator'
 
 interface RouteParams {
   diaper_id?: string
@@ -155,7 +157,7 @@ const DiaperFormScreen = () => {
         dispatch(updateDiaperRecord(updatedRecord))
         showMessage('记录已更新')
       } else {
-        // 新增模式
+        // 发送API请求
         const response = await addDiaperRecordReq(babyId, requestData)
         // 假设返回的响应包含 diaper_id
         const newRecord: DiaperItem = {
@@ -172,8 +174,8 @@ const DiaperFormScreen = () => {
         showMessage('记录已保存')
       }
 
-      // 刷新数据
-      dispatch(fetchDiaperList(babyId))
+      // 通知主页面刷新
+      DeviceEventEmitter.emit('refreshDashboard')
       navigation.goBack()
     } catch (error) {
       showMessage('保存失败，请重试')

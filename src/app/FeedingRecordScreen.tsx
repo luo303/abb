@@ -27,6 +27,8 @@ import {
   RemarkInput
 } from '../components/DailyRecord/FeedingRecord'
 import { useMessage } from '../components/Message'
+import dayjs from 'dayjs'
+import { generateTempId } from '../utils/idGenerator'
 
 interface FeedingRecord {
   type: '奶粉' | '母乳' | '辅食'
@@ -54,12 +56,30 @@ const FeedingRecordScreen = () => {
   const feedingList = useSelector(
     (state: RootState) => state.feeding.feedingList
   )
+  // 获取当前选中的日期
+  const currentDate = useSelector((state: RootState) => state.daily.currentDate)
 
   const [selectedType, setSelectedType] = useState<'奶粉' | '母乳' | '辅食'>(
     '母乳'
   )
   const [amount, setAmount] = useState('')
-  const [feedingTime, setFeedingTime] = useState(new Date())
+  // 初始化feedingTime为当前选中日期的时间
+  const [feedingTime, setFeedingTime] = useState(() => {
+    // 解析currentDate (YYYYMMDD) 为日期对象
+    if (currentDate && currentDate.length === 8) {
+      const year = parseInt(currentDate.substring(0, 4))
+      const month = parseInt(currentDate.substring(4, 6)) - 1 // 月份从0开始
+      const day = parseInt(currentDate.substring(6, 8))
+      return new Date(
+        year,
+        month,
+        day,
+        new Date().getHours(),
+        new Date().getMinutes()
+      )
+    }
+    return new Date()
+  })
   const [remark, setRemark] = useState('')
   const { showMessage } = useMessage()
 
@@ -237,19 +257,6 @@ const FeedingRecordScreen = () => {
           showMessage('更新失败，请重试')
         }
       } else {
-        // 乐观更新：先将记录添加到本地喂养列表中（使用临时 ID 并 unshift 到顶部）
-        const newRecord = {
-          feeding_id: `feed_${Date.now()}`,
-          baby_id: babyId,
-          feed_type: record.feed_type,
-          feed_time: record.start_time,
-          amount: record.amount,
-          duration: record.duration,
-          remark: record.remark,
-          summary_text: record.summary_text
-        }
-        dispatch(addFeedingItem(newRecord))
-
         // 发送请求：调用saveFeedingRecord接口
         try {
           if (!babyId) {
@@ -264,8 +271,6 @@ const FeedingRecordScreen = () => {
           // 导航回“日常记录”列表页
           navigation.goBack()
         } catch (error) {
-          console.error('保存喂养记录失败:', error)
-          // 添加错误提示
           showMessage('保存失败，请重试')
         }
       }

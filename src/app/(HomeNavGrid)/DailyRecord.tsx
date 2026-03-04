@@ -96,7 +96,9 @@ export default function DailyRecordScreen() {
         if (babyId) {
           // 确保 diaper store 中的日期与 selectedDate 一致
           dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
-          dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+          // 只获取其他类型的记录，保留本地的喂养记录
+          // 不重新获取喂养记录，避免被mock数据覆盖
+          // dispatch(fetchFeedingList({ babyId, date: selectedDate }))
           dispatch(fetchDiaperList(babyId))
           dispatch(fetchSleepList({ babyId, date: selectedDate }))
           dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
@@ -111,9 +113,6 @@ export default function DailyRecordScreen() {
 
   // 根据选中日期更新记录和统计
   useEffect(() => {
-    // 获取 mock 数据
-    const mockRecords = mockData[selectedDate] || []
-
     // 从 diaperList 中筛选出当前日期的记录
     const diaperRecords = diaperList
       .filter(item => {
@@ -161,11 +160,17 @@ export default function DailyRecordScreen() {
     // 从 feedingList 中筛选出当前日期的记录
     const feedingRecords = feedingList
       .filter(item => {
-        const itemDate = dayjs(item.feed_time).format('YYYY-MM-DD')
+        // 确保feed_time是有效的时间戳
+        const feedTime = item.feed_time
+        if (!feedTime || isNaN(feedTime)) {
+          return false
+        }
+
+        const itemDate = dayjs(feedTime).format('YYYY-MM-DD')
         return itemDate === selectedDate
       })
       .map(item => {
-        // 固定图标为baby-bottom
+        // 固定图标为baby-bottle
         const icon = 'baby-bottle'
 
         // 将feed_type枚举值转换为中文名称
@@ -191,8 +196,11 @@ export default function DailyRecordScreen() {
           description += ` · ${item.duration}分钟`
         } else if (item.remark) {
           description += ` · ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
+        } else if (item.amount) {
+          description += ` · ${item.amount}ml`
         }
 
+        // 确保返回的对象包含所有必要字段
         return {
           id: item.feeding_id,
           type: 'feeding' as const,
@@ -201,18 +209,24 @@ export default function DailyRecordScreen() {
           icon: icon,
           name: '喂养',
           title: '喂养',
-          description: description
+          description: description,
+          remark: item.remark // 添加备注字段，确保RecordCard组件能够显示
         }
       })
 
     // 从 sleepList 中筛选出当前日期的记录
     const sleepRecords = sleepList
       .filter(item => {
+        // 检查时间戳是否有效（大于1970-01-02）
+        const isValidTimestamp = item.started_at > 86400000 // 1天的毫秒数
+        if (!isValidTimestamp) {
+          return false
+        }
+
         const itemDate = dayjs(item.started_at).format('YYYY-MM-DD')
         return itemDate === selectedDate
       })
       .map(item => {
-        console.log('sleep item:', JSON.stringify(item))
         const durationMs = item.duration_ms || 0
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
         const durationMinutes = Math.floor(
@@ -225,14 +239,17 @@ export default function DailyRecordScreen() {
 
         // 构建时长文本
         let durationText = ''
-        if (durationHours > 0) {
-          durationText = `${durationHours}小时${durationMinutes}分`
-        } else if (durationMinutes > 0) {
-          durationText = `${durationMinutes}分`
+        const durationSeconds = Math.floor(durationMs / 1000)
+        const h = Math.floor(durationSeconds / 3600)
+        const m = Math.floor((durationSeconds % 3600) / 60)
+        const s = durationSeconds % 60
+
+        if (h > 0) {
+          durationText = `${h}h${m}m${s}s`
+        } else if (m > 0) {
+          durationText = `${m}m${s}s`
         } else {
-          // 不足1分钟时显示秒数
-          const durationSeconds = Math.floor(durationMs / 1000)
-          durationText = `${durationSeconds}秒`
+          durationText = `${s}s`
         }
 
         // 构建副标题
@@ -252,7 +269,7 @@ export default function DailyRecordScreen() {
 
     // 合并并按时间降序排序
     const allRecords = [
-      ...mockRecords,
+      // ...mockRecords,
       ...diaperRecords,
       ...feedingRecords,
       ...sleepRecords
