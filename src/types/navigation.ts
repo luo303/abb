@@ -23,6 +23,9 @@ export type RootStackParamList = {
   AddMilestone: undefined
   MyPosts: undefined
   MilestoneList: undefined
+  SleepRecord: { session_id?: string }
+  FeedingRecord: { feeding_id?: string }
+  DiaperForm: { diaper_id?: string }
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>
