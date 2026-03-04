@@ -79,6 +79,9 @@ export interface Item {
   like_count: number
   dislike_count: number
   collect_count: number
+  is_like?: boolean
+  is_dislike?: boolean
+  is_collect?: boolean
   comment_count: number
   ctime: number
   utime: number

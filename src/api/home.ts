@@ -19,6 +19,8 @@ export const getHomePosts = async (
       strategy
     }
   })
+  console.log('raw post list:', res)
+
   return res as unknown as PostListResponse
 }
 
@@ -52,6 +54,9 @@ export const createPost = async (
   const res = await request.post('/post/newPost', data, {
     signal: options?.signal
   })
+  console.log('create post data:', data)
+  console.log('create post res:', res)
+
   // 检查响应是否包含错误码（部分 Mock 服务即使 HTTP 200 也会返回业务错误码）
   const response = res as unknown as CreatePostResponse
   if (response && response.code !== 0 && response.code !== 200) {

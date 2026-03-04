@@ -31,6 +31,7 @@ export default function AddPostScreen() {
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedTagNames, setSelectedTagNames] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
   const [pendingImages, setPendingImages] = useState<ImageItem[]>([])
 
@@ -163,7 +164,10 @@ export default function AddPostScreen() {
               style={styles.cardGradient}
             >
               <PostToolbar
-                onTagsChange={setSelectedTags}
+                onTagsChange={(tagIds, tagNames) => {
+                  setSelectedTags(tagIds)
+                  setSelectedTagNames(tagNames)
+                }}
                 onPrivacyChange={setIsPublic}
               />
             </LinearGradient>
@@ -176,6 +180,7 @@ export default function AddPostScreen() {
             content,
             images,
             tags: selectedTags,
+            tagNames: selectedTagNames,
             isPublic
           }}
         />
