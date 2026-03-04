@@ -28,7 +28,7 @@ export const getFeedingListByDateReq = async (
       }
     }
   )
-  return res.data
+  return res
 }
 
 // 新增喂养记录
@@ -40,7 +40,7 @@ export const addFeedingRecordReq = async (
     `/baby/${baby_id}/daily/feeding`,
     data
   )
-  return res.data
+  return res
 }
 
 // 修改喂养记录
@@ -53,5 +53,5 @@ export const updateFeedingRecordReq = async (
     `/baby/${baby_id}/daily/feeding/${feeding_id}`,
     data
   )
-  return res.data
+  return res
 }

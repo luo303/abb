@@ -1,5 +1,4 @@
 import request from '@/utils/request'
-import { MOCK_POSTS, getMockPostById } from '@/data/mock/homePosts'
 import { PostListResponse, PostDetailResponse } from '@/types/home'
 
 /**
@@ -13,56 +12,14 @@ export const getHomePosts = async (
   pageSize = 10,
   strategy?: string
 ): Promise<PostListResponse> => {
-  try {
-    const res = (await request.get('/post', {
-      params: {
-        page: String(page),
-        page_size: String(pageSize),
-        strategy
-      }
-    })) as any
-    // 由于响应拦截器返回的是response.data，所以需要构建完整的响应结构
-    return {
-      code: res.code || 200,
-      message: res.message || 'success',
-      data: res.data || {
-        items: [],
-        page,
-        page_size: pageSize,
-        has_more: false
-      }
-    } as PostListResponse
-  } catch (error: any) {
-    console.error(
-      '首页请求失败详情:',
-      error.response?.status,
-      error.response?.data
-    )
-    console.warn('Network request failed, falling back to mock data', error)
-
-    // 纯 Mock 模式：直接返回本地数据
-    const start = (page - 1) * pageSize
-    const end = start + pageSize
-    let list = MOCK_POSTS.slice(start, end)
-
-    // 根据策略排序
-    if (strategy === 'hot') {
-      list.sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
-    } else if (strategy === 'ctime') {
-      list.sort((a, b) => (b.ctime || 0) - (a.ctime || 0))
+  const res = await request.get('/post', {
+    params: {
+      page: String(page),
+      page_size: String(pageSize),
+      strategy
     }
-
-    return {
-      code: 200,
-      message: 'success (local mock)',
-      data: {
-        items: list,
-        page,
-        page_size: pageSize,
-        has_more: end < MOCK_POSTS.length
-      }
-    }
-  }
+  })
+  return res as unknown as PostListResponse
 }
 
 /**
@@ -92,29 +49,15 @@ export const createPost = async (
   data: CreatePostParams,
   options?: { signal?: AbortSignal }
 ): Promise<CreatePostResponse> => {
-  try {
-    const res = await request.post('/post/newPost', data, {
-      signal: options?.signal
-    })
-    // 检查响应是否包含错误码（部分 Mock 服务即使 HTTP 200 也会返回业务错误码）
-    const response = res as unknown as CreatePostResponse
-    if (response && response.code !== 0 && response.code !== 200) {
-      throw new Error(response.message || 'Mock business error')
-    }
-    return response
-  } catch (error) {
-    // 针对 Mock 随机错误的临时容错处理
-    // console.warn('Post publish failed (network/mock error):', error)
-    return {
-      code: 200,
-      message: 'success (mock fallback)',
-      data: {
-        post_id: '1011',
-        status: 'published',
-        message: '创建成功 (Mock)'
-      }
-    }
+  const res = await request.post('/post/newPost', data, {
+    signal: options?.signal
+  })
+  // 检查响应是否包含错误码（部分 Mock 服务即使 HTTP 200 也会返回业务错误码）
+  const response = res as unknown as CreatePostResponse
+  if (response && response.code !== 0 && response.code !== 200) {
+    throw new Error(response.message || 'Business error')
   }
+  return response
 }
 
 /**
@@ -124,29 +67,9 @@ export const createPost = async (
 export const getPostDetail = async (
   post_id: string
 ): Promise<PostDetailResponse> => {
-  try {
-    const res = await request.get(`/post/${post_id}`)
-    const response = res as unknown as PostDetailResponse
-    return response
-  } catch (error) {
-    console.warn('Network request failed, falling back to mock data', error)
-
-    // 从本地 Mock 数据中获取
-    const mockPost = getMockPostById(post_id)
-
-    if (mockPost) {
-      return {
-        code: 200,
-        message: 'success (local mock)',
-        data: {
-          post: mockPost
-        }
-      }
-    }
-
-    // 如果 Mock 数据中也没有，再抛出错误
-    throw error
-  }
+  const res = await request.get(`/post/${post_id}`)
+  const response = res as unknown as PostDetailResponse
+  return response
 }
 
 export interface CommentApiItem {

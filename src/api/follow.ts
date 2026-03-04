@@ -9,29 +9,16 @@ import { FollowStatus, FollowingPost } from '@/types/follow'
 export const toggleFollow = async (
   target_user_id: string
 ): Promise<FollowStatus> => {
-  try {
-    const res = (await request.post(
-      `/user/follow/${target_user_id}`
-    )) as FollowStatus
+  const res = (await request.post(
+    `/user/follow/${target_user_id}`
+  )) as FollowStatus
 
-    // 处理后端返回的非成功状态码
-    if (res.code !== 0 && res.code !== 200) {
-      throw new Error(res.message || '操作失败')
-    }
-
-    return res
-  } catch (error) {
-    console.warn('Network request failed, falling back to mock data', error)
-
-    // Mock fallback for development
-    return {
-      code: 200,
-      message: 'success (mock fallback)',
-      data: {
-        message: '操作成功'
-      }
-    }
+  // 处理后端返回的非成功状态码
+  if (res.code !== 0 && res.code !== 200) {
+    throw new Error(res.message || '操作失败')
   }
+
+  return res
 }
 
 /**
