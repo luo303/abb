@@ -30,10 +30,12 @@ export const fetchDiaperList = createAsyncThunk<DiaperListResponse, string>(
   async (babyId, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { diaper: DiaperState }
-      const response = await getDiaperListByDateReq(
-        babyId,
-        state.diaper.currentDate
+      // 转换日期格式为 YYYY-MM-DD
+      const formattedDate = state.diaper.currentDate.replace(
+        /(\d{4})(\d{2})(\d{2})/,
+        '$1-$2-$3'
       )
+      const response = await getDiaperListByDateReq(babyId, formattedDate)
       return response
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)

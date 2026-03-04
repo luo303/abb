@@ -38,7 +38,7 @@ export enum PoopConsistency {
   FOOD_RESIDUE = 'food_residue',
   EGG_LIKE = 'egg_like',
   WATERY = 'watery',
-  SHEEP_DUNG = 'sheep_dung',
+  SHEEP = 'sheep',
   BLOODY = 'bloody'
 }
 

@@ -30,7 +30,10 @@ import { FeedingItem } from '../../types/feeding'
 import { SleepRecord } from '../../types/sleep'
 import { NavigationProps } from '../../types/navigation'
 import mockData from '../../data/mock/dailyRecordMock'
-import { fetchDiaperList } from '../../store/modules/diaperStore'
+import {
+  fetchDiaperList,
+  setCurrentDate
+} from '../../store/modules/diaperStore'
 import { fetchFeedingList } from '../../store/modules/feedingStore'
 import { fetchSleepList } from '../../store/modules/sleepStore'
 import { fetchDailyStatistics } from '../../store/modules/dailyStore'
@@ -73,6 +76,8 @@ export default function DailyRecordScreen() {
     if (babyId) {
       // 防抖处理，避免快速切换日期时的重复请求
       const timer = setTimeout(() => {
+        // 确保 diaper store 中的日期与 selectedDate 一致
+        dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
         dispatch(fetchDiaperList(babyId))
         dispatch(fetchFeedingList({ babyId, date: selectedDate }))
         dispatch(fetchSleepList({ babyId, date: selectedDate }))
@@ -89,6 +94,8 @@ export default function DailyRecordScreen() {
       'refreshDashboard',
       () => {
         if (babyId) {
+          // 确保 diaper store 中的日期与 selectedDate 一致
+          dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
           dispatch(fetchFeedingList({ babyId, date: selectedDate }))
           dispatch(fetchDiaperList(babyId))
           dispatch(fetchSleepList({ babyId, date: selectedDate }))
