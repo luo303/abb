@@ -1,5 +1,10 @@
 import request from '@/utils/request'
 import { PostListResponse } from '@/types/home'
+import {
+  CreatePostRequest,
+  CreatePostResponse,
+  PublishPostResponse
+} from '@/types/post'
 
 /**
  * 搜索帖子
@@ -95,4 +100,26 @@ export const getMyMilestones = async (
     }
   })
   return res as unknown as PostListResponse
+}
+
+/**
+ * 创建帖子/草稿/大事记
+ * @param data 创建帖子的数据
+ */
+export const createPost = async (
+  data: CreatePostRequest
+): Promise<CreatePostResponse> => {
+  const res = await request.post('/post/newPost', data)
+  return res.data
+}
+
+/**
+ * 发布草稿
+ * @param postId 帖子ID
+ */
+export const publishPost = async (
+  postId: string
+): Promise<PublishPostResponse> => {
+  const res = await request.post(`/post/${postId}/publish`)
+  return res.data
 }

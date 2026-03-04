@@ -4,7 +4,8 @@ import {
   fetchPostList,
   loadMorePosts,
   fetchFollowingPosts,
-  loadMoreFollowingPosts
+  loadMoreFollowingPosts,
+  addLocalPost
 } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../api/profile'
 import { setUserInfo } from '../store/modules/userStore'
@@ -27,7 +28,8 @@ export function useHomeData() {
     followingPosts,
     followHasMore,
     isFollowLoading,
-    followPage
+    followPage,
+    localPublishedPosts
   } = useAppSelector(state => state.post)
   const userInfo = useAppSelector(
     state => state.user.userInfo
@@ -35,7 +37,6 @@ export function useHomeData() {
   const babyState = useAppSelector(state => state.baby)
 
   const [refreshing, setRefreshing] = useState(false)
-  const [localPosts, setLocalPosts] = useState<PostItem[]>([])
   const [activeTab, setActiveTab] = useState('推荐')
 
   const isMountedRef = useRef(true)
@@ -48,11 +49,13 @@ export function useHomeData() {
       ? followingPosts.map(p => p.post_id)
       : postList.map(p => p.post_id)
   )
-  const uniqueLocalPosts = localPosts.filter(p => !serverIds.has(p.post_id))
+  const uniqueLocalPosts = localPublishedPosts.filter(
+    p => !serverIds.has(p.post_id)
+  )
   const posts =
     activeTab === '关注'
       ? followingPosts // 关注列表只显示API获取的关注帖子
-      : [...postList, ...uniqueLocalPosts]
+      : [...uniqueLocalPosts, ...postList] // 本地添加的帖子优先显示在前面
 
   // 初始化时加载数据
   useEffect(() => {
@@ -186,13 +189,12 @@ export function useHomeData() {
   ])
 
   // 添加新帖子
-  const addNewPost = useCallback((newPost: PostItem) => {
-    setLocalPosts(prev => {
-      const isDuplicate = prev.some(p => p.post_id === newPost.post_id)
-      if (isDuplicate) return prev
-      return [newPost, ...prev]
-    })
-  }, [])
+  const addNewPost = useCallback(
+    (newPost: PostItem) => {
+      dispatch(addLocalPost(newPost))
+    },
+    [dispatch]
+  )
 
   useEffect(() => {
     return () => {

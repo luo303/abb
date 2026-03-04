@@ -11,13 +11,48 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { createPost } from '@/api/home'
-import request from '@/utils/request'
+import { publishPost } from '@/api/post'
 import { addMockPost } from '@/data/mock/homePosts'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
-import { addNewPost, fetchPostList } from '@/store/modules/PostStore'
+import { addLocalPost, fetchPostList } from '@/store/modules/PostStore'
 import { NavigationProps } from '@/types/navigation'
 import { RootState } from '@/store'
+
+// 标签数据（与 PostToolbar 保持一致）
+interface Tag {
+  id: string
+  name: string
+}
+
+const TAGS: Tag[] = [
+  { id: 'tag_001', name: '宝宝日常' },
+  { id: 'tag_002', name: '成长记录' },
+  { id: 'tag_003', name: '育儿经验' },
+  { id: 'tag_004', name: '亲子时光' },
+  { id: 'tag_005', name: '辅食分享' },
+  { id: 'tag_006', name: '绘本推荐' },
+  { id: 'tag_007', name: '玩具测评' },
+  { id: 'tag_008', name: '好物分享' },
+  { id: 'tag_009', name: '宝宝穿搭' },
+  { id: 'tag_010', name: '出行攻略' },
+  { id: 'tag_011', name: '早教启蒙' },
+  { id: 'tag_012', name: '睡眠引导' },
+  { id: 'tag_013', name: '疾病护理' },
+  { id: 'tag_014', name: '疫苗接种' },
+  { id: 'tag_015', name: '情感交流' }
+]
+
+// 根据标签 ID 获取标签名称
+const getTagName = (tagId: string): string => {
+  const tag = TAGS.find(t => t.id === tagId)
+  return tag ? tag.name : ''
+}
+
+// 将标签 ID 数组转换为标签名称数组
+const getTagNames = (tagIds: string[]): string[] => {
+  return tagIds.map(tagId => getTagName(tagId)).filter(name => name !== '')
+}
 
 export interface PostData {
   title?: string
@@ -102,13 +137,21 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       }
 
       // 调用发布接口 POST /post/{post_id}/publish
-      const publishResponse = (await request.post(
-        `/post/${postId}/publish`
-      )) as any
+      const publishResponse = await publishPost(postId)
 
-      // 确保发布请求成功（code: 0）
-      if (publishResponse.code !== 0) {
-        throw new Error('发布失败: ' + publishResponse.message)
+      // 确保发布请求成功
+      if (!publishResponse) {
+        throw new Error('发布失败: 响应数据为空')
+      }
+
+      // 检查响应状态
+      const isSuccess =
+        publishResponse.code === 0 ||
+        publishResponse.code === 200 ||
+        (publishResponse.message && publishResponse.message.includes('成功'))
+
+      if (!isSuccess) {
+        throw new Error('发布失败: ' + (publishResponse.message || '未知错误'))
       }
 
       // 构造完整的帖子对象用于前端展示
@@ -129,7 +172,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
         comment_count: 0,
         ctime: Date.now(),
         utime: Date.now(),
-        tags: payload.tags,
+        tags: getTagNames(payload.tags),
         images: validNetworkUrls,
         cover: validNetworkUrls[0] || '', // 使用第一张图片作为封面
         baby_age_year: 0,
@@ -140,15 +183,8 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 将新帖子真正添加到 Mock 数据列表中，确保刷新后依然存在
       addMockPost(newPost)
 
-      // 更新Redux状态
-      dispatch(addNewPost(newPost))
-
-      // 调用 fetchPostList 刷新首页数据，传入 strategy=ctime
-      try {
-        await dispatch(fetchPostList({ page: 1, strategy: 'ctime' })).unwrap()
-      } catch (error) {
-        console.warn('Failed to refresh post list:', error)
-      }
+      // 将新帖子添加到 Redux 中
+      dispatch(addLocalPost(newPost))
 
       // 触发成功回调
       if (onSuccess) {
@@ -158,7 +194,7 @@ export default function PostFooter({ postData, onSuccess }: PostFooterProps) {
       // 提示发布成功
       showMessage('发布成功！')
 
-      // 执行 navigation.goBack() 返回上一页
+      // 直接返回首页
       navigation.goBack()
     } catch (error) {
       console.error('Publish failed:', error)

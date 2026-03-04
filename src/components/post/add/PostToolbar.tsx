@@ -138,31 +138,6 @@ export default function PostToolbar({
                 </TouchableOpacity>
               </View>
 
-              {/* 已选择的话题显示区域 */}
-              {selectedTagIds.length > 0 && (
-                <View style={styles.selectedTagsContainer}>
-                  <Text style={styles.selectedTagsTitle}>已选择的话题</Text>
-                  <View style={styles.selectedTagsList}>
-                    {selectedTagIds.map(tagId => (
-                      <TouchableOpacity
-                        key={tagId}
-                        style={styles.selectedTagItem}
-                        onPress={() => toggleTag(tagId)}
-                      >
-                        <Text style={styles.selectedTagText}>
-                          #{getTagName(tagId)}
-                        </Text>
-                        <Ionicons
-                          name="close-circle"
-                          size={16}
-                          color="#f43f5e"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
-
               <ScrollView contentContainerStyle={styles.tagsList}>
                 <View style={styles.tagsWrapper}>
                   {TAGS.map(tag => (
@@ -187,6 +162,31 @@ export default function PostToolbar({
                   ))}
                 </View>
               </ScrollView>
+
+              {/* 已选择的话题显示区域 */}
+              {selectedTagIds.length > 0 && (
+                <View style={styles.selectedTagsContainer}>
+                  <Text style={styles.selectedTagsTitle}>已选择的话题</Text>
+                  <View style={styles.selectedTagsList}>
+                    {selectedTagIds.map(tagId => (
+                      <TouchableOpacity
+                        key={tagId}
+                        style={styles.selectedTagItem}
+                        onPress={() => toggleTag(tagId)}
+                      >
+                        <Text style={styles.selectedTagText}>
+                          #{getTagName(tagId)}
+                        </Text>
+                        <Ionicons
+                          name="close-circle"
+                          size={16}
+                          color="#f43f5e"
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
               <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={() => setShowTagsModal(false)}

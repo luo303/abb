@@ -7,6 +7,7 @@ import {
 } from '../../types/home'
 import { getPostDetail, getHomePosts } from '../../api/home'
 import { getFollowingPosts } from '../../api/follow'
+import { createPost, publishPost } from '../../api/post'
 
 // 私有 Helper 函数：统一处理 content 字段的解析逻辑
 const parsePostContent = (post: PostItem): PostItem => {
@@ -77,6 +78,8 @@ interface PostState {
   page: number
   hasMore: boolean
   isLoadingMore: boolean
+  // 本地发布的帖子
+  localPublishedPosts: PostItem[]
 }
 
 const initialState: PostState = {
@@ -92,7 +95,9 @@ const initialState: PostState = {
   // 分页相关状态
   page: 1,
   hasMore: true,
-  isLoadingMore: false
+  isLoadingMore: false,
+  // 本地发布的帖子
+  localPublishedPosts: []
 }
 
 // 获取帖子详情
@@ -170,6 +175,37 @@ export const loadMoreFollowingPosts = createAsyncThunk<
       return response as unknown as PostListResponse
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  }
+)
+
+// 创建帖子/草稿/大事记
+export const createNewPost = createAsyncThunk<
+  any,
+  {
+    title: string
+    content: string
+    status: string
+    tag_ids?: string[]
+  }
+>('post/createNewPost', async (data, { rejectWithValue }) => {
+  try {
+    const response = await createPost(data)
+    return response
+  } catch (error: any) {
+    return rejectWithValue(error.message || '创建帖子失败')
+  }
+})
+
+// 发布草稿
+export const publishDraft = createAsyncThunk<any, string>(
+  'post/publishDraft',
+  async (postId, { rejectWithValue }) => {
+    try {
+      const response = await publishPost(postId)
+      return response
+    } catch (error: any) {
+      return rejectWithValue(error.message || '发布草稿失败')
     }
   }
 )
@@ -275,12 +311,17 @@ const postSlice = createSlice({
         if (typeof newPost.content === 'string') {
           try {
             const parsedContent = JSON.parse(newPost.content) as ParsedContent
-            if (parsedContent) {
+            if (parsedContent && typeof parsedContent === 'object') {
               newPost.content = parsedContent
               newPost.images = parsedContent.images || newPost.images
             }
           } catch (parseError) {
-            // 如果解析失败，保持原content不变
+            // 如果解析失败，使用默认显示方案
+            newPost.content = {
+              text: newPost.content,
+              images: []
+            } as ParsedContent
+            newPost.images = []
           }
         } else if (
           typeof newPost.content === 'object' &&
@@ -289,7 +330,18 @@ const postSlice = createSlice({
           // content已经是对象，直接使用
           newPost.images =
             (newPost.content as ParsedContent).images || newPost.images
+        } else {
+          // 其他情况，使用默认显示方案
+          newPost.content = {
+            text: String(newPost.content),
+            images: []
+          } as ParsedContent
+          newPost.images = []
         }
+      } else {
+        // 如果 content 为空，使用默认显示方案
+        newPost.content = { text: '', images: [] } as ParsedContent
+        newPost.images = []
       }
       // 检查是否已存在，避免重复添加
       const existingPostIndex = state.postList.findIndex(
@@ -331,6 +383,15 @@ const postSlice = createSlice({
       state.followingPosts = state.followingPosts.filter(
         post => post.post_id !== postId
       )
+    },
+    addLocalPost: (state: PostState, action: PayloadAction<PostItem>) => {
+      const newPost = parsePostContent(action.payload)
+      const isDuplicate = state.localPublishedPosts.some(
+        p => p.post_id === newPost.post_id
+      )
+      if (!isDuplicate) {
+        state.localPublishedPosts.unshift(newPost)
+      }
     }
   },
   extraReducers: (builder: any) => {
@@ -549,6 +610,40 @@ const postSlice = createSlice({
           state.error = action.payload as string
         }
       )
+      // 创建帖子/草稿/大事记
+      .addCase(createNewPost.pending, (state: PostState) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(createNewPost.fulfilled, (state: PostState, action: any) => {
+        state.loading = false
+        if (action.payload?.code === 0 || action.payload?.code === 200) {
+          // 可以在这里添加成功后的逻辑，比如更新状态或显示成功消息
+        } else {
+          state.error = action.payload?.message || '未知错误'
+        }
+      })
+      .addCase(createNewPost.rejected, (state: PostState, action: any) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      // 发布草稿
+      .addCase(publishDraft.pending, (state: PostState) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(publishDraft.fulfilled, (state: PostState, action: any) => {
+        state.loading = false
+        if (action.payload?.code === 0 || action.payload?.code === 200) {
+          // 可以在这里添加成功后的逻辑，比如更新帖子状态
+        } else {
+          state.error = action.payload?.message || '未知错误'
+        }
+      })
+      .addCase(publishDraft.rejected, (state: PostState, action: any) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
   }
 })
 
@@ -560,6 +655,7 @@ export const {
   syncPostDetailToList,
   addNewPost,
   addAuthorPostToFollowing,
-  removeAuthorPostFromFollowing
+  removeAuthorPostFromFollowing,
+  addLocalPost
 } = postSlice.actions
 export default postSlice.reducer
