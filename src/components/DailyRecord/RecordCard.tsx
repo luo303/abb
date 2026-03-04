@@ -20,7 +20,7 @@ interface RecordCardProps {
 // 定义导航类型
 type RootStackParamList = {
   DiaperForm: { diaper_id: string }
-  FeedingRecord: { feed_id: string }
+  FeedingRecord: { feeding_id: string }
   SleepRecord: { session_id: string }
 }
 
@@ -37,7 +37,7 @@ export default function RecordCard({ item }: RecordCardProps) {
           break
         case 'feeding':
           console.log('点击的喂养ID:', item.id)
-          navigation.navigate('FeedingRecord', { feed_id: item.id })
+          navigation.navigate('FeedingRecord', { feeding_id: item.id })
           break
         case 'sleep':
           navigation.navigate('SleepRecord', { session_id: item.id })

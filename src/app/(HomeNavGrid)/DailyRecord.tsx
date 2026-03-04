@@ -32,6 +32,7 @@ import mockData from '../../data/mock/dailyRecordMock'
 import { fetchDiaperList } from '../../store/modules/diaperStore'
 import { fetchFeedingList } from '../../store/modules/feedingStore'
 import { fetchSleepList } from '../../store/modules/sleepStore'
+import { fetchDailyStatistics } from '../../store/modules/dailyStore'
 import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
@@ -44,6 +45,13 @@ export default function DailyRecordScreen() {
     (state: RootState) => state.feeding.feedingList
   )
   const sleepList = useSelector((state: RootState) => state.sleep.sleepList)
+  const dailyStatistics = useSelector(
+    (state: RootState) => state.daily.statistics
+  )
+  const isLoading = useSelector(
+    (state: RootState) =>
+      state.feeding.loading || state.diaper.isLoading || state.sleep.loading
+  )
 
   const [selectedDate, setSelectedDate] = useState<string>(
     dayjs().format('YYYY-MM-DD')
@@ -65,6 +73,7 @@ export default function DailyRecordScreen() {
       dispatch(fetchDiaperList(babyId))
       dispatch(fetchFeedingList({ babyId, date: selectedDate }))
       dispatch(fetchSleepList({ babyId, date: selectedDate }))
+      dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
     }
   }, [babyId, selectedDate, dispatch])
 
@@ -77,6 +86,7 @@ export default function DailyRecordScreen() {
           dispatch(fetchFeedingList({ babyId, date: selectedDate }))
           dispatch(fetchDiaperList(babyId))
           dispatch(fetchSleepList({ babyId, date: selectedDate }))
+          dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
         }
       }
     )
@@ -138,7 +148,7 @@ export default function DailyRecordScreen() {
     // 从 feedingList 中筛选出当前日期的记录
     const feedingRecords = feedingList
       .filter(item => {
-        const itemDate = dayjs(item.start_time).format('YYYY-MM-DD')
+        const itemDate = dayjs(item.feed_time).format('YYYY-MM-DD')
         return itemDate === selectedDate
       })
       .map(item => {
@@ -171,9 +181,9 @@ export default function DailyRecordScreen() {
         }
 
         return {
-          id: item.feed_id,
+          id: item.feeding_id,
           type: 'feeding' as const,
-          time: item.start_time,
+          time: item.feed_time,
           details: description,
           icon: icon,
           name: '喂养',
@@ -238,46 +248,58 @@ export default function DailyRecordScreen() {
 
     setCurrentRecords(allRecords)
 
-    // 计算统计数据
-    let feedingCount = 0
-    let feedingVolume = 0 // 保留字段但不使用
-    let sleepCount = 0
-    let sleepDuration = 0 // 以小时为单位，保留小数
-    let diaperCount = 0
+    // 使用从 Redux store 中获取的统计数据
+    if (dailyStatistics) {
+      setStatistics({
+        feedingCount: dailyStatistics.feeding.totalCount || 0,
+        feedingVolume: 0, // 保留字段但不使用
+        sleepCount: 0, // 保留字段但不使用
+        sleepDuration:
+          (dailyStatistics.sleep.totalDuration || 0) / (1000 * 60 * 60), // 转换为小时
+        diaperCount: dailyStatistics.diaper.totalCount || 0
+      })
+    } else {
+      // 如果没有统计数据，使用本地计算的统计数据
+      let feedingCount = 0
+      let feedingVolume = 0 // 保留字段但不使用
+      let sleepCount = 0
+      let sleepDuration = 0 // 以小时为单位，保留小数
+      let diaperCount = 0
 
-    allRecords.forEach(record => {
-      switch (record.type) {
-        case 'feeding':
-          feedingCount++
-          break
-        case 'sleep':
-          sleepCount++
-          // 计算实际睡眠时长（从details中提取或使用默认值）
-          // 假设details格式为 "HH:MM - HH:MM · X小时X分"
-          const durationMatch = record.details?.match(/(\d+)小时(\d+)分/)
-          if (durationMatch) {
-            const hours = parseInt(durationMatch[1])
-            const minutes = parseInt(durationMatch[2])
-            sleepDuration += hours + minutes / 60
-          } else {
-            // 如果无法提取时长，使用默认值1.5小时
-            sleepDuration += 0
-          }
-          break
-        case 'diaper':
-          diaperCount++
-          break
-      }
-    })
+      allRecords.forEach(record => {
+        switch (record.type) {
+          case 'feeding':
+            feedingCount++
+            break
+          case 'sleep':
+            sleepCount++
+            // 计算实际睡眠时长（从details中提取或使用默认值）
+            // 假设details格式为 "HH:MM - HH:MM · X小时X分"
+            const durationMatch = record.details?.match(/(\d+)小时(\d+)分/)
+            if (durationMatch) {
+              const hours = parseInt(durationMatch[1])
+              const minutes = parseInt(durationMatch[2])
+              sleepDuration += hours + minutes / 60
+            } else {
+              // 如果无法提取时长，使用默认值1.5小时
+              sleepDuration += 0
+            }
+            break
+          case 'diaper':
+            diaperCount++
+            break
+        }
+      })
 
-    setStatistics({
-      feedingCount,
-      feedingVolume,
-      sleepCount,
-      sleepDuration,
-      diaperCount
-    })
-  }, [selectedDate, diaperList, feedingList, sleepList])
+      setStatistics({
+        feedingCount,
+        feedingVolume,
+        sleepCount,
+        sleepDuration,
+        diaperCount
+      })
+    }
+  }, [selectedDate, diaperList, feedingList, sleepList, dailyStatistics])
 
   // 计算整体进度并更新背景颜色
   useEffect(() => {
@@ -505,7 +527,11 @@ export default function DailyRecordScreen() {
 
         {/* 记录列表 - 这里不再嵌套 FlatList */}
         <View style={styles.recordsListContainer}>
-          {currentRecords.length > 0 ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>加载中...</Text>
+            </View>
+          ) : currentRecords.length > 0 ? (
             currentRecords.map(item => <RecordCard key={item.id} item={item} />)
           ) : (
             <EmptyState />
@@ -604,5 +630,15 @@ const styles = StyleSheet.create({
   recordsListContainer: {
     paddingHorizontal: 16,
     zIndex: 1
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#f43f5e'
   }
 })

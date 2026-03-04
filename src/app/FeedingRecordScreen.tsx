@@ -14,7 +14,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../store'
 import {
   addFeedingItem,
-  updateFeedingItem
+  updateFeedingItem,
+  saveFeedingRecord
 } from '../store/modules/feedingStore'
 import type { AppDispatch } from '../store'
 import { FeedingType } from '../types/feeding'
@@ -24,6 +25,7 @@ import {
   TimePicker,
   RemarkInput
 } from '../components/DailyRecord/FeedingRecord'
+import { useMessage } from '../components/Message'
 
 interface FeedingRecord {
   type: '奶粉' | '母乳' | '辅食'
@@ -33,15 +35,26 @@ interface FeedingRecord {
 }
 
 interface RouteParams {
-  feed_id?: string
+  feeding_id?: string
 }
 
 const FeedingRecordScreen = () => {
   const navigation = useNavigation()
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>()
-  const feedId = route.params?.feed_id
+  const feedId = route.params?.feeding_id
   const dispatch = useDispatch<AppDispatch>()
-  const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
+  const routeParams = route.params as { baby_id?: string } | undefined
+  const reduxBabyId = useSelector(
+    (state: RootState) => state.baby.currentBabyId
+  )
+  const babyState = useSelector((state: RootState) => state.baby)
+  const babyId = routeParams?.baby_id || reduxBabyId
+
+  // 添加日志确认babyId的值
+  console.log('currentBabyId:', reduxBabyId)
+  console.log('babyState:', babyState)
+  console.log('routeParams:', routeParams)
+  console.log('final babyId:', babyId)
   const feedingList = useSelector(
     (state: RootState) => state.feeding.feedingList
   )
@@ -52,12 +65,13 @@ const FeedingRecordScreen = () => {
   const [amount, setAmount] = useState('')
   const [feedingTime, setFeedingTime] = useState(new Date())
   const [remark, setRemark] = useState('')
+  const { showMessage } = useMessage()
 
   // 当feedId存在时，从feedingList中找到对应的记录并回显数据
   useEffect(() => {
     console.log('收到的路由参数:', route.params)
     if (feedId) {
-      const feedingRecord = feedingList.find(item => item.feed_id === feedId)
+      const feedingRecord = feedingList.find(item => item.feeding_id === feedId)
       if (feedingRecord) {
         // 将feed_type转换为UI中的类型
         let uiType: '奶粉' | '母乳' | '辅食' = '母乳'
@@ -75,7 +89,7 @@ const FeedingRecordScreen = () => {
         }
         setSelectedType(uiType)
         setAmount(feedingRecord.amount?.toString() || '')
-        setFeedingTime(new Date(feedingRecord.start_time))
+        setFeedingTime(new Date(feedingRecord.feed_time))
         setRemark(feedingRecord.remark || '')
       }
     }
@@ -181,7 +195,7 @@ const FeedingRecordScreen = () => {
     return `${year}-${month}-${day} ${hours}:${minutes}`
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // 将UI中的喂养类型转换为FeedingType枚举
     let feedType: FeedingType
     switch (selectedType) {
@@ -212,40 +226,54 @@ const FeedingRecordScreen = () => {
       if (feedId) {
         // 如果有feedId，说明是编辑模式，调用updateFeedingItem
         const updatedRecord = {
-          feed_id: feedId,
+          feeding_id: feedId,
           baby_id: babyId,
           feed_type: record.feed_type,
-          start_time: record.start_time,
+          feed_time: record.start_time,
           amount: record.amount,
           duration: record.duration,
           remark: record.remark,
           summary_text: record.summary_text
         }
         dispatch(updateFeedingItem(updatedRecord))
+        // 通知主页面刷新
+        DeviceEventEmitter.emit('refreshDashboard')
+        // 导航回上一页
+        navigation.goBack()
       } else {
-        // 如果没有feedId，说明是新增模式，调用addFeedingItem
+        // 乐观更新：先将记录添加到本地喂养列表中（使用临时 ID 并 unshift 到顶部）
         const newRecord = {
-          feed_id: `feed_${Date.now()}`,
+          feeding_id: `feed_${Date.now()}`,
           baby_id: babyId,
           feed_type: record.feed_type,
-          start_time: record.start_time,
+          feed_time: record.start_time,
           amount: record.amount,
           duration: record.duration,
           remark: record.remark,
           summary_text: record.summary_text
         }
         dispatch(addFeedingItem(newRecord))
+
+        // 发送请求：调用saveFeedingRecord接口
+        try {
+          if (!babyId) {
+            showMessage('获取宝宝信息失败，请重试')
+            return
+          }
+          await dispatch(saveFeedingRecord({ babyId, data: record })).unwrap()
+          // 保存成功后，使用 showMessage 提示用户
+          showMessage('保存成功')
+          // 通知主页面刷新
+          DeviceEventEmitter.emit('refreshDashboard')
+          // 导航回“日常记录”列表页
+          navigation.goBack()
+        } catch (error) {
+          console.error('保存喂养记录失败:', error)
+          // 添加错误提示
+          showMessage('保存失败，请重试')
+        }
       }
     }
-
-    // 这里可以添加保存逻辑，比如调用API
-    console.log('保存喂养记录:', record)
-
-    // 通知主页面刷新
-    DeviceEventEmitter.emit('refreshDashboard')
-
-    // 导航回上一页
-    navigation.goBack()
   }
 
   return (

@@ -3,13 +3,16 @@ import { RootState } from '..'
 import { fetchDiaperList as fetchDiaperListAction } from './diaperStore'
 import { fetchFeedingList as fetchFeedingListAction } from './feedingStore'
 import { fetchSleepList as fetchSleepListAction } from './sleepStore'
+import { getDailyStatistics, DailyStatisticsResponse } from '../../api/daily'
 import { DiaperItem } from '../../types/diaper'
 import { FeedingItem } from '../../types/feeding'
 import { SleepRecord } from '../../types/sleep'
+import { DailyStatistics as DailyStatisticsType } from '../../types/daily'
 
 interface DailyState {
   currentDate: string
   isLoading: boolean
+  statistics: DailyStatisticsType | null
 }
 
 // 获取今天的日期，格式为 YYYYMMDD
@@ -23,7 +26,8 @@ const getTodayDate = (): string => {
 
 const initialState: DailyState = {
   currentDate: getTodayDate(),
-  isLoading: false
+  isLoading: false,
+  statistics: null
 }
 
 export const updateDateAndRefresh = createAsyncThunk<
@@ -33,11 +37,12 @@ export const updateDateAndRefresh = createAsyncThunk<
   // 先更新日期
   dispatch(setCurrentDate(date))
 
-  // 同时触发三个仓库的 fetch 请求
+  // 同时触发四个仓库的 fetch 请求，包括统计信息
   await Promise.all([
     dispatch(fetchDiaperListAction(babyId)),
     dispatch(fetchFeedingListAction({ babyId, date })),
-    dispatch(fetchSleepListAction({ babyId, date }))
+    dispatch(fetchSleepListAction({ babyId, date })),
+    dispatch(fetchDailyStatistics({ babyId, date }))
   ])
 })
 
@@ -50,8 +55,85 @@ export const initDailyData = createAsyncThunk<void, string>(
     await Promise.all([
       dispatch(fetchDiaperListAction(babyId)),
       dispatch(fetchFeedingListAction({ babyId, date })),
-      dispatch(fetchSleepListAction({ babyId, date }))
+      dispatch(fetchSleepListAction({ babyId, date })),
+      dispatch(fetchDailyStatistics({ babyId, date }))
     ])
+  }
+)
+
+export const fetchDailyStatistics = createAsyncThunk<
+  DailyStatisticsType,
+  { babyId: string; date: string }
+>(
+  'daily/fetchDailyStatistics',
+  async ({ babyId, date }, { rejectWithValue }) => {
+    try {
+      const response = await getDailyStatistics(babyId, date)
+
+      // 处理响应数据，转换为本地统计类型
+      if (
+        response.code === 0 ||
+        response.code === 200 ||
+        String(response.code) === '0'
+      ) {
+        const data = response.data
+        if (data) {
+          // 从items中提取各类型的记录
+          const feedingItems = data.items.filter(
+            item => item.type === 'feeding'
+          )
+          const sleepItems = data.items.filter(item => item.type === 'sleep')
+          const diaperItems = data.items.filter(item => item.type === 'diaper')
+
+          // 计算喂养统计
+          const feedingStats = {
+            totalCount: data.feeding_count,
+            lastTime:
+              feedingItems.length > 0
+                ? Math.max(...feedingItems.map(item => item.time))
+                : undefined
+          }
+
+          // 计算睡眠统计
+          const sleepStats = {
+            totalDuration: data.sleep_duration_ms,
+            totalCount: sleepItems.length,
+            lastTime:
+              sleepItems.length > 0
+                ? Math.max(...sleepItems.map(item => item.time))
+                : undefined
+          }
+
+          // 计算 diaper 统计
+          const peeCount = diaperItems.filter(
+            item => item.sub_type === 'pee'
+          ).length
+          const poopCount = diaperItems.filter(
+            item => item.sub_type === 'poop'
+          ).length
+          const diaperStats = {
+            totalCount: data.diaper_count,
+            peeCount,
+            poopCount,
+            lastTime:
+              diaperItems.length > 0
+                ? Math.max(...diaperItems.map(item => item.time))
+                : undefined
+          }
+
+          return {
+            feeding: feedingStats,
+            sleep: sleepStats,
+            diaper: diaperStats,
+            date
+          }
+        }
+      }
+
+      throw new Error('获取统计信息失败')
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
   }
 )
 
@@ -83,6 +165,17 @@ const dailySlice = createSlice({
       .addCase(initDailyData.rejected, state => {
         state.isLoading = false
       })
+      .addCase(fetchDailyStatistics.pending, state => {
+        state.isLoading = true
+      })
+      .addCase(fetchDailyStatistics.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.statistics = action.payload
+      })
+      .addCase(fetchDailyStatistics.rejected, state => {
+        state.isLoading = false
+        state.statistics = null
+      })
   }
 })
 
@@ -111,9 +204,9 @@ export const selectSortedDailyRecords = (state: RootState): UnifiedRecord[] => {
   }))
 
   const feedingRecords: UnifiedRecord[] = feedingList.map(item => ({
-    id: item.feed_id,
+    id: item.feeding_id,
     type: 'feeding' as const,
-    time: item.start_time,
+    time: item.feed_time,
     data: item
   }))
 

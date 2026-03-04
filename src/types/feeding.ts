@@ -12,10 +12,10 @@ export enum FeedSide {
 }
 
 export interface FeedingItem {
-  feed_id: string
+  feeding_id: string
   baby_id: string
   feed_type: FeedingType
-  start_time: number
+  feed_time: number
   amount?: number
   side?: FeedSide
   duration?: number
