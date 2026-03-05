@@ -12,11 +12,6 @@ import {
   FeedingType
 } from '../../types/feeding'
 import { fetchDailyStatistics } from './dailyStore'
-import {
-  saveFeedingRecords,
-  getFeedingRecords,
-  clearFeedingRecords
-} from '../../utils/feedingStorage'
 
 interface FeedingState {
   feedingList: FeedingItem[]
@@ -31,28 +26,14 @@ const initialState: FeedingState = {
 }
 
 export const fetchFeedingList = createAsyncThunk<
-  FeedingListResponse | FeedingItem[],
+  FeedingListResponse,
   { babyId: string; date: string }
 >('feeding/fetchFeedingList', async ({ babyId, date }, { rejectWithValue }) => {
-  console.log('fetchFeedingList called with:', { babyId, date })
   try {
-    // 优先从 API 获取数据
+    // 只从 API 获取数据
     const response = await getFeedingListByDateReq(babyId, date)
-    console.log('fetchFeedingList API response:', response)
     return response
   } catch (error: any) {
-    console.error('fetchFeedingList error:', error)
-    try {
-      // 出错时，从本地存储获取数据
-      console.log('Trying to get feeding records from local storage')
-      const localRecords = await getFeedingRecords(babyId, date)
-      console.log('Local feeding records:', localRecords)
-      if (localRecords.length > 0) {
-        return localRecords
-      }
-    } catch (storageError) {
-      console.error('从本地存储获取数据失败:', storageError)
-    }
     return rejectWithValue(error.response?.data?.message || error.message)
   }
 })
@@ -159,15 +140,6 @@ const feedingSlice = createSlice({
         // 否则添加新记录
         state.feedingList.unshift(action.payload)
       }
-      // 保存到本地存储
-      try {
-        const date = new Date(action.payload.feed_time)
-          .toISOString()
-          .split('T')[0]
-        saveFeedingRecords(action.payload.baby_id, date, state.feedingList)
-      } catch (error) {
-        console.error('保存喂养记录到本地存储失败:', error)
-      }
     },
     updateFeedingItem: (state, action: PayloadAction<FeedingItem>) => {
       const index = state.feedingList.findIndex(
@@ -184,16 +156,6 @@ const feedingSlice = createSlice({
       state.feedingList = state.feedingList.filter(
         item => item.feeding_id !== action.payload.feedingId
       )
-      // 保存到本地存储
-      try {
-        saveFeedingRecords(
-          action.payload.babyId,
-          action.payload.date,
-          state.feedingList
-        )
-      } catch (error) {
-        console.error('保存喂养记录到本地存储失败:', error)
-      }
     },
     clearFeedingData: (
       state,
@@ -201,12 +163,6 @@ const feedingSlice = createSlice({
     ) => {
       state.feedingList = []
       state.error = null
-      // 清除本地存储
-      try {
-        clearFeedingRecords(action.payload.babyId, action.payload.date)
-      } catch (error) {
-        console.error('清除本地存储失败:', error)
-      }
     }
   },
   extraReducers: builder => {
@@ -218,12 +174,8 @@ const feedingSlice = createSlice({
       .addCase(fetchFeedingList.fulfilled, (state, action) => {
         state.loading = false
 
-        // 检查返回的数据类型
-        if (Array.isArray(action.payload)) {
-          // 从本地存储获取的数据
-          state.feedingList = action.payload
-        } else if (action.payload?.code === 0 || action.payload?.code === 200) {
-          // 从接口获取的数据
+        // 从接口获取的数据
+        if (action.payload?.code === 0 || action.payload?.code === 200) {
           const records = (action.payload.data?.items || []).map(item => ({
             feeding_id: item.feeding_id,
             baby_id: action.meta.arg.babyId,
@@ -242,16 +194,6 @@ const feedingSlice = createSlice({
             summary_text: item.remark
           }))
           state.feedingList = records
-          // 保存到本地存储
-          try {
-            saveFeedingRecords(
-              action.meta.arg.babyId,
-              action.meta.arg.date,
-              records
-            )
-          } catch (error) {
-            console.error('保存喂养记录到本地存储失败:', error)
-          }
         } else {
           state.error = action.payload?.message || '获取喂养记录失败'
         }
@@ -269,21 +211,10 @@ const feedingSlice = createSlice({
           item =>
             typeof item.feeding_id === 'string' &&
             item.feeding_id.startsWith('feed_') &&
-            item.baby_id === action.payload.babyId &&
-            item.feed_type === action.payload.data.feed_type &&
-            item.feed_time === action.payload.data.start_time
+            item.baby_id === action.payload.babyId
         )
         if (index >= 0) {
           state.feedingList[index].feeding_id = action.payload.feeding_id
-        }
-        // 保存到本地存储
-        try {
-          const date = new Date(action.payload.data.start_time)
-            .toISOString()
-            .split('T')[0]
-          saveFeedingRecords(action.payload.babyId, date, state.feedingList)
-        } catch (error) {
-          console.error('保存喂养记录到本地存储失败:', error)
         }
       })
       .addCase(addFeedingRecord.rejected, (state, action) => {
@@ -312,15 +243,6 @@ const feedingSlice = createSlice({
             remark: action.meta.arg.data.remark,
             summary_text: action.meta.arg.data.summary_text
           }
-          // 保存到本地存储
-          try {
-            const date = new Date(action.meta.arg.data.start_time)
-              .toISOString()
-              .split('T')[0]
-            saveFeedingRecords(action.meta.arg.babyId, date, state.feedingList)
-          } catch (error) {
-            console.error('保存喂养记录到本地存储失败:', error)
-          }
         }
       })
       .addCase(updateFeedingRecord.rejected, (state, action) => {
@@ -336,7 +258,6 @@ const feedingSlice = createSlice({
 
         // 确保feeding_id存在
         if (!feeding_id) {
-          console.error('保存喂养记录成功但未返回feeding_id')
           return
         }
 
@@ -345,9 +266,7 @@ const feedingSlice = createSlice({
           item =>
             typeof item.feeding_id === 'string' &&
             item.feeding_id.startsWith('feed_') &&
-            item.baby_id === babyId &&
-            item.feed_type === data.feed_type &&
-            item.feed_time === data.start_time
+            item.baby_id === babyId
         )
 
         if (index >= 0) {
@@ -361,9 +280,6 @@ const feedingSlice = createSlice({
           }
           // 准确赋值feeding_id字段
           state.feedingList[index].feeding_id = feeding_id
-          console.log(
-            `成功将临时ID ${state.feedingList[index].feeding_id} 替换为后端ID ${feeding_id}`
-          )
         } else {
           // 如果没有找到临时记录，直接添加新记录
           const newRecord = {
@@ -377,15 +293,6 @@ const feedingSlice = createSlice({
             summary_text: data.remark
           }
           state.feedingList.unshift(newRecord)
-          console.log('添加新的喂养记录:', newRecord)
-        }
-
-        // 保存到本地存储
-        try {
-          const date = new Date(data.start_time).toISOString().split('T')[0]
-          saveFeedingRecords(babyId, date, state.feedingList)
-        } catch (error) {
-          console.error('保存喂养记录到本地存储失败:', error)
         }
       })
       .addCase(saveFeedingRecord.rejected, (state, action) => {
