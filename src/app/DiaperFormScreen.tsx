@@ -26,7 +26,9 @@ import { addDiaperRecordReq, updateDiaperRecordReq } from '../api/diaper'
 import {
   fetchDiaperList,
   addDiaperRecord,
-  updateDiaperRecord
+  updateDiaperRecord,
+  addDiaperItem,
+  updateDiaperItem
 } from '../store/modules/diaperStore'
 import { useMessage } from '../components/Message'
 import { TimePicker } from '../components/DailyRecord/DiaperRecord/TimePicker'
@@ -153,15 +155,16 @@ const DiaperFormScreen = () => {
           poop_consistency: selectedPoopConsistency || null,
           remark: requestData.remark
         }
-        await updateDiaperRecordReq(babyId, diaperId, requestData)
+        await dispatch(
+          updateDiaperItem({ babyId, diaperId, data: requestData })
+        ).unwrap()
         dispatch(updateDiaperRecord(updatedRecord))
         showMessage('记录已更新')
       } else {
-        // 发送API请求
-        const response = await addDiaperRecordReq(babyId, requestData)
-        // 假设返回的响应包含 diaper_id
+        // 新增模式
+        const tempId = generateTempId('diaper')
         const newRecord: DiaperItem = {
-          diaper_id: response?.data?.diaper_id || `diaper_${Date.now()}`,
+          diaper_id: tempId,
           baby_id: babyId,
           diaper_type: selectedType,
           change_time: requestData.change_time,
@@ -170,7 +173,10 @@ const DiaperFormScreen = () => {
           poop_consistency: selectedPoopConsistency || null,
           remark: requestData.remark
         }
+        // 先添加到本地状态
         dispatch(addDiaperRecord(newRecord))
+        // 调用API
+        await dispatch(addDiaperItem({ babyId, data: requestData })).unwrap()
         showMessage('记录已保存')
       }
 

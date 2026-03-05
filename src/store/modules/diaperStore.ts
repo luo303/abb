@@ -1,6 +1,18 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { getDiaperListByDateReq, DiaperListResponse } from '../../api/diaper'
-import { DiaperItem } from '../../types/diaper'
+import {
+  getDiaperListByDateReq,
+  addDiaperRecordReq,
+  updateDiaperRecordReq,
+  deleteDiaperRecordReq,
+  DiaperListResponse,
+  ApiResponse
+} from '../../api/diaper'
+import { DiaperItem, DiaperRecordRequest } from '../../types/diaper'
+import {
+  saveDiaperRecords,
+  getDiaperRecords,
+  clearDiaperRecords
+} from '../../utils/diaperStorage'
 
 interface DiaperState {
   diaperList: DiaperItem[]
@@ -36,9 +48,134 @@ export const fetchDiaperList = createAsyncThunk<DiaperListResponse, string>(
         '$1-$2-$3'
       )
       const response = await getDiaperListByDateReq(babyId, formattedDate)
+
+      // 保存到本地存储
+      if (response.code === 0 || response.code === 200) {
+        const records = response.data?.items || []
+        await saveDiaperRecords(records)
+      }
+
       return response
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message)
+      // 失败时从本地存储获取数据
+      try {
+        const localRecords = await getDiaperRecords()
+        return {
+          code: 0,
+          message: '从本地存储获取数据',
+          data: { items: localRecords }
+        } as DiaperListResponse
+      } catch (localError) {
+        return rejectWithValue(
+          error.response?.data?.message || error.message || '获取尿布记录失败'
+        )
+      }
+    }
+  }
+)
+
+export const addDiaperItem = createAsyncThunk<
+  ApiResponse,
+  { babyId: string; data: DiaperRecordRequest }
+>(
+  'diaper/addDiaperItem',
+  async ({ babyId, data }, { getState, rejectWithValue }) => {
+    try {
+      const response = await addDiaperRecordReq(babyId, data)
+
+      // 更新本地存储
+      if (response.code === 0 || response.code === 200) {
+        const state = getState() as { diaper: DiaperState }
+        const updatedRecords = state.diaper.diaperList
+        await saveDiaperRecords(updatedRecords)
+      }
+
+      return response
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || '添加尿布记录失败'
+      )
+    }
+  }
+)
+
+export const updateDiaperItem = createAsyncThunk<
+  ApiResponse,
+  { babyId: string; diaperId: string; data: DiaperRecordRequest }
+>(
+  'diaper/updateDiaperItem',
+  async (
+    { babyId, diaperId, data },
+    { getState, rejectWithValue, dispatch }
+  ) => {
+    try {
+      const response = await updateDiaperRecordReq(babyId, diaperId, data)
+
+      // 更新本地存储
+      if (response.code === 0 || response.code === 200) {
+        const state = getState() as { diaper: DiaperState }
+        const updatedRecords = state.diaper.diaperList
+        await saveDiaperRecords(updatedRecords)
+      }
+
+      return response
+    } catch (error: any) {
+      // 错误时回滚到原始记录
+      const state = getState() as { diaper: DiaperState }
+      const originalRecord = state.diaper.diaperList.find(
+        item => item.diaper_id === diaperId
+      )
+      if (originalRecord) {
+        dispatch(updateDiaperRecord(originalRecord))
+      }
+      return rejectWithValue(
+        error.response?.data?.message || error.message || '更新尿布记录失败'
+      )
+    }
+  }
+)
+
+export const deleteDiaperItem = createAsyncThunk<
+  ApiResponse,
+  { babyId: string; diaperId: string }
+>(
+  'diaper/deleteDiaperItem',
+  async ({ babyId, diaperId }, { getState, rejectWithValue, dispatch }) => {
+    try {
+      const response = await deleteDiaperRecordReq(babyId, diaperId)
+
+      // 更新本地存储
+      if (response.code === 0 || response.code === 200) {
+        const state = getState() as { diaper: DiaperState }
+        const updatedRecords = state.diaper.diaperList
+        await saveDiaperRecords(updatedRecords)
+      }
+
+      return response
+    } catch (error: any) {
+      // 错误时恢复记录
+      const state = getState() as { diaper: DiaperState }
+      const deletedRecord = state.diaper.diaperList.find(
+        item => item.diaper_id === diaperId
+      )
+      if (deletedRecord) {
+        dispatch(addDiaperRecord(deletedRecord))
+      }
+      return rejectWithValue(
+        error.response?.data?.message || error.message || '删除尿布记录失败'
+      )
+    }
+  }
+)
+
+export const clearDiaperDataAsync = createAsyncThunk(
+  'diaper/clearDiaperDataAsync',
+  async (_, { rejectWithValue }) => {
+    try {
+      await clearDiaperRecords()
+      return { success: true }
+    } catch (error: any) {
+      return rejectWithValue(error.message || '清除尿布记录失败')
     }
   }
 )
@@ -77,6 +214,7 @@ const diaperSlice = createSlice({
   },
   extraReducers: builder => {
     builder
+      // fetchDiaperList
       .addCase(fetchDiaperList.pending, state => {
         state.isLoading = true
         state.error = null
@@ -90,6 +228,58 @@ const diaperSlice = createSlice({
         }
       })
       .addCase(fetchDiaperList.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+      // addDiaperItem
+      .addCase(addDiaperItem.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(addDiaperItem.fulfilled, state => {
+        state.isLoading = false
+      })
+      .addCase(addDiaperItem.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+      // updateDiaperItem
+      .addCase(updateDiaperItem.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(updateDiaperItem.fulfilled, state => {
+        state.isLoading = false
+      })
+      .addCase(updateDiaperItem.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+      // deleteDiaperItem
+      .addCase(deleteDiaperItem.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(deleteDiaperItem.fulfilled, state => {
+        state.isLoading = false
+      })
+      .addCase(deleteDiaperItem.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+      // clearDiaperDataAsync
+      .addCase(clearDiaperDataAsync.pending, state => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(clearDiaperDataAsync.fulfilled, state => {
+        state.isLoading = false
+      })
+      .addCase(clearDiaperDataAsync.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
       })
