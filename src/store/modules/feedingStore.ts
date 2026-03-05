@@ -36,20 +36,14 @@ export const fetchFeedingList = createAsyncThunk<
 >('feeding/fetchFeedingList', async ({ babyId, date }, { rejectWithValue }) => {
   console.log('fetchFeedingList called with:', { babyId, date })
   try {
-    // 先尝试从本地存储获取数据
-    const localRecords = await getFeedingRecords(babyId, date)
-    if (localRecords.length > 0) {
-      console.log('Using local feeding records:', localRecords)
-      return localRecords
-    }
-    // 本地存储没有数据时，从 API 获取
+    // 优先从 API 获取数据
     const response = await getFeedingListByDateReq(babyId, date)
     console.log('fetchFeedingList API response:', response)
     return response
   } catch (error: any) {
     console.error('fetchFeedingList error:', error)
     try {
-      // 出错时，再次尝试从本地存储获取数据
+      // 出错时，从本地存储获取数据
       console.log('Trying to get feeding records from local storage')
       const localRecords = await getFeedingRecords(babyId, date)
       console.log('Local feeding records:', localRecords)

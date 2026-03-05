@@ -26,12 +26,26 @@ export const getDiaperListByDateReq = async (
   baby_id: string,
   date: string
 ): Promise<DiaperListResponse> => {
+  // 转换日期格式为YYYYMMDD
+  const formattedDate = date.replace(/-/g, '')
+
   const res = await request.get(`/baby/${baby_id}/daily/diaper/byDate/list`, {
     params: {
-      date
+      date: formattedDate
     }
   })
-  return res as unknown as DiaperListResponse
+
+  // 确保items是数组
+  const typedRes = res as unknown as DiaperListResponse
+  if (
+    typedRes.data &&
+    typedRes.data.items &&
+    !Array.isArray(typedRes.data.items)
+  ) {
+    typedRes.data.items = []
+  }
+
+  return typedRes
 }
 
 // 新增记录

@@ -1,5 +1,6 @@
 import request from '../utils/request'
 import { SleepSession, SleepRecord } from '../types/sleep'
+import { getSleepRecords } from '../utils/sleepStorage'
 
 /**
  * 开启睡眠记录
@@ -58,13 +59,25 @@ export const getSleepByDate = async (
   const response = await request.get(`/baby/${babyId}/daily/sleep/byDate`, {
     params: { date: formattedDate }
   })
-  console.log('getSleepByDate response:', JSON.stringify(response))
-  console.log('items:', JSON.stringify(response.data?.items))
 
   // 确保返回的时间戳是毫秒级的
-  const items = response.data?.items || []
+  let items = []
+  if (Array.isArray(response.data?.items)) {
+    items = response.data.items
+  } else if (response.data?.items === null) {
+    // 当API返回null时，尝试从本地存储获取数据
+    try {
+      const localRecords = await getSleepRecords(babyId, date)
+      return localRecords
+    } catch (error) {
+      console.error('Error getting local sleep records:', error)
+      items = []
+    }
+  } else {
+    items = []
+  }
+
   return items.map((item: any) => {
-    console.log('Original sleep item:', JSON.stringify(item))
     let startedAt = item.started_at
     let endedAt = item.ended_at
 
@@ -133,15 +146,6 @@ export const getSleepByDate = async (
     // 检查时间戳是否已经是毫秒级（大于1天的毫秒数）
     const isStartedAtMs = startedAt > 86400000
     const isEndedAtMs = endedAt > 86400000 && endedAt !== null
-
-    console.log('Sleep timestamp info:', {
-      originalStartedAt: item.started_at,
-      originalEndedAt: item.ended_at,
-      processedStartedAt: startedAt,
-      processedEndedAt: endedAt,
-      isStartedAtMs,
-      isEndedAtMs
-    })
 
     return {
       ...item,

@@ -63,7 +63,7 @@ export const getDailyStatistics = async (
     })) as unknown as DailyStatisticsResponse
 
     // 统一处理响应code
-    if (String(res.code) !== '0') {
+    if (String(res.code) !== '0' && res.code !== 200) {
       throw new Error(res.message || '获取当日统计信息失败')
     }
 

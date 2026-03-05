@@ -76,13 +76,7 @@ export const fetchDailyStatistics = createAsyncThunk<
   'daily/fetchDailyStatistics',
   async ({ babyId, date }, { rejectWithValue }) => {
     try {
-      // 优先从本地存储获取数据
-      const localData = await getDailyStatistics(babyId, date)
-      if (localData) {
-        return localData
-      }
-
-      // 本地存储没有数据，从API获取
+      // 优先从API获取数据
       const response = await getDailyStatisticsApi(babyId, date)
 
       // 处理响应数据，转换为本地统计类型
@@ -93,46 +87,56 @@ export const fetchDailyStatistics = createAsyncThunk<
       ) {
         const data = response.data
         if (data) {
+          // 确保items是数组
+          const items = Array.isArray(data.items) ? data.items : []
+
           // 从items中提取各类型的记录
-          const feedingItems = data.items.filter(
-            item => item.type === 'feeding'
+          const feedingItems = items.filter(
+            item => item && item.type === 'feeding'
           )
-          const sleepItems = data.items.filter(item => item.type === 'sleep')
-          const diaperItems = data.items.filter(item => item.type === 'diaper')
+          const sleepItems = items.filter(item => item && item.type === 'sleep')
+          const diaperItems = items.filter(
+            item => item && item.type === 'diaper'
+          )
 
           // 计算喂养统计
           const feedingStats = {
-            totalCount: data.feeding_count,
+            totalCount:
+              typeof data.feeding_count === 'number' ? data.feeding_count : 0,
             lastTime:
               feedingItems.length > 0
-                ? Math.max(...feedingItems.map(item => item.time))
+                ? Math.max(...feedingItems.map(item => item.time || 0))
                 : undefined
           }
 
           // 计算睡眠统计
           const sleepStats = {
-            totalDuration: data.sleep_duration_ms,
+            totalDuration:
+              typeof data.sleep_duration_ms === 'number'
+                ? data.sleep_duration_ms
+                : 0,
             totalCount: sleepItems.length,
             lastTime:
               sleepItems.length > 0
-                ? Math.max(...sleepItems.map(item => item.time))
+                ? Math.max(...sleepItems.map(item => item.time || 0))
                 : undefined
           }
 
           // 计算 diaper 统计
           const peeCount = diaperItems.filter(
-            item => item.sub_type === 'pee'
+            item => item && item.sub_type === 'pee'
           ).length
           const poopCount = diaperItems.filter(
-            item => item.sub_type === 'poop'
+            item => item && item.sub_type === 'poop'
           ).length
           const diaperStats = {
-            totalCount: data.diaper_count,
+            totalCount:
+              typeof data.diaper_count === 'number' ? data.diaper_count : 0,
             peeCount,
             poopCount,
             lastTime:
               diaperItems.length > 0
-                ? Math.max(...diaperItems.map(item => item.time))
+                ? Math.max(...diaperItems.map(item => item.time || 0))
                 : undefined
           }
 
@@ -153,9 +157,13 @@ export const fetchDailyStatistics = createAsyncThunk<
       throw new Error('获取统计信息失败')
     } catch (error: any) {
       // 尝试从本地存储获取
-      const localData = await getDailyStatistics(babyId, date)
-      if (localData) {
-        return localData
+      try {
+        const localData = await getDailyStatistics(babyId, date)
+        if (localData) {
+          return localData
+        }
+      } catch (localError) {
+        console.error('从本地存储获取数据失败:', localError)
       }
       return rejectWithValue(error.response?.data?.message || error.message)
     }

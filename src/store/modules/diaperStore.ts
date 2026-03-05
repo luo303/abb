@@ -42,17 +42,7 @@ export const fetchDiaperList = createAsyncThunk<
   { babyId: string; date: string }
 >('diaper/fetchDiaperList', async ({ babyId, date }, { rejectWithValue }) => {
   try {
-    // 先尝试从本地存储获取数据
-    const localRecords = await getDiaperRecords(babyId, date)
-    if (localRecords.length > 0) {
-      return {
-        code: 0,
-        message: '从本地存储获取数据',
-        data: { items: localRecords }
-      } as DiaperListResponse
-    }
-
-    // 本地存储没有数据时，从 API 获取
+    // 优先从 API 获取数据
     const response = await getDiaperListByDateReq(babyId, date)
 
     // 保存到本地存储

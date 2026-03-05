@@ -31,6 +31,12 @@ export const getFeedingListByDateReq = async (
   if (String(res.code) !== '0') {
     throw new Error(res.message || '获取喂养记录失败')
   }
+
+  // 确保items是数组
+  if (res.data && res.data.items && !Array.isArray(res.data.items)) {
+    res.data.items = []
+  }
+
   return res
 }
 

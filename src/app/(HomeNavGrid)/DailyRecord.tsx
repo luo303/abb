@@ -99,11 +99,12 @@ export default function DailyRecordScreen() {
         if (babyId) {
           // 确保 diaper store 中的日期与 selectedDate 一致
           dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
-          // 只获取其他类型的记录，保留本地的喂养记录
+          // 只获取其他类型的记录，保留本地的喂养和睡眠记录
           // 不重新获取喂养记录，避免被mock数据覆盖
           // dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+          // 不重新获取睡眠记录，避免覆盖本地创建的记录
+          // dispatch(fetchSleepList({ babyId, date: selectedDate }))
           dispatch(fetchDiaperList({ babyId, date: selectedDate }))
-          dispatch(fetchSleepList({ babyId, date: selectedDate }))
           dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
         }
       }

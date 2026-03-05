@@ -24,23 +24,11 @@ export const fetchSleepList = createAsyncThunk<
   { babyId: string; date: string }
 >('sleep/fetchSleepList', async ({ babyId, date }, { rejectWithValue }) => {
   try {
-    console.log('Fetching sleep list for babyId:', babyId, 'date:', date)
-    // 先尝试从本地存储获取数据
-    const localRecords = await getSleepRecords(babyId, date)
-    console.log('Local records:', JSON.stringify(localRecords))
-    if (localRecords.length > 0) {
-      console.log('Returning local records')
-      return localRecords
-    }
-
-    // 本地存储没有数据时，从 API 获取
-    console.log('Fetching sleep records from API')
+    // 优先从 API 获取数据
     const response = await getSleepByDate(babyId, date)
-    console.log('API response:', JSON.stringify(response))
 
     // 保存到本地存储
     await saveSleepRecords(babyId, date, response)
-    console.log('API records saved to local storage')
 
     return response
   } catch (error: any) {
@@ -48,9 +36,7 @@ export const fetchSleepList = createAsyncThunk<
     // 失败时从本地存储获取数据
     try {
       const localRecords = await getSleepRecords(babyId, date)
-      console.log('Local records on error:', JSON.stringify(localRecords))
       if (localRecords.length > 0) {
-        console.log('Returning local records on error')
         return localRecords
       }
     } catch (localError) {
