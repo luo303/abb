@@ -9,11 +9,6 @@ import {
 } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../api/profile'
 import { setUserInfo } from '../store/modules/userStore'
-import {
-  fetchBabies,
-  fetchBabyProfile,
-  loadCurrentBabyId
-} from '../store/modules/BabyStore'
 import { PostItem } from '../types/home'
 import { getFollowingPosts } from '../api/follow'
 import { useMessage } from '@/components/Message'
@@ -25,23 +20,73 @@ export function useHomeData() {
     hasMore,
     isLoadingMore,
     page,
+    postListFetched,
+    postListStrategy,
     followingPosts,
     followHasMore,
     isFollowLoading,
     followPage,
+    followFetched,
     localPublishedPosts
   } = useAppSelector(state => state.post)
   const userInfo = useAppSelector(
     state => state.user.userInfo
   ) as UserMeResponse | null
-  const babyState = useAppSelector(state => state.baby)
-
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState('推荐')
+  const [isTabLoading, setIsTabLoading] = useState(false)
 
   const isMountedRef = useRef(true)
   const isLockRef = useRef(false)
   const { showMessage } = useMessage()
+
+  useEffect(() => {
+    let isActive = true
+    const loadTabData = async () => {
+      if (activeTab === '关注') {
+        if (followFetched || isFollowLoading || followingPosts.length > 0) {
+          if (isActive) setIsTabLoading(false)
+          return
+        }
+        if (isActive) setIsTabLoading(true)
+        try {
+          await dispatch(fetchFollowingPosts({ page: 1 })).unwrap()
+        } catch (error) {
+          console.error('获取关注帖子失败:', error)
+          showMessage('获取关注帖子失败，请稍后重试')
+        } finally {
+          if (isActive) setIsTabLoading(false)
+        }
+        return
+      }
+
+      const strategy = activeTab === '热门' ? 'hot' : 'ctime'
+      if (postListFetched && postListStrategy === strategy) {
+        if (isActive) setIsTabLoading(false)
+        return
+      }
+      if (isActive) setIsTabLoading(true)
+      try {
+        await dispatch(fetchPostList({ page: 1, strategy })).unwrap()
+      } finally {
+        if (isActive) setIsTabLoading(false)
+      }
+    }
+
+    loadTabData()
+    return () => {
+      isActive = false
+    }
+  }, [
+    dispatch,
+    activeTab,
+    postListFetched,
+    postListStrategy,
+    followFetched,
+    isFollowLoading,
+    followingPosts.length,
+    showMessage
+  ])
 
   // 合并展示的数据
   const serverIds = new Set(
@@ -56,30 +101,6 @@ export function useHomeData() {
     activeTab === '关注'
       ? followingPosts // 关注列表只显示API获取的关注帖子
       : [...uniqueLocalPosts, ...postList] // 本地添加的帖子优先显示在前面
-
-  // 初始化时加载数据
-  useEffect(() => {
-    const loadData = async () => {
-      if (activeTab === '关注') {
-        try {
-          await dispatch(fetchFollowingPosts({ page: 1 })).unwrap()
-        } catch (error) {
-          console.error('获取关注帖子失败:', error)
-          showMessage('获取关注帖子失败，请稍后重试')
-        }
-      } else {
-        let strategy: string | undefined
-        if (activeTab === '热门') {
-          strategy = 'hot'
-        } else if (activeTab === '推荐') {
-          strategy = 'ctime'
-        }
-        dispatch(fetchPostList({ page: 1, strategy }))
-      }
-    }
-
-    loadData()
-  }, [dispatch, activeTab, showMessage])
 
   // 首次进入首页时获取一次用户信息（如果 Redux 中还没有）
   useEffect(() => {
@@ -102,19 +123,6 @@ export function useHomeData() {
     fetchUserInfo()
   }, [dispatch, userInfo])
 
-  // 获取宝宝信息
-  useEffect(() => {
-    if (babyState.currentBabyDetail) return
-    if (!babyState.currentBabyId) {
-      dispatch(loadCurrentBabyId())
-    }
-    if (babyState.currentBabyId) {
-      dispatch(fetchBabyProfile(babyState.currentBabyId))
-      return
-    }
-    dispatch(fetchBabies())
-  }, [dispatch, babyState.currentBabyId, babyState.currentBabyDetail])
-
   // 下拉刷新处理函数
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -128,7 +136,9 @@ export function useHomeData() {
         } else if (activeTab === '推荐') {
           strategy = 'ctime'
         }
-        await dispatch(fetchPostList({ page: 1, strategy })).unwrap()
+        await dispatch(
+          fetchPostList({ page: 1, strategy, force: true })
+        ).unwrap()
       }
     } catch (error) {
       console.error('Refresh failed:', error)
@@ -207,6 +217,7 @@ export function useHomeData() {
     // 关键：根据 activeTab 返回对应的 hasMore 状态
     hasMore: activeTab === '关注' ? followHasMore : hasMore,
     isLoadingMore: activeTab === '关注' ? isFollowLoading : isLoadingMore,
+    isTabLoading,
     refreshing,
     activeTab,
     setActiveTab,

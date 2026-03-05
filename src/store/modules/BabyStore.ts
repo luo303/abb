@@ -25,6 +25,8 @@ interface BabyState {
   currentBabyId: string | null
   babiesList: BabyBasicInfo[]
   currentBabyDetail: BabyProfile | null
+  babiesFetched: boolean
+  babyProfileFetchedId: string | null
   growthCurve: {
     height: GrowthCurveItem[]
     weight: GrowthCurveItem[]
@@ -40,6 +42,8 @@ const initialState: BabyState = {
   currentBabyId: null,
   babiesList: [],
   currentBabyDetail: null,
+  babiesFetched: false,
+  babyProfileFetchedId: null,
   growthCurve: {
     height: [],
     weight: [],
@@ -82,27 +86,56 @@ export const addBaby = createAsyncThunk<ApiResponse<AddBabyResponse>, BabyData>(
 export const fetchBabies = createAsyncThunk<
   ApiResponse<FetchBabiesResponse>,
   void
->('baby/fetchBabies', async (_, { rejectWithValue }) => {
-  try {
-    const response = await fetchBabiesReq()
-    return response as unknown as ApiResponse<FetchBabiesResponse>
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || error.message)
+>(
+  'baby/fetchBabies',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchBabiesReq()
+      return response as unknown as ApiResponse<FetchBabiesResponse>
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState() as { baby: BabyState }
+      if (state.baby.loading) return false
+      if (state.baby.babiesFetched && state.baby.babiesList.length > 0) {
+        return false
+      }
+      return true
+    }
   }
-})
+)
 
 export const fetchBabyProfile = createAsyncThunk<
   ApiResponse<BabyProfile>,
   string
->('baby/fetchBabyProfile', async (babyId, { rejectWithValue }) => {
-  try {
-    const response = await getBabyProfileReq(babyId)
-    console.log(response)
-    return response as unknown as ApiResponse<BabyProfile>
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || error.message)
+>(
+  'baby/fetchBabyProfile',
+  async (babyId, { rejectWithValue }) => {
+    try {
+      const response = await getBabyProfileReq(babyId)
+      console.log(response)
+      return response as unknown as ApiResponse<BabyProfile>
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  },
+  {
+    condition: (babyId, { getState }) => {
+      const state = getState() as { baby: BabyState }
+      if (state.baby.loading) return false
+      if (
+        state.baby.currentBabyDetail?.baby_id === babyId &&
+        state.baby.babyProfileFetchedId === babyId
+      ) {
+        return false
+      }
+      return true
+    }
   }
-})
+)
 
 export const fetchGrowthCurve = createAsyncThunk<
   ApiResponse<GrowthCurveResponse>,
@@ -200,6 +233,7 @@ const babySlice = createSlice({
       })
       .addCase(fetchBabies.fulfilled, (state, action) => {
         state.loading = false
+        state.babiesFetched = true
         if (action.payload?.code === 0) {
           state.babiesList = action.payload.data?.babies || []
           // 如果当前没有选中的宝宝，且列表不为空，默认选中第一个
@@ -212,6 +246,7 @@ const babySlice = createSlice({
       })
       .addCase(fetchBabies.rejected, (state, action) => {
         state.loading = false
+        state.babiesFetched = true
         state.error = action.payload as string
       })
       // Fetch Baby Profile
@@ -222,6 +257,7 @@ const babySlice = createSlice({
       .addCase(fetchBabyProfile.fulfilled, (state, action) => {
         state.loading = false
         const requestedBabyId = action.meta.arg
+        state.babyProfileFetchedId = requestedBabyId
         if (requestedBabyId !== state.currentBabyId) {
           return
         }
@@ -233,6 +269,7 @@ const babySlice = createSlice({
       })
       .addCase(fetchBabyProfile.rejected, (state, action) => {
         state.loading = false
+        state.babyProfileFetchedId = action.meta.arg
         state.error = action.payload as string
       })
       // Fetch Growth Curve
