@@ -184,7 +184,20 @@ const sleepSlice = createSlice({
       if (!Array.isArray(state.sleepList)) {
         state.sleepList = []
       }
-      state.sleepList.unshift(action.payload.record)
+
+      // 检查是否已经存在相同session_id的记录
+      const existingIndex = state.sleepList.findIndex(
+        item => item.session_id === action.payload.record.session_id
+      )
+
+      if (existingIndex >= 0) {
+        // 如果存在，更新记录
+        state.sleepList[existingIndex] = action.payload.record
+      } else {
+        // 如果不存在，添加新记录
+        state.sleepList.unshift(action.payload.record)
+      }
+
       // 保存到本地存储
       try {
         const date = new Date(action.payload.record.started_at)
@@ -281,7 +294,19 @@ const sleepSlice = createSlice({
         if (!Array.isArray(state.sleepList)) {
           state.sleepList = []
         }
-        state.sleepList.unshift(action.payload)
+
+        // 检查是否已经存在相同session_id的记录
+        const existingIndex = state.sleepList.findIndex(
+          item => item.session_id === action.payload.session_id
+        )
+
+        if (existingIndex >= 0) {
+          // 如果存在，更新记录
+          state.sleepList[existingIndex] = action.payload
+        } else {
+          // 如果不存在，添加新记录
+          state.sleepList.unshift(action.payload)
+        }
       })
       .addCase(addSleepRecord.rejected, (state, action) => {
         state.loading = false

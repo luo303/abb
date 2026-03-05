@@ -259,7 +259,21 @@ const FeedingRecordScreen = () => {
           showMessage('更新失败，请重试')
         }
       } else {
-        // 发送请求：调用saveFeedingRecord接口
+        // 新增模式
+        const tempId = generateTempId('feed')
+        const newRecord = {
+          feeding_id: tempId,
+          baby_id: babyId,
+          feed_type: feedType,
+          feed_time: feedingTime.getTime(),
+          amount: amount ? Number(amount) : undefined,
+          duration: undefined,
+          remark: remark,
+          summary_text: remark
+        }
+        // 先添加到本地状态
+        dispatch(addFeedingItem(newRecord))
+        // 调用API
         try {
           if (!babyId) {
             showMessage('获取宝宝信息失败，请重试')

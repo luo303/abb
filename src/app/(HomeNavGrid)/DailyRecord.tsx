@@ -173,7 +173,7 @@ export default function DailyRecordScreen() {
         }
 
         return {
-          id: item.diaper_id,
+          id: `diaper_${item.diaper_id}`,
           type: 'diaper' as const,
           time: item.change_time,
           details: description,
@@ -241,7 +241,7 @@ export default function DailyRecordScreen() {
 
         // 确保返回的对象包含所有必要字段
         return {
-          id: item.feeding_id,
+          id: `feeding_${item.feeding_id}`,
           type: 'feeding' as const,
           time: item.feed_time,
           details: description,
@@ -308,7 +308,7 @@ export default function DailyRecordScreen() {
         const icon = isManual ? 'gesture-tap-hold' : 'clock-outline'
 
         return {
-          id: item.session_id,
+          id: `sleep_${item.session_id}`,
           type: 'sleep' as const,
           time: item.started_at,
           details: description,

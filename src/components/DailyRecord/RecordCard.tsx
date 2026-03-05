@@ -31,16 +31,19 @@ export default function RecordCard({ item }: RecordCardProps) {
 
   const handlePress = () => {
     if (item.id) {
+      // 移除类型前缀，获取原始id
+      const originalId = item.id.replace(/^\w+_/, '')
+
       switch (item.type) {
         case 'diaper':
-          navigation.navigate('DiaperForm', { diaper_id: item.id })
+          navigation.navigate('DiaperForm', { diaper_id: originalId })
           break
         case 'feeding':
-          console.log('点击的喂养ID:', item.id)
-          navigation.navigate('FeedingRecord', { feeding_id: item.id })
+          console.log('点击的喂养ID:', originalId)
+          navigation.navigate('FeedingRecord', { feeding_id: originalId })
           break
         case 'sleep':
-          navigation.navigate('SleepRecord', { session_id: item.id })
+          navigation.navigate('SleepRecord', { session_id: originalId })
           break
       }
     }
