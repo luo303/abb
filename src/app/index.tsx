@@ -7,7 +7,7 @@ import store from '../store'
 import { LogBox, View, Image, StyleSheet } from 'react-native'
 import { initFollowingIds } from '../store/modules/FollowStore'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
-import { fetchPostList } from '../store/modules/PostStore'
+import { fetchPostList, fetchFollowingPosts } from '../store/modules/PostStore'
 import {
   fetchBabies,
   fetchBabyProfile,
@@ -71,7 +71,9 @@ function AppInitializer({ onReady }: { onReady?: () => void }) {
         if (babyId) {
           await dispatch(fetchBabyProfile(babyId))
         }
-        await dispatch(fetchPostList({ page: 1, strategy: 'ctime' }))
+        await dispatch(fetchPostList({ page: 1, strategy: 'random' }))
+        await dispatch(fetchPostList({ page: 1, strategy: 'hot' }))
+        await dispatch(fetchFollowingPosts({ page: 1 }))
       } finally {
         if (active) onReady?.()
       }

@@ -84,6 +84,7 @@ export const getFollowingPosts = async (
         items: FollowingPost[]
       }
     }
+    console.log('[follow] getFollowingPosts', res)
 
     // 处理后端返回的非成功状态码
     if (res.code !== 0 && res.code !== 200) {

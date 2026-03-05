@@ -26,7 +26,8 @@ import {
   updatePostStats,
   clearCurrentPost,
   addAuthorPostToFollowing,
-  removeAuthorPostFromFollowing
+  removeAuthorPostFromFollowing,
+  fetchFollowingPosts
 } from '@/store/modules/PostStore'
 import {
   followUser as followUserApi,
@@ -60,6 +61,10 @@ export default function PostDetail() {
   const userInfo = useAppSelector(
     state => state.user.userInfo
   ) as UserMeResponse | null
+  const isOwnPost = useMemo(() => {
+    if (!currentPost?.author_id || !userInfo?.user_id) return false
+    return String(currentPost.author_id) === String(userInfo.user_id)
+  }, [currentPost?.author_id, userInfo?.user_id])
 
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
@@ -502,6 +507,7 @@ export default function PostDetail() {
       } else {
         await unfollowUserApi(currentPost.author_id as string)
       }
+      await dispatch(fetchFollowingPosts({ page: 1, force: true }))
     } catch (error) {
       console.error('关注操作失败:', error)
       // 失败时回滚状态
@@ -717,6 +723,7 @@ export default function PostDetail() {
           description={currentPost.baby_age_text}
           isFollowing={isFollowing}
           onFollow={handleFollowAuthor}
+          showFollow={!isOwnPost}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody

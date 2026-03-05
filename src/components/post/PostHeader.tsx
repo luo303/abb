@@ -7,6 +7,7 @@ interface PostHeaderProps {
   description?: string
   isFollowing?: boolean
   onFollow?: () => void
+  showFollow?: boolean
 }
 
 export default function PostHeader({
@@ -14,7 +15,8 @@ export default function PostHeader({
   nickname,
   description,
   isFollowing = false,
-  onFollow
+  onFollow,
+  showFollow = true
 }: PostHeaderProps) {
   const [avatarLoadError, setAvatarLoadError] = useState(false)
 
@@ -43,22 +45,25 @@ export default function PostHeader({
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[styles.followBtn, isFollowing && styles.followingBtn]}
-        onPress={e => {
-          // 阻止事件冒泡，防止触发父组件的点击事件
-          if (e && e.stopPropagation) {
-            e.stopPropagation()
-          }
-          if (onFollow) {
-            onFollow()
-          }
-        }}
-      >
-        <Text style={[styles.followText, isFollowing && styles.followingText]}>
-          {isFollowing ? '已关注' : '关注'}
-        </Text>
-      </TouchableOpacity>
+      {showFollow && (
+        <TouchableOpacity
+          style={[styles.followBtn, isFollowing && styles.followingBtn]}
+          onPress={e => {
+            if (e && e.stopPropagation) {
+              e.stopPropagation()
+            }
+            if (onFollow) {
+              onFollow()
+            }
+          }}
+        >
+          <Text
+            style={[styles.followText, isFollowing && styles.followingText]}
+          >
+            {isFollowing ? '已关注' : '关注'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   )
 }
