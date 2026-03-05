@@ -15,9 +15,6 @@ export function useHomeSearch() {
   // 搜索处理函数
   const handleSearch = useCallback(
     async (text: string) => {
-      // 增加请求锁，防止重叠请求
-      if (searchLoading) return
-
       const keyword = text.trim()
 
       // 当搜索框内容为空时，重置搜索状态并切回首页推荐列表
@@ -29,6 +26,9 @@ export function useHomeSearch() {
         setSearchHasMore(true)
         return
       }
+
+      // 增加请求锁，防止重叠请求
+      if (searchLoading) return
 
       setSearchText(keyword)
       setSearchLoading(true)
