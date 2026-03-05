@@ -65,16 +65,80 @@ export const getSleepByDate = async (
   const items = response.data?.items || []
   return items.map((item: any) => {
     console.log('Original sleep item:', JSON.stringify(item))
-    const startedAt = typeof item.started_at === 'number' ? item.started_at : 0
-    const endedAt = typeof item.ended_at === 'number' ? item.ended_at : 0
+    let startedAt = item.started_at
+    let endedAt = item.ended_at
+
+    // 处理字符串形式的时间戳
+    if (typeof startedAt === 'string') {
+      // 检查是否是 mock 数据格式
+      if (startedAt.startsWith('@now(')) {
+        // 对于 mock 数据，使用当前时间减去偏移量
+        const match = startedAt.match(/@now\('timestamp', 'offset: ([^']+)'\)/)
+        const now = Date.now()
+        if (match) {
+          const offset = match[1]
+          // 解析偏移量
+          if (offset.endsWith('h')) {
+            const hours = parseInt(offset.replace('h', ''))
+            startedAt = now - hours * 60 * 60 * 1000
+          } else if (offset.endsWith('m')) {
+            const minutes = parseInt(offset.replace('m', ''))
+            startedAt = now - minutes * 60 * 1000
+          } else {
+            startedAt = now
+          }
+        } else {
+          startedAt = now
+        }
+      } else {
+        // 尝试解析为数字
+        startedAt = parseInt(startedAt) || 0
+      }
+    } else if (typeof startedAt !== 'number') {
+      startedAt = 0
+    }
+
+    // 处理 ended_at
+    if (endedAt === null) {
+      // 正在进行的睡眠，ended_at 为 null
+    } else if (typeof endedAt === 'string') {
+      // 检查是否是 mock 数据格式
+      if (endedAt.startsWith('@now(')) {
+        // 对于 mock 数据，使用当前时间减去偏移量
+        const match = endedAt.match(/@now\('timestamp', 'offset: ([^']+)'\)/)
+        const now = Date.now()
+        if (match) {
+          const offset = match[1]
+          // 解析偏移量
+          if (offset.endsWith('h')) {
+            const hours = parseInt(offset.replace('h', ''))
+            endedAt = now - hours * 60 * 60 * 1000
+          } else if (offset.endsWith('m')) {
+            const minutes = parseInt(offset.replace('m', ''))
+            endedAt = now - minutes * 60 * 1000
+          } else {
+            endedAt = now
+          }
+        } else {
+          endedAt = now
+        }
+      } else {
+        // 尝试解析为数字
+        endedAt = parseInt(endedAt) || 0
+      }
+    } else if (typeof endedAt !== 'number') {
+      endedAt = 0
+    }
 
     // 检查时间戳是否已经是毫秒级（大于1天的毫秒数）
     const isStartedAtMs = startedAt > 86400000
-    const isEndedAtMs = endedAt > 86400000
+    const isEndedAtMs = endedAt > 86400000 && endedAt !== null
 
     console.log('Sleep timestamp info:', {
-      originalStartedAt: startedAt,
-      originalEndedAt: endedAt,
+      originalStartedAt: item.started_at,
+      originalEndedAt: item.ended_at,
+      processedStartedAt: startedAt,
+      processedEndedAt: endedAt,
       isStartedAtMs,
       isEndedAtMs
     })
@@ -82,7 +146,7 @@ export const getSleepByDate = async (
     return {
       ...item,
       started_at: isStartedAtMs ? startedAt : startedAt * 1000,
-      ended_at: isEndedAtMs ? endedAt : endedAt * 1000
+      ended_at: endedAt === null ? null : isEndedAtMs ? endedAt : endedAt * 1000
     }
   })
 }

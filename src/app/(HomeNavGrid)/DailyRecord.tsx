@@ -85,6 +85,16 @@ export default function DailyRecordScreen() {
       }, 300)
 
       return () => clearTimeout(timer)
+    } else {
+      // 如果没有选中宝宝，清空统计数据
+      setStatistics({
+        feedingCount: 0,
+        feedingVolume: 0,
+        sleepCount: 0,
+        sleepDuration: 0,
+        diaperCount: 0
+      })
+      setCurrentRecords([])
     }
   }, [babyId, selectedDate, dispatch])
 
@@ -246,8 +256,9 @@ export default function DailyRecordScreen() {
     // 从 sleepList 中筛选出当前日期的记录
     const sleepRecords = sleepList
       .filter(item => {
-        // 检查时间戳是否有效（大于1970-01-02）
-        const isValidTimestamp = item.started_at > 86400000 // 1天的毫秒数
+        // 检查时间戳是否有效
+        const isValidTimestamp =
+          typeof item.started_at === 'number' && !isNaN(item.started_at)
         if (!isValidTimestamp) {
           return false
         }
@@ -266,13 +277,24 @@ export default function DailyRecordScreen() {
         const startTime = dayjs(item.started_at).format('HH:mm')
         const endTime = dayjs(item.ended_at).format('HH:mm')
 
+        // 获取开始时间和结束时间的小时部分
+        const startHour = dayjs(item.started_at).hour()
+        const endHour = dayjs(item.ended_at).hour()
+
         // 构建时长文本
         let durationText = ''
         const durationSeconds = Math.floor(durationMs / 1000)
-        const h = Math.floor(durationSeconds / 3600)
+        let h = Math.floor(durationSeconds / 3600) % 24 // 对小时数取模 24
+        // 如果开始时间和结束时间的小时相同，将小时部分设置为 0
+        if (startHour === endHour) {
+          h = 0
+        }
         const m = Math.floor((durationSeconds % 3600) / 60)
-        const s = durationSeconds % 60
+        // 判断是否为手动记录
+        const isManual = item.session_id?.includes('manual-session') || false
+        const s = isManual ? 0 : durationSeconds % 60
 
+        // 确保小时显示为两位数，并且如果小时为 0，显示为 00
         const formattedH = String(h).padStart(2, '0')
         const formattedM = String(m).padStart(2, '0')
         const formattedS = String(s).padStart(2, '0')
@@ -282,15 +304,19 @@ export default function DailyRecordScreen() {
         // 构建副标题
         const description = `${startTime} - ${endTime}  ${durationText}`
 
+        // 根据记录类型设置不同的 icon（使用 MaterialCommunityIcons 支持的图标）
+        const icon = isManual ? 'gesture-tap-hold' : 'clock-outline'
+
         return {
           id: item.session_id,
           type: 'sleep' as const,
           time: item.started_at,
           details: description,
-          icon: 'sleep',
+          icon: icon,
           name: '睡眠',
           title: '睡眠',
-          description: description
+          description: description,
+          data: item // 添加原始数据，用于统计计算
         }
       })
 
@@ -310,57 +336,55 @@ export default function DailyRecordScreen() {
 
     setCurrentRecords(allRecords)
 
-    // 使用从 Redux store 中获取的统计数据
-    if (dailyStatistics) {
-      setStatistics({
-        feedingCount: dailyStatistics.feeding.totalCount || 0,
-        feedingVolume: 0, // 保留字段但不使用
-        sleepCount: 0, // 保留字段但不使用
-        sleepDuration:
-          (dailyStatistics.sleep.totalDuration || 0) / (1000 * 60 * 60), // 转换为小时
-        diaperCount: dailyStatistics.diaper.totalCount || 0
-      })
-    } else {
-      // 如果没有统计数据，使用本地计算的统计数据
-      let feedingCount = 0
-      let feedingVolume = 0 // 保留字段但不使用
-      let sleepCount = 0
-      let sleepDuration = 0 // 以小时为单位，保留小数
-      let diaperCount = 0
+    // 总是使用本地计算的统计数据，基于当前列表
+    let feedingCount = 0
+    let feedingVolume = 0 // 保留字段但不使用
+    let sleepCount = 0
+    let sleepDuration = 0 // 以小时为单位，保留小数
+    let diaperCount = 0
 
-      allRecords.forEach(record => {
-        switch (record.type) {
-          case 'feeding':
-            feedingCount++
-            break
-          case 'sleep':
-            sleepCount++
-            // 计算实际睡眠时长（从details中提取或使用默认值）
-            // 假设details格式为 "HH:MM - HH:MM · X小时X分"
-            const durationMatch = record.details?.match(/(\d+)小时(\d+)分/)
+    allRecords.forEach(record => {
+      switch (record.type) {
+        case 'feeding':
+          feedingCount++
+          break
+        case 'sleep':
+          sleepCount++
+          // 从record.data中直接获取duration_ms
+          if (record.data && typeof record.data.duration_ms === 'number') {
+            // 确保duration_ms是正数，计算总毫秒数
+            if (record.data.duration_ms > 0) {
+              sleepDuration += record.data.duration_ms
+            }
+          } else {
+            // 如果没有duration_ms，尝试从details中提取
+            // 匹配 HH:MM:SS 格式
+            const durationMatch = record.details?.match(/(\d+):(\d+):(\d+)/)
             if (durationMatch) {
               const hours = parseInt(durationMatch[1])
               const minutes = parseInt(durationMatch[2])
-              sleepDuration += hours + minutes / 60
-            } else {
-              // 如果无法提取时长，使用默认值1.5小时
-              sleepDuration += 0
+              const seconds = parseInt(durationMatch[3])
+              // 转换为毫秒并累加
+              sleepDuration += (hours * 3600 + minutes * 60 + seconds) * 1000
             }
-            break
-          case 'diaper':
-            diaperCount++
-            break
-        }
-      })
+          }
+          break
+        case 'diaper':
+          diaperCount++
+          break
+      }
+    })
 
-      setStatistics({
-        feedingCount,
-        feedingVolume,
-        sleepCount,
-        sleepDuration,
-        diaperCount
-      })
-    }
+    // 将总毫秒数转换为整数小时
+    sleepDuration = Math.floor(sleepDuration / (1000 * 60 * 60))
+
+    setStatistics({
+      feedingCount,
+      feedingVolume,
+      sleepCount,
+      sleepDuration,
+      diaperCount
+    })
   }, [selectedDate, diaperList, feedingList, sleepList, dailyStatistics])
 
   // 计算整体进度并更新背景颜色
@@ -439,15 +463,10 @@ export default function DailyRecordScreen() {
       return '--'
     }
 
-    // 对于睡眠时长，显示为小时和分钟格式
+    // 对于睡眠时长，只显示整数小时
     if (unit === 'h') {
       const hours = Math.floor(value)
-      const minutes = Math.round((value - hours) * 60)
-      if (minutes === 0) {
-        return `${hours}h`
-      } else {
-        return `${hours}h${minutes}m`
-      }
+      return `${hours}h`
     }
 
     // 对于其他单位，保持原格式

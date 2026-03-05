@@ -1,5 +1,12 @@
 import React from 'react'
-import { TouchableOpacity, Text, StyleSheet, Platform } from 'react-native'
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Platform,
+  View
+} from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 
 interface SleepActionButtonProps {
   isTimerRunning: boolean
@@ -31,14 +38,22 @@ const SleepActionButton: React.FC<SleepActionButtonProps> = ({
       ]}
       onPress={handlePress}
     >
-      <Text
-        style={[
-          styles.actionButtonText,
-          isTimerRunning ? styles.stopButtonText : styles.startButtonText
-        ]}
-      >
-        {isTimerRunning ? '结束睡眠' : '开始计时'}
-      </Text>
+      <View style={styles.buttonContent}>
+        <Ionicons
+          name={isTimerRunning ? 'stopwatch' : 'time'}
+          size={24}
+          color={isTimerRunning ? 'white' : '#f43f5e'}
+          style={styles.buttonIcon}
+        />
+        <Text
+          style={[
+            styles.actionButtonText,
+            isTimerRunning ? styles.stopButtonText : styles.startButtonText
+          ]}
+        >
+          {isTimerRunning ? '结束睡眠' : '开始计时'}
+        </Text>
+      </View>
     </TouchableOpacity>
   )
 }
@@ -62,6 +77,13 @@ const styles = StyleSheet.create({
         elevation: 4
       }
     })
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  buttonIcon: {
+    marginRight: 8
   },
   startButton: {
     backgroundColor: 'white'
