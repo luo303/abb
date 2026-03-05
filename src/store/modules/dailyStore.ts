@@ -39,7 +39,7 @@ export const updateDateAndRefresh = createAsyncThunk<
 
   // 同时触发四个仓库的 fetch 请求，包括统计信息
   await Promise.all([
-    dispatch(fetchDiaperListAction(babyId)),
+    dispatch(fetchDiaperListAction({ babyId, date })),
     dispatch(fetchFeedingListAction({ babyId, date })),
     dispatch(fetchSleepListAction({ babyId, date })),
     dispatch(fetchDailyStatistics({ babyId, date }))
@@ -53,7 +53,7 @@ export const initDailyData = createAsyncThunk<void, string>(
 
     // 同时触发三个仓库的 fetch 请求
     await Promise.all([
-      dispatch(fetchDiaperListAction(babyId)),
+      dispatch(fetchDiaperListAction({ babyId, date })),
       dispatch(fetchFeedingListAction({ babyId, date })),
       dispatch(fetchSleepListAction({ babyId, date })),
       dispatch(fetchDailyStatistics({ babyId, date }))

@@ -78,7 +78,7 @@ export default function DailyRecordScreen() {
       const timer = setTimeout(() => {
         // 确保 diaper store 中的日期与 selectedDate 一致
         dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
-        dispatch(fetchDiaperList(babyId))
+        dispatch(fetchDiaperList({ babyId, date: selectedDate }))
         dispatch(fetchFeedingList({ babyId, date: selectedDate }))
         dispatch(fetchSleepList({ babyId, date: selectedDate }))
         dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
@@ -99,7 +99,7 @@ export default function DailyRecordScreen() {
           // 只获取其他类型的记录，保留本地的喂养记录
           // 不重新获取喂养记录，避免被mock数据覆盖
           // dispatch(fetchFeedingList({ babyId, date: selectedDate }))
-          dispatch(fetchDiaperList(babyId))
+          dispatch(fetchDiaperList({ babyId, date: selectedDate }))
           dispatch(fetchSleepList({ babyId, date: selectedDate }))
           dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
         }

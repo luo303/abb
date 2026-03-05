@@ -37,42 +37,47 @@ const initialState: DiaperState = {
   error: null
 }
 
-export const fetchDiaperList = createAsyncThunk<DiaperListResponse, string>(
-  'diaper/fetchDiaperList',
-  async (babyId, { getState, rejectWithValue }) => {
+export const fetchDiaperList = createAsyncThunk<
+  DiaperListResponse,
+  { babyId: string; date: string }
+>('diaper/fetchDiaperList', async ({ babyId, date }, { rejectWithValue }) => {
+  try {
+    // 先尝试从本地存储获取数据
+    const localRecords = await getDiaperRecords(babyId, date)
+    if (localRecords.length > 0) {
+      return {
+        code: 0,
+        message: '从本地存储获取数据',
+        data: { items: localRecords }
+      } as DiaperListResponse
+    }
+
+    // 本地存储没有数据时，从 API 获取
+    const response = await getDiaperListByDateReq(babyId, date)
+
+    // 保存到本地存储
+    if (response.code === 0 || response.code === 200) {
+      const records = response.data?.items || []
+      await saveDiaperRecords(babyId, date, records)
+    }
+
+    return response
+  } catch (error: any) {
+    // 失败时从本地存储获取数据
     try {
-      const state = getState() as { diaper: DiaperState }
-      // 转换日期格式为 YYYY-MM-DD
-      const formattedDate = state.diaper.currentDate.replace(
-        /(\d{4})(\d{2})(\d{2})/,
-        '$1-$2-$3'
+      const localRecords = await getDiaperRecords(babyId, date)
+      return {
+        code: 0,
+        message: '从本地存储获取数据',
+        data: { items: localRecords }
+      } as DiaperListResponse
+    } catch (localError) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || '获取尿布记录失败'
       )
-      const response = await getDiaperListByDateReq(babyId, formattedDate)
-
-      // 保存到本地存储
-      if (response.code === 0 || response.code === 200) {
-        const records = response.data?.items || []
-        await saveDiaperRecords(records)
-      }
-
-      return response
-    } catch (error: any) {
-      // 失败时从本地存储获取数据
-      try {
-        const localRecords = await getDiaperRecords()
-        return {
-          code: 0,
-          message: '从本地存储获取数据',
-          data: { items: localRecords }
-        } as DiaperListResponse
-      } catch (localError) {
-        return rejectWithValue(
-          error.response?.data?.message || error.message || '获取尿布记录失败'
-        )
-      }
     }
   }
-)
+})
 
 export const addDiaperItem = createAsyncThunk<
   ApiResponse,
@@ -87,7 +92,8 @@ export const addDiaperItem = createAsyncThunk<
       if (response.code === 0 || response.code === 200) {
         const state = getState() as { diaper: DiaperState }
         const updatedRecords = state.diaper.diaperList
-        await saveDiaperRecords(updatedRecords)
+        const date = new Date(data.change_time).toISOString().split('T')[0]
+        await saveDiaperRecords(babyId, date, updatedRecords)
       }
 
       return response
@@ -115,7 +121,8 @@ export const updateDiaperItem = createAsyncThunk<
       if (response.code === 0 || response.code === 200) {
         const state = getState() as { diaper: DiaperState }
         const updatedRecords = state.diaper.diaperList
-        await saveDiaperRecords(updatedRecords)
+        const date = new Date(data.change_time).toISOString().split('T')[0]
+        await saveDiaperRecords(babyId, date, updatedRecords)
       }
 
       return response
@@ -137,10 +144,13 @@ export const updateDiaperItem = createAsyncThunk<
 
 export const deleteDiaperItem = createAsyncThunk<
   ApiResponse,
-  { babyId: string; diaperId: string }
+  { babyId: string; diaperId: string; date: string }
 >(
   'diaper/deleteDiaperItem',
-  async ({ babyId, diaperId }, { getState, rejectWithValue, dispatch }) => {
+  async (
+    { babyId, diaperId, date },
+    { getState, rejectWithValue, dispatch }
+  ) => {
     try {
       const response = await deleteDiaperRecordReq(babyId, diaperId)
 
@@ -148,7 +158,7 @@ export const deleteDiaperItem = createAsyncThunk<
       if (response.code === 0 || response.code === 200) {
         const state = getState() as { diaper: DiaperState }
         const updatedRecords = state.diaper.diaperList
-        await saveDiaperRecords(updatedRecords)
+        await saveDiaperRecords(babyId, date, updatedRecords)
       }
 
       return response
@@ -170,9 +180,12 @@ export const deleteDiaperItem = createAsyncThunk<
 
 export const clearDiaperDataAsync = createAsyncThunk(
   'diaper/clearDiaperDataAsync',
-  async (_, { rejectWithValue }) => {
+  async (
+    { babyId, date }: { babyId: string; date: string },
+    { rejectWithValue }
+  ) => {
     try {
-      await clearDiaperRecords()
+      await clearDiaperRecords(babyId, date)
       return { success: true }
     } catch (error: any) {
       return rejectWithValue(error.message || '清除尿布记录失败')
@@ -187,14 +200,32 @@ const diaperSlice = createSlice({
     setCurrentDate: (state, action: PayloadAction<string>) => {
       state.currentDate = action.payload
     },
-    clearDiaperData: state => {
+    clearDiaperData: (
+      state,
+      action: PayloadAction<{ babyId: string; date: string }>
+    ) => {
       state.diaperList = []
       state.currentDate = getTodayDate()
       state.error = null
+      // 清除本地存储
+      try {
+        clearDiaperRecords(action.payload.babyId, action.payload.date)
+      } catch (error) {
+        console.error('清除本地存储失败:', error)
+      }
     },
     addDiaperRecord: (state, action: PayloadAction<DiaperItem>) => {
       // 将新记录添加到列表开头
       state.diaperList.unshift(action.payload)
+      // 保存到本地存储
+      try {
+        const date = new Date(action.payload.change_time)
+          .toISOString()
+          .split('T')[0]
+        saveDiaperRecords(action.payload.baby_id, date, state.diaperList)
+      } catch (error) {
+        console.error('保存尿布记录到本地存储失败:', error)
+      }
     },
     updateDiaperRecord: (state, action: PayloadAction<DiaperItem>) => {
       // 找到并更新对应的记录
@@ -203,13 +234,35 @@ const diaperSlice = createSlice({
       )
       if (index !== -1) {
         state.diaperList[index] = action.payload
+        // 保存到本地存储
+        try {
+          const date = new Date(action.payload.change_time)
+            .toISOString()
+            .split('T')[0]
+          saveDiaperRecords(action.payload.baby_id, date, state.diaperList)
+        } catch (error) {
+          console.error('保存尿布记录到本地存储失败:', error)
+        }
       }
     },
-    deleteDiaperRecord: (state, action: PayloadAction<string>) => {
+    deleteDiaperRecord: (
+      state,
+      action: PayloadAction<{ diaperId: string; babyId: string; date: string }>
+    ) => {
       // 删除对应的记录
       state.diaperList = state.diaperList.filter(
-        item => item.diaper_id !== action.payload
+        item => item.diaper_id !== action.payload.diaperId
       )
+      // 保存到本地存储
+      try {
+        saveDiaperRecords(
+          action.payload.babyId,
+          action.payload.date,
+          state.diaperList
+        )
+      } catch (error) {
+        console.error('保存尿布记录到本地存储失败:', error)
+      }
     }
   },
   extraReducers: builder => {
