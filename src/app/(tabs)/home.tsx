@@ -1,14 +1,16 @@
-import React, { useCallback, useRef, useEffect, useMemo } from 'react'
+import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
   FlatList,
   RefreshControl,
   ActivityIndicator,
-  StyleSheet
+  StyleSheet,
+  TouchableOpacity
 } from 'react-native'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons } from '@expo/vector-icons'
 
 import { HomeScrollToContext } from '@/context/HomeScrollContext'
 import { useNavigation, useRoute } from '@react-navigation/native'
@@ -32,6 +34,7 @@ export default function Home() {
   const flatListRef = useRef<FlatList>(null)
   const communityHeaderRef = useRef<View>(null)
   const isEndReachedRef = useRef(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
 
   // 使用自定义 Hooks
   const {
@@ -171,6 +174,19 @@ export default function Home() {
     })
   }, [insets.top])
 
+  const handleScrollToTop = useCallback(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+  }, [])
+
+  const handleListScroll = useCallback(
+    (event: any) => {
+      handleScroll(event)
+      const offsetY = event?.nativeEvent?.contentOffset?.y ?? 0
+      setShowScrollTop(offsetY > 400)
+    },
+    [handleScroll]
+  )
+
   // 监听路由参数，添加新帖子或切换标签
   useEffect(() => {
     if (route.params) {
@@ -259,11 +275,48 @@ export default function Home() {
             <Text style={{ color: '#999', fontSize: 12 }}>加载更多...</Text>
           </View>
         )}
-        {!hasMore && posts.length > 0 && (
-          <View style={{ padding: 10, alignItems: 'center' }}>
-            <Text style={{ color: '#ccc', fontSize: 12 }}>
-              - 没有更多内容了 -
-            </Text>
+        {!isLoadingMore && !hasMore && posts.length > 0 && (
+          <View
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 16,
+              alignItems: 'center'
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 14,
+                backgroundColor: '#FCE7F3'
+              }}
+            >
+              <View
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#F43F5E',
+                  marginHorizontal: 6
+                }}
+              />
+              <Text
+                style={{ color: '#E11D48', fontSize: 12, fontWeight: '600' }}
+              >
+                我也是有底线的
+              </Text>
+              <View
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#F43F5E',
+                  marginHorizontal: 6
+                }}
+              />
+            </View>
           </View>
         )}
       </View>
@@ -308,7 +361,7 @@ export default function Home() {
             ref={flatListRef}
             key={isSearching ? 'search' : 'default'}
             style={styles.container}
-            contentContainerStyle={{ paddingBottom: 150 }}
+            contentContainerStyle={{ paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}
             data={flatListData}
             keyExtractor={(item, index) => item.id || `item-${index}`}
@@ -319,10 +372,10 @@ export default function Home() {
             // ✅ 非搜索模式下，index=1 的 tabs 项吸顶
             stickyHeaderIndices={isSearching ? [] : [1]}
             ListFooterComponent={ListFooterComponent}
-            onScroll={handleScroll}
+            onScroll={handleListScroll}
             scrollEventThrottle={16}
             onEndReached={handleEndReached}
-            onEndReachedThreshold={0.3}
+            onEndReachedThreshold={0.5}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -335,6 +388,15 @@ export default function Home() {
           />
         </SafeAreaView>
       </View>
+      {showScrollTop && (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleScrollToTop}
+          style={[localStyles.scrollTopButton, { bottom: 90 + insets.bottom }]}
+        >
+          <Ionicons name="arrow-up" size={20} color="#fff" />
+        </TouchableOpacity>
+      )}
     </HomeScrollToContext.Provider>
   )
 }
@@ -344,5 +406,20 @@ const localStyles = StyleSheet.create({
     overflow: 'hidden',
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22
+  },
+  scrollTopButton: {
+    position: 'absolute',
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F43F5E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F43F5E',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6
   }
 })

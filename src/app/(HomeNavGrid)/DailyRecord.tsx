@@ -9,12 +9,11 @@ import {
   Animated,
   DeviceEventEmitter
 } from 'react-native'
-import { Stack, useNavigation } from 'expo-router'
+import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import dayjs from 'dayjs'
 import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigationHelper } from '../../utils/navigation'
 
@@ -25,11 +24,6 @@ import EmptyState from '../../components/DailyRecord/EmptyState'
 
 // 导入类型定义和模拟数据
 import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
-import { DiaperItem } from '../../types/diaper'
-import { FeedingItem } from '../../types/feeding'
-import { SleepRecord } from '../../types/sleep'
-import { NavigationProps } from '../../types/navigation'
-import mockData from '../../data/mock/dailyRecordMock'
 import {
   fetchDiaperList,
   setCurrentDate
@@ -41,7 +35,6 @@ import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
   const { navigateToRecord } = useNavigationHelper()
-  const navigation = useNavigation<NavigationProps>()
   const dispatch = useDispatch<AppDispatch>()
   const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
   const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
@@ -268,10 +261,6 @@ export default function DailyRecordScreen() {
       })
       .map(item => {
         const durationMs = item.duration_ms || 0
-        const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
-        const durationMinutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        )
 
         // 格式化开始时间和结束时间
         const startTime = dayjs(item.started_at).format('HH:mm')

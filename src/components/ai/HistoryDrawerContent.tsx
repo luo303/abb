@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
 import {
   AntDesign,
+  FontAwesome5,
   Ionicons,
   MaterialIcons,
   SimpleLineIcons
@@ -22,6 +23,7 @@ import {
   switchConversation,
   resetSession,
   removeHistoryItem,
+  togglePublicEnabled,
   togglePrivateEnabled,
   togglePin
 } from '../../store/modules/ChatStore'
@@ -32,6 +34,9 @@ import * as Speech from 'expo-speech'
 export default function HistoryDrawerContent(
   props: DrawerContentComponentProps
 ) {
+  const search_public = useSelector(
+    (state: RootState) => state.chat.search_public
+  )
   const search_private = useSelector(
     (state: RootState) => state.chat.search_private
   )
@@ -87,6 +92,9 @@ export default function HistoryDrawerContent(
     dispatch(resetSession())
     props.navigation.closeDrawer()
   }
+  const togglePublic = () => {
+    dispatch(togglePublicEnabled())
+  }
   const togglePrivate = () => {
     dispatch(togglePrivateEnabled())
   }
@@ -95,9 +103,22 @@ export default function HistoryDrawerContent(
       <View style={styles.actionContainer}>
         <View style={styles.knowledgeRow}>
           <View style={styles.knowledgeLabel}>
+            <FontAwesome5 name="old-republic" size={16} color="black" />
+            <Text style={[styles.actionText, { marginLeft: 12 }]}>
+              公共空间
+            </Text>
+          </View>
+          <Switch
+            value={search_public}
+            onValueChange={togglePublic}
+            trackColor={{ false: '#767577', true: '#1890ff' }}
+          />
+        </View>
+        <View style={styles.knowledgeRow}>
+          <View style={styles.knowledgeLabel}>
             <MaterialIcons name="privacy-tip" size={16} color="black" />
             <Text style={[styles.actionText, { marginLeft: 12 }]}>
-              私人知识库
+              私人空间
             </Text>
           </View>
           <Switch
@@ -120,10 +141,7 @@ export default function HistoryDrawerContent(
         <TouchableOpacity
           style={styles.actionButton}
           activeOpacity={0.7}
-          onPress={() => {
-            props.navigation.navigate('KnowledgeUpload')
-            props.navigation.closeDrawer()
-          }}
+          onPress={handleNewChat}
         >
           <View style={styles.actionIconContainer}>
             <Ionicons name="cloud-upload-outline" size={16} color="black" />

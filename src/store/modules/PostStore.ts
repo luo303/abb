@@ -90,6 +90,11 @@ interface PostState {
   postList: PostItem[]
   postListFetched: boolean
   postListStrategy: string
+  hotPostList: PostItem[]
+  hotPage: number
+  hotHasMore: boolean
+  isHotLoadingMore: boolean
+  hotFetched: boolean
   currentPost: PostItem | null
   // 关注列表相关状态
   followingPosts: PostItem[]
@@ -110,7 +115,12 @@ const initialState: PostState = {
   error: null,
   postList: [],
   postListFetched: false,
-  postListStrategy: 'ctime',
+  postListStrategy: 'random',
+  hotPostList: [],
+  hotPage: 1,
+  hotHasMore: true,
+  isHotLoadingMore: false,
+  hotFetched: false,
   currentPost: null,
   // 关注列表相关状态
   followingPosts: [],
@@ -160,10 +170,9 @@ export const fetchPostList = createAsyncThunk<
       const state = getState() as { post: PostState }
       const strategy = arg?.strategy || 'ctime'
       if (state.post.loading) return false
-      if (
-        state.post.postListFetched &&
-        state.post.postListStrategy === strategy
-      ) {
+      if (strategy === 'hot') {
+        if (state.post.hotFetched) return false
+      } else if (state.post.postListFetched) {
         return false
       }
       return true
@@ -190,7 +199,7 @@ export const loadMorePosts = createAsyncThunk<
 // 获取关注列表
 export const fetchFollowingPosts = createAsyncThunk<
   PostListResponse,
-  { page?: number; pageSize?: number }
+  { page?: number; pageSize?: number; force?: boolean }
 >(
   'post/fetchFollowingPosts',
   async ({ page = 1, pageSize = 10 }, { rejectWithValue }) => {
@@ -200,6 +209,14 @@ export const fetchFollowingPosts = createAsyncThunk<
       return response as unknown as PostListResponse
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true
+      const state = getState() as { post: PostState }
+      if (state.post.isFollowLoading) return false
+      return true
     }
   }
 )
@@ -305,6 +322,12 @@ const postSlice = createSlice({
         }
         return post
       })
+      state.hotPostList = state.hotPostList.map((post: PostItem) => {
+        if (String(post.post_id) === stringPostId) {
+          return normalizePostInteractionFlags({ ...post, ...stats })
+        }
+        return post
+      })
     },
     toggleFollow: (state: PostState, action: PayloadAction<string>) => {
       const authorId = action.payload
@@ -321,6 +344,17 @@ const postSlice = createSlice({
 
       // 更新列表页中的关注状态
       state.postList = state.postList.map((post: PostItem) => {
+        if (post.author_id === authorId) {
+          const nextFollowState = !(post.is_follow ?? post.is_followed ?? false)
+          return {
+            ...post,
+            is_follow: nextFollowState,
+            is_followed: nextFollowState
+          }
+        }
+        return post
+      })
+      state.hotPostList = state.hotPostList.map((post: PostItem) => {
         if (post.author_id === authorId) {
           const nextFollowState = !(post.is_follow ?? post.is_followed ?? false)
           return {
@@ -363,6 +397,15 @@ const postSlice = createSlice({
       if (index !== -1) {
         state.postList[index] = normalizePostInteractionFlags({
           ...state.postList[index],
+          ...action.payload
+        })
+      }
+      const hotIndex = state.hotPostList.findIndex(
+        p => String(p.post_id) === postId
+      )
+      if (hotIndex !== -1) {
+        state.hotPostList[hotIndex] = normalizePostInteractionFlags({
+          ...state.hotPostList[hotIndex],
           ...action.payload
         })
       }
@@ -468,39 +511,62 @@ const postSlice = createSlice({
       })
       .addCase(fetchPostList.fulfilled, (state: PostState, action: any) => {
         state.loading = false
-        state.postListFetched = true
-        state.postListStrategy = action.meta?.arg?.strategy || 'ctime'
+        const strategy = action.meta?.arg?.strategy || 'random'
+        state.postListStrategy = strategy
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
           const parsedPostList =
             action.payload.data?.items?.map((post: PostItem) =>
               parsePostContent(post)
             ) || []
-          state.postList = parsedPostList
-          state.page = 1
-          // 强制数据量判定：如果返回的数据量不满一页，说明后面没货了
           const pageSize = 10
           const finalHasMore =
             parsedPostList.length === pageSize &&
             (action.payload.data?.has_more ?? false)
-          state.hasMore = finalHasMore
+          if (strategy === 'hot') {
+            state.hotPostList = parsedPostList
+            state.hotPage = 1
+            state.hotHasMore = finalHasMore
+            state.hotFetched = true
+          } else {
+            state.postList = parsedPostList
+            state.localPublishedPosts = []
+            state.page = 1
+            state.hasMore = finalHasMore
+            state.postListFetched = true
+          }
         } else {
           state.error = action.payload?.message || '未知错误'
         }
       })
       .addCase(fetchPostList.rejected, (state: PostState, action: any) => {
         state.loading = false
-        state.postListFetched = true
-        state.postListStrategy = action.meta?.arg?.strategy || 'ctime'
+        const strategy = action.meta?.arg?.strategy || 'random'
+        state.postListStrategy = strategy
+        if (strategy === 'hot') {
+          state.hotFetched = true
+        } else {
+          state.postListFetched = true
+        }
         state.error = action.payload as string
       })
       // 加载更多帖子
-      .addCase(loadMorePosts.pending, (state: PostState) => {
-        state.isLoadingMore = true
+      .addCase(loadMorePosts.pending, (state: PostState, action: any) => {
+        const strategy = action.meta?.arg?.strategy || 'random'
+        if (strategy === 'hot') {
+          state.isHotLoadingMore = true
+        } else {
+          state.isLoadingMore = true
+        }
         state.error = null
       })
       .addCase(loadMorePosts.fulfilled, (state: PostState, action: any) => {
-        state.isLoadingMore = false
+        const strategy = action.meta?.arg?.strategy || 'ctime'
+        if (strategy === 'hot') {
+          state.isHotLoadingMore = false
+        } else {
+          state.isLoadingMore = false
+        }
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
           const parsedPostList =
@@ -510,32 +576,52 @@ const postSlice = createSlice({
 
           // 过滤重复数据
           const existingIds = new Set(
-            state.postList.map((p: PostItem) => p.post_id)
+            (strategy === 'hot' ? state.hotPostList : state.postList).map(
+              (p: PostItem) => p.post_id
+            )
           )
           const uniqueNewItems = parsedPostList.filter(
             (p: PostItem) => !existingIds.has(p.post_id)
           )
 
           if (uniqueNewItems.length > 0) {
-            state.postList = [...state.postList, ...uniqueNewItems]
-            state.page += 1
-            // 强制数据量判定：如果返回的数据量不满一页，说明后面没货了
-            const pageSize = 10
-            // 针对 Mock 环境限流：增加页码上限
-            const finalHasMore =
-              uniqueNewItems.length === pageSize &&
-              (action.payload.data?.has_more ?? false) &&
-              state.page < 5
-            state.hasMore = finalHasMore
+            if (strategy === 'hot') {
+              state.hotPostList = [...state.hotPostList, ...uniqueNewItems]
+              state.hotPage += 1
+              const pageSize = 10
+              const finalHasMore =
+                uniqueNewItems.length === pageSize &&
+                (action.payload.data?.has_more ?? false) &&
+                state.hotPage < 5
+              state.hotHasMore = finalHasMore
+            } else {
+              state.postList = [...state.postList, ...uniqueNewItems]
+              state.page += 1
+              const pageSize = 10
+              const finalHasMore =
+                uniqueNewItems.length === pageSize &&
+                (action.payload.data?.has_more ?? false) &&
+                state.page < 5
+              state.hasMore = finalHasMore
+            }
           } else {
-            state.hasMore = false
+            if (strategy === 'hot') {
+              state.hotHasMore = false
+            } else {
+              state.hasMore = false
+            }
           }
         } else {
           state.error = action.payload?.message || '未知错误'
         }
       })
       .addCase(loadMorePosts.rejected, (state: PostState, action: any) => {
-        state.isLoadingMore = false
+        const strategy = action.meta?.arg?.strategy || 'ctime'
+        if (strategy === 'hot') {
+          state.isHotLoadingMore = false
+        } else {
+          state.isLoadingMore = false
+        }
         state.error = action.payload as string
       })
       // 获取帖子详情
@@ -611,21 +697,7 @@ const postSlice = createSlice({
               action.payload.data?.items?.map((post: PostItem) =>
                 parsePostContent(post)
               ) || []
-
-            // 合并本地添加的帖子，确保关注的帖子不会丢失
-            const existingIds = new Set(
-              parsedPostList.map((p: PostItem) => p.post_id)
-            )
-            const localAddedPosts = state.followingPosts
-              .filter((p: PostItem) => !existingIds.has(p.post_id))
-              // 移除本地添加的标记
-              .map((p: PostItem) => {
-                const { __isLocalAdded, ...postWithoutLocalMark } = p
-                return postWithoutLocalMark
-              })
-
-            // 合并并去重，保持本地添加的帖子在前面
-            state.followingPosts = [...localAddedPosts, ...parsedPostList]
+            state.followingPosts = parsedPostList
             state.followPage = 1
             state.followHasMore = action.payload.data?.has_more ?? false
           } else {
