@@ -41,6 +41,19 @@ const formatTime = (seconds: number) => {
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
 }
 
+const formatPickerTime = (date: Date) => {
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const mergeTimeToDate = (base: Date, time: Date) => {
+  const next = new Date(base)
+  next.setHours(time.getHours(), time.getMinutes(), 0, 0)
+  return next
+}
+
 type RouteParams = {
   SleepRecord: {
     session_id?: string
@@ -304,13 +317,28 @@ const SleepRecordScreen = () => {
     selectedDate?: Date,
     type: 'start' | 'end' = 'start'
   ) => {
-    if (selectedDate) {
-      if (type === 'start') {
-        setStartTime(selectedDate)
-      } else {
-        setEndTime(selectedDate)
-      }
+    if (event?.type !== 'set' || !selectedDate) {
+      return
     }
+
+    if (type === 'start') {
+      setStartTime(prev => mergeTimeToDate(prev, selectedDate))
+    } else {
+      setEndTime(prev => mergeTimeToDate(prev, selectedDate))
+    }
+  }
+
+  const openAndroidTimePicker = (type: 'start' | 'end') => {
+    const value = type === 'start' ? startTime : endTime
+
+    DateTimePickerAndroid.open({
+      value,
+      mode: 'time',
+      display: 'default',
+      is24Hour: true,
+      onChange: (event, selectedDate) =>
+        handleTimeChange(event, selectedDate, type)
+    })
   }
 
   // 提交手动记录
@@ -430,25 +458,47 @@ const SleepRecordScreen = () => {
               <View style={styles.manualInputContainer}>
                 <View style={styles.inputRow}>
                   <Text style={styles.inputLabel}>开始时间</Text>
-                  <DateTimePicker
-                    value={startTime}
-                    mode="time"
-                    display="default"
-                    onChange={(event, date) =>
-                      handleTimeChange(event, date, 'start')
-                    }
-                  />
+                  {Platform.OS === 'android' ? (
+                    <TouchableOpacity
+                      style={styles.timeButton}
+                      onPress={() => openAndroidTimePicker('start')}
+                    >
+                      <Text style={styles.timeButtonText}>
+                        {formatPickerTime(startTime)}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <DateTimePicker
+                      value={startTime}
+                      mode="time"
+                      display="default"
+                      onChange={(event, date) =>
+                        handleTimeChange(event, date, 'start')
+                      }
+                    />
+                  )}
                 </View>
                 <View style={styles.inputRow}>
                   <Text style={styles.inputLabel}>结束时间</Text>
-                  <DateTimePicker
-                    value={endTime}
-                    mode="time"
-                    display="default"
-                    onChange={(event, date) =>
-                      handleTimeChange(event, date, 'end')
-                    }
-                  />
+                  {Platform.OS === 'android' ? (
+                    <TouchableOpacity
+                      style={styles.timeButton}
+                      onPress={() => openAndroidTimePicker('end')}
+                    >
+                      <Text style={styles.timeButtonText}>
+                        {formatPickerTime(endTime)}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <DateTimePicker
+                      value={endTime}
+                      mode="time"
+                      display="default"
+                      onChange={(event, date) =>
+                        handleTimeChange(event, date, 'end')
+                      }
+                    />
+                  )}
                 </View>
                 <TouchableOpacity
                   style={styles.submitButton}
@@ -555,6 +605,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     marginRight: 16
+  },
+  timeButton: {
+    minWidth: 110,
+    borderWidth: 1,
+    borderColor: '#fecdd3',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff5f5',
+    alignItems: 'center'
+  },
+  timeButtonText: {
+    color: '#be123c',
+    fontSize: 15,
+    fontWeight: '500'
   },
 
   submitButton: {
