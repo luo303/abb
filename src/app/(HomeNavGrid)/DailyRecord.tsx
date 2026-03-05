@@ -448,10 +448,6 @@ export default function DailyRecordScreen() {
 
   // 处理无数据情况
   const getDisplayValue = (value: number, unit: string) => {
-    if (value === 0) {
-      return '--'
-    }
-
     // 对于睡眠时长，只显示整数小时
     if (unit === 'h') {
       const hours = Math.floor(value)
