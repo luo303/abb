@@ -19,7 +19,7 @@ export const fetchPartner = () => {
   return request.get('/user/partner') as Promise<PartnerResponse>
 }
 
-export const PARTNER_WS_BASE_URL = 'ws://127.0.0.1:9000/ws/chat'
+export const PARTNER_WS_BASE_URL = 'ws://38.76.197.12:8080/ws/chat'
 
 export const bindPartner = (data: PartnerBindPayload) => {
   return request.post('/user/partner/bind', data) as Promise<PartnerResponse>
