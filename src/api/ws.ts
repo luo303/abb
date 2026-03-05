@@ -19,8 +19,7 @@ export const fetchPartner = () => {
   return request.get('/user/partner') as Promise<PartnerResponse>
 }
 
-export const PARTNER_WS_BASE_URL =
-  'wss://tayna-nonredemptible-dissipatedly.ngrok-free.dev/ws/chat'
+export const PARTNER_WS_BASE_URL = 'ws://127.0.0.1:9000/ws/chat'
 
 export const bindPartner = (data: PartnerBindPayload) => {
   return request.post('/user/partner/bind', data) as Promise<PartnerResponse>

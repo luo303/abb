@@ -29,7 +29,6 @@ import { v4 as uuidv4 } from 'uuid'
 import { RootState } from '../../store'
 import {
   setPartner,
-  removePartner,
   addMessage,
   setConnectionStatus
 } from '../../store/modules/PartnerStore'
@@ -188,11 +187,6 @@ export default function PartnerChat() {
     dispatch(setConnectionStatus(false))
   }, [dispatch])
 
-  const handleUnbindPartner = useCallback(() => {
-    closeSocket()
-    dispatch(removePartner())
-  }, [closeSocket, dispatch])
-
   const connectSocket = useCallback(() => {
     if (!partnerId || !token) {
       console.warn('[伴侣聊天] 跳过 connectSocket：缺少必要参数', {
@@ -235,18 +229,9 @@ export default function PartnerChat() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: partnerName || '另一半',
-      headerRight: () =>
-        partnerId ? (
-          <TouchableOpacity
-            onPress={handleUnbindPartner}
-            style={styles.headerButton}
-          >
-            <Text style={styles.headerButtonText}>解绑</Text>
-          </TouchableOpacity>
-        ) : null
+      title: partnerName || '另一半'
     })
-  }, [navigation, partnerId, partnerName, handleUnbindPartner])
+  }, [navigation, partnerName])
 
   const handleAddPartner = async () => {
     if (!inputPartnerAccount.trim() || !inputPartnerPassword.trim()) {
@@ -376,9 +361,6 @@ export default function PartnerChat() {
                 {isBinding ? '绑定中..' : '立即绑定'}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.addPartnerFootnote}>
-              绑定后可随时在设置中解除
-            </Text>
           </View>
         </View>
       </KeyboardAvoidingView>

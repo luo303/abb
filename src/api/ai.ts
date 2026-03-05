@@ -3,10 +3,9 @@ import { AiRequest } from '@/types/AIchat'
 import * as SecureStore from 'expo-secure-store'
 import { ApiResponse } from './profile'
 
-const AI_URL =
-  'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api/common/ai/chat/stream'
+const AI_URL = 'http://38.76.197.12:8080/api/common/ai/chat/stream'
 const GROWTH_ANALYSIS_URL =
-  'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api/common/ai/growth/analysis'
+  'http://38.76.197.12:8080/api/common/ai/growth/analysis'
 
 //基本ai对话
 export const SendMessage = async (data: AiRequest, signal?: AbortSignal) => {
