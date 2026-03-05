@@ -84,10 +84,7 @@ const styles = StyleSheet.create({
   },
   ringContainer: {
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)'
+    gap: 12
   },
   progressContent: {
     alignItems: 'center',

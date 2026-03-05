@@ -270,7 +270,7 @@ const SleepRecordScreen = () => {
       const CACHE_KEY = `sleep_active_${babyId}`
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(sleepSession))
 
-      // ✅ 启动定时器和记录时间戳放在一起，消除异步间隔
+      // 启动定时器和记录时间戳放在一起，消除异步间隔
       const now = Date.now()
       startTimestampRef.current = now
       setIsTimerRunning(true)
@@ -278,7 +278,6 @@ const SleepRecordScreen = () => {
       secondsRef.current = 0
       startTimer()
     } catch (error) {
-      console.error('开始睡眠记录失败:', error)
       Alert.alert('操作失败', '请重试')
     }
   }
@@ -308,12 +307,9 @@ const SleepRecordScreen = () => {
             try {
               if (!sessionIdRef.current) throw new Error('sessionId为空')
 
-              // ✅ 确保 duration_ms 与弹窗显示的时间一致
+              // 确保 duration_ms 与弹窗显示的时间一致
               const started_at = startTimestampRef.current
-              const ended_at = started_at + currentSeconds * 1000 // ← 基于 secondsRef.current 计算
-              console.log('started_at:', started_at)
-              console.log('ended_at:', ended_at)
-              console.log('duration_ms:', ended_at - started_at)
+              const ended_at = started_at + currentSeconds * 1000 // 基于 secondsRef.current 计算
               // 直接使用 addSleepItem action，与手动记录的行为一致
               const sleepRecord: SleepRecord = {
                 session_id: sessionIdRef.current!,
@@ -324,7 +320,6 @@ const SleepRecordScreen = () => {
 
               // 添加到 sleepList
               dispatch(addSleepItem({ record: sleepRecord, babyId }))
-              console.log('计时器睡眠记录已添加到 sleepList')
 
               // 清除正在进行的计时
               await clearOngoingTimer()

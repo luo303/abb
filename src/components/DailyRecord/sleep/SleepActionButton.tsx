@@ -20,12 +20,9 @@ const SleepActionButton: React.FC<SleepActionButtonProps> = ({
   onStop
 }) => {
   const handlePress = () => {
-    console.log('SleepActionButton点击，isTimerRunning:', isTimerRunning)
     if (isTimerRunning) {
-      console.log('调用onStop回调')
       onStop()
     } else {
-      console.log('调用onStart回调')
       onStart()
     }
   }

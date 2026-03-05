@@ -9,7 +9,6 @@ import { getSleepRecords } from '../utils/sleepStorage'
  */
 export const startSleep = async (babyId: string): Promise<SleepSession> => {
   const response = await request.post(`/baby/${babyId}/daily/sleep/start`)
-  console.log('startSleep原始response:', JSON.stringify(response))
   const data = response.data as unknown as SleepSession
   // 确保返回的时间戳是毫秒级的
   if (typeof data.started_at === 'number') {
@@ -70,7 +69,6 @@ export const getSleepByDate = async (
       const localRecords = await getSleepRecords(babyId, date)
       return localRecords
     } catch (error) {
-      console.error('Error getting local sleep records:', error)
       items = []
     }
   } else {

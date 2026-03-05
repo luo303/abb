@@ -32,16 +32,13 @@ export const fetchSleepList = createAsyncThunk<
 
     return response
   } catch (error: any) {
-    console.error('Error fetching sleep list:', error)
     // 失败时从本地存储获取数据
     try {
       const localRecords = await getSleepRecords(babyId, date)
       if (localRecords.length > 0) {
         return localRecords
       }
-    } catch (localError) {
-      console.error('从本地存储获取数据失败:', localError)
-    }
+    } catch (localError) {}
     return rejectWithValue(error.response?.data?.message || error.message)
   }
 })
@@ -72,19 +69,12 @@ export const addSleepRecord = createAsyncThunk<
         const date = new Date(sleepRecord.started_at)
           .toISOString()
           .split('T')[0]
-        console.log('Saving sleep record for date:', date)
-        console.log('Sleep record:', JSON.stringify(sleepRecord))
         // 先从本地存储获取当前日期的睡眠记录
         const existingRecords = await getSleepRecords(babyId, date)
-        console.log('Existing records:', JSON.stringify(existingRecords))
         // 将新的睡眠记录添加到列表的开头
         const updatedRecords = [sleepRecord, ...existingRecords]
-        console.log('Updated records:', JSON.stringify(updatedRecords))
         await saveSleepRecords(babyId, date, updatedRecords)
-        console.log('Sleep record saved to local storage')
-      } catch (storageError) {
-        console.error('保存睡眠记录到本地存储失败:', storageError)
-      }
+      } catch (storageError) {}
 
       return sleepRecord
     } catch (error: any) {
@@ -103,19 +93,12 @@ export const addSleepRecord = createAsyncThunk<
         const date = new Date(sleepRecord.started_at)
           .toISOString()
           .split('T')[0]
-        console.log('Saving sleep record for date:', date)
-        console.log('Sleep record:', JSON.stringify(sleepRecord))
         // 先从本地存储获取当前日期的睡眠记录
         const existingRecords = await getSleepRecords(babyId, date)
-        console.log('Existing records:', JSON.stringify(existingRecords))
         // 将新的睡眠记录添加到列表的开头
         const updatedRecords = [sleepRecord, ...existingRecords]
-        console.log('Updated records:', JSON.stringify(updatedRecords))
         await saveSleepRecords(babyId, date, updatedRecords)
-        console.log('Sleep record saved to local storage')
-      } catch (storageError) {
-        console.error('保存睡眠记录到本地存储失败:', storageError)
-      }
+      } catch (storageError) {}
 
       return sleepRecord
     }
@@ -262,9 +245,7 @@ const sleepSlice = createSlice({
       })
       .addCase(fetchSleepList.fulfilled, (state, action) => {
         state.loading = false
-        console.log('fetchSleepList payload:', JSON.stringify(action.payload))
         state.sleepList = action.payload || []
-        console.log('sleepList after set:', JSON.stringify(state.sleepList))
       })
       .addCase(fetchSleepList.rejected, (state, action) => {
         state.loading = false

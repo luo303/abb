@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import dayjs from 'dayjs'
 import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -570,7 +571,12 @@ export default function DailyRecordScreen() {
       >
         {/* 三环仪表盘 */}
         <View style={styles.dashboardContainer}>
-          <View style={styles.dashboardCard}>
+          <LinearGradient
+            colors={['#ffffff', '#fef5f5']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.dashboardCard}
+          >
             <DashboardRing
               type="feeding"
               value={getDisplayValue(statistics.feedingCount, '次')}
@@ -589,7 +595,7 @@ export default function DailyRecordScreen() {
               percent={currentRecords.length > 0 ? diaperPercent : 0}
               onPress={() => handleActionPress('diaper')}
             />
-          </View>
+          </LinearGradient>
         </View>
 
         {/* 记录列表 - 这里不再嵌套 FlatList */}
@@ -676,21 +682,19 @@ const styles = StyleSheet.create({
     zIndex: 1
   },
   dashboardCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 20,
+    padding: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between', // 改为 between 让间距更均匀
-    // 阴影适配
+    justifyContent: 'space-between',
     ...(Platform.select({
       ios: {
         shadowColor: '#f43f5e',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
-        shadowRadius: 10
+        shadowRadius: 8
       },
       android: {
-        elevation: 5
+        elevation: 4
       }
     }) as any)
   },
