@@ -54,7 +54,7 @@ export const PoopConsistencySelector: React.FC<
       icon: 'water'
     },
     {
-      value: { id: PoopConsistency.SHEEP_DUNG, name: '羊屎便' },
+      value: { id: PoopConsistency.SHEEP, name: '羊屎便' },
       label: '羊屎便',
       icon: 'dots-grid'
     },

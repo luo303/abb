@@ -110,8 +110,10 @@ const SleepRecordScreen = () => {
                 (Date.now() - ongoingTimer.started_at) / 1000
               )
               setSeconds(elapsedSeconds)
+              secondsRef.current = elapsedSeconds
               setIsTimerRunning(true)
               sessionIdRef.current = ongoingTimer.session_id
+              startTimestampRef.current = ongoingTimer.started_at
 
               // 启动定时器
               startTimer()
@@ -156,6 +158,7 @@ const SleepRecordScreen = () => {
       clearInterval(timerRef.current)
       timerRef.current = null
     }
+    // 设置定时器，每秒钟更新一次
     timerRef.current = setInterval(() => {
       setSeconds(prev => {
         const newSeconds = prev + 1
@@ -185,30 +188,26 @@ const SleepRecordScreen = () => {
       const sleepSession = await startSleep(babyId)
 
       // 检查API返回数据
-      if (
-        !sleepSession ||
-        !sleepSession.session_id ||
-        !sleepSession.started_at
-      ) {
+      if (!sleepSession?.session_id || !sleepSession?.started_at) {
         Alert.alert('操作失败', '请重试')
         return
       }
 
-      // 记录开始时间戳
-      startTimestampRef.current = Date.now()
-
-      // 保存到本地缓存
-      await saveOngoingTimer({
-        session_id: sleepSession.session_id,
-        started_at: sleepSession.started_at
-      })
-
       // 保存session_id到ref
       sessionIdRef.current = sleepSession.session_id
 
-      // 启动定时器
+      // 先保存缓存（异步，不等待）
+      saveOngoingTimer({
+        session_id: sleepSession.session_id,
+        started_at: Date.now()
+      })
+
+      // ✅ 启动定时器和记录时间戳放在一起，消除异步间隔
+      const now = Date.now()
+      startTimestampRef.current = now
       setIsTimerRunning(true)
       setSeconds(0)
+      secondsRef.current = 0
       startTimer()
     } catch (error) {
       console.error('开始睡眠记录失败:', error)
@@ -218,27 +217,18 @@ const SleepRecordScreen = () => {
 
   // 结束睡眠
   const handleStopTimer = () => {
-    if (!babyId) {
-      Alert.alert('提示', '请先选择宝宝')
-      return
-    }
-
-    if (!sessionIdRef.current) {
-      // 重置状态
+    if (!babyId || !sessionIdRef.current) {
       setIsTimerRunning(false)
       setSeconds(0)
       Alert.alert('提示', '睡眠记录未开始')
       return
     }
 
-    // 停止定时器
     stopTimer()
 
-    // 使用时间戳计算时长
-    const now = Date.now()
-    const currentSeconds = Math.floor((now - startTimestampRef.current) / 1000)
+    // 使用定时器记录的秒数，确保与显示的时间一致
+    const currentSeconds = secondsRef.current
 
-    // 显示确认弹窗
     Alert.alert(
       '确认结束睡眠',
       `当前睡眠时长：${formatTime(currentSeconds)}，确定要结束吗？`,
@@ -247,21 +237,15 @@ const SleepRecordScreen = () => {
         {
           text: '确定',
           onPress: async () => {
-            console.log('secondsRef.current:', secondsRef.current)
-            console.log('seconds state:', seconds)
-            console.log('最终使用的 currentSeconds:', currentSeconds)
-
             try {
-              // 再次检查sessionId
-              if (!sessionIdRef.current) {
-                throw new Error('sessionId为空')
-              }
+              if (!sessionIdRef.current) throw new Error('sessionId为空')
 
+              // ✅ 确保 duration_ms 与弹窗显示的时间一致
               const started_at = startTimestampRef.current
-              const ended_at = now
-              const duration_ms = ended_at - started_at
-
-              // 调用 addSleepRecord 异步 thunk
+              const ended_at = started_at + currentSeconds * 1000 // ← 基于 secondsRef.current 计算
+              console.log('started_at:', started_at)
+              console.log('ended_at:', ended_at)
+              console.log('duration_ms:', ended_at - started_at)
               dispatch(
                 addSleepRecord({
                   babyId: babyId,
@@ -272,32 +256,23 @@ const SleepRecordScreen = () => {
               )
                 .unwrap()
                 .then(async () => {
-                  // 清除本地缓存
                   await clearOngoingTimer()
-
-                  // 弹出提示
                   Alert.alert(
                     '睡眠已记录',
                     `睡眠时长 ${formatTime(currentSeconds)}`
                   )
-
-                  // 重置状态
                   setIsTimerRunning(false)
                   setSeconds(0)
                   sessionIdRef.current = null
-
-                  // 返回上一页
                   navigation.goBack()
                 })
                 .catch(error => {
                   console.error('添加睡眠记录失败:', error)
                   Alert.alert('操作失败', '请重试')
-                  // 恢复定时器
                   startTimer()
                 })
             } catch (error) {
               Alert.alert('操作失败', '请重试')
-              // 恢复定时器
               startTimer()
             }
           }
@@ -376,11 +351,11 @@ const SleepRecordScreen = () => {
     dispatch(addSleepItem(sleepRecord))
     console.log('手动睡眠记录已添加到sleepList')
 
+    // 计算总秒数
+    const totalSeconds = Math.floor(durationMs / 1000)
+
     // 弹出提示
-    Alert.alert(
-      '睡眠已记录',
-      `睡眠时长 ${durationHours}小时${durationMinutes}分钟`
-    )
+    Alert.alert('睡眠已记录', `睡眠时长 ${formatTime(totalSeconds)}`)
 
     // 重置表单
     setStartTime(new Date())

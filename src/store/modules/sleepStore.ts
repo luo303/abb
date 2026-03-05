@@ -133,7 +133,9 @@ const sleepSlice = createSlice({
       })
       .addCase(fetchSleepList.fulfilled, (state, action) => {
         state.loading = false
+        console.log('fetchSleepList payload:', JSON.stringify(action.payload))
         state.sleepList = action.payload || []
+        console.log('sleepList after set:', JSON.stringify(state.sleepList))
       })
       .addCase(fetchSleepList.rejected, (state, action) => {
         state.loading = false

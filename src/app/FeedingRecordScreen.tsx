@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  DeviceEventEmitter
+  DeviceEventEmitter,
+  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
@@ -27,6 +28,8 @@ import {
   RemarkInput
 } from '../components/DailyRecord/FeedingRecord'
 import { useMessage } from '../components/Message'
+import dayjs from 'dayjs'
+import { generateTempId } from '../utils/idGenerator'
 
 interface FeedingRecord {
   type: '奶粉' | '母乳' | '辅食'
@@ -54,13 +57,32 @@ const FeedingRecordScreen = () => {
   const feedingList = useSelector(
     (state: RootState) => state.feeding.feedingList
   )
+  // 获取当前选中的日期
+  const currentDate = useSelector((state: RootState) => state.daily.currentDate)
 
   const [selectedType, setSelectedType] = useState<'奶粉' | '母乳' | '辅食'>(
     '母乳'
   )
   const [amount, setAmount] = useState('')
-  const [feedingTime, setFeedingTime] = useState(new Date())
+  // 初始化feedingTime为当前选中日期的时间
+  const [feedingTime, setFeedingTime] = useState(() => {
+    // 解析currentDate (YYYYMMDD) 为日期对象
+    if (currentDate && currentDate.length === 8) {
+      const year = parseInt(currentDate.substring(0, 4))
+      const month = parseInt(currentDate.substring(4, 6)) - 1 // 月份从0开始
+      const day = parseInt(currentDate.substring(6, 8))
+      return new Date(
+        year,
+        month,
+        day,
+        new Date().getHours(),
+        new Date().getMinutes()
+      )
+    }
+    return new Date()
+  })
   const [remark, setRemark] = useState('')
+  const [isFormModified, setIsFormModified] = useState(false)
   const { showMessage } = useMessage()
 
   // 当feedId存在时，从feedingList中找到对应的记录并回显数据
@@ -237,19 +259,6 @@ const FeedingRecordScreen = () => {
           showMessage('更新失败，请重试')
         }
       } else {
-        // 乐观更新：先将记录添加到本地喂养列表中（使用临时 ID 并 unshift 到顶部）
-        const newRecord = {
-          feeding_id: `feed_${Date.now()}`,
-          baby_id: babyId,
-          feed_type: record.feed_type,
-          feed_time: record.start_time,
-          amount: record.amount,
-          duration: record.duration,
-          remark: record.remark,
-          summary_text: record.summary_text
-        }
-        dispatch(addFeedingItem(newRecord))
-
         // 发送请求：调用saveFeedingRecord接口
         try {
           if (!babyId) {
@@ -264,8 +273,6 @@ const FeedingRecordScreen = () => {
           // 导航回“日常记录”列表页
           navigation.goBack()
         } catch (error) {
-          console.error('保存喂养记录失败:', error)
-          // 添加错误提示
           showMessage('保存失败，请重试')
         }
       }
@@ -282,7 +289,24 @@ const FeedingRecordScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              Alert.alert(
+                '提示',
+                '是否要保存喂养记录？',
+                [
+                  {
+                    text: '取消',
+                    style: 'cancel',
+                    onPress: () => navigation.goBack()
+                  },
+                  {
+                    text: '保存',
+                    onPress: handleSave
+                  }
+                ],
+                { cancelable: false }
+              )
+            }}
             style={styles.backButton}
           >
             <Text
@@ -303,7 +327,10 @@ const FeedingRecordScreen = () => {
         <ScrollView style={styles.content}>
           <FeedingTypeTabs
             selectedType={selectedType}
-            onTypeChange={setSelectedType}
+            onTypeChange={value => {
+              setSelectedType(value)
+              setIsFormModified(true)
+            }}
           />
 
           {/* 表单卡片 */}
@@ -311,7 +338,10 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <AmountInput
                 value={amount}
-                onChange={setAmount}
+                onChange={value => {
+                  setAmount(value)
+                  setIsFormModified(true)
+                }}
                 type={selectedType}
                 placeholder="请输入数值"
               />
@@ -320,7 +350,10 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <TimePicker
                 value={feedingTime}
-                onChange={setFeedingTime}
+                onChange={value => {
+                  setFeedingTime(value)
+                  setIsFormModified(true)
+                }}
                 label="时间"
                 type={selectedType}
               />
@@ -329,7 +362,10 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <RemarkInput
                 value={remark}
-                onChange={setRemark}
+                onChange={value => {
+                  setRemark(value)
+                  setIsFormModified(true)
+                }}
                 label="喂养状态"
                 placeholder="宝宝今天胃口怎么样？可以记录在这里哦..."
                 type={selectedType}

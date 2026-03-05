@@ -6,7 +6,9 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  DeviceEventEmitter,
+  Alert
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
@@ -25,7 +27,9 @@ import { addDiaperRecordReq, updateDiaperRecordReq } from '../api/diaper'
 import {
   fetchDiaperList,
   addDiaperRecord,
-  updateDiaperRecord
+  updateDiaperRecord,
+  addDiaperItem,
+  updateDiaperItem
 } from '../store/modules/diaperStore'
 import { useMessage } from '../components/Message'
 import { TimePicker } from '../components/DailyRecord/DiaperRecord/TimePicker'
@@ -34,6 +38,7 @@ import { PeeColorSelector } from '../components/DailyRecord/DiaperRecord/PeeColo
 import { PoopColorSelector } from '../components/DailyRecord/DiaperRecord/PoopColorSelector'
 import { PoopConsistencySelector } from '../components/DailyRecord/DiaperRecord/PoopConsistencySelector'
 import { RemarkInput } from '../components/DailyRecord/DiaperRecord/RemarkInput'
+import { generateTempId } from '../utils/idGenerator'
 
 interface RouteParams {
   diaper_id?: string
@@ -151,15 +156,16 @@ const DiaperFormScreen = () => {
           poop_consistency: selectedPoopConsistency || null,
           remark: requestData.remark
         }
-        await updateDiaperRecordReq(babyId, diaperId, requestData)
+        await dispatch(
+          updateDiaperItem({ babyId, diaperId, data: requestData })
+        ).unwrap()
         dispatch(updateDiaperRecord(updatedRecord))
         showMessage('记录已更新')
       } else {
         // 新增模式
-        const response = await addDiaperRecordReq(babyId, requestData)
-        // 假设返回的响应包含 diaper_id
+        const tempId = generateTempId('diaper')
         const newRecord: DiaperItem = {
-          diaper_id: response?.data?.diaper_id || `diaper_${Date.now()}`,
+          diaper_id: tempId,
           baby_id: babyId,
           diaper_type: selectedType,
           change_time: requestData.change_time,
@@ -168,12 +174,15 @@ const DiaperFormScreen = () => {
           poop_consistency: selectedPoopConsistency || null,
           remark: requestData.remark
         }
+        // 先添加到本地状态
         dispatch(addDiaperRecord(newRecord))
+        // 调用API
+        await dispatch(addDiaperItem({ babyId, data: requestData })).unwrap()
         showMessage('记录已保存')
       }
 
-      // 刷新数据
-      dispatch(fetchDiaperList(babyId))
+      // 通知主页面刷新
+      DeviceEventEmitter.emit('refreshDashboard')
       navigation.goBack()
     } catch (error) {
       showMessage('保存失败，请重试')
@@ -196,7 +205,24 @@ const DiaperFormScreen = () => {
         {/* 顶部导航栏 */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              Alert.alert(
+                '提示',
+                '是否要保存换尿布记录？',
+                [
+                  {
+                    text: '取消',
+                    style: 'cancel',
+                    onPress: () => navigation.goBack()
+                  },
+                  {
+                    text: '保存',
+                    onPress: handleSave
+                  }
+                ],
+                { cancelable: false }
+              )
+            }}
             style={styles.backButton}
           >
             <Text style={styles.backButtonText}>←</Text>
