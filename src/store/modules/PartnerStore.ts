@@ -10,6 +10,7 @@ interface Message {
 interface PartnerState {
   partnerId: string | null
   partnerName: string | null
+  partnerAvatar: string | null
   messages: Message[]
   isConnected: boolean
 }
@@ -17,6 +18,7 @@ interface PartnerState {
 const initialState: PartnerState = {
   partnerId: null, // Initial state is null, meaning no partner added
   partnerName: null,
+  partnerAvatar: null,
   messages: [],
   isConnected: false
 }
@@ -27,15 +29,21 @@ const partnerSlice = createSlice({
   reducers: {
     setPartner: (
       state,
-      action: PayloadAction<{ id: string; name: string }>
+      action: PayloadAction<{
+        id: string
+        name: string
+        avatar?: string | null
+      }>
     ) => {
       state.partnerId = action.payload.id
       state.partnerName = action.payload.name
+      state.partnerAvatar = action.payload.avatar || null
       // Persist if needed, but for now just state
     },
     removePartner: state => {
       state.partnerId = null
       state.partnerName = null
+      state.partnerAvatar = null
       state.messages = []
       state.isConnected = false
     },

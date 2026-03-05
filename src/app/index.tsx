@@ -1,12 +1,19 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
-import { LogBox } from 'react-native'
+import { LogBox, View, Image, StyleSheet } from 'react-native'
 import { initFollowingIds } from '../store/modules/FollowStore'
-import { useAppDispatch } from '../hooks/redux'
+import { useAppDispatch, useAppSelector } from '../hooks/redux'
+import { fetchPostList } from '../store/modules/PostStore'
+import {
+  fetchBabies,
+  fetchBabyProfile,
+  loadCurrentBabyId
+} from '../store/modules/BabyStore'
+import * as SplashScreen from 'expo-splash-screen'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -45,23 +52,72 @@ LogBox.ignoreLogs([
 const Stack = createNativeStackNavigator()
 
 // 初始化组件，用于在应用启动时加载关注列表
-function AppInitializer() {
+function AppInitializer({ onReady }: { onReady?: () => void }) {
   const dispatch = useAppDispatch()
+  const token = useAppSelector(state => state.user.token)
 
   useEffect(() => {
-    // 初始化关注列表
-    dispatch(initFollowingIds())
-  }, [dispatch])
+    let active = true
+    const run = async () => {
+      if (!token) {
+        if (active) onReady?.()
+        return
+      }
+      try {
+        await dispatch(initFollowingIds())
+        await dispatch(loadCurrentBabyId() as any)
+        await dispatch(fetchBabies())
+        const babyId = store.getState().baby.currentBabyId
+        if (babyId) {
+          await dispatch(fetchBabyProfile(babyId))
+        }
+        await dispatch(fetchPostList({ page: 1, strategy: 'ctime' }))
+      } finally {
+        if (active) onReady?.()
+      }
+    }
+    run()
+    return () => {
+      active = false
+    }
+  }, [dispatch, onReady, token])
 
   return null
 }
 
 export default function Layout() {
+  const [splashVisible, setSplashVisible] = useState(true)
+  const [appReady, setAppReady] = useState(false)
+  const [rootViewReady, setRootViewReady] = useState(false)
+  const [minDelayDone, setMinDelayDone] = useState(false)
+
+  useEffect(() => {
+    SplashScreen.preventAutoHideAsync().catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinDelayDone(true)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const onLayoutRootView = useCallback(() => {
+    setRootViewReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (appReady && rootViewReady && minDelayDone && splashVisible) {
+      SplashScreen.hideAsync().catch(() => {})
+      setSplashVisible(false)
+    }
+  }, [appReady, rootViewReady, minDelayDone, splashVisible])
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <Provider store={store}>
         <MessageProvider>
-          <AppInitializer />
+          <AppInitializer onReady={() => setAppReady(true)} />
           <NavigationContainer>
             <Stack.Navigator
               initialRouteName={store.getState().user.token ? 'Tabs' : 'Login'}
@@ -216,6 +272,26 @@ export default function Layout() {
           </NavigationContainer>
         </MessageProvider>
       </Provider>
+      {splashVisible && (
+        <View style={localStyles.splashOverlay}>
+          <Image
+            source={require('../assets/splash.png')}
+            style={localStyles.splashImage}
+            resizeMode="cover"
+          />
+        </View>
+      )}
     </GestureHandlerRootView>
   )
 }
+
+const localStyles = StyleSheet.create({
+  splashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#ffffff'
+  },
+  splashImage: {
+    width: '100%',
+    height: '100%'
+  }
+})

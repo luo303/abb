@@ -17,7 +17,8 @@ import {
   Platform,
   Alert,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Image
 } from 'react-native'
 import { useSelector, useDispatch } from 'react-redux'
 import { Ionicons, AntDesign } from '@expo/vector-icons'
@@ -44,9 +45,10 @@ import {
 export default function PartnerChat() {
   const dispatch = useDispatch()
   const navigation = useNavigation()
-  const { partnerId, partnerName, messages } = useSelector(
+  const { partnerId, partnerName, partnerAvatar, messages } = useSelector(
     (state: RootState) => state.partner
   )
+  const userInfo = useSelector((state: RootState) => state.user.userInfo)
   const token = useSelector((state: RootState) => state.user.token)
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
@@ -110,11 +112,13 @@ export default function PartnerChat() {
         if (!isActive) return
         const serverPartnerId = res?.data?.partner_id
         const serverPartnerUsername = res?.data?.partner_username
+        const serverPartnerAvatar = res?.data?.partner_avatar
         if (res?.code === 0 && serverPartnerId) {
           dispatch(
             setPartner({
               id: serverPartnerId,
-              name: serverPartnerUsername || '另一半'
+              name: serverPartnerUsername || '另一半',
+              avatar: serverPartnerAvatar || null
             })
           )
         }
@@ -259,11 +263,13 @@ export default function PartnerChat() {
 
       const serverPartnerId = res?.data?.partner_id
       const serverPartnerUsername = res?.data?.partner_username
+      const serverPartnerAvatar = res?.data?.partner_avatar
       if (res?.code === 0 && serverPartnerId) {
         dispatch(
           setPartner({
             id: serverPartnerId,
-            name: serverPartnerUsername || '另一半'
+            name: serverPartnerUsername || '另一半',
+            avatar: serverPartnerAvatar || null
           })
         )
         setInputPartnerAccount('')
@@ -381,6 +387,8 @@ export default function PartnerChat() {
 
   const renderMessageItem = ({ item }: { item: any }) => {
     const isMe = item.sender === 'me'
+    const partnerAvatarSource = partnerAvatar ? { uri: partnerAvatar } : null
+    const myAvatarSource = userInfo?.avatar ? { uri: userInfo.avatar } : null
     return (
       <View
         style={[
@@ -388,11 +396,14 @@ export default function PartnerChat() {
           isMe ? styles.messageRowRight : styles.messageRowLeft
         ]}
       >
-        {!isMe && (
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>TA</Text>
-          </View>
-        )}
+        {!isMe &&
+          (partnerAvatarSource ? (
+            <Image source={partnerAvatarSource} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>TA</Text>
+            </View>
+          ))}
         <View
           style={[
             styles.messageBubble,
@@ -408,11 +419,14 @@ export default function PartnerChat() {
             {item.text}
           </Text>
         </View>
-        {isMe && (
-          <View style={[styles.avatar, styles.myAvatar]}>
-            <Text style={[styles.avatarText, { color: '#fff' }]}>我</Text>
-          </View>
-        )}
+        {isMe &&
+          (myAvatarSource ? (
+            <Image source={myAvatarSource} style={styles.myAvatarImage} />
+          ) : (
+            <View style={[styles.avatar, styles.myAvatar]}>
+              <Text style={[styles.avatarText, { color: '#fff' }]}>我</Text>
+            </View>
+          ))}
       </View>
     )
   }
@@ -643,10 +657,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10
   },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#E0E0E0'
+  },
   myAvatar: {
     backgroundColor: '#FF6B6B',
     marginRight: 0,
     marginLeft: 10
+  },
+  myAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 0,
+    marginLeft: 10,
+    backgroundColor: '#FF6B6B'
   },
   avatarText: {
     fontSize: 14,

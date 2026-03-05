@@ -38,6 +38,7 @@ export default function Home() {
     posts,
     hasMore,
     isLoadingMore,
+    isTabLoading,
     refreshing,
     activeTab,
     setActiveTab,
@@ -67,10 +68,12 @@ export default function Home() {
       ? Array.isArray(searchResults)
         ? searchResults
         : []
-      : posts
+      : isTabLoading
+        ? []
+        : posts
 
     return filtered
-  }, [isSearching, searchResults, posts])
+  }, [isSearching, searchResults, posts, isTabLoading])
 
   // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
   const flatListData = useMemo(() => {
@@ -214,6 +217,16 @@ export default function Home() {
 
   // 渲染列表尾部
   const ListFooterComponent = useCallback(() => {
+    if (isTabLoading && !isSearching) {
+      return (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color="#f43f5e" />
+          <Text style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
+            加载中...
+          </Text>
+        </View>
+      )
+    }
     if (isSearching) {
       return (
         <View>
@@ -262,6 +275,7 @@ export default function Home() {
     searchHasMore,
     activeTab,
     sortedPosts,
+    isTabLoading,
     isLoadingMore,
     hasMore,
     posts,

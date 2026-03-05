@@ -11,6 +11,7 @@ export interface PartnerResponse {
   data: {
     partner_id: string
     partner_username?: string
+    partner_avatar?: string
   }
 }
 

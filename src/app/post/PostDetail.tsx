@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   View,
   StyleSheet,
   ScrollView,
   Text,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -27,7 +28,10 @@ import {
   addAuthorPostToFollowing,
   removeAuthorPostFromFollowing
 } from '@/store/modules/PostStore'
-import { toggleFollow } from '@/api/follow'
+import {
+  followUser as followUserApi,
+  unfollowUser as unfollowUserApi
+} from '@/api/follow'
 import { followUser, unfollowUser } from '@/store/modules/FollowStore'
 import {
   getPostComments,
@@ -68,6 +72,8 @@ export default function PostDetail() {
 
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
+  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollOffsetRef = useRef(0)
 
   // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
   const isFollowingFromStore = useAppSelector(state => {
@@ -162,15 +168,31 @@ export default function PostDetail() {
   }, [currentPost?.author_avatar])
 
   const displayImages = useMemo(() => {
-    if (!currentPost) return []
-    if (currentPost.images && currentPost.images.length > 0) {
+    if (currentPost?.images && currentPost.images.length > 0) {
       return currentPost.images
     }
-    if (currentPost.cover) {
+    if (currentPost?.cover) {
       return [currentPost.cover]
     }
     return []
-  }, [currentPost])
+  }, [currentPost?.images, currentPost?.cover])
+
+  const displayContent = useMemo(() => {
+    if (!currentPost) return ''
+    return typeof currentPost.content === 'string'
+      ? currentPost.content
+      : JSON.stringify(currentPost.content)
+  }, [currentPost?.content])
+
+  const restoreScrollPosition = useCallback(() => {
+    if (Platform.OS !== 'android') return
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: scrollOffsetRef.current,
+        animated: false
+      })
+    })
+  }, [])
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return ''
@@ -407,15 +429,14 @@ export default function PostDetail() {
         }
       })
     )
+    restoreScrollPosition()
     ;(async () => {
       try {
         setIsCollectLoading(true)
         if (newIsFavorited) {
           await collectPost(currentPost.post_id)
-          showMessage('收藏成功')
         } else {
           await uncollectPost(currentPost.post_id)
-          showMessage('取消收藏')
         }
       } catch (error) {
         const rollbackCount = newIsFavorited
@@ -476,8 +497,11 @@ export default function PostDetail() {
         dispatch(removeAuthorPostFromFollowing(currentPost.post_id))
       }
 
-      await toggleFollow(currentPost.author_id as string)
-      showMessage(newIsFollowing ? '关注成功' : '取消关注')
+      if (newIsFollowing) {
+        await followUserApi(currentPost.author_id as string)
+      } else {
+        await unfollowUserApi(currentPost.author_id as string)
+      }
     } catch (error) {
       console.error('关注操作失败:', error)
       // 失败时回滚状态
@@ -681,6 +705,11 @@ export default function PostDetail() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}
+        ref={scrollViewRef}
+        onScroll={event => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y
+        }}
+        scrollEventThrottle={16}
       >
         <PostHeader
           avatar={displayAvatar}
@@ -692,11 +721,7 @@ export default function PostDetail() {
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
             title={currentPost.title}
-            content={
-              typeof currentPost.content === 'string'
-                ? currentPost.content
-                : JSON.stringify(currentPost.content)
-            }
+            content={displayContent}
             tags={currentPost.tags}
             images={displayImages}
             publishTime={formatDate(currentPost.ctime)}
@@ -750,7 +775,12 @@ export default function PostDetail() {
       </ScrollView>
 
       {/* 底部常驻栏 */}
-      <View style={[styles.footerWrapper, { paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.footerWrapper,
+          { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0 }
+        ]}
+      >
         <PostFooter
           onInputPress={handleStartInput}
           likeCount={currentPost.like_count}

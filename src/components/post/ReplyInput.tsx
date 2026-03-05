@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   TextInput,
   StyleSheet,
@@ -24,6 +24,7 @@ export default function ReplyInput({
   onDismiss
 }: ReplyInputProps) {
   const [text, setText] = useState('')
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
   const inputRef = useRef<TextInput>(null)
 
   useEffect(() => {
@@ -37,6 +38,34 @@ export default function ReplyInput({
       Keyboard.dismiss()
     }
   }, [visible])
+
+  const handleKeyboardShow = useCallback((event: any) => {
+    if (Platform.OS === 'android') {
+      setKeyboardHeight(event.endCoordinates?.height || 0)
+    }
+  }, [])
+
+  const handleKeyboardHide = useCallback(() => {
+    if (Platform.OS === 'android') {
+      setKeyboardHeight(0)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!visible) return
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      handleKeyboardShow
+    )
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      handleKeyboardHide
+    )
+    return () => {
+      showSub.remove()
+      hideSub.remove()
+    }
+  }, [visible, handleKeyboardShow, handleKeyboardHide])
 
   const handleSend = () => {
     if (text.trim()) {
@@ -56,7 +85,7 @@ export default function ReplyInput({
       onRequestClose={onDismiss}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <TouchableOpacity
@@ -67,7 +96,10 @@ export default function ReplyInput({
           <TouchableOpacity
             activeOpacity={1}
             onPress={e => e.stopPropagation()}
-            style={styles.inputContainer}
+            style={[
+              styles.inputContainer,
+              Platform.OS === 'android' && { marginBottom: keyboardHeight }
+            ]}
           >
             <TextInput
               ref={inputRef}

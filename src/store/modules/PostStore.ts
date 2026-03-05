@@ -88,12 +88,15 @@ interface PostState {
   loading: boolean
   error: string | null
   postList: PostItem[]
+  postListFetched: boolean
+  postListStrategy: string
   currentPost: PostItem | null
   // 关注列表相关状态
   followingPosts: PostItem[]
   followPage: number
   followHasMore: boolean
   isFollowLoading: boolean
+  followFetched: boolean
   // 分页相关状态
   page: number
   hasMore: boolean
@@ -106,12 +109,15 @@ const initialState: PostState = {
   loading: false,
   error: null,
   postList: [],
+  postListFetched: false,
+  postListStrategy: 'ctime',
   currentPost: null,
   // 关注列表相关状态
   followingPosts: [],
   followPage: 1,
   followHasMore: true,
   isFollowLoading: false,
+  followFetched: false,
   // 分页相关状态
   page: 1,
   hasMore: true,
@@ -137,7 +143,7 @@ export const fetchPostDetail = createAsyncThunk<PostDetailResponse, string>(
 // 获取帖子列表
 export const fetchPostList = createAsyncThunk<
   PostListResponse,
-  { page?: number; pageSize?: number; strategy?: string }
+  { page?: number; pageSize?: number; strategy?: string; force?: boolean }
 >(
   'post/fetchPostList',
   async ({ page = 1, pageSize = 10, strategy }, { rejectWithValue }) => {
@@ -146,6 +152,21 @@ export const fetchPostList = createAsyncThunk<
       return response
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
+    }
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true
+      const state = getState() as { post: PostState }
+      const strategy = arg?.strategy || 'ctime'
+      if (state.post.loading) return false
+      if (
+        state.post.postListFetched &&
+        state.post.postListStrategy === strategy
+      ) {
+        return false
+      }
+      return true
     }
   }
 )
@@ -447,6 +468,8 @@ const postSlice = createSlice({
       })
       .addCase(fetchPostList.fulfilled, (state: PostState, action: any) => {
         state.loading = false
+        state.postListFetched = true
+        state.postListStrategy = action.meta?.arg?.strategy || 'ctime'
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
           const parsedPostList =
@@ -467,6 +490,8 @@ const postSlice = createSlice({
       })
       .addCase(fetchPostList.rejected, (state: PostState, action: any) => {
         state.loading = false
+        state.postListFetched = true
+        state.postListStrategy = action.meta?.arg?.strategy || 'ctime'
         state.error = action.payload as string
       })
       // 加载更多帖子
@@ -579,6 +604,7 @@ const postSlice = createSlice({
         fetchFollowingPosts.fulfilled,
         (state: PostState, action: any) => {
           state.isFollowLoading = false
+          state.followFetched = true
           if (action.payload?.code === 0 || action.payload?.code === 200) {
             // 统一对 content 字段进行 JSON.parse 解析
             const parsedPostList =
@@ -611,6 +637,7 @@ const postSlice = createSlice({
         fetchFollowingPosts.rejected,
         (state: PostState, action: any) => {
           state.isFollowLoading = false
+          state.followFetched = true
           state.error = action.payload as string
         }
       )
