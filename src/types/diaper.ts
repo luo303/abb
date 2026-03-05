@@ -17,26 +17,25 @@ export enum PeeColor {
   NORMAL = 'normal',
   YELLOW = 'yellow',
   RED = 'red',
-  DARK_TEA = 'dark_tea'
+  DARK_TEA = 'tea'
 }
 
 export enum PoopColor {
   DARK_GREEN = 'dark_green',
   GREEN = 'green',
   YELLOW = 'yellow',
-  BROWN = 'brown',
+  BROWN = 'orange',
   RED = 'red',
   BLACK = 'black',
-  GREY_WHITE = 'grey_white'
+  GREY_WHITE = 'gray_white'
 }
 
 export enum PoopConsistency {
-  NORMAL = 'normal',
   PASTE = 'paste',
-  FOAM = 'foam',
-  MILK_CLOT = 'milk_clot',
+  FOAM = 'foamy',
+  MILK_CLOT = 'milky',
   FOOD_RESIDUE = 'food_residue',
-  EGG_LIKE = 'egg_like',
+  EGG_LIKE = 'egg_flower',
   WATERY = 'watery',
   SHEEP = 'sheep',
   BLOODY = 'bloody'

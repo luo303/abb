@@ -26,15 +26,12 @@ export const getDiaperListByDateReq = async (
   baby_id: string,
   date: string
 ): Promise<DiaperListResponse> => {
-  const res = await request.get<DiaperListResponse>(
-    `/baby/${baby_id}/daily/diaper/byDate/list`,
-    {
-      params: {
-        date
-      }
+  const res = await request.get(`/baby/${baby_id}/daily/diaper/byDate/list`, {
+    params: {
+      date
     }
-  )
-  return res.data
+  })
+  return res as unknown as DiaperListResponse
 }
 
 // 新增记录
@@ -42,11 +39,8 @@ export const addDiaperRecordReq = async (
   baby_id: string,
   data: DiaperRecordRequest
 ): Promise<ApiResponse> => {
-  const res = await request.post<ApiResponse>(
-    `/baby/${baby_id}/daily/diaper`,
-    data
-  )
-  return res.data
+  const res = await request.post(`/baby/${baby_id}/daily/diaper`, data)
+  return res as unknown as ApiResponse
 }
 
 // 修改记录
@@ -55,11 +49,11 @@ export const updateDiaperRecordReq = async (
   diaper_id: string,
   data: DiaperRecordRequest
 ): Promise<ApiResponse> => {
-  const res = await request.put<ApiResponse>(
+  const res = await request.put(
     `/baby/${baby_id}/daily/diaper/${diaper_id}`,
     data
   )
-  return res.data
+  return res as unknown as ApiResponse
 }
 
 // 获取单条记录详情
@@ -67,10 +61,8 @@ export const getDiaperDetailReq = async (
   baby_id: string,
   diaper_id: string
 ): Promise<DiaperDetailResponse> => {
-  const res = await request.get<DiaperDetailResponse>(
-    `/baby/${baby_id}/daily/diaper/${diaper_id}`
-  )
-  return res.data
+  const res = await request.get(`/baby/${baby_id}/daily/diaper/${diaper_id}`)
+  return res as unknown as DiaperDetailResponse
 }
 
 // 删除记录
@@ -78,8 +70,6 @@ export const deleteDiaperRecordReq = async (
   baby_id: string,
   diaper_id: string
 ): Promise<ApiResponse> => {
-  const res = await request.delete<ApiResponse>(
-    `/baby/${baby_id}/daily/diaper/${diaper_id}`
-  )
-  return res.data
+  const res = await request.delete(`/baby/${baby_id}/daily/diaper/${diaper_id}`)
+  return res as unknown as ApiResponse
 }

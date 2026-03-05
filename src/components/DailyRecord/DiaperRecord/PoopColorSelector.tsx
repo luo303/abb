@@ -19,8 +19,8 @@ export const PoopColorSelector: React.FC<PoopColorSelectorProps> = ({
 }) => {
   const colors = [
     {
-      value: { id: PoopColor.DARK_GREEN, name: '深绿色' },
-      label: '深绿色',
+      value: { id: PoopColor.DARK_GREEN, name: '墨绿色' },
+      label: '墨绿色',
       color: '#2F4F4F'
     },
     {

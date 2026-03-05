@@ -69,7 +69,7 @@ const DiaperFormScreen = () => {
   >({ id: PoopColor.YELLOW, name: '黄色' })
   const [selectedPoopConsistency, setSelectedPoopConsistency] = useState<
     Option | undefined
-  >({ id: PoopConsistency.NORMAL, name: '正常' })
+  >({ id: PoopConsistency.PASTE, name: '膏状' })
   const [selectedTime, setSelectedTime] = useState(new Date())
   const [remark, setRemark] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -123,25 +123,36 @@ const DiaperFormScreen = () => {
 
     setIsLoading(true)
     try {
-      const requestData: DiaperRecordRequest = {
+      // 先创建基本数据
+      const baseData = {
         diaper_type: selectedType.id,
         change_time: selectedTime.getTime(),
         remark
       }
 
-      // 根据类型添加相应的字段
+      // 根据类型添加相应的字段，只在有值时添加
+      let requestData: DiaperRecordRequest = { ...baseData }
+
+      // 只在需要且有值时添加 pee_color
       if (
-        selectedType.id === DiaperType.PEE ||
-        selectedType.id === DiaperType.BOTH
+        (selectedType.id === DiaperType.PEE ||
+          selectedType.id === DiaperType.BOTH) &&
+        selectedPeeColor?.id
       ) {
-        requestData.pee_color = selectedPeeColor?.id
+        requestData.pee_color = selectedPeeColor.id
       }
+
+      // 只在需要且有值时添加 poop_color 和 poop_consistency
       if (
         selectedType.id === DiaperType.POOP ||
         selectedType.id === DiaperType.BOTH
       ) {
-        requestData.poop_color = selectedPoopColor?.id
-        requestData.poop_consistency = selectedPoopConsistency?.id
+        if (selectedPoopColor?.id) {
+          requestData.poop_color = selectedPoopColor.id
+        }
+        if (selectedPoopConsistency?.id) {
+          requestData.poop_consistency = selectedPoopConsistency.id
+        }
       }
 
       if (isEditMode && diaperId) {

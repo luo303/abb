@@ -19,11 +19,6 @@ export const PoopConsistencySelector: React.FC<
 > = ({ selectedConsistency, onSelectConsistency }) => {
   const consistencies = [
     {
-      value: { id: PoopConsistency.NORMAL, name: '正常' },
-      label: '正常',
-      icon: 'emoticon-poop'
-    },
-    {
       value: { id: PoopConsistency.PASTE, name: '膏状' },
       label: '膏状',
       icon: 'wave'

@@ -84,16 +84,29 @@ export const addDiaperItem = createAsyncThunk<
   { babyId: string; data: DiaperRecordRequest }
 >(
   'diaper/addDiaperItem',
-  async ({ babyId, data }, { getState, rejectWithValue }) => {
+  async ({ babyId, data }, { getState, rejectWithValue, dispatch }) => {
     try {
       const response = await addDiaperRecordReq(babyId, data)
 
+      // 打印后端返回的ID
+      console.log('Backend returned diaper_id:', response.data?.diaper_id)
+
       // 更新本地存储
       if (response.code === 0 || response.code === 200) {
-        const state = getState() as { diaper: DiaperState }
-        const updatedRecords = state.diaper.diaperList
-        const date = new Date(data.change_time).toISOString().split('T')[0]
-        await saveDiaperRecords(babyId, date, updatedRecords)
+        // 如果后端返回了 diaper_id，更新本地记录
+        if (response.data && response.data.diaper_id) {
+          // 找到最新添加的记录（使用临时ID）并更新为后端返回的 ID
+          const state = getState() as { diaper: DiaperState }
+          const latestRecord = state.diaper.diaperList[0]
+          if (latestRecord) {
+            const updatedRecord = {
+              ...latestRecord,
+              diaper_id: response.data.diaper_id
+            }
+            // 直接更新本地记录
+            dispatch(updateDiaperRecord(updatedRecord))
+          }
+        }
       }
 
       return response
@@ -115,7 +128,11 @@ export const updateDiaperItem = createAsyncThunk<
     { getState, rejectWithValue, dispatch }
   ) => {
     try {
+      console.log('Updating diaper record with:', { babyId, diaperId, data })
       const response = await updateDiaperRecordReq(babyId, diaperId, data)
+
+      // 打印完整的响应
+      console.log('Update response:', JSON.stringify(response))
 
       // 更新本地存储
       if (response.code === 0 || response.code === 200) {
@@ -127,6 +144,7 @@ export const updateDiaperItem = createAsyncThunk<
 
       return response
     } catch (error: any) {
+      console.error('Update error:', error)
       // 错误时回滚到原始记录
       const state = getState() as { diaper: DiaperState }
       const originalRecord = state.diaper.diaperList.find(
@@ -229,9 +247,16 @@ const diaperSlice = createSlice({
     },
     updateDiaperRecord: (state, action: PayloadAction<DiaperItem>) => {
       // 找到并更新对应的记录
-      const index = state.diaperList.findIndex(
+      let index = state.diaperList.findIndex(
         item => item.diaper_id === action.payload.diaper_id
       )
+
+      // 如果找不到记录，检查是否是最新添加的记录（可能是用临时ID添加的）
+      if (index === -1 && state.diaperList.length > 0) {
+        // 假设最新添加的记录是我们要更新的记录
+        index = 0
+      }
+
       if (index !== -1) {
         state.diaperList[index] = action.payload
         // 保存到本地存储

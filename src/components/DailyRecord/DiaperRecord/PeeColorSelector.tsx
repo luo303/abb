@@ -24,8 +24,8 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
       color: '#FFF8DC'
     },
     {
-      value: { id: PeeColor.PINK, name: '淡粉色' },
-      label: '淡粉色',
+      value: { id: PeeColor.PINK, name: '粉色' },
+      label: '粉色',
       color: '#FFC0CB'
     },
     {
@@ -44,8 +44,8 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
       color: '#FF6347'
     },
     {
-      value: { id: PeeColor.DARK_TEA, name: '深茶色' },
-      label: '深茶色',
+      value: { id: PeeColor.DARK_TEA, name: '浓茶色' },
+      label: '浓茶色',
       color: '#8B4513'
     }
   ]
