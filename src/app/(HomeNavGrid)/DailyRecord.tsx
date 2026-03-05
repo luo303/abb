@@ -141,8 +141,25 @@ export default function DailyRecordScreen() {
             if (item.poop_consistency) {
               parts.push(item.poop_consistency.name)
             }
-            description = parts.join(' | ')
+            description = parts.join(' ')
           }
+        }
+
+        // 根据尿布类型选择图标
+        let icon = 'baby-carriage' // 默认图标
+        switch (item.diaper_type.id) {
+          case 'pee':
+            icon = 'water' // 嘘嘘图标
+            break
+          case 'poop':
+            icon = 'emoticon-poop' // 便便图标
+            break
+          case 'both':
+            icon = 'opacity' // 两者都有图标
+            break
+          case 'dry':
+            icon = 'shield-check-outline' // 干爽图标
+            break
         }
 
         return {
@@ -150,7 +167,7 @@ export default function DailyRecordScreen() {
           type: 'diaper' as const,
           time: item.change_time,
           details: description,
-          icon: 'baby-carriage',
+          icon: icon,
           name: '尿布',
           title: '尿布',
           description: description
@@ -170,8 +187,20 @@ export default function DailyRecordScreen() {
         return itemDate === selectedDate
       })
       .map(item => {
-        // 固定图标为baby-bottle
-        const icon = 'baby-bottle'
+        // 根据喂养类型选择图标
+        let icon = 'baby-bottle' // 默认图标
+        switch (item.feed_type) {
+          case 'formula':
+            icon = 'baby-bottle' // 奶粉图标
+            break
+          case 'breast':
+          case 'pump':
+            icon = 'water' // 母乳图标
+            break
+          case 'food':
+            icon = 'food' // 辅食图标
+            break
+        }
 
         // 将feed_type枚举值转换为中文名称
         let feedTypeName = '喂养'
@@ -193,11 +222,11 @@ export default function DailyRecordScreen() {
         // 构建副标题：喂养类型 + 时长或备注
         let description = feedTypeName
         if (item.duration) {
-          description += ` · ${item.duration}分钟`
+          description += `  ${item.duration}分钟`
         } else if (item.remark) {
-          description += ` · ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
+          description += `  ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
         } else if (item.amount) {
-          description += ` · ${item.amount}ml`
+          description += `  ${item.amount}ml`
         }
 
         // 确保返回的对象包含所有必要字段
@@ -244,16 +273,14 @@ export default function DailyRecordScreen() {
         const m = Math.floor((durationSeconds % 3600) / 60)
         const s = durationSeconds % 60
 
-        if (h > 0) {
-          durationText = `${h}h${m}m${s}s`
-        } else if (m > 0) {
-          durationText = `${m}m${s}s`
-        } else {
-          durationText = `${s}s`
-        }
+        const formattedH = String(h).padStart(2, '0')
+        const formattedM = String(m).padStart(2, '0')
+        const formattedS = String(s).padStart(2, '0')
+
+        durationText = `${formattedH}:${formattedM}:${formattedS}`
 
         // 构建副标题
-        const description = `${startTime} - ${endTime} · ${durationText}`
+        const description = `${startTime} - ${endTime}  ${durationText}`
 
         return {
           id: item.session_id,

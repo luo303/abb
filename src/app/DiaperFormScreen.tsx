@@ -7,7 +7,8 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
-  DeviceEventEmitter
+  DeviceEventEmitter,
+  Alert
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
@@ -204,7 +205,24 @@ const DiaperFormScreen = () => {
         {/* 顶部导航栏 */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              Alert.alert(
+                '提示',
+                '是否要保存换尿布记录？',
+                [
+                  {
+                    text: '取消',
+                    style: 'cancel',
+                    onPress: () => navigation.goBack()
+                  },
+                  {
+                    text: '保存',
+                    onPress: handleSave
+                  }
+                ],
+                { cancelable: false }
+              )
+            }}
             style={styles.backButton}
           >
             <Text style={styles.backButtonText}>←</Text>
