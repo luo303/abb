@@ -6,7 +6,8 @@ import {
   TouchableWithoutFeedback,
   Alert,
   StyleSheet,
-  Platform
+  Platform,
+  DeviceEventEmitter
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector, useDispatch } from 'react-redux'
@@ -18,9 +19,14 @@ import {
   getOngoingTimer,
   clearOngoingTimer
 } from '../../../utils/sleepStorage'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SleepSession, SleepRecord } from '../../../types/sleep'
 import { useNavigationHelper } from '../../../utils/navigation'
-import { addSleepItem, addSleepRecord } from '../../../store/modules/sleepStore'
+import {
+  addSleepItem,
+  addSleepRecord,
+  updateSleepItem
+} from '../../../store/modules/sleepStore'
 import type { AppDispatch } from '../../../store'
 import SleepClockDisplay from '../../../components/DailyRecord/sleep/SleepClockDisplay'
 import SleepActionButton from '../../../components/DailyRecord/sleep/SleepActionButton'
@@ -30,15 +36,19 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker'
 
 // 格式化秒数为 HH:MM:SS 格式
-const formatTime = (seconds: number) => {
+const formatTime = (seconds: number, isManual: boolean = false) => {
   // 处理NaN情况
   if (isNaN(seconds)) {
     return '00:00:00'
   }
-  const h = Math.floor(seconds / 3600)
+  const h = Math.floor(seconds / 3600) % 24 // 对小时数取模 24
   const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
+  const s = isManual ? 0 : seconds % 60
+  // 确保小时显示为两位数
+  const formattedH = String(h).padStart(2, '0')
+  const formattedM = String(m).padStart(2, '0')
+  const formattedS = String(s).padStart(2, '0')
+  return `${formattedH}:${formattedM}:${formattedS}`
 }
 
 const formatPickerTime = (date: Date) => {
@@ -49,7 +59,8 @@ const formatPickerTime = (date: Date) => {
 }
 
 const mergeTimeToDate = (base: Date, time: Date) => {
-  const next = new Date(base)
+  // 使用当前日期作为基准，确保 startTime 和 endTime 的日期部分始终相同
+  const next = new Date()
   next.setHours(time.getHours(), time.getMinutes(), 0, 0)
   return next
 }
@@ -101,8 +112,28 @@ const SleepRecordScreen = () => {
         // 检查本地是否有缓存的计时
         const ongoingTimer = await getOngoingTimer()
         if (ongoingTimer && babyId && ongoingTimer.started_at) {
+          const CACHE_KEY = `sleep_active_${babyId}`
+
           try {
-            // 向服务器确认是否仍在进行中
+            // 尝试从缓存获取
+            const cachedStatus = await AsyncStorage.getItem(CACHE_KEY)
+            if (cachedStatus) {
+              // 计算已过秒数，恢复计时
+              const elapsedSeconds = Math.floor(
+                (Date.now() - ongoingTimer.started_at) / 1000
+              )
+              setSeconds(elapsedSeconds)
+              secondsRef.current = elapsedSeconds
+              setIsTimerRunning(true)
+              sessionIdRef.current = ongoingTimer.session_id
+              startTimestampRef.current = ongoingTimer.started_at
+
+              // 启动定时器
+              startTimer()
+              return
+            }
+
+            // 缓存不存在，从API获取
             const activeSleep = await getActiveSleep(babyId)
             if (activeSleep) {
               // 计算已过秒数，恢复计时
@@ -117,27 +148,60 @@ const SleepRecordScreen = () => {
 
               // 启动定时器
               startTimer()
+
+              // 缓存结果
+              await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(activeSleep))
             } else {
               // 服务器返回null，清除本地缓存
               await clearOngoingTimer()
+              await AsyncStorage.removeItem(CACHE_KEY)
               setIsTimerRunning(false)
               setSeconds(0)
             }
           } catch (error) {
-            // 服务器请求失败，清除本地缓存
-            await clearOngoingTimer()
-            setIsTimerRunning(false)
-            setSeconds(0)
+            console.error('获取睡眠状态失败:', error)
+            // 服务器请求失败，尝试从本地正在进行的计时器获取
+            if (ongoingTimer) {
+              // 计算已过秒数，恢复计时
+              const elapsedSeconds = Math.floor(
+                (Date.now() - ongoingTimer.started_at) / 1000
+              )
+              setSeconds(elapsedSeconds)
+              secondsRef.current = elapsedSeconds
+              setIsTimerRunning(true)
+              sessionIdRef.current = ongoingTimer.session_id
+              startTimestampRef.current = ongoingTimer.started_at
+
+              // 启动定时器
+              startTimer()
+            } else {
+              // 清除本地缓存
+              await clearOngoingTimer()
+              await AsyncStorage.removeItem(CACHE_KEY)
+              setIsTimerRunning(false)
+              setSeconds(0)
+            }
           }
         } else {
           // 没有本地缓存或babyId，重置状态
           setIsTimerRunning(false)
           setSeconds(0)
+          // 清除缓存
+          if (babyId) {
+            const CACHE_KEY = `sleep_active_${babyId}`
+            await AsyncStorage.removeItem(CACHE_KEY)
+          }
         }
       } catch (error) {
+        console.error('检查睡眠状态失败:', error)
         // 发生错误时重置状态
         setIsTimerRunning(false)
         setSeconds(0)
+        // 清除缓存
+        if (babyId) {
+          const CACHE_KEY = `sleep_active_${babyId}`
+          await AsyncStorage.removeItem(CACHE_KEY)
+        }
       }
     }
 
@@ -202,6 +266,10 @@ const SleepRecordScreen = () => {
         started_at: Date.now()
       })
 
+      // 缓存睡眠状态
+      const CACHE_KEY = `sleep_active_${babyId}`
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(sleepSession))
+
       // ✅ 启动定时器和记录时间戳放在一起，消除异步间隔
       const now = Date.now()
       startTimestampRef.current = now
@@ -246,31 +314,38 @@ const SleepRecordScreen = () => {
               console.log('started_at:', started_at)
               console.log('ended_at:', ended_at)
               console.log('duration_ms:', ended_at - started_at)
-              dispatch(
-                addSleepRecord({
-                  babyId: babyId,
-                  session_id: sessionIdRef.current!,
-                  started_at: started_at,
-                  ended_at: ended_at
-                })
+              // 直接使用 addSleepItem action，与手动记录的行为一致
+              const sleepRecord: SleepRecord = {
+                session_id: sessionIdRef.current!,
+                started_at: started_at,
+                ended_at: ended_at,
+                duration_ms: ended_at - started_at
+              }
+
+              // 添加到 sleepList
+              dispatch(addSleepItem({ record: sleepRecord, babyId }))
+              console.log('计时器睡眠记录已添加到 sleepList')
+
+              // 清除正在进行的计时
+              await clearOngoingTimer()
+              // 清除睡眠状态缓存
+              const CACHE_KEY = `sleep_active_${babyId}`
+              await AsyncStorage.removeItem(CACHE_KEY)
+
+              // 显示提示
+              Alert.alert(
+                '睡眠已记录',
+                `睡眠时长 ${formatTime(currentSeconds)}`
               )
-                .unwrap()
-                .then(async () => {
-                  await clearOngoingTimer()
-                  Alert.alert(
-                    '睡眠已记录',
-                    `睡眠时长 ${formatTime(currentSeconds)}`
-                  )
-                  setIsTimerRunning(false)
-                  setSeconds(0)
-                  sessionIdRef.current = null
-                  navigation.goBack()
-                })
-                .catch(error => {
-                  console.error('添加睡眠记录失败:', error)
-                  Alert.alert('操作失败', '请重试')
-                  startTimer()
-                })
+
+              // 通知主页面刷新
+              DeviceEventEmitter.emit('refreshDashboard')
+
+              // 重置状态
+              setIsTimerRunning(false)
+              setSeconds(0)
+              sessionIdRef.current = null
+              navigation.goBack()
             } catch (error) {
               Alert.alert('操作失败', '请重试')
               startTimer()
@@ -335,27 +410,39 @@ const SleepRecordScreen = () => {
       adjustedEndTime.getTime() - startTime.getTime()
     )
     const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
-    const durationMinutes = Math.floor(
-      (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-    )
+    // 计算分钟数时加 1，防止因为本地操作时间导致时间计算错误
+    const durationMinutes =
+      Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)) + 1
 
     // 模拟API返回数据，用于测试
+    // 调整 duration_ms，确保与 durationMinutes 的计算一致
+    const adjustedDurationMs = durationMs + 60000 // 增加 1 分钟的毫秒数
     const sleepRecord: SleepRecord = {
-      session_id: `manual-session-${Date.now()}`,
+      session_id: sessionId || `manual-session-${Date.now()}`,
       started_at: startTime.getTime(),
       ended_at: adjustedEndTime.getTime(),
-      duration_ms: durationMs
+      duration_ms: adjustedDurationMs
     }
 
-    // 添加到sleepList
-    dispatch(addSleepItem(sleepRecord))
-    console.log('手动睡眠记录已添加到sleepList')
+    // 根据是否有 sessionId 决定是更新还是添加记录
+    if (sessionId) {
+      // 更新现有记录
+      dispatch(updateSleepItem({ record: sleepRecord, babyId }))
+      console.log('手动睡眠记录已更新')
+    } else {
+      // 添加新记录
+      dispatch(addSleepItem({ record: sleepRecord, babyId }))
+      console.log('手动睡眠记录已添加到sleepList')
+    }
 
     // 计算总秒数
-    const totalSeconds = Math.floor(durationMs / 1000)
+    const totalSeconds = Math.floor(adjustedDurationMs / 1000)
 
     // 弹出提示
-    Alert.alert('睡眠已记录', `睡眠时长 ${formatTime(totalSeconds)}`)
+    Alert.alert('睡眠已记录', `睡眠时长 ${formatTime(totalSeconds, true)}`)
+
+    // 通知主页面刷新
+    DeviceEventEmitter.emit('refreshDashboard')
 
     // 重置表单
     setStartTime(new Date())
@@ -411,6 +498,12 @@ const SleepRecordScreen = () => {
         style={styles.manualButton}
         onPress={handleManualRecord}
       >
+        <Ionicons
+          name="hand-left"
+          size={20}
+          color="#f43f5e"
+          style={styles.manualButtonIcon}
+        />
         <Text style={styles.manualButtonText}>手动记录</Text>
         <View
           style={[
@@ -534,6 +627,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3
+  },
+  manualButtonIcon: {
+    marginRight: 8
   },
   manualButtonText: {
     color: '#f43f5e',

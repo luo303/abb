@@ -246,8 +246,9 @@ export default function DailyRecordScreen() {
     // 从 sleepList 中筛选出当前日期的记录
     const sleepRecords = sleepList
       .filter(item => {
-        // 检查时间戳是否有效（大于1970-01-02）
-        const isValidTimestamp = item.started_at > 86400000 // 1天的毫秒数
+        // 检查时间戳是否有效
+        const isValidTimestamp =
+          typeof item.started_at === 'number' && !isNaN(item.started_at)
         if (!isValidTimestamp) {
           return false
         }
@@ -266,13 +267,24 @@ export default function DailyRecordScreen() {
         const startTime = dayjs(item.started_at).format('HH:mm')
         const endTime = dayjs(item.ended_at).format('HH:mm')
 
+        // 获取开始时间和结束时间的小时部分
+        const startHour = dayjs(item.started_at).hour()
+        const endHour = dayjs(item.ended_at).hour()
+
         // 构建时长文本
         let durationText = ''
         const durationSeconds = Math.floor(durationMs / 1000)
-        const h = Math.floor(durationSeconds / 3600)
+        let h = Math.floor(durationSeconds / 3600) % 24 // 对小时数取模 24
+        // 如果开始时间和结束时间的小时相同，将小时部分设置为 0
+        if (startHour === endHour) {
+          h = 0
+        }
         const m = Math.floor((durationSeconds % 3600) / 60)
-        const s = durationSeconds % 60
+        // 判断是否为手动记录
+        const isManual = item.session_id?.includes('manual-session') || false
+        const s = isManual ? 0 : durationSeconds % 60
 
+        // 确保小时显示为两位数，并且如果小时为 0，显示为 00
         const formattedH = String(h).padStart(2, '0')
         const formattedM = String(m).padStart(2, '0')
         const formattedS = String(s).padStart(2, '0')
@@ -282,12 +294,15 @@ export default function DailyRecordScreen() {
         // 构建副标题
         const description = `${startTime} - ${endTime}  ${durationText}`
 
+        // 根据记录类型设置不同的 icon（使用 MaterialCommunityIcons 支持的图标）
+        const icon = isManual ? 'gesture-tap-hold' : 'clock-outline'
+
         return {
           id: item.session_id,
           type: 'sleep' as const,
           time: item.started_at,
           details: description,
-          icon: 'sleep',
+          icon: icon,
           name: '睡眠',
           title: '睡眠',
           description: description
