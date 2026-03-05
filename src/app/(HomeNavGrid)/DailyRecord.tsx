@@ -138,10 +138,13 @@ export default function DailyRecordScreen() {
           }
         } else {
           // 其他类型显示颜色和性状信息
-          if (item.poop_color || item.poop_consistency) {
+          if (item.poop_color || item.poop_consistency || item.pee_color) {
             const parts = []
             if (item.poop_color) {
               parts.push(item.poop_color.name)
+            }
+            if (item.pee_color) {
+              parts.push(item.pee_color.name)
             }
             if (item.poop_consistency) {
               parts.push(item.poop_consistency.name)
