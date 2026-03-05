@@ -292,6 +292,7 @@ export default function Home() {
           {/* FlatList：stickyHeaderIndices={[1]} 让 tabs 项原生吸顶 */}
           <FlatList
             ref={flatListRef}
+            key={isSearching ? 'search' : 'default'}
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 150 }}
             showsVerticalScrollIndicator={false}
