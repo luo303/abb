@@ -2,7 +2,7 @@ import axios from 'axios'
 // import store from '../store'
 import * as SecureStore from 'expo-secure-store'
 //创建axios实例
-const baseURL = 'https://tayna-nonredemptible-dissipatedly.ngrok-free.dev/api' //云端mock地址
+const baseURL = 'http://38.76.197.12:8080/api' //云端mock地址
 const request = axios.create({
   baseURL,
   timeout: 10000 //10s

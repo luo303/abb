@@ -20,7 +20,8 @@ import MemoHeaderSections from '@/components/home/MemoHeaderSections'
 import StickyTabHeader from '@/components/home/StickyTabHeader'
 import {
   SearchEmptyState,
-  FollowEmptyState
+  FollowEmptyState,
+  HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
 import { useHomeData } from '@/hooks/useHomeData'
 import { useHomeSearch } from '@/hooks/useHomeSearch'
@@ -265,6 +266,24 @@ export default function Home() {
 
     if (activeTab === '关注' && sortedPosts.length === 0) {
       return <FollowEmptyState onGoToRecommend={() => setActiveTab('推荐')} />
+    }
+    if (activeTab === '推荐' && sortedPosts.length === 0) {
+      return (
+        <HomeTabEmptyState
+          iconName="sparkles-outline"
+          title="暂无推荐内容"
+          subtitle="下拉刷新试试"
+        />
+      )
+    }
+    if (activeTab === '热门' && sortedPosts.length === 0) {
+      return (
+        <HomeTabEmptyState
+          iconName="flame-outline"
+          title="暂无热门内容"
+          subtitle="稍后再来看看"
+        />
+      )
     }
 
     return (

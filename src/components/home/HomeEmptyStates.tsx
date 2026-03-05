@@ -32,7 +32,7 @@ interface FollowEmptyStateProps {
 export function FollowEmptyState({ onGoToRecommend }: FollowEmptyStateProps) {
   return (
     <View style={styles.emptyStateContainer}>
-      <Text style={styles.emptyStateTitle}>还没有关注任何人</Text>
+      <Text style={styles.emptyStateTitle}>暂无相关帖子呢</Text>
       <Text style={styles.emptyStateSubtitle}>
         关注感兴趣的作者，获取他们的最新动态
       </Text>
@@ -46,6 +46,26 @@ export function FollowEmptyState({ onGoToRecommend }: FollowEmptyStateProps) {
           <Text style={styles.emptyStateButtonText}>去发现精彩内容</Text>
         </LinearGradient>
       </TouchableOpacity>
+    </View>
+  )
+}
+
+interface HomeTabEmptyStateProps {
+  iconName: keyof typeof Ionicons.glyphMap
+  title: string
+  subtitle: string
+}
+
+export function HomeTabEmptyState({
+  iconName,
+  title,
+  subtitle
+}: HomeTabEmptyStateProps) {
+  return (
+    <View style={styles.emptyStateContainer}>
+      <Ionicons name={iconName} size={64} color="#ccc" />
+      <Text style={styles.emptyStateTitle}>{title}</Text>
+      <Text style={styles.emptyStateSubtitle}>{subtitle}</Text>
     </View>
   )
 }
