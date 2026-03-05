@@ -45,7 +45,6 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     }
 
     const handleImageError = (error: any) => {
-      console.error('Image load failed:', imageUrl, error.nativeEvent.error)
       setImageLoading(false)
       setImageError(true)
     }
