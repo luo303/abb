@@ -3,11 +3,19 @@ import { RootState } from '..'
 import { fetchDiaperList as fetchDiaperListAction } from './diaperStore'
 import { fetchFeedingList as fetchFeedingListAction } from './feedingStore'
 import { fetchSleepList as fetchSleepListAction } from './sleepStore'
-import { getDailyStatistics, DailyStatisticsResponse } from '../../api/daily'
+import {
+  getDailyStatistics as getDailyStatisticsApi,
+  DailyStatisticsResponse
+} from '../../api/daily'
 import { DiaperItem } from '../../types/diaper'
 import { FeedingItem } from '../../types/feeding'
 import { SleepRecord } from '../../types/sleep'
 import { DailyStatistics as DailyStatisticsType } from '../../types/daily'
+import {
+  saveDailyStatistics,
+  getDailyStatistics,
+  clearDailyStatistics
+} from '../../utils/dailyStorage'
 
 interface DailyState {
   currentDate: string
@@ -68,7 +76,14 @@ export const fetchDailyStatistics = createAsyncThunk<
   'daily/fetchDailyStatistics',
   async ({ babyId, date }, { rejectWithValue }) => {
     try {
-      const response = await getDailyStatistics(babyId, date)
+      // 优先从本地存储获取数据
+      const localData = await getDailyStatistics(babyId, date)
+      if (localData) {
+        return localData
+      }
+
+      // 本地存储没有数据，从API获取
+      const response = await getDailyStatisticsApi(babyId, date)
 
       // 处理响应数据，转换为本地统计类型
       if (
@@ -121,17 +136,27 @@ export const fetchDailyStatistics = createAsyncThunk<
                 : undefined
           }
 
-          return {
+          const processedData = {
             feeding: feedingStats,
             sleep: sleepStats,
             diaper: diaperStats,
             date
           }
+
+          // 保存到本地存储
+          await saveDailyStatistics(babyId, date, processedData)
+
+          return processedData
         }
       }
 
       throw new Error('获取统计信息失败')
     } catch (error: any) {
+      // 尝试从本地存储获取
+      const localData = await getDailyStatistics(babyId, date)
+      if (localData) {
+        return localData
+      }
       return rejectWithValue(error.response?.data?.message || error.message)
     }
   }

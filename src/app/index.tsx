@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'
 import store from '../store'
 import { LogBox } from 'react-native'
 import { initFollowingIds } from '../store/modules/FollowStore'
+import { fetchBabies, loadCurrentBabyId } from '../store/modules/BabyStore'
 import { useAppDispatch } from '../hooks/redux'
 
 // 导入页面组件
@@ -51,6 +52,10 @@ function AppInitializer() {
   useEffect(() => {
     // 初始化关注列表
     dispatch(initFollowingIds())
+    // 加载保存的宝宝ID
+    dispatch(loadCurrentBabyId())
+    // 获取宝宝列表
+    dispatch(fetchBabies())
   }, [dispatch])
 
   return null
