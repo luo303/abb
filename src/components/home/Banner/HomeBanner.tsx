@@ -17,7 +17,7 @@ const { width } = Dimensions.get('window')
 const RAW_DATA = [
   {
     id: '1',
-    imageSource: require('../../../assets/poster_ai 2.0.jpg'),
+    imageSource: require('../../../assets/poster_ai.jpg'),
     targetPage: 'AIAssistant'
   },
   {
@@ -27,17 +27,17 @@ const RAW_DATA = [
   },
   {
     id: '3',
-    imageSource: require('../../../assets/Growth_curve.png'),
+    imageSource: require('../../../assets/growthcurve.png'),
     targetPage: 'GrowthCurve'
   },
   {
     id: '4',
-    imageSource: require('../../../assets/Major_Events.png'),
+    imageSource: require('../../../assets/majorevents.png'),
     targetPage: 'MilestoneList'
   },
   {
     id: '5',
-    imageSource: require('../../../assets/Vaccine_records.png'),
+    imageSource: require('../../../assets/vaccinerecords.png'),
     targetPage: 'VaccineRecord'
   }
 ]
