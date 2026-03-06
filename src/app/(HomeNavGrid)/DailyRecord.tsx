@@ -1,0 +1,718 @@
+import React, { useState, useEffect } from 'react'
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  TouchableOpacity,
+  Text,
+  Animated,
+  DeviceEventEmitter
+} from 'react-native'
+import { Stack } from 'expo-router'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import dayjs from 'dayjs'
+import { Button } from '@ant-design/react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { useSelector, useDispatch } from 'react-redux'
+import { useNavigationHelper } from '../../utils/navigation'
+
+// 导入日常记录组件
+import DashboardRing from '../../components/DailyRecord/DashboardRing'
+import RecordCard from '../../components/DailyRecord/RecordCard'
+import EmptyState from '../../components/DailyRecord/EmptyState'
+
+// 导入类型定义和模拟数据
+import { RecordType, RecordItem, Statistics } from '../../types/recordTypes'
+import {
+  fetchDiaperList,
+  setCurrentDate
+} from '../../store/modules/diaperStore'
+import { fetchFeedingList } from '../../store/modules/feedingStore'
+import { fetchSleepList } from '../../store/modules/sleepStore'
+import { fetchDailyStatistics } from '../../store/modules/dailyStore'
+import { RootState, AppDispatch } from '../../store'
+
+export default function DailyRecordScreen() {
+  const { navigateToRecord } = useNavigationHelper()
+  const dispatch = useDispatch<AppDispatch>()
+  const babyId = useSelector((state: RootState) => state.baby.currentBabyId)
+  const diaperList = useSelector((state: RootState) => state.diaper.diaperList)
+  const feedingList = useSelector(
+    (state: RootState) => state.feeding.feedingList
+  )
+  const sleepList = useSelector((state: RootState) => state.sleep.sleepList)
+  const dailyStatistics = useSelector(
+    (state: RootState) => state.daily.statistics
+  )
+  const isLoading = useSelector(
+    (state: RootState) =>
+      state.feeding.loading || state.diaper.isLoading || state.sleep.loading
+  )
+
+  const [selectedDate, setSelectedDate] = useState<string>(
+    dayjs().format('YYYY-MM-DD')
+  )
+  const [currentRecords, setCurrentRecords] = useState<RecordItem[]>([])
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [statistics, setStatistics] = useState<Statistics>({
+    feedingCount: 0,
+    feedingVolume: 0,
+    sleepCount: 0,
+    sleepDuration: 0,
+    diaperCount: 0
+  })
+  const animatedBackgroundValue = useState(new Animated.Value(0))[0]
+
+  // 初始化数据 - 添加防抖处理
+  useEffect(() => {
+    if (babyId) {
+      // 防抖处理，避免快速切换日期时的重复请求
+      const timer = setTimeout(() => {
+        // 确保 diaper store 中的日期与 selectedDate 一致
+        dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
+        dispatch(fetchDiaperList({ babyId, date: selectedDate }))
+        dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+        dispatch(fetchSleepList({ babyId, date: selectedDate }))
+        dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
+      }, 300)
+
+      return () => clearTimeout(timer)
+    } else {
+      // 如果没有选中宝宝，清空统计数据
+      setStatistics({
+        feedingCount: 0,
+        feedingVolume: 0,
+        sleepCount: 0,
+        sleepDuration: 0,
+        diaperCount: 0
+      })
+      setCurrentRecords([])
+    }
+  }, [babyId, selectedDate, dispatch])
+
+  // 监听仪表盘刷新事件
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      'refreshDashboard',
+      () => {
+        if (babyId) {
+          // 确保 diaper store 中的日期与 selectedDate 一致
+          dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
+          // 只获取其他类型的记录，保留本地的喂养和睡眠记录
+          // 不重新获取喂养记录，避免被mock数据覆盖
+          // dispatch(fetchFeedingList({ babyId, date: selectedDate }))
+          // 不重新获取睡眠记录，避免覆盖本地创建的记录
+          // dispatch(fetchSleepList({ babyId, date: selectedDate }))
+          dispatch(fetchDiaperList({ babyId, date: selectedDate }))
+          dispatch(fetchDailyStatistics({ babyId, date: selectedDate }))
+        }
+      }
+    )
+
+    return () => {
+      subscription.remove()
+    }
+  }, [babyId, selectedDate, dispatch])
+
+  // 根据选中日期更新记录和统计
+  useEffect(() => {
+    // 从 diaperList 中筛选出当前日期的记录
+    const diaperRecords = diaperList
+      .filter(item => {
+        const itemDate = dayjs(item.change_time).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        // 构建描述文本
+        let description = ''
+        if (item.diaper_type.id === 'dry') {
+          // 如果是干爽类型，显示备注信息并适当省略，过滤掉换行符
+          if (item.remark) {
+            const cleanRemark = item.remark.replace(/\n/g, ' ').trim()
+            description =
+              cleanRemark.length > 10
+                ? cleanRemark.substring(0, 10) + '...'
+                : cleanRemark
+          }
+        } else {
+          // 其他类型显示颜色和性状信息
+          if (item.poop_color || item.poop_consistency || item.pee_color) {
+            const parts = []
+            if (item.poop_color) {
+              parts.push(item.poop_color.name)
+            }
+            if (item.pee_color) {
+              parts.push(item.pee_color.name)
+            }
+            if (item.poop_consistency) {
+              parts.push(item.poop_consistency.name)
+            }
+            description = parts.join(' ')
+          }
+        }
+
+        // 根据尿布类型选择图标
+        let icon = 'baby-carriage' // 默认图标
+        switch (item.diaper_type.id) {
+          case 'pee':
+            icon = 'water' // 嘘嘘图标
+            break
+          case 'poop':
+            icon = 'emoticon-poop' // 便便图标
+            break
+          case 'both':
+            icon = 'opacity' // 两者都有图标
+            break
+          case 'dry':
+            icon = 'shield-check-outline' // 干爽图标
+            break
+        }
+
+        return {
+          id: `diaper_${item.diaper_id}`,
+          type: 'diaper' as const,
+          time: item.change_time,
+          details: description,
+          icon: icon,
+          name: '尿布',
+          title: '尿布',
+          description: description
+        }
+      })
+
+    // 从 feedingList 中筛选出当前日期的记录
+    const feedingRecords = feedingList
+      .filter(item => {
+        // 确保feed_time是有效的时间戳
+        const feedTime = item.feed_time
+        if (!feedTime || isNaN(feedTime)) {
+          return false
+        }
+
+        const itemDate = dayjs(feedTime).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        // 根据喂养类型选择图标
+        let icon = 'baby-bottle' // 默认图标
+        switch (item.feed_type) {
+          case 'formula':
+            icon = 'baby-bottle' // 奶粉图标
+            break
+          case 'breast':
+          case 'pump':
+            icon = 'water' // 母乳图标
+            break
+          case 'food':
+            icon = 'food' // 辅食图标
+            break
+        }
+
+        // 将feed_type枚举值转换为中文名称
+        let feedTypeName = '喂养'
+        switch (item.feed_type) {
+          case 'breast':
+            feedTypeName = '母乳'
+            break
+          case 'pump':
+            feedTypeName = '泵奶'
+            break
+          case 'formula':
+            feedTypeName = '奶粉'
+            break
+          case 'food':
+            feedTypeName = '辅食'
+            break
+        }
+
+        // 构建副标题：喂养类型 + 时长或备注
+        let description = feedTypeName
+        if (item.duration) {
+          description += `  ${item.duration}分钟`
+        } else if (item.remark) {
+          description += `  ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
+        } else if (item.amount) {
+          description += `  ${item.amount}ml`
+        }
+
+        // 确保返回的对象包含所有必要字段
+        return {
+          id: `feeding_${item.feeding_id}`,
+          type: 'feeding' as const,
+          time: item.feed_time,
+          details: description,
+          icon: icon,
+          name: '喂养',
+          title: '喂养',
+          description: description,
+          remark: item.remark // 添加备注字段，确保RecordCard组件能够显示
+        }
+      })
+
+    // 从 sleepList 中筛选出当前日期的记录
+    const sleepRecords = sleepList
+      .filter(item => {
+        // 检查时间戳是否有效
+        const isValidTimestamp =
+          typeof item.started_at === 'number' && !isNaN(item.started_at)
+        if (!isValidTimestamp) {
+          return false
+        }
+
+        const itemDate = dayjs(item.started_at).format('YYYY-MM-DD')
+        return itemDate === selectedDate
+      })
+      .map(item => {
+        const durationMs = item.duration_ms || 0
+
+        // 格式化开始时间和结束时间
+        const startTime = dayjs(item.started_at).format('HH:mm')
+        const endTime = dayjs(item.ended_at).format('HH:mm')
+
+        // 获取开始时间和结束时间的小时部分
+        const startHour = dayjs(item.started_at).hour()
+        const endHour = dayjs(item.ended_at).hour()
+
+        // 构建时长文本
+        let durationText = ''
+        const durationSeconds = Math.floor(durationMs / 1000)
+        let h = Math.floor(durationSeconds / 3600) % 24 // 对小时数取模 24
+        // 如果开始时间和结束时间的小时相同，将小时部分设置为 0
+        if (startHour === endHour) {
+          h = 0
+        }
+        const m = Math.floor((durationSeconds % 3600) / 60)
+        // 判断是否为手动记录
+        const isManual = item.session_id?.includes('manual-session') || false
+        const s = isManual ? 0 : durationSeconds % 60
+
+        // 确保小时显示为两位数，并且如果小时为 0，显示为 00
+        const formattedH = String(h).padStart(2, '0')
+        const formattedM = String(m).padStart(2, '0')
+        const formattedS = String(s).padStart(2, '0')
+
+        durationText = `${formattedH}:${formattedM}:${formattedS}`
+
+        // 构建副标题
+        const description = `${startTime} - ${endTime}  ${durationText}`
+
+        // 根据记录类型设置不同的 icon（使用 MaterialCommunityIcons 支持的图标）
+        const icon = isManual ? 'gesture-tap-hold' : 'clock-outline'
+
+        return {
+          id: `sleep_${item.session_id}`,
+          type: 'sleep' as const,
+          time: item.started_at,
+          details: description,
+          icon: icon,
+          name: '睡眠',
+          title: '睡眠',
+          description: description,
+          data: item // 添加原始数据，用于统计计算
+        }
+      })
+
+    // 合并并按时间降序排序
+    const allRecords = [
+      // ...mockRecords,
+      ...diaperRecords,
+      ...feedingRecords,
+      ...sleepRecords
+    ].sort((a, b) => {
+      const timeA =
+        typeof a.time === 'string' ? new Date(a.time).getTime() : a.time
+      const timeB =
+        typeof b.time === 'string' ? new Date(b.time).getTime() : b.time
+      return timeB - timeA
+    })
+
+    setCurrentRecords(allRecords)
+
+    // 总是使用本地计算的统计数据，基于当前列表
+    let feedingCount = 0
+    let feedingVolume = 0 // 保留字段但不使用
+    let sleepCount = 0
+    let sleepDuration = 0 // 以小时为单位，保留小数
+    let diaperCount = 0
+
+    allRecords.forEach(record => {
+      switch (record.type) {
+        case 'feeding':
+          feedingCount++
+          break
+        case 'sleep':
+          sleepCount++
+          // 从record.data中直接获取duration_ms
+          if (record.data && typeof record.data.duration_ms === 'number') {
+            // 确保duration_ms是正数，计算总毫秒数
+            if (record.data.duration_ms > 0) {
+              sleepDuration += record.data.duration_ms
+            }
+          } else {
+            // 如果没有duration_ms，尝试从details中提取
+            // 匹配 HH:MM:SS 格式
+            const durationMatch = record.details?.match(/(\d+):(\d+):(\d+)/)
+            if (durationMatch) {
+              const hours = parseInt(durationMatch[1])
+              const minutes = parseInt(durationMatch[2])
+              const seconds = parseInt(durationMatch[3])
+              // 转换为毫秒并累加
+              sleepDuration += (hours * 3600 + minutes * 60 + seconds) * 1000
+            }
+          }
+          break
+        case 'diaper':
+          diaperCount++
+          break
+      }
+    })
+
+    // 将总毫秒数转换为整数小时
+    sleepDuration = Math.floor(sleepDuration / (1000 * 60 * 60))
+
+    setStatistics({
+      feedingCount,
+      feedingVolume,
+      sleepCount,
+      sleepDuration,
+      diaperCount
+    })
+  }, [selectedDate, diaperList, feedingList, sleepList, dailyStatistics])
+
+  // 计算整体进度并更新背景颜色
+  useEffect(() => {
+    // 目标值设置
+    const feedingTarget = 8 // 每日喂养目标8次
+    const sleepTarget = 12 // 每日睡眠目标12小时
+    const diaperTarget = 8 // 每日换尿布目标8次
+
+    // 计算各项目进度
+    const feedingProgress = Math.min(
+      (statistics.feedingCount / feedingTarget) * 100,
+      100
+    )
+    const sleepProgress = Math.min(
+      (statistics.sleepDuration / sleepTarget) * 100,
+      100
+    )
+    const diaperProgress = Math.min(
+      (statistics.diaperCount / diaperTarget) * 100,
+      100
+    )
+
+    // 计算平均进度
+    const averageProgress =
+      (feedingProgress + sleepProgress + diaperProgress) / 3
+
+    // 启动背景颜色动画
+    Animated.timing(animatedBackgroundValue, {
+      toValue: averageProgress,
+      duration: 1000,
+      useNativeDriver: false
+    }).start()
+  }, [statistics, animatedBackgroundValue])
+
+  // 处理底部按钮点击
+  const handleActionPress = (type: RecordType) => {
+    navigateToRecord(type)
+  }
+
+  // 处理日期选择器确认
+  const handleDatePickerConfirm = (event: any, date?: Date) => {
+    // Android需要手动关闭picker
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false)
+    }
+
+    if (date) {
+      const selectedDate = dayjs(date).format('YYYY-MM-DD')
+      setSelectedDate(selectedDate)
+    }
+  }
+
+  // 目标值设置
+  const feedingTarget = 8 // 每日喂养目标8次
+  const sleepTarget = 12 // 每日睡眠目标12小时
+  const diaperTarget = 8 // 每日换尿布目标8次
+
+  // 计算百分比
+  const feedingPercent = Math.min(
+    Math.round((statistics.feedingCount / feedingTarget) * 100),
+    100
+  )
+  const sleepPercent = Math.min(
+    Math.round((statistics.sleepDuration / sleepTarget) * 100),
+    100
+  )
+  const diaperPercent = Math.min(
+    Math.round((statistics.diaperCount / diaperTarget) * 100),
+    100
+  )
+
+  // 处理无数据情况
+  const getDisplayValue = (value: number, unit: string) => {
+    // 对于睡眠时长，只显示整数小时
+    if (unit === 'h') {
+      const hours = Math.floor(value)
+      return `${hours}h`
+    }
+
+    // 对于其他单位，保持原格式
+    return `${value}${unit}`
+  }
+
+  // 切换到前一天
+  const handlePreviousDay = () => {
+    const previousDate = dayjs(selectedDate)
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD')
+    setSelectedDate(previousDate)
+  }
+
+  // 切换到后一天（不超过今天）
+  const handleNextDay = () => {
+    const today = dayjs().format('YYYY-MM-DD')
+    const nextDate = dayjs(selectedDate).add(1, 'day').format('YYYY-MM-DD')
+    if (nextDate <= today) {
+      setSelectedDate(nextDate)
+    }
+  }
+
+  // 动态计算背景颜色
+  const animatedBackgroundColor = animatedBackgroundValue.interpolate({
+    inputRange: [0, 25, 50, 75, 100],
+    outputRange: ['#ffffff', '#ffeeee', '#ffdddd', '#ffcccc', '#ffaaaa']
+  })
+
+  return (
+    <View style={styles.container}>
+      <Stack.Screen options={{ title: '日常记录' }} />
+
+      {/* 动态背景颜色 */}
+      <Animated.View
+        style={[
+          styles.backgroundView,
+          { backgroundColor: animatedBackgroundColor }
+        ]}
+      />
+
+      {/* 1. 日历Header - 保持固定 */}
+      <View style={styles.calendarHeader}>
+        <View style={styles.headerContent}>
+          <Button
+            type="ghost"
+            size="large"
+            onPress={handlePreviousDay}
+            style={{
+              borderWidth: 0,
+              paddingVertical: 8,
+              paddingHorizontal: 12
+            }}
+          >
+            <MaterialCommunityIcons
+              name="chevron-left"
+              size={28}
+              color="#f43f5e"
+            />
+          </Button>
+
+          <View style={styles.datePickerContainer}>
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                value={new Date(selectedDate)}
+                mode="date"
+                display="default"
+                maximumDate={new Date()}
+                onChange={handleDatePickerConfirm}
+              />
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.dateTextContainer}
+                >
+                  <Text style={styles.dateText}>{selectedDate}</Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(selectedDate)}
+                    mode="date"
+                    display="default"
+                    maximumDate={new Date()}
+                    onChange={handleDatePickerConfirm}
+                  />
+                )}
+              </>
+            )}
+          </View>
+
+          <Button
+            type="ghost"
+            size="large"
+            onPress={handleNextDay}
+            style={{
+              borderWidth: 0,
+              paddingVertical: 8,
+              paddingHorizontal: 12
+            }}
+          >
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#f43f5e"
+            />
+          </Button>
+        </View>
+      </View>
+
+      {/* 2. 主滚动区域 */}
+      <ScrollView
+        style={styles.mainScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 三环仪表盘 */}
+        <View style={styles.dashboardContainer}>
+          <LinearGradient
+            colors={['#ffffff', '#fef5f5']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.dashboardCard}
+          >
+            <DashboardRing
+              type="feeding"
+              value={getDisplayValue(statistics.feedingCount, '次')}
+              percent={currentRecords.length > 0 ? feedingPercent : 0}
+              onPress={() => handleActionPress('feeding')}
+            />
+            <DashboardRing
+              type="sleep"
+              value={getDisplayValue(statistics.sleepDuration, 'h')}
+              percent={currentRecords.length > 0 ? sleepPercent : 0}
+              onPress={() => handleActionPress('sleep')}
+            />
+            <DashboardRing
+              type="diaper"
+              value={getDisplayValue(statistics.diaperCount, '次')}
+              percent={currentRecords.length > 0 ? diaperPercent : 0}
+              onPress={() => handleActionPress('diaper')}
+            />
+          </LinearGradient>
+        </View>
+
+        {/* 记录列表 - 这里不再嵌套 FlatList */}
+        <View style={styles.recordsListContainer}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>加载中...</Text>
+            </View>
+          ) : currentRecords.length > 0 ? (
+            currentRecords.map(item => <RecordCard key={item.id} item={item} />)
+          ) : (
+            <EmptyState />
+          )}
+        </View>
+
+        {/* 底部留白，防止内容被遮挡 */}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff' // 默认白色背景
+  },
+  backgroundView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0
+  },
+  calendarHeader: {
+    backgroundColor: 'transparent',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    zIndex: 10 // 确保在 iOS 上层级正确
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%'
+  },
+  datePickerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dateTextContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    shadowColor: '#f43f5e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f43f5e'
+  },
+  dateNavigation: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  navButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#f43f5e'
+  },
+  mainScroll: {
+    flex: 1,
+    zIndex: 1
+  },
+  dashboardContainer: {
+    padding: 16,
+    zIndex: 1
+  },
+  dashboardCard: {
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    ...(Platform.select({
+      ios: {
+        shadowColor: '#f43f5e',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 4
+      }
+    }) as any)
+  },
+  recordsListContainer: {
+    paddingHorizontal: 16,
+    zIndex: 1
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#f43f5e'
+  }
+})

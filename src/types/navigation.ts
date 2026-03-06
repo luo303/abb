@@ -1,0 +1,31 @@
+import { NavigationProp } from '@react-navigation/native'
+import { GrowthAnalysisPayload } from '@/api/ai'
+
+export type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Password: undefined
+  Tabs: undefined
+  AIAssistant: undefined
+  PartnerChat: undefined
+  DailyRecord: undefined
+  VaccineRecord: undefined
+  Album: undefined
+  MyFavorites: undefined
+  GrowthCurve: undefined
+  GrowthAnalysis: { growthAnalysis: GrowthAnalysisPayload }
+  Diary: undefined
+  PostDetail: { post_id: string }
+  AddPost: undefined
+  AddBaby: undefined
+  EditProfile: undefined
+  VaccineDetail: { url: string; title: string }
+  AddMilestone: undefined
+  MyPosts: undefined
+  MilestoneList: undefined
+  SleepRecord: { session_id?: string }
+  FeedingRecord: { feeding_id?: string }
+  DiaperForm: { diaper_id?: string }
+}
+
+export type NavigationProps = NavigationProp<RootStackParamList>
