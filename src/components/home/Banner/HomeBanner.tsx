@@ -27,17 +27,17 @@ const RAW_DATA = [
   },
   {
     id: '3',
-    imageSource: require('../../../assets/Growth curve.png'),
+    imageSource: require('../../../assets/Growth_curve.png'),
     targetPage: 'GrowthCurve'
   },
   {
     id: '4',
-    imageSource: require('../../../assets/Major Events.png'),
+    imageSource: require('../../../assets/Major_Events.png'),
     targetPage: 'MilestoneList'
   },
   {
     id: '5',
-    imageSource: require('../../../assets/Vaccine records.png'),
+    imageSource: require('../../../assets/Vaccine_records.png'),
     targetPage: 'VaccineRecord'
   }
 ]
