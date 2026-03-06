@@ -12,7 +12,7 @@ import {
 export const apiLogin = (
   data: EmailLogin | AccountLogin
 ): Promise<resLogin> => {
-  return request.post('/user/login?apifoxApiId=392864290', data) //要测试记得改成自己本地mock接口
+  return request.post('/user/login', data)
 }
 //邮箱登录验证码
 export const apiLoginCode = (data: {
