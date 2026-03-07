@@ -40,6 +40,7 @@ import SleepRecordScreen from './(HomeNavGrid)/daily-record/sleep'
 import DiaperFormScreen from './DiaperFormScreen'
 
 import KnowledgeUploadScreen from './KnowledgeUpload'
+import SearchScreen from './search/SearchScreen'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -269,6 +270,11 @@ export default function Layout() {
                 name="MyFavorites"
                 component={MyFavoritesScreen}
                 options={{ title: '我的收藏' }}
+              />
+              <Stack.Screen
+                name="Search"
+                component={SearchScreen}
+                options={{ headerShown: false }}
               />
             </Stack.Navigator>
           </NavigationContainer>

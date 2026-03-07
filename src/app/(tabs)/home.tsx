@@ -24,7 +24,6 @@ import {
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
 import { useHomeData } from '@/hooks/useHomeData'
-import { useHomeSearch } from '@/hooks/useHomeSearch'
 import { useHomeAnimations } from '@/hooks/useHomeAnimations'
 import { styles } from '@/styles/Home.styles'
 
@@ -51,47 +50,16 @@ export default function Home() {
     addNewPost
   } = useHomeData()
 
-  const {
-    searchText,
-    searchLoading,
-    searchResults,
-    searchHasMore,
-    handleSearch,
-    loadMoreSearchResults
-  } = useHomeSearch()
-
   const { handleScroll, measureSearchBar, measureCommunityHeader } =
     useHomeAnimations()
 
-  // 是否正在搜索
-  const isSearching = searchText.trim().length > 0
-
   // 使用 useMemo 计算帖子列表，移除前端排序，依赖后端返回排好序的数据
   const sortedPosts = useMemo(() => {
-    const filtered = isSearching
-      ? Array.isArray(searchResults)
-        ? searchResults
-        : []
-      : isTabLoading
-        ? []
-        : posts
-
-    return filtered
-  }, [isSearching, searchResults, posts, isTabLoading])
+    return isTabLoading ? [] : posts
+  }, [posts, isTabLoading])
 
   // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
   const flatListData = useMemo(() => {
-    if (isSearching) {
-      return [
-        { type: 'search-header', id: '__search_header__' },
-        ...sortedPosts.map((post: any, i: number) => ({
-          type: 'post',
-          id: post.post_id || `unknown-${i}`,
-          data: post
-        }))
-      ]
-    }
-
     return [
       { type: 'header', id: '__header__' }, // index 0：顶部内容
       { type: 'tabs', id: '__tabs__' }, // index 1：Tab 栏（吸顶）
@@ -101,25 +69,11 @@ export default function Home() {
         data: post
       }))
     ]
-  }, [isSearching, sortedPosts])
+  }, [sortedPosts])
 
   // 渲染 FlatList 项
   const renderItem = useCallback(
     ({ item }: { item: any }) => {
-      // 搜索模式下的头部
-      if (item.type === 'search-header') {
-        // 只有在搜索结果为空且不在加载时才显示空状态
-        if (!searchLoading && searchResults.length === 0) {
-          return (
-            <View style={styles.communitySection}>
-              <SearchEmptyState isLoading={searchLoading} />
-            </View>
-          )
-        }
-        // 否则返回空视图
-        return null
-      }
-
       // 顶部轮播图等 Header 区域
       if (item.type === 'header') {
         return <MemoHeaderSections style={styles.topSection} />
@@ -162,7 +116,7 @@ export default function Home() {
 
       return null
     },
-    [searchLoading, activeTab, setActiveTab, measureCommunityHeader]
+    [activeTab, setActiveTab, measureCommunityHeader]
   )
 
   // 滚动到社区模块
@@ -225,41 +179,18 @@ export default function Home() {
       isEndReachedRef.current = false
     }, 1000) // 1秒内不重复触发
 
-    if (isSearching) {
-      loadMoreSearchResults()
-    } else {
-      loadMore()
-    }
-  }, [isSearching, loadMoreSearchResults, loadMore])
+    loadMore()
+  }, [loadMore])
 
   // 渲染列表尾部
   const ListFooterComponent = useCallback(() => {
-    if (isTabLoading && !isSearching) {
+    if (isTabLoading) {
       return (
         <View style={{ padding: 20, alignItems: 'center' }}>
           <ActivityIndicator size="small" color="#f43f5e" />
           <Text style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
             加载中...
           </Text>
-        </View>
-      )
-    }
-    if (isSearching) {
-      return (
-        <View>
-          {searchLoading && searchResults.length === 0 && (
-            <View style={{ padding: 10, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color="#f43f5e" />
-              <Text style={{ color: '#999', fontSize: 12 }}>搜索中...</Text>
-            </View>
-          )}
-          {!searchLoading && !searchHasMore && searchResults.length > 0 && (
-            <View style={{ padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#ccc', fontSize: 12 }}>
-                - 没有更多搜索结果了 -
-              </Text>
-            </View>
-          )}
         </View>
       )
     }
@@ -341,10 +272,6 @@ export default function Home() {
       </View>
     )
   }, [
-    isSearching,
-    searchLoading,
-    searchResults,
-    searchHasMore,
     activeTab,
     sortedPosts,
     isTabLoading,
@@ -372,13 +299,12 @@ export default function Home() {
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           {/* 搜索栏固定，不参与滚动 */}
           <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
-            <HomeSearchBar onSearch={handleSearch} />
+            <HomeSearchBar />
           </View>
 
           {/* FlatList：stickyHeaderIndices={[1]} 让 tabs 项原生吸顶 */}
           <FlatList
             ref={flatListRef}
-            key={isSearching ? 'search' : 'default'}
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}
@@ -388,8 +314,8 @@ export default function Home() {
             initialNumToRender={5}
             maxToRenderPerBatch={10}
             windowSize={21}
-            // ✅ 非搜索模式下，index=1 的 tabs 项吸顶
-            stickyHeaderIndices={isSearching ? [] : [1]}
+            // ✅ index=1 的 tabs 项吸顶
+            stickyHeaderIndices={[1]}
             ListFooterComponent={ListFooterComponent}
             onScroll={handleListScroll}
             scrollEventThrottle={16}

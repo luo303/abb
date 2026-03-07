@@ -1,36 +1,24 @@
-import React, { useState } from 'react'
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Text
-} from 'react-native'
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../../types/navigation'
 
-interface HomeSearchBarProps {
-  onSearch: (text: string) => void
-}
-
-export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
+export default function HomeSearchBar() {
   const navigation = useNavigation<NavigationProps>()
-  const [searchText, setSearchText] = useState('')
 
-  const handleSearch = () => {
-    onSearch(searchText)
-  }
-
-  const handleClear = () => {
-    setSearchText('')
-    onSearch('')
+  const handleSearchPress = () => {
+    navigation.navigate('Search')
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBox}>
+      <TouchableOpacity
+        style={styles.searchBox}
+        activeOpacity={0.8}
+        onPress={handleSearchPress}
+      >
         <LinearGradient
           colors={['#ff9a9e', '#f43f5e']}
           start={{ x: 0, y: 0 }}
@@ -39,31 +27,18 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
         >
           <Ionicons name="search" size={24} color="#fff" />
         </LinearGradient>
-        <TextInput
-          style={styles.input}
-          placeholder="搜索您感兴趣的内容..."
-          placeholderTextColor="#94a3b8"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Ionicons name="close-circle" size={20} color="#999" />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity onPress={handleSearch} activeOpacity={0.8}>
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.searchButton}
-          >
-            <Text style={styles.searchButtonText}>搜索</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.inputWrapper}>
+          <Text style={styles.placeholder}>搜索您感兴趣的内容...</Text>
+        </View>
+        <LinearGradient
+          colors={['#ff9a9e', '#f43f5e']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.searchButton}
+        >
+          <Text style={styles.searchButtonText}>搜索</Text>
+        </LinearGradient>
+      </TouchableOpacity>
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => navigation.navigate('AddPost')}
@@ -119,17 +94,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 0
   },
-  input: {
+  inputWrapper: {
     flex: 1,
-    fontSize: 14,
-    color: '#333',
     height: '100%',
+    justifyContent: 'center',
     paddingLeft: 12
   },
-  clearButton: {
-    paddingHorizontal: 10,
-    justifyContent: 'center',
-    alignItems: 'center'
+  placeholder: {
+    fontSize: 14,
+    color: '#94a3b8'
   },
   searchButton: {
     paddingHorizontal: 20,

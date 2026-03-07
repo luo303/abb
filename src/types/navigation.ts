@@ -26,6 +26,7 @@ export type RootStackParamList = {
   SleepRecord: { session_id?: string }
   FeedingRecord: { feeding_id?: string }
   DiaperForm: { diaper_id?: string }
+  Search: undefined
 }
 
 export type NavigationProps = NavigationProp<RootStackParamList>
