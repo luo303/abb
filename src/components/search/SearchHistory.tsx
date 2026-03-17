@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, memo, useRef } from 'react'
 import {
   View,
   Text,
@@ -24,6 +24,8 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [animation] = useState(new Animated.Value(0))
+  const contentHeight = useRef(new Animated.Value(76)).current // 初始高度为折叠状态
+  const contentRef = useRef<View>(null)
 
   if (history.length === 0) {
     return null
@@ -37,11 +39,18 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({
 
   const toggleExpand = () => {
     const toValue = isExpanded ? 0 : 1
-    Animated.timing(animation, {
-      toValue,
-      duration: 300,
-      useNativeDriver: true
-    }).start()
+    Animated.parallel([
+      Animated.timing(animation, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true
+      }),
+      Animated.timing(contentHeight, {
+        toValue: isExpanded ? 76 : 1000, // 76是折叠高度，1000是足够大的展开高度
+        duration: 300,
+        useNativeDriver: false
+      })
+    ]).start()
     setIsExpanded(!isExpanded)
   }
 
@@ -72,15 +81,16 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-      <View
+      <Animated.View
         style={[
           styles.historyList,
-          !isExpanded && { maxHeight: 76, overflow: 'hidden' }
+          { height: contentHeight, overflow: 'hidden' }
         ]}
+        ref={contentRef}
       >
-        {visibleHistory.map((item, index) => (
+        {visibleHistory.map(item => (
           <TouchableOpacity
-            key={index}
+            key={item}
             style={styles.historyItem}
             onPress={() => onHistoryPress(item)}
           >
@@ -97,7 +107,7 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
-      </View>
+      </Animated.View>
     </View>
   )
 }
@@ -157,4 +167,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default SearchHistory
+export default memo(SearchHistory)

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import {
   View,
   Text,
@@ -8,6 +8,17 @@ import {
 } from 'react-native'
 import { PostItem } from '../../types/home'
 import HomeCommunityCard from '../home/HomeCommunityCard'
+
+// 简单的哈希函数
+const getHashCode = (str: string): string => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // 转换为32位整数
+  }
+  return hash.toString()
+}
 
 interface SearchResultsProps {
   results: PostItem[]
@@ -31,7 +42,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     return (
       <View style={styles.footer}>
         <ActivityIndicator size="small" color="#f43f5e" />
-        <Text style={styles.footerText}>加载中...</Text>
+        <Text style={styles.footerText}>正在为您搜索相关内容...</Text>
       </View>
     )
   }
@@ -50,7 +61,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     <FlatList
       data={results}
       renderItem={renderItem}
-      keyExtractor={item => item.post_id || item.id || `post-${Math.random()}`}
+      keyExtractor={item => {
+        // 使用更稳定的唯一标识符
+        if (item.post_id) return `post-${item.post_id}`
+        if (item.id) return `post-${item.id}`
+        // 作为最后的 fallback，使用内容的哈希值
+        return `post-${getHashCode(JSON.stringify(item))}`
+      }}
       contentContainerStyle={
         results.length === 0 ? styles.emptyContainer : styles.list
       }
@@ -140,4 +157,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default SearchResults
+export default memo(SearchResults)

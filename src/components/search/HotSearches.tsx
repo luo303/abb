@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 
 interface HotSearchesProps {
@@ -18,9 +18,9 @@ const HotSearches: React.FC<HotSearchesProps> = ({
     <View style={styles.container}>
       <Text style={styles.title}>热门搜索</Text>
       <View style={styles.hotList}>
-        {hotSearches.map((item, index) => (
+        {hotSearches.map(item => (
           <TouchableOpacity
-            key={index}
+            key={item}
             style={styles.hotItem}
             onPress={() => onHotSearchPress(item)}
           >
@@ -67,4 +67,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default HotSearches
+export default memo(HotSearches)

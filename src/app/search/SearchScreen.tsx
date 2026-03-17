@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -8,7 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Keyboard
+  Keyboard,
+  ActivityIndicator,
+  Alert
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
@@ -35,23 +37,27 @@ const HOT_SEARCHES = [
   '疫苗接种'
 ]
 
+// 页面状态枚举，替代多个 boolean 状态，避免状态组合爆炸
+type ScreenState = 'idle' | 'loading' | 'results' | 'empty'
+
 const SearchScreen = () => {
   const navigation = useNavigation<NavigationProps>()
   const insets = useSafeAreaInsets()
   const [searchText, setSearchText] = useState('')
   const [searchHistory, setSearchHistory] = useState<string[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [hasSearched, setHasSearched] = useState(false)
+  const [screenState, setScreenState] = useState<ScreenState>('idle')
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false)
 
-  // 复用现有的搜索逻辑
+  // 用 ref 追踪"正在执行搜索"，阻止建议 useEffect 在搜索期间触发
+  const isPerformingSearch = useRef(false)
+
   const {
-    searchLoading,
     searchResults,
     searchHasMore,
     handleSearch,
-    loadMoreSearchResults
+    loadMoreSearchResults,
+    searchLoading
   } = useHomeSearch()
 
   // 加载搜索历史
@@ -63,97 +69,211 @@ const SearchScreen = () => {
     loadHistory()
   }, [])
 
-  // 搜索防抖和模糊搜索
+  // 实时生成搜索建议（isPerformingSearch 为 true 时跳过，防止闪烁）
   useEffect(() => {
-    // 实时显示搜索建议，无延迟
+    if (isPerformingSearch.current) return
+
     if (searchText.trim()) {
-      // 生成模糊搜索建议
       const suggestions = generateSuggestions(searchText)
       setSearchSuggestions(suggestions)
       setIsSuggestionsVisible(true)
     } else {
-      // 清空输入时隐藏建议
       setSearchSuggestions([])
       setIsSuggestionsVisible(false)
     }
   }, [searchText, searchHistory])
 
-  // 搜索防抖
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (searchText.trim() && isSearching) {
-        performSearch(searchText)
-      }
-    }, 300)
-
-    return () => clearTimeout(debounceTimer)
-  }, [searchText, isSearching])
-
   // 生成模糊搜索建议
   const generateSuggestions = (text: string) => {
     const allPossibleSuggestions = [...searchHistory, ...HOT_SEARCHES]
     const uniqueSuggestions = [...new Set(allPossibleSuggestions)]
-
     return uniqueSuggestions
       .filter(item => item.toLowerCase().includes(text.toLowerCase()))
-      .slice(0, 5) // 最多显示5个建议
+      .slice(0, 5)
   }
 
-  // 执行搜索
-  const performSearch = async (text: string) => {
-    if (text.trim()) {
-      setHasSearched(true)
-      setIsSuggestionsVisible(false) // 搜索时隐藏建议
+  // 执行搜索的核心方法，所有入口统一调用此方法
+  const performSearch = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return
+
+      // 1. 加锁，切到 loading 页面
+      isPerformingSearch.current = true
+      setIsSuggestionsVisible(false)
+      setScreenState('loading')
+      Keyboard.dismiss()
+
+      // 2. 执行搜索
       await handleSearch(text)
+
+      // 3. 更新输入框文字和历史记录
+      //    此时 isPerformingSearch 仍为 true，setSearchText/setSearchHistory
+      //    不会触发建议 useEffect 显示建议列表
+      setSearchText(text)
       await saveSearchHistory(text)
-      // 更新搜索历史
       const updatedHistory = await getSearchHistory()
       setSearchHistory(updatedHistory)
-      Keyboard.dismiss()
-    }
-  }
 
-  // 处理搜索提交
-  const handleSubmit = () => {
-    setIsSearching(true)
-  }
+      // 4. 解锁，并根据结果切换页面
+      //    注意：handleSearch 内部用 setState 更新 searchResults，
+      //    React 的批量更新机制保证此处拿到的是最新值需要用回调形式
+      //    所以通过 useHomeSearch 返回的 searchResults ref 或直接在
+      //    handleSearch resolve 后判断结果数量
+      //    这里改为让 useHomeSearch 返回结果数量，或用一个临时变量
+      isPerformingSearch.current = false
+    },
+    [handleSearch]
+  )
+
+  // 监听 searchResults 变化，切换到对应页面
+  // 这样可以解耦"搜索完成"和"结果渲染"，避免时序问题
+  useEffect(() => {
+    if (screenState !== 'idle' && !searchLoading) {
+      setScreenState(searchResults.length > 0 ? 'results' : 'empty')
+    }
+  }, [searchResults, screenState, searchLoading])
+
+  // 处理键盘搜索按钮提交
+  const handleSubmit = useCallback(() => {
+    if (searchText.trim()) {
+      performSearch(searchText)
+    }
+  }, [searchText, performSearch])
 
   // 处理历史记录点击
-  const handleHistoryPress = (keyword: string) => {
-    setSearchText(keyword)
-    setIsSearching(true)
-  }
+  const handleHistoryPress = useCallback(
+    (keyword: string) => {
+      performSearch(keyword)
+    },
+    [performSearch]
+  )
 
   // 处理热门搜索点击
-  const handleHotSearchPress = (keyword: string) => {
-    setSearchText(keyword)
-    setIsSearching(true)
-  }
+  const handleHotSearchPress = useCallback(
+    (keyword: string) => {
+      performSearch(keyword)
+    },
+    [performSearch]
+  )
 
   // 处理搜索建议点击
-  const handleSuggestionPress = (keyword: string) => {
-    setSearchText(keyword)
-    setIsSuggestionsVisible(false) // 点击建议后立即隐藏建议列表
-    setIsSearching(true)
-  }
+  const handleSuggestionPress = useCallback(
+    (keyword: string) => {
+      performSearch(keyword)
+    },
+    [performSearch]
+  )
 
   // 处理清空历史
-  const handleClearHistory = async () => {
-    await clearSearchHistory()
-    setSearchHistory([])
-  }
+  const handleClearHistory = useCallback(() => {
+    Alert.alert(
+      '确认清除',
+      '确定要清除所有搜索历史吗？',
+      [
+        {
+          text: '取消',
+          style: 'cancel'
+        },
+        {
+          text: '确定',
+          onPress: async () => {
+            await clearSearchHistory()
+            setSearchHistory([])
+          }
+        }
+      ],
+      { cancelable: true }
+    )
+  }, [])
 
   // 处理删除单个历史记录
-  const handleRemoveHistoryItem = async (keyword: string) => {
+  const handleRemoveHistoryItem = useCallback(async (keyword: string) => {
     await removeSearchHistoryItem(keyword)
-    // 更新搜索历史
     const updatedHistory = await getSearchHistory()
     setSearchHistory(updatedHistory)
-  }
+  }, [])
 
-  // 处理搜索结果点击
-  const handleItemPress = (item: any) => {
-    navigation.navigate('PostDetail', { post_id: item.id })
+  // 重置搜索状态（回到初始页）
+  const resetSearch = useCallback(() => {
+    isPerformingSearch.current = false
+    setScreenState('idle')
+    setSearchText('')
+    setIsSuggestionsVisible(false)
+    setSearchSuggestions([])
+  }, [])
+
+  // 渲染主内容区域
+  const renderContent = () => {
+    // 搜索建议只在 idle 状态下显示，避免覆盖搜索结果
+    if (
+      screenState === 'idle' &&
+      isSuggestionsVisible &&
+      searchSuggestions.length > 0
+    ) {
+      return (
+        <ScrollView style={styles.searchSuggestions}>
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsTitle}>搜索建议</Text>
+            {searchSuggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => handleSuggestionPress(suggestion)}
+              >
+                <Ionicons name="search" size={16} color="#f43f5e" />
+                <Text style={styles.suggestionText}>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )
+    }
+
+    switch (screenState) {
+      case 'loading':
+        return (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#f43f5e" />
+            <Text style={styles.loadingText}>正在搜索...</Text>
+          </View>
+        )
+
+      case 'results':
+        return (
+          <SearchResults
+            results={searchResults}
+            loading={false}
+            hasMore={searchHasMore}
+            onLoadMore={loadMoreSearchResults}
+          />
+        )
+
+      case 'empty':
+        return (
+          <View style={styles.centerContainer}>
+            <Ionicons name="search-outline" size={64} color="#fda4af" />
+            <Text style={styles.emptyText}>未搜索到对应帖子</Text>
+            <Text style={styles.emptySubText}>换个关键词试试吧</Text>
+          </View>
+        )
+
+      case 'idle':
+      default:
+        return (
+          <ScrollView style={styles.searchSuggestions}>
+            <SearchHistory
+              history={searchHistory}
+              onHistoryPress={handleHistoryPress}
+              onClearHistory={handleClearHistory}
+              onRemoveItem={handleRemoveHistoryItem}
+            />
+            <HotSearches
+              hotSearches={HOT_SEARCHES}
+              onHotSearchPress={handleHotSearchPress}
+            />
+          </ScrollView>
+        )
+    }
   }
 
   return (
@@ -175,11 +295,7 @@ const SearchScreen = () => {
           <TouchableOpacity
             style={styles.searchBox}
             activeOpacity={1}
-            onPress={() => {
-              setHasSearched(false)
-              setSearchText('')
-              setIsSearching(false)
-            }}
+            onPress={resetSearch}
           >
             <LinearGradient
               colors={['#ff9a9e', '#f43f5e']}
@@ -196,11 +312,7 @@ const SearchScreen = () => {
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={handleSubmit}
-              onFocus={() => {
-                setHasSearched(false)
-                setSearchText('')
-                setIsSearching(false)
-              }}
+              onFocus={resetSearch}
               autoFocus
               returnKeyType="search"
             />
@@ -218,7 +330,12 @@ const SearchScreen = () => {
               end={{ x: 1, y: 1 }}
               style={styles.searchButton}
             >
-              <Text style={styles.searchButtonText}>搜索</Text>
+              <TouchableOpacity
+                onPress={handleSubmit}
+                style={styles.searchButtonInner}
+              >
+                <Text style={styles.searchButtonText}>搜索</Text>
+              </TouchableOpacity>
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity
@@ -229,55 +346,8 @@ const SearchScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* 搜索内容区域 */}
-        {isSuggestionsVisible && searchSuggestions.length > 0 ? (
-          /* 搜索建议列表 */
-          <ScrollView style={styles.searchSuggestions}>
-            <View style={styles.suggestionsContainer}>
-              <Text style={styles.suggestionsTitle}>搜索建议</Text>
-              {searchSuggestions.map((suggestion, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.suggestionItem}
-                  onPress={() => handleSuggestionPress(suggestion)}
-                >
-                  <Ionicons name="search" size={16} color="#f43f5e" />
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        ) : !hasSearched ? (
-          <ScrollView style={styles.searchSuggestions}>
-            {/* 搜索历史 */}
-            <SearchHistory
-              history={searchHistory}
-              onHistoryPress={handleHistoryPress}
-              onClearHistory={handleClearHistory}
-              onRemoveItem={handleRemoveHistoryItem}
-            />
-            {/* 热门搜索 */}
-            <HotSearches
-              hotSearches={HOT_SEARCHES}
-              onHotSearchPress={handleHotSearchPress}
-            />
-          </ScrollView>
-        ) : searchResults.length > 0 || searchLoading ? (
-          /* 搜索结果列表 */
-          <SearchResults
-            results={searchResults}
-            loading={searchLoading}
-            hasMore={searchHasMore}
-            onLoadMore={loadMoreSearchResults}
-          />
-        ) : (
-          /* 搜索无结果 */
-          <View style={styles.noResultsContainer}>
-            <Ionicons name="search" size={64} color="#f43f5e" />
-            <Text style={styles.noResultsText}>未搜索到对应帖子</Text>
-            <Text style={styles.noResultsSubText}>换个关键词试试吧</Text>
-          </View>
-        )}
+        {/* 主内容区域 */}
+        {renderContent()}
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -351,10 +421,15 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   searchButton: {
-    paddingHorizontal: 20,
     height: '100%',
     borderTopLeftRadius: 22,
     borderBottomLeftRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  searchButtonInner: {
+    paddingHorizontal: 20,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -375,22 +450,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16
   },
-  noResultsContainer: {
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32
+    gap: 12
   },
-  noResultsText: {
+  loadingText: {
+    fontSize: 16,
+    color: '#f43f5e',
+    marginTop: 12
+  },
+  emptyText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginTop: 16
-  },
-  noResultsSubText: {
-    fontSize: 14,
-    color: '#999',
     marginTop: 8
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#999'
   },
   suggestionsContainer: {
     paddingVertical: 8
