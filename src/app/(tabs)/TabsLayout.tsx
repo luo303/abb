@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { View, Platform, Dimensions, Alert } from 'react-native'
+import { View, Platform, Dimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { FontAwesome, AntDesign } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'

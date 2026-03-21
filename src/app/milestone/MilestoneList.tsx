@@ -8,7 +8,6 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  Dimensions,
   ScrollView
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -19,8 +18,6 @@ import { PostItem } from '@/types/home'
 import { getMyMilestones } from '@/api/post'
 import { NavigationProps } from '@/types/navigation'
 import TimelineNode from '@/components/common/TimelineNode'
-
-const { width } = Dimensions.get('window')
 
 interface PostListResponse {
   code: number
@@ -233,10 +230,6 @@ export default function MilestoneList() {
 
   const ListEmptyComponent = () => (
     <View style={styles.emptyState}>
-      <Image
-        source={require('../../assets/icon.png')} // 路径修正
-        style={{ width: 80, height: 80, opacity: 0.3, marginBottom: 16 }}
-      />
       <Text style={styles.emptyTitle}>暂无大事记</Text>
       <Text style={styles.emptySubtitle}>记录宝宝成长的每一个重要时刻</Text>
       <TouchableOpacity

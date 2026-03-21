@@ -19,7 +19,6 @@ import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import MemoHeaderSections from '@/components/home/MemoHeaderSections'
 import StickyTabHeader from '@/components/home/StickyTabHeader'
 import {
-  SearchEmptyState,
   FollowEmptyState,
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
