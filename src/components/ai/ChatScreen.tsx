@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   Platform,
   LayoutAnimation,
   UIManager,
+  InteractionManager,
   Keyboard,
   TouchableOpacity,
   NativeSyntheticEvent,
@@ -28,7 +29,8 @@ import {
   createNewSession,
   addMessage,
   loadInitialData,
-  updateLastMessageContent
+  updateLastMessageContent,
+  togglePrivateEnabled
 } from '../../store/modules/ChatStore'
 import { Message } from '../../types/AIchat'
 import { SendMessageStream } from '@/api/ai'
@@ -51,9 +53,6 @@ export default function ChatScreen() {
   const search_private = useSelector(
     (state: RootState) => state.chat.search_private
   )
-  const search_public = useSelector(
-    (state: RootState) => state.chat.search_public
-  )
   const dispatch = useDispatch()
   const [inputText, setInputText] = useState('')
   const flatListRef = useRef<FlatList>(null)
@@ -62,9 +61,29 @@ export default function ChatScreen() {
   const [isStreaming, setIsStreaming] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [pendingImages, setPendingImages] = useState<ImageItem[]>([])
+  const messagesRef = useRef(messages)
+  const lastMessagesLengthRef = useRef(0)
+  const scrollInteractionRef = useRef<{ cancel: () => void } | null>(null)
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  const reversedMessages = useMemo(() => {
+    const data = [...messages]
+    data.reverse()
+    return data
+  }, [messages])
+
+  const typingMessageKey = useMemo(() => {
+    if (!isStreaming || messages.length === 0) return null
+    const last = messages[messages.length - 1]
+    if (!last || last.role !== 'assistant') return null
+    return `${last.timestamp}-${last.role}`
+  }, [isStreaming, messages])
 
   // 处理图片添加和自动上传
-  const handleAddImages = (uris: string[]) => {
+  const handleAddImages = useCallback((uris: string[]) => {
     const newImages: ImageItem[] = uris.map(uri => ({
       uri,
       status: 'uploading'
@@ -103,11 +122,11 @@ export default function ChatScreen() {
         )
       }
     })
-  }
+  }, [])
 
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = useCallback((index: number) => {
     setPendingImages(prev => prev.filter((_, i) => i !== index))
-  }
+  }, [])
 
   // 加载初始数据
   useEffect(() => {
@@ -116,45 +135,47 @@ export default function ChatScreen() {
   }, [dispatch])
 
   // 语音播放状态管理
-  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
-  const speakingIndexRef = useRef<number | null>(null)
+  const [speakingTimestamp, setSpeakingTimestamp] = useState<number | null>(
+    null
+  )
+  const speakingTimestampRef = useRef<number | null>(null)
 
-  const updateSpeakingIndex = (index: number | null) => {
-    speakingIndexRef.current = index
-    setSpeakingIndex(index)
-  }
+  const updateSpeakingTimestamp = useCallback((timestamp: number | null) => {
+    speakingTimestampRef.current = timestamp
+    setSpeakingTimestamp(timestamp)
+  }, [])
 
-  const handleSpeak = (index: number, text: string) => {
-    if (speakingIndexRef.current === index) {
-      // 如果点击的是当前正在播放的，则停止
+  const handleSpeak = useCallback(
+    (timestamp: number, text: string) => {
+      if (speakingTimestampRef.current === timestamp) {
+        Speech.stop()
+        updateSpeakingTimestamp(null)
+        return
+      }
+
       Speech.stop()
-      updateSpeakingIndex(null)
-    } else {
-      // 停止之前的播放（如果有）
-      Speech.stop()
-      // 立即更新为新的播放索引
-      updateSpeakingIndex(index)
+      updateSpeakingTimestamp(timestamp)
 
       Speech.speak(text, {
         onDone: () => {
-          // 只有当当前播放索引仍然是这个索引时才清除（防止被新的播放打断后错误清除）
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
+          if (speakingTimestampRef.current === timestamp) {
+            updateSpeakingTimestamp(null)
           }
         },
         onStopped: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
+          if (speakingTimestampRef.current === timestamp) {
+            updateSpeakingTimestamp(null)
           }
         },
         onError: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
+          if (speakingTimestampRef.current === timestamp) {
+            updateSpeakingTimestamp(null)
           }
         }
       })
-    }
-  }
+    },
+    [updateSpeakingTimestamp]
+  )
 
   // 组件卸载时停止播放
   useEffect(() => {
@@ -166,14 +187,19 @@ export default function ChatScreen() {
   // 监听会话ID变化，停止语音播放，并中断可能的进行中的请求
   useEffect(() => {
     Speech.stop()
-    updateSpeakingIndex(null)
+    updateSpeakingTimestamp(null)
   }, [currentConversationId])
 
   // 尝试获取头部高度，如果不可用则回退到安全默认值
   // 在抽屉导航中，useHeaderHeight 有时返回 0 或需要调整
   const headerHeight = useHeaderHeight() || 0
 
-  const sendMessage = async () => {
+  const handleTogglePrivateKb = useCallback(() => {
+    // @ts-ignore
+    dispatch(togglePrivateEnabled())
+  }, [dispatch])
+
+  const sendMessage = useCallback(async () => {
     // 检查是否有正在上传的图片
     if (pendingImages.some(img => img.status === 'uploading')) {
       alert('图片正在上传中，请稍候')
@@ -236,8 +262,29 @@ export default function ChatScreen() {
 
     try {
       let buffer = ''
+      let contentBuffer = ''
+      let lastDispatchTime = 0
+      const DISPATCH_INTERVAL = Platform.OS === 'android' ? 200 : 120
+      const MIN_CHARS = Platform.OS === 'android' ? 80 : 50
+      let flushScheduled = false
 
-      // 定义处理单行数据的函数
+      const flushContentBuffer = () => {
+        if (contentBuffer) {
+          dispatch(updateLastMessageContent(contentBuffer))
+          contentBuffer = ''
+          lastDispatchTime = Date.now()
+        }
+      }
+
+      const scheduleFlush = () => {
+        if (flushScheduled) return
+        flushScheduled = true
+        requestAnimationFrame(() => {
+          flushScheduled = false
+          flushContentBuffer()
+        })
+      }
+
       const processLine = (line: string) => {
         if (line.startsWith('data:')) {
           const jsonStr = line.slice(5).trim()
@@ -245,9 +292,16 @@ export default function ChatScreen() {
           try {
             const data = JSON.parse(jsonStr)
             if (data.type === 'content' && data.content) {
-              // @ts-ignore
-              dispatch(updateLastMessageContent(data.content))
+              contentBuffer += data.content
+              const now = Date.now()
+              if (
+                contentBuffer.length >= MIN_CHARS ||
+                now - lastDispatchTime >= DISPATCH_INTERVAL
+              ) {
+                scheduleFlush()
+              }
             } else if (data.type === 'done') {
+              flushContentBuffer()
               console.log('Chat session done:', data.session_id)
             }
           } catch (e) {
@@ -262,9 +316,9 @@ export default function ChatScreen() {
           message: contentToSend,
           images: imagesToSend,
           kb_config: {
-            enable: search_private || search_public,
+            enable: search_private,
             search_private,
-            search_public
+            search_public: false
           }
         },
         chunk => {
@@ -287,6 +341,8 @@ export default function ChatScreen() {
         const lines = buffer.split('\n')
         lines.forEach(processLine)
       }
+      // 确保所有内容都被更新
+      flushContentBuffer()
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request aborted')
@@ -313,21 +369,42 @@ export default function ChatScreen() {
     //   dispatch(addMessage(aiMsg))
     // }, 1000)
     // 像后端发送消息
-  }
+  }, [
+    currentConversationId,
+    dispatch,
+    inputText,
+    pendingImages,
+    search_private
+  ])
 
-  // 当消息变化时，如果是AI回复，则平滑滚动到底部
+  // 当新增消息时，如果用户在底部，则平滑滚动到底部（避免流式更新时反复触发滚动）
   useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1]
-      // 只有当最新消息不是用户发送的（即AI回复），或者是用户刚发送时，才触发滚动
-      // 初始化或切换会话时，由于 inverted 属性，自然就在底部，不需要额外滚动
-      if (lastMessage.role === 'assistant' || messages.length === 1) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
-        }, 100)
+    const currLen = messages.length
+    const prevLen = lastMessagesLengthRef.current
+    lastMessagesLengthRef.current = currLen
+
+    if (currLen === 0 || currLen === prevLen) return
+    if (showScrollBottom) return
+
+    const currentMessages = messagesRef.current
+    const lastMessage = currentMessages[currentMessages.length - 1]
+    if (!lastMessage) return
+
+    if (lastMessage.role !== 'assistant' && currLen !== 1) return
+
+    scrollInteractionRef.current?.cancel()
+    scrollInteractionRef.current = InteractionManager.runAfterInteractions(
+      () => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
       }
+    )
+  }, [messages.length, showScrollBottom])
+
+  useEffect(() => {
+    return () => {
+      scrollInteractionRef.current?.cancel()
     }
-  }, [messages])
+  }, [])
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset } = event.nativeEvent
@@ -339,6 +416,21 @@ export default function ChatScreen() {
   const scrollToBottom = () => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
   }
+
+  const renderMessageItem = useCallback(
+    ({ item }: { item: Message }) => {
+      const isTyping = typingMessageKey === `${item.timestamp}-${item.role}`
+      return (
+        <ChatMessage
+          message={item}
+          isSpeaking={item.timestamp === speakingTimestamp}
+          onSpeak={handleSpeak}
+          isTyping={isTyping}
+        />
+      )
+    },
+    [handleSpeak, speakingTimestamp, typingMessageKey]
+  )
 
   // 由于全面屏模式问题，手动处理 Android 键盘
   useEffect(() => {
@@ -369,53 +461,46 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={headerHeight}
       >
-        <View style={styles.contentContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#1f99b0" />
-            </View>
-          ) : messages.length === 0 ? (
-            <ChatEmptyState />
-          ) : (
-            <FlatList
-              ref={flatListRef}
-              data={[...messages].reverse()} // 反转数据源以适配 inverted
-              keyExtractor={(_, index) => index.toString()}
-              inverted={true} // 启用倒序模式，默认从底部开始
-              renderItem={({ item, index }) => {
-                // 计算原始索引：messages.length - 1 - index
-                const originalIndex = messages.length - 1 - index
-                return (
-                  <ChatMessage
-                    message={item}
-                    isSpeaking={originalIndex === speakingIndex}
-                    onSpeak={() => handleSpeak(originalIndex, item.content)}
-                    isTyping={
-                      isStreaming && originalIndex === messages.length - 1
-                    }
-                  />
-                )
-              }}
-              contentContainerStyle={styles.listContent}
-              ListHeaderComponent={<View style={{ height: 80 }} />} // 倒序后 Footer 变成了 Header
-              showsVerticalScrollIndicator={false}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              style={styles.flatList}
-            />
-          )}
+        <View style={styles.layout}>
+          <View style={styles.messagesContainer}>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#1f99b0" />
+              </View>
+            ) : messages.length === 0 ? (
+              <ChatEmptyState />
+            ) : (
+              <FlatList
+                ref={flatListRef}
+                data={reversedMessages}
+                keyExtractor={item => `${item.timestamp}-${item.role}`}
+                inverted={true}
+                renderItem={renderMessageItem}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                removeClippedSubviews={Platform.OS === 'android'}
+                initialNumToRender={12}
+                maxToRenderPerBatch={8}
+                updateCellsBatchingPeriod={50}
+                windowSize={7}
+                style={styles.flatList}
+              />
+            )}
 
-          {messages.length > 0 && showScrollBottom && (
-            <TouchableOpacity
-              style={styles.scrollToBottomButton}
-              onPress={scrollToBottom}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-down" size={24} color="#666" />
-            </TouchableOpacity>
-          )}
+            {messages.length > 0 && showScrollBottom && (
+              <TouchableOpacity
+                style={styles.scrollToBottomButton}
+                onPress={scrollToBottom}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="arrow-down" size={24} color="#666" />
+              </TouchableOpacity>
+            )}
+          </View>
 
-          <View style={styles.inputContainer}>
+          <View style={styles.inputBar}>
             <ChatInput
               value={inputText}
               onChangeText={setInputText}
@@ -427,6 +512,8 @@ export default function ChatScreen() {
               images={pendingImages}
               onAddImages={handleAddImages}
               onRemoveImage={handleRemoveImage}
+              privateKbEnabled={search_private}
+              onTogglePrivateKb={handleTogglePrivateKb}
             />
           </View>
         </View>
@@ -448,7 +535,10 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1
   },
-  contentContainer: {
+  layout: {
+    flex: 1
+  },
+  messagesContainer: {
     flex: 1,
     position: 'relative'
   },
@@ -458,19 +548,24 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     flexGrow: 1,
-    justifyContent: 'flex-end'
-    // paddingBottom 移至 ListFooterComponent 以确保正确滚动
+    justifyContent: 'flex-end',
+    paddingBottom: 12
   },
-  inputContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0
+  inputBar: {
+    flexShrink: 0,
+    width: '100%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E5E6EB',
+    borderBottomWidth: 0,
+    overflow: 'hidden'
   },
   scrollToBottomButton: {
     position: 'absolute',
     alignSelf: 'center', // 水平居中
-    bottom: 100, // 在输入区域上方
+    bottom: 16,
     width: 44, // 稍微大一点
     height: 44,
     borderRadius: 22,

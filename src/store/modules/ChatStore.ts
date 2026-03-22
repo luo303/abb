@@ -11,7 +11,7 @@ const initialState: ChatState = {
   currentConversationId: null,
   isLoading: false,
   search_private: false,
-  search_public: true
+  search_public: false
 }
 
 const chatSlice = createSlice({

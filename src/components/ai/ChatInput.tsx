@@ -7,9 +7,10 @@ import {
   Image,
   ScrollView,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Text
 } from 'react-native'
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
@@ -29,22 +30,66 @@ interface ChatInputProps {
   images: ImageItem[]
   onAddImages: (uris: string[]) => void
   onRemoveImage: (index: number) => void
+  privateKbEnabled?: boolean
+  onTogglePrivateKb?: () => void
 }
 
-export default function ChatInput({
+function ChatInput({
   value,
   onChangeText,
   onSend,
   disabled,
   images = [],
   onAddImages,
-  onRemoveImage
+  onRemoveImage,
+  privateKbEnabled = false,
+  onTogglePrivateKb
 }: ChatInputProps) {
   const insets = useSafeAreaInsets()
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  const pickImage = async () => {
+  const paddingBottom = useMemo(() => {
+    return Platform.OS === 'android' ? 16 : Math.max(insets.bottom, 16)
+  }, [insets.bottom])
+
+  const containerStyle = useMemo(() => {
+    return [styles.container, { paddingBottom }]
+  }, [paddingBottom])
+
+  const previewImages = useMemo(() => {
+    return images.map(img => ({ uri: img.uri }))
+  }, [images])
+
+  const hasBlockedImage = useMemo(() => {
+    return images.some(
+      img => img.status === 'uploading' || img.status === 'error'
+    )
+  }, [images])
+
+  const isSendDisabled = useMemo(() => {
+    return !!disabled || hasBlockedImage
+  }, [disabled, hasBlockedImage])
+
+  const hasReadyImage = useMemo(() => {
+    return images.some(img => img.status === 'done')
+  }, [images])
+
+  const canSend = useMemo(() => {
+    if (isSendDisabled) return false
+    return value.trim().length > 0 || hasReadyImage
+  }, [hasReadyImage, isSendDisabled, value])
+
+  const openPreviewAtIndex = useCallback((index: number) => {
+    setCurrentImageIndex(index)
+    setIsPreviewVisible(true)
+  }, [])
+
+  const closePreview = useCallback(() => {
+    setIsPreviewVisible(false)
+  }, [])
+
+  const pickImage = useCallback(async () => {
     // 请求权限
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
@@ -64,24 +109,15 @@ export default function ChatInput({
       const newUris = result.assets.map(asset => asset.uri)
       onAddImages(newUris)
     }
-  }
+  }, [images.length, onAddImages])
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     onSend()
-  }
+  }, [onSend])
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingBottom:
-            Platform.OS === 'android' ? 16 : Math.max(insets.bottom, 16)
-        }
-      ]}
-      pointerEvents="box-none"
-    >
-      <View style={styles.inputWrapper}>
+    <View style={containerStyle} pointerEvents="box-none">
+      <View style={styles.card}>
         {images.length > 0 && (
           <ScrollView
             horizontal
@@ -93,8 +129,7 @@ export default function ChatInput({
               <View key={index} style={styles.imagePreview}>
                 <TouchableOpacity
                   onPress={() => {
-                    setCurrentImageIndex(index)
-                    setIsPreviewVisible(true)
+                    openPreviewAtIndex(index)
                   }}
                 >
                   <Image
@@ -131,65 +166,67 @@ export default function ChatInput({
           </ScrollView>
         )}
 
-        <View style={styles.inputRow}>
-          <TouchableOpacity style={styles.plusButton} onPress={pickImage}>
-            <Ionicons name="add" size={24} color="#666" />
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder="给稚慧云发送消息"
+          placeholderTextColor="#B0B0B0"
+          multiline
+          maxLength={1000}
+        />
+
+        <View style={styles.bottomRow}>
+          <TouchableOpacity
+            style={[styles.pill, privateKbEnabled && styles.pillActive]}
+            onPress={onTogglePrivateKb}
+            activeOpacity={0.85}
+            disabled={!onTogglePrivateKb}
+          >
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={18}
+              color={privateKbEnabled ? '#1890ff' : '#111'}
+            />
+            <Text
+              style={[
+                styles.pillText,
+                privateKbEnabled && styles.pillTextActive
+              ]}
+            >
+              私人知识库
+            </Text>
           </TouchableOpacity>
 
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={value}
-              onChangeText={onChangeText}
-              placeholder="问问AI..."
-              placeholderTextColor="#B0BEC5"
-              multiline
-              maxLength={1000}
-            />
-            {(value.trim().length > 0 || images.length > 0) && (
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  (disabled ||
-                    images.some(
-                      img =>
-                        img.status === 'uploading' || img.status === 'error'
-                    )) &&
-                    styles.sendButtonDisabled
-                ]}
-                onPress={handleSend}
-                disabled={
-                  disabled ||
-                  images.some(
-                    img => img.status === 'uploading' || img.status === 'error'
-                  )
-                }
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name="arrow-up"
-                  size={20}
-                  color={
-                    disabled ||
-                    images.some(
-                      img =>
-                        img.status === 'uploading' || img.status === 'error'
-                    )
-                      ? '#CFD8DC'
-                      : '#fff'
-                  }
-                />
-              </TouchableOpacity>
-            )}
+          <View style={styles.rightActions}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={pickImage}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="add" size={28} color="#111" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={!canSend}
+              activeOpacity={0.85}
+            >
+              <Ionicons
+                name="arrow-up"
+                size={20}
+                color={!canSend ? '#CFD8DC' : '#fff'}
+              />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
       <ImageViewing
-        images={images.map(img => ({ uri: img.uri }))}
+        images={previewImages}
         imageIndex={currentImageIndex}
         visible={isPreviewVisible}
-        onRequestClose={() => setIsPreviewVisible(false)}
+        onRequestClose={closePreview}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
         keyExtractor={(_, index) => `chat-input-preview-${index}`}
@@ -198,71 +235,87 @@ export default function ChatInput({
   )
 }
 
+export default memo(ChatInput, (prev, next) => {
+  return (
+    prev.value === next.value &&
+    prev.disabled === next.disabled &&
+    prev.images === next.images &&
+    prev.onChangeText === next.onChangeText &&
+    prev.onSend === next.onSend &&
+    prev.onAddImages === next.onAddImages &&
+    prev.onRemoveImage === next.onRemoveImage &&
+    prev.privateKbEnabled === next.privateKbEnabled &&
+    prev.onTogglePrivateKb === next.onTogglePrivateKb
+  )
+})
+
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     backgroundColor: 'transparent'
   },
-  inputWrapper: {
-    width: '100%'
+  card: {
+    width: '100%',
+    backgroundColor: 'transparent'
   },
-  inputRow: {
+  input: {
+    fontSize: 16,
+    color: '#37474F',
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 6,
+    minHeight: 44,
+    maxHeight: 120,
+    textAlignVertical: 'top'
+  },
+  bottomRow: {
+    marginTop: 10,
     flexDirection: 'row',
-    alignItems: 'flex-end'
+    alignItems: 'center',
+    justifyContent: 'space-between'
   },
-  plusButton: {
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F3F5',
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: 18,
+    gap: 8
+  },
+  pillActive: {
+    backgroundColor: '#E6F4FF'
+  },
+  pillText: {
+    fontSize: 14,
+    color: '#111',
+    fontWeight: '600'
+  },
+  pillTextActive: {
+    color: '#1890ff'
+  },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#9aa8ff',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    marginBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  inputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    minHeight: 48,
-    maxHeight: 120,
-    paddingHorizontal: 8,
-    paddingBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#37474F',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingLeft: 12,
-    paddingRight: 8,
-    maxHeight: 120
-  },
-  sendButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    marginRight: 4
+    alignItems: 'center'
   },
   sendButtonDisabled: {
-    backgroundColor: '#E0E0E0'
+    backgroundColor: '#E5E6EB'
   },
   imageList: {
     marginBottom: 8,

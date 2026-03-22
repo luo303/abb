@@ -7,7 +7,7 @@ import {
   ScrollView,
   ActivityIndicator
 } from 'react-native'
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import Markdown from 'react-native-markdown-display'
@@ -19,11 +19,11 @@ import ImageViewing from 'react-native-image-viewing'
 interface ChatMessageProps {
   message: Message
   isSpeaking: boolean
-  onSpeak: () => void
+  onSpeak: (timestamp: number, text: string) => void
   isTyping?: boolean
 }
 
-export default function ChatMessage({
+function ChatMessage({
   message,
   isSpeaking,
   onSpeak,
@@ -33,14 +33,22 @@ export default function ChatMessage({
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  const handleCopy = async () => {
+  const previewImages = useMemo(() => {
+    return message.images?.map(uri => ({ uri })) || []
+  }, [message.images])
+
+  const closePreview = useCallback(() => {
+    setIsPreviewVisible(false)
+  }, [])
+
+  const handleCopy = useCallback(async () => {
     await Clipboard.setStringAsync(message.content)
     showMessage('复制成功')
-  }
+  }, [message.content, showMessage])
 
-  const handleSpeak = () => {
-    onSpeak()
-  }
+  const handleSpeak = useCallback(() => {
+    onSpeak(message.timestamp, message.content)
+  }, [message.content, message.timestamp, onSpeak])
 
   return (
     <View
@@ -93,23 +101,29 @@ export default function ChatMessage({
                 {message.content}
               </Text>
             ) : message.content ? (
-              <Markdown
-                style={{
-                  body: {
-                    fontSize: 16,
-                    color: '#333'
-                  },
-                  paragraph: {
-                    marginVertical: 0
-                  }
-                }}
-              >
-                {message.content}
-              </Markdown>
+              isTyping ? (
+                <Text style={[styles.text, styles.aiText]}>
+                  {message.content}
+                </Text>
+              ) : (
+                <Markdown
+                  style={{
+                    body: {
+                      fontSize: 16,
+                      color: '#333'
+                    },
+                    paragraph: {
+                      marginVertical: 0
+                    }
+                  }}
+                >
+                  {message.content}
+                </Markdown>
+              )
             ) : (
               <View style={styles.loadingBlock}>
                 <ActivityIndicator size="small" color="#1f99b0" />
-                <Text style={styles.loadingText}>AI正在思考...</Text>
+                <Text style={styles.loadingText}>AI 正在思考...</Text>
               </View>
             )}
           </View>
@@ -139,10 +153,10 @@ export default function ChatMessage({
       </View>
 
       <ImageViewing
-        images={message.images?.map(uri => ({ uri })) || []}
+        images={previewImages}
         imageIndex={currentImageIndex}
         visible={isPreviewVisible}
-        onRequestClose={() => setIsPreviewVisible(false)}
+        onRequestClose={closePreview}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
         keyExtractor={(_, index) => `chat-message-preview-${index}`}
@@ -150,6 +164,15 @@ export default function ChatMessage({
     </View>
   )
 }
+
+export default memo(ChatMessage, (prev, next) => {
+  return (
+    prev.message === next.message &&
+    prev.isSpeaking === next.isSpeaking &&
+    prev.isTyping === next.isTyping &&
+    prev.onSpeak === next.onSpeak
+  )
+})
 
 const styles = StyleSheet.create({
   container: {

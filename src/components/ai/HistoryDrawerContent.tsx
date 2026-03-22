@@ -4,17 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Switch
+  ScrollView
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
-import {
-  AntDesign,
-  Ionicons,
-  MaterialIcons,
-  SimpleLineIcons
-} from '@expo/vector-icons'
+import { AntDesign, Ionicons, SimpleLineIcons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
 import HistoryActionModal from './HistoryActionModal'
 import { RootState } from '../../store'
@@ -22,7 +16,6 @@ import {
   switchConversation,
   resetSession,
   removeHistoryItem,
-  togglePrivateEnabled,
   togglePin
 } from '../../store/modules/ChatStore'
 import { HistoryItem } from '../../types/AIchat'
@@ -32,9 +25,6 @@ import * as Speech from 'expo-speech'
 export default function HistoryDrawerContent(
   props: DrawerContentComponentProps
 ) {
-  const search_private = useSelector(
-    (state: RootState) => state.chat.search_private
-  )
   const items = useSelector((state: RootState) => state.chat.historyList)
   const currentConversationId = useSelector(
     (state: RootState) => state.chat.currentConversationId
@@ -87,26 +77,9 @@ export default function HistoryDrawerContent(
     dispatch(resetSession())
     props.navigation.closeDrawer()
   }
-  const togglePrivate = () => {
-    dispatch(togglePrivateEnabled())
-  }
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.actionContainer}>
-        <View style={styles.knowledgeRow}>
-          <View style={styles.knowledgeLabel}>
-            <MaterialIcons name="privacy-tip" size={16} color="black" />
-            <Text style={[styles.actionText, { marginLeft: 12 }]}>
-              私人知识库
-            </Text>
-          </View>
-          <Switch
-            value={search_private}
-            onValueChange={togglePrivate}
-            trackColor={{ false: '#767577', true: '#1890ff' }}
-          />
-        </View>
-
         <TouchableOpacity
           style={styles.actionButton}
           activeOpacity={0.7}
@@ -206,16 +179,6 @@ const styles = StyleSheet.create({
   actionContainer: {
     padding: 16,
     paddingTop: 8
-  },
-  knowledgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  knowledgeLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 4
   },
   actionButton: {
     flexDirection: 'row',
