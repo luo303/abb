@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
+import AuthBackground from '../components/common/AuthBackground'
 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign, Ionicons } from '@expo/vector-icons'
@@ -19,6 +19,18 @@ import { apiRegister, apiRegisterCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
 import { NavigationProps } from '../types/navigation'
+
+const THEME_PRIMARY = '#f43f5e'
+const THEME_PRIMARY_DARK = '#e11d48'
+const THEME_PRIMARY_DISABLED = '#fda4af'
+
+type FocusedField =
+  | 'username'
+  | 'account'
+  | 'password'
+  | 'email'
+  | 'code'
+  | null
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProps>()
@@ -46,6 +58,7 @@ export default function RegisterScreen() {
   const [agree, setAgree] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [isCodeLoading, setIsCodeLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState<FocusedField>(null)
   // 表单输入变化处理
   const handleInputChange = (key: string, value: string) => {
     setFormData({
@@ -177,16 +190,16 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/bg.png')}
-        style={styles.backgroundImage}
-      />
+      <AuthBackground />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.titleSection}>
               <Text style={styles.mainTitle}>欢迎注册</Text>
               <Text style={styles.subTitle}>开启您的宝宝成长记录之旅！</Text>
@@ -196,33 +209,50 @@ export default function RegisterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>用户名</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'username' && styles.inputFocused
+                  ]}
                   placeholder="请输入用户名（3-20位）"
                   placeholderTextColor="#9CA3AF"
                   value={formData.username}
                   onChangeText={value => handleInputChange('username', value)}
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('username')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>账号</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'account' && styles.inputFocused
+                  ]}
                   placeholder="请输入账号(可用于后续登录)"
                   placeholderTextColor="#9CA3AF"
                   value={formData.account}
                   onChangeText={value => handleInputChange('account', value)}
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('account')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>密码</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'password' && styles.inputFocused
+                  ]}
                   placeholder="请输入密码（至少6位）"
                   placeholderTextColor="#9CA3AF"
                   value={formData.password}
@@ -230,6 +260,10 @@ export default function RegisterScreen() {
                   secureTextEntry
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -288,7 +322,10 @@ export default function RegisterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>邮箱</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'email' && styles.inputFocused
+                  ]}
                   placeholder="请输入邮箱"
                   placeholderTextColor="#9CA3AF"
                   value={formData.email}
@@ -296,6 +333,10 @@ export default function RegisterScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -303,7 +344,11 @@ export default function RegisterScreen() {
                 <Text style={styles.label}>验证码</Text>
                 <View style={styles.codeInputContainer}>
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    style={[
+                      styles.input,
+                      focusedField === 'code' && styles.inputFocused,
+                      { flex: 1, marginBottom: 0 }
+                    ]}
                     placeholder="请输入验证码"
                     placeholderTextColor="#9CA3AF"
                     value={formData.code}
@@ -311,6 +356,10 @@ export default function RegisterScreen() {
                     keyboardType="number-pad"
                     autoCapitalize="none"
                     editable={!isLoading}
+                    selectionColor={THEME_PRIMARY}
+                    cursorColor={THEME_PRIMARY}
+                    onFocus={() => setFocusedField('code')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <TouchableOpacity
                     style={styles.getCodeBtn}
@@ -318,7 +367,7 @@ export default function RegisterScreen() {
                     disabled={countdown > 0 || isCodeLoading}
                   >
                     {isCodeLoading ? (
-                      <ActivityIndicator color="#1f99b0" />
+                      <ActivityIndicator color={THEME_PRIMARY} />
                     ) : (
                       <Text
                         style={[
@@ -391,18 +440,11 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA'
+    backgroundColor: '#fff1f2'
   },
   safeArea: {
     flex: 1,
     backgroundColor: 'transparent'
-  },
-  backgroundImage: {
-    width: '100%',
-    height: '110%',
-    position: 'absolute',
-    top: 0,
-    left: 0
   },
   scrollContent: {
     flexGrow: 1,
@@ -444,11 +486,22 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 15,
-    color: '#333'
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#fecdd3'
+  },
+  inputFocused: {
+    borderColor: THEME_PRIMARY,
+    backgroundColor: '#fff',
+    shadowColor: THEME_PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 2
   },
   codeInputContainer: {
     flexDirection: 'row',
@@ -461,7 +514,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
   getCodeText: {
-    color: '#1f99b0',
+    color: THEME_PRIMARY,
     fontSize: 14
   },
   getCodeTextDisabled: {
@@ -469,19 +522,19 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     height: 50,
-    backgroundColor: '#1f99b0',
+    backgroundColor: THEME_PRIMARY,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#1f99b0',
+    shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5
   },
   btnDisabled: {
-    backgroundColor: '#99d6e5'
+    backgroundColor: THEME_PRIMARY_DISABLED
   },
   loginBtnText: {
     color: '#fff',
@@ -508,15 +561,15 @@ const styles = StyleSheet.create({
     marginRight: 4
   },
   checkboxRoundChecked: {
-    backgroundColor: '#1f99b0',
-    borderColor: '#1f99b0'
+    backgroundColor: THEME_PRIMARY,
+    borderColor: THEME_PRIMARY
   },
   agreementText: {
     fontSize: 12,
     color: '#999'
   },
   linkText: {
-    color: '#1f99b0'
+    color: THEME_PRIMARY
   },
   genderContainer: {
     flexDirection: 'row',
@@ -534,10 +587,10 @@ const styles = StyleSheet.create({
     borderColor: 'transparent'
   },
   genderButtonActive: {
-    backgroundColor: '#1f99b0'
+    backgroundColor: THEME_PRIMARY
   },
   genderButtonActiveFemale: {
-    backgroundColor: '#f9739b'
+    backgroundColor: THEME_PRIMARY_DARK
   },
   genderText: {
     marginLeft: 6,
@@ -560,7 +613,7 @@ const styles = StyleSheet.create({
     color: '#999'
   },
   registerHighlight: {
-    color: '#1f99b0',
+    color: THEME_PRIMARY,
     fontWeight: 'bold'
   }
 })

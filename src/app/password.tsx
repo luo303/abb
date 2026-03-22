@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
   KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native'
@@ -13,10 +12,16 @@ import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
+import AuthBackground from '../components/common/AuthBackground'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
 import { NavigationProps } from '../types/navigation'
+
+const THEME_PRIMARY = '#f43f5e'
+const THEME_PRIMARY_DISABLED = '#fda4af'
+
+type FocusedField = 'email' | 'code' | 'password' | null
 
 export default function PasswordScreen() {
   const navigation = useNavigation<NavigationProps>()
@@ -37,6 +42,7 @@ export default function PasswordScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [isCodeLoading, setIsCodeLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState<FocusedField>(null)
 
   // 表单输入变化处理
   const handleInputChange = (key: string, value: string) => {
@@ -144,10 +150,7 @@ export default function PasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/bg.png')}
-        style={styles.backgroundImage}
-      />
+      <AuthBackground />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -172,7 +175,10 @@ export default function PasswordScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>邮箱</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'email' && styles.inputFocused
+                  ]}
                   placeholder="请输入注册邮箱"
                   placeholderTextColor="#9CA3AF"
                   value={formData.email}
@@ -180,6 +186,10 @@ export default function PasswordScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -187,13 +197,21 @@ export default function PasswordScreen() {
                 <Text style={styles.label}>验证码</Text>
                 <View style={styles.codeInputContainer}>
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    style={[
+                      styles.input,
+                      focusedField === 'code' && styles.inputFocused,
+                      { flex: 1, marginBottom: 0 }
+                    ]}
                     placeholder="请输入验证码"
                     placeholderTextColor="#9CA3AF"
                     value={formData.code}
                     onChangeText={value => handleInputChange('code', value)}
                     keyboardType="number-pad"
                     editable={!isLoading}
+                    selectionColor={THEME_PRIMARY}
+                    cursorColor={THEME_PRIMARY}
+                    onFocus={() => setFocusedField('code')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <TouchableOpacity
                     style={styles.getCodeBtn}
@@ -201,7 +219,7 @@ export default function PasswordScreen() {
                     disabled={countdown > 0 || isCodeLoading || isLoading}
                   >
                     {isCodeLoading ? (
-                      <ActivityIndicator color="#1f99b0" />
+                      <ActivityIndicator color={THEME_PRIMARY} />
                     ) : (
                       <Text
                         style={[
@@ -219,7 +237,10 @@ export default function PasswordScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>新密码</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'password' && styles.inputFocused
+                  ]}
                   placeholder="请输入新密码（至少6位）"
                   placeholderTextColor="#9CA3AF"
                   value={formData.password}
@@ -227,6 +248,10 @@ export default function PasswordScreen() {
                   secureTextEntry
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -254,19 +279,11 @@ export default function PasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA'
+    backgroundColor: '#fff1f2'
   },
   safeArea: {
     flex: 1,
     backgroundColor: 'transparent'
-  },
-  backgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    resizeMode: 'cover'
   },
   scrollContent: {
     flexGrow: 1,
@@ -308,11 +325,22 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 15,
-    color: '#333'
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#fecdd3'
+  },
+  inputFocused: {
+    borderColor: THEME_PRIMARY,
+    backgroundColor: '#fff',
+    shadowColor: THEME_PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 2
   },
   codeInputContainer: {
     flexDirection: 'row',
@@ -325,7 +353,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
   getCodeText: {
-    color: '#1f99b0',
+    color: THEME_PRIMARY,
     fontSize: 14
   },
   getCodeTextDisabled: {
@@ -333,19 +361,19 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     height: 50,
-    backgroundColor: '#1f99b0',
+    backgroundColor: THEME_PRIMARY,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#1f99b0',
+    shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5
   },
   btnDisabled: {
-    backgroundColor: '#99d6e5'
+    backgroundColor: THEME_PRIMARY_DISABLED
   },
   submitBtnText: {
     color: '#fff',

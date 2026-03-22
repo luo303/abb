@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
   ActivityIndicator
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
+import AuthBackground from '../components/common/AuthBackground'
 
 import { useEffect, useState } from 'react'
 import { setToken, setRememberMe } from '../store/modules/userStore'
@@ -20,6 +20,11 @@ import { resLogin, resLoginCode } from '../api/type'
 import { useMessage } from '../components/Message'
 
 import { NavigationProps } from '../types/navigation'
+
+const THEME_PRIMARY = '#f43f5e'
+const THEME_PRIMARY_DISABLED = '#fda4af'
+
+type FocusedField = 'account' | 'password' | 'email' | 'code' | null
 
 export default function LoginScreen() {
   const dispatch = useDispatch()
@@ -33,6 +38,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
+  const [focusedField, setFocusedField] = useState<FocusedField>(null)
 
   const [agree, setAgree] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -165,10 +171,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Image
-        source={require('../assets/bg.png')}
-        style={styles.backgroundImage}
-      />
+      <AuthBackground />
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.titleSection}>
           <Text style={styles.mainTitle}>稚慧云欢迎您</Text>
@@ -213,24 +216,38 @@ export default function LoginScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>账号</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'account' && styles.inputFocused
+                  ]}
                   placeholder="请输入账号"
                   value={account}
                   onChangeText={setAccount}
                   placeholderTextColor="#999"
                   autoCapitalize="none"
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('account')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>密码</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'password' && styles.inputFocused
+                  ]}
                   placeholder="请输入密码"
                   value={password}
                   onChangeText={setPassword}
                   placeholderTextColor="#999"
                   secureTextEntry
                   autoCapitalize="none"
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
 
@@ -261,25 +278,40 @@ export default function LoginScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>邮箱</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    focusedField === 'email' && styles.inputFocused
+                  ]}
                   placeholder="请输入邮箱号"
                   value={email}
                   onChangeText={setEmail}
                   placeholderTextColor="#999"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  selectionColor={THEME_PRIMARY}
+                  cursorColor={THEME_PRIMARY}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
                 />
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>验证码</Text>
                 <View style={styles.codeInputContainer}>
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    style={[
+                      styles.input,
+                      focusedField === 'code' && styles.inputFocused,
+                      { flex: 1, marginBottom: 0 }
+                    ]}
                     placeholder="请输入验证码"
                     value={code}
                     onChangeText={setCode}
                     placeholderTextColor="#999"
                     keyboardType="number-pad"
+                    selectionColor={THEME_PRIMARY}
+                    cursorColor={THEME_PRIMARY}
+                    onFocus={() => setFocusedField('code')}
+                    onBlur={() => setFocusedField(null)}
                   />
                   <TouchableOpacity
                     style={styles.getCodeBtn}
@@ -287,7 +319,7 @@ export default function LoginScreen() {
                     disabled={countdown > 0 || isCodeLoading}
                   >
                     {isCodeLoading ? (
-                      <ActivityIndicator color="#1f99b0" />
+                      <ActivityIndicator color={THEME_PRIMARY} />
                     ) : (
                       <Text
                         style={[
@@ -310,7 +342,7 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[
               styles.loginBtn,
-              isLoading && { backgroundColor: '#99d6e5' }
+              isLoading && { backgroundColor: THEME_PRIMARY_DISABLED }
             ]}
             onPress={handleLogin}
             disabled={isLoading}
@@ -365,15 +397,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA'
-  },
-  backgroundImage: {
-    width: '100%',
-    height: '110%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: -1
+    backgroundColor: '#fff1f2'
   },
   scrollView: {
     flexGrow: 1,
@@ -427,7 +451,7 @@ const styles = StyleSheet.create({
     marginLeft: -10,
     width: 20,
     height: 3,
-    backgroundColor: '#1f99b0',
+    backgroundColor: THEME_PRIMARY,
     borderRadius: 2
   },
   formContainer: {
@@ -444,11 +468,22 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 15,
-    color: '#333'
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#fecdd3'
+  },
+  inputFocused: {
+    borderColor: THEME_PRIMARY,
+    backgroundColor: '#fff',
+    shadowColor: THEME_PRIMARY,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 2
   },
   codeInputContainer: {
     flexDirection: 'row',
@@ -460,7 +495,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   getCodeText: {
-    color: '#1f99b0',
+    color: THEME_PRIMARY,
     fontSize: 14
   },
   getCodeTextDisabled: {
@@ -488,8 +523,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   },
   checkboxChecked: {
-    backgroundColor: '#1f99b0',
-    borderColor: '#1f99b0'
+    backgroundColor: THEME_PRIMARY,
+    borderColor: THEME_PRIMARY
   },
   checkMark: {
     width: 8,
@@ -517,16 +552,16 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: '#666'
+    color: THEME_PRIMARY
   },
   loginBtn: {
     height: 50,
-    backgroundColor: '#1f99b0',
+    backgroundColor: THEME_PRIMARY,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#1f99b0',
+    shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -557,15 +592,15 @@ const styles = StyleSheet.create({
     marginRight: 4
   },
   checkboxRoundChecked: {
-    backgroundColor: '#1f99b0',
-    borderColor: '#1f99b0'
+    backgroundColor: THEME_PRIMARY,
+    borderColor: THEME_PRIMARY
   },
   agreementText: {
     fontSize: 12,
     color: '#999'
   },
   linkText: {
-    color: '#1f99b0'
+    color: THEME_PRIMARY
   },
   footer: {
     alignItems: 'center',
@@ -579,7 +614,7 @@ const styles = StyleSheet.create({
     color: '#999'
   },
   registerHighlight: {
-    color: '#1f99b0',
+    color: THEME_PRIMARY,
     fontWeight: 'bold'
   }
 })

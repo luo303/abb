@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Provider } from 'react-redux'
 import store from '../store'
 import { LogBox } from 'react-native'
+import { StatusBar } from 'expo-status-bar'
 import { initFollowingIds } from '../store/modules/FollowStore'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
 import { fetchPostList, fetchFollowingPosts } from '../store/modules/PostStore'
@@ -283,6 +284,7 @@ export default function Layout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Provider store={store}>
         <MessageProvider>
           <AppInitializer onReady={() => setAppReady(true)} />
