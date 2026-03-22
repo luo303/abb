@@ -264,7 +264,7 @@ export default function ChatScreen() {
       let buffer = ''
       let contentBuffer = ''
       let lastDispatchTime = 0
-      const DISPATCH_INTERVAL = Platform.OS === 'android' ? 200 : 120
+      const DISPATCH_INTERVAL = Platform.OS === 'android' ? 50 : 50
       const MIN_CHARS = Platform.OS === 'android' ? 80 : 50
       let flushScheduled = false
 
