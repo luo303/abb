@@ -71,14 +71,10 @@ function ChatInput({
     return !!disabled || hasBlockedImage
   }, [disabled, hasBlockedImage])
 
-  const hasReadyImage = useMemo(() => {
-    return images.some(img => img.status === 'done')
-  }, [images])
-
   const canSend = useMemo(() => {
     if (isSendDisabled) return false
-    return value.trim().length > 0 || hasReadyImage
-  }, [hasReadyImage, isSendDisabled, value])
+    return value.trim().length > 0
+  }, [isSendDisabled, value])
 
   const openPreviewAtIndex = useCallback((index: number) => {
     setCurrentImageIndex(index)
@@ -112,8 +108,9 @@ function ChatInput({
   }, [images.length, onAddImages])
 
   const handleSend = useCallback(() => {
+    if (value.trim().length === 0) return
     onSend()
-  }, [onSend])
+  }, [onSend, value])
 
   return (
     <View style={containerStyle} pointerEvents="box-none">
@@ -170,7 +167,7 @@ function ChatInput({
           style={styles.input}
           value={value}
           onChangeText={onChangeText}
-          placeholder="给稚慧云发送消息"
+          placeholder="问问小稚"
           placeholderTextColor="#B0B0B0"
           multiline
           maxLength={1000}

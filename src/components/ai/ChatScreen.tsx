@@ -211,7 +211,7 @@ export default function ChatScreen() {
       .filter(img => img.status === 'done' && img.url)
       .map(img => img.url!)
 
-    if (!contentToSend && imagesToSend.length === 0) return
+    if (!contentToSend) return
 
     // 如果有正在进行的请求，先中断它
     if (abortControllerRef.current) {
