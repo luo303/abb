@@ -11,7 +11,7 @@ const initialState: ChatState = {
   currentConversationId: null,
   isLoading: false,
   search_private: false,
-  search_public: false
+  search_public: true
 }
 
 const chatSlice = createSlice({
@@ -20,7 +20,7 @@ const chatSlice = createSlice({
   reducers: {
     resetChatState: () => initialState,
     togglePublicEnabled: state => {
-      state.search_public = !state.search_public
+      state.search_public = true
     },
     togglePrivateEnabled: state => {
       state.search_private = !state.search_private

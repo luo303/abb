@@ -1,44 +1,100 @@
-import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import React, { useCallback, useState } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput
+} from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../../types/navigation'
 
-export default function HomeSearchBar() {
+interface HomeSearchBarProps {
+  onSearch?: (text: string) => void
+}
+
+export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
   const navigation = useNavigation<NavigationProps>()
+  const [searchText, setSearchText] = useState('')
 
   const handleSearchPress = () => {
     navigation.navigate('Search')
   }
 
+  const handleChangeText = useCallback(
+    (text: string) => {
+      setSearchText(text)
+      onSearch?.(text)
+    },
+    [onSearch]
+  )
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.searchBox}
-        activeOpacity={0.8}
-        onPress={handleSearchPress}
-      >
-        <LinearGradient
-          colors={['#ff9a9e', '#f43f5e']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.searchIconContainer}
-        >
-          <Ionicons name="search" size={24} color="#fff" />
-        </LinearGradient>
-        <View style={styles.inputWrapper}>
-          <Text style={styles.placeholder}>搜索您感兴趣的内容...</Text>
+      {onSearch ? (
+        <View style={styles.searchBox}>
+          <LinearGradient
+            colors={['#ff9a9e', '#f43f5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.searchIconContainer}
+          >
+            <Ionicons name="search" size={24} color="#fff" />
+          </LinearGradient>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="搜索您感兴趣的内容..."
+              placeholderTextColor="#94a3b8"
+              value={searchText}
+              onChangeText={handleChangeText}
+              returnKeyType="search"
+            />
+          </View>
+          <LinearGradient
+            colors={['#ff9a9e', '#f43f5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.searchButton}
+          >
+            <TouchableOpacity
+              style={styles.searchButtonInner}
+              activeOpacity={0.85}
+              onPress={() => onSearch(searchText)}
+            >
+              <Text style={styles.searchButtonText}>搜索</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
-        <LinearGradient
-          colors={['#ff9a9e', '#f43f5e']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.searchButton}
+      ) : (
+        <TouchableOpacity
+          style={styles.searchBox}
+          activeOpacity={0.8}
+          onPress={handleSearchPress}
         >
-          <Text style={styles.searchButtonText}>搜索</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={['#ff9a9e', '#f43f5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.searchIconContainer}
+          >
+            <Ionicons name="search" size={24} color="#fff" />
+          </LinearGradient>
+          <View style={styles.inputWrapper}>
+            <Text style={styles.placeholder}>搜索您感兴趣的内容...</Text>
+          </View>
+          <LinearGradient
+            colors={['#ff9a9e', '#f43f5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.searchButton}
+          >
+            <Text style={styles.searchButtonText}>搜索</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => navigation.navigate('AddPost')}
@@ -100,6 +156,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 12
   },
+  input: {
+    fontSize: 14,
+    color: '#111',
+    paddingVertical: 0
+  },
   placeholder: {
     fontSize: 14,
     color: '#94a3b8'
@@ -111,6 +172,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 22,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  searchButtonInner: {
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20
   },
   searchButtonText: {
     color: '#fff',

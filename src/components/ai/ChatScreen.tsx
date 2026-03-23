@@ -316,9 +316,9 @@ export default function ChatScreen() {
           message: contentToSend,
           images: imagesToSend,
           kb_config: {
-            enable: search_private,
+            enable: true,
             search_private,
-            search_public: false
+            search_public: true
           }
         },
         chunk => {
