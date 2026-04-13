@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator
 } from 'react-native'
@@ -14,6 +13,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector } from 'react-redux'
+import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
 
 import {
   updateProfileReq,
@@ -170,7 +170,7 @@ export default function EditProfile() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <AppKeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
@@ -313,7 +313,7 @@ export default function EditProfile() {
           />
         )}
       </View>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   )
 }
 

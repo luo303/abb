@@ -1,15 +1,9 @@
 import React, { useState } from 'react'
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Platform,
-  KeyboardAvoidingView,
-  Alert
-} from 'react-native'
+import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { uploadFile } from '@/api/upload'
+import AppKeyboardAvoidingView from '@/components/common/AppKeyboardAvoidingView'
 
 // 导入子组件
 import AddPostHeader from '@/components/post/add/AddPostHeader'
@@ -122,7 +116,7 @@ export default function AddPostScreen() {
     <View style={styles.container}>
       <AddPostHeader />
 
-      <KeyboardAvoidingView
+      <AppKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
@@ -184,7 +178,7 @@ export default function AddPostScreen() {
             isPublic
           }}
         />
-      </KeyboardAvoidingView>
+      </AppKeyboardAvoidingView>
     </View>
   )
 }

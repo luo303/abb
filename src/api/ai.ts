@@ -1,6 +1,7 @@
 import request from '@/utils/request'
 import { AiRequest } from '@/types/AIchat'
 import * as SecureStore from 'expo-secure-store'
+import { fetch as expoFetch } from 'expo/fetch'
 import { ApiResponse } from './profile'
 
 const AI_URL = 'http://38.76.197.12:8080/api/common/ai/chat/stream'
@@ -16,7 +17,7 @@ export const SendMessage = async (data: AiRequest, signal?: AbortSignal) => {
   if (token) {
     headers.Authorization = `Bearer ${token}`
   }
-  return fetch(AI_URL, {
+  return expoFetch(AI_URL, {
     method: 'POST',
     headers,
     body: JSON.stringify(data),
@@ -24,61 +25,73 @@ export const SendMessage = async (data: AiRequest, signal?: AbortSignal) => {
   })
 }
 
-// 基于 XMLHttpRequest 的流式发送方法
-export const SendMessageStream = (
+const createAbortError = () => {
+  const abortError = new Error('Aborted')
+  abortError.name = 'AbortError'
+  return abortError
+}
+
+const streamWithExpoFetch = async <T extends object>(
+  url: string,
+  data: T,
+  onMessage: (chunk: string) => void,
+  signal?: AbortSignal
+) => {
+  const token = await SecureStore.getItemAsync('token')
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const res = await expoFetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+    signal
+  })
+
+  if (!res.ok) {
+    throw new Error(`HTTP Error: ${res.status}`)
+  }
+
+  if (!res.body) {
+    const text = await res.text()
+    if (text) onMessage(text)
+    return
+  }
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+
+  while (true) {
+    if (signal?.aborted) {
+      throw createAbortError()
+    }
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    const chunk = decoder.decode(value, { stream: true })
+    if (chunk) onMessage(chunk)
+  }
+
+  const remain = decoder.decode()
+  if (remain) onMessage(remain)
+}
+
+export const SendMessageStream = async (
   data: AiRequest,
   onMessage: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    SecureStore.getItemAsync('token')
-      .then(token => {
-        const xhr = new XMLHttpRequest()
-        let lastReadIndex = 0
-
-        xhr.open('POST', AI_URL)
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        if (token) {
-          xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-        }
-
-        if (signal) {
-          signal.onabort = () => {
-            xhr.abort()
-            const error = new Error('Aborted')
-            error.name = 'AbortError'
-            reject(error)
-          }
-        }
-
-        xhr.onprogress = () => {
-          // 鑾峰彇鏂板鐨勯儴鍒?
-          const currIndex = xhr.responseText.length
-          if (currIndex > lastReadIndex) {
-            const chunk = xhr.responseText.substring(lastReadIndex, currIndex)
-            lastReadIndex = currIndex
-            onMessage(chunk)
-          }
-        }
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve()
-          } else {
-            reject(new Error(`HTTP Error: ${xhr.status}`))
-          }
-        }
-
-        xhr.onerror = () => {
-          reject(new Error('Network request failed'))
-        }
-
-        xhr.send(JSON.stringify(data))
-      })
-      .catch(error => {
-        reject(error)
-      })
-  })
+  try {
+    await streamWithExpoFetch(AI_URL, data, onMessage, signal)
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw error
+    if (signal?.aborted) throw createAbortError()
+    throw error
+  }
 }
 
 export type UploadKnowledgePayload = {
@@ -113,71 +126,16 @@ export interface GrowthAnalysisPayload {
   items: GrowthAnalysisItem[]
 }
 
-export const SendGrowthAnalysisStream = (
+export const SendGrowthAnalysisStream = async (
   data: GrowthAnalysisPayload,
   onMessage: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> => {
-  console.log(1, data)
-
-  return new Promise((resolve, reject) => {
-    SecureStore.getItemAsync('token')
-      .then(token => {
-        const xhr = new XMLHttpRequest()
-        let lastReadIndex = 0
-
-        xhr.open('POST', GROWTH_ANALYSIS_URL)
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        if (token) {
-          xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-        }
-
-        if (signal) {
-          signal.onabort = () => {
-            xhr.abort()
-            const error = new Error('Aborted')
-            error.name = 'AbortError'
-            reject(error)
-          }
-        }
-
-        xhr.onprogress = () => {
-          const currIndex = xhr.responseText.length
-          if (currIndex > lastReadIndex) {
-            const chunk = xhr.responseText.substring(lastReadIndex, currIndex)
-            lastReadIndex = currIndex
-            onMessage(chunk)
-          }
-        }
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve()
-          } else {
-            reject(new Error(`HTTP Error: ${xhr.status}`))
-          }
-        }
-
-        xhr.onerror = () => {
-          reject(new Error('Network request failed'))
-        }
-
-        xhr.send(JSON.stringify(data))
-      })
-      .catch(error => {
-        reject(error)
-      })
-  })
-}
-
-//获取会话记录
-export const GetSessionMessages = async (session_id: string) => {
-  console.log(`获取会话记录${session_id}`)
-
-  const res = await request.get(
-    `/common/ai/chat/history?session_id=${session_id}`
-  )
-  console.log(res)
-
-  return res
+  try {
+    await streamWithExpoFetch(GROWTH_ANALYSIS_URL, data, onMessage, signal)
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw error
+    if (signal?.aborted) throw createAbortError()
+    throw error
+  }
 }

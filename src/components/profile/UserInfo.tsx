@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -61,7 +61,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
     }
   }, [currentBabyId, babiesList, value])
 
-  const renderItem = (item: any) => {
+  const renderItem = useCallback((item: any) => {
     return (
       <View style={styles.item}>
         {item.avatar ? (
@@ -74,7 +74,65 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
         <Text style={styles.textItem}>{item.name}</Text>
       </View>
     )
-  }
+  }, [])
+
+  const handleBabyChange = useCallback(
+    (item: any) => {
+      setValue(item.baby_id)
+      dispatch(setCurrentBabyIdPersist(item.baby_id))
+      dispatch(fetchBabyProfile(item.baby_id))
+      setIsFocus(false)
+    },
+    [dispatch]
+  )
+
+  const handleNavigateToAddBaby = useCallback(() => {
+    dropdownRef.current?.close()
+    setIsFocus(false)
+    navigation.navigate('AddBaby')
+  }, [navigation])
+
+  const renderLeftIcon = useCallback(() => {
+    const selectedItem = babiesList.find(item => item.baby_id === value)
+    if (!selectedItem) {
+      return (
+        <Ionicons style={styles.icon} color={'#ccc'} name="person" size={20} />
+      )
+    }
+
+    return selectedItem.avatar ? (
+      <Image
+        source={{ uri: selectedItem.avatar }}
+        style={styles.selectedIcon}
+      />
+    ) : (
+      <View style={[styles.selectedIcon, styles.placeholderIcon]}>
+        <Ionicons name="person" size={16} color="#ccc" />
+      </View>
+    )
+  }, [babiesList, value])
+
+  const renderDropdownHeader = useCallback(() => {
+    return (
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={handleNavigateToAddBaby}
+      >
+        <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
+        <Text style={styles.addButtonText}>新增宝宝</Text>
+      </TouchableOpacity>
+    )
+  }, [handleNavigateToAddBaby])
+
+  const dropdownFlatListProps = useMemo(() => {
+    return {
+      ListHeaderComponent: renderDropdownHeader
+    }
+  }, [renderDropdownHeader])
+
+  const dropdownStyle = useMemo(() => {
+    return [styles.dropdown, isFocus && styles.dropdownFocused]
+  }, [isFocus])
 
   const handleChangeAvatar = async () => {
     if (uploadingAvatar) return
@@ -154,7 +212,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
           <View style={styles.headerActions}>
             <Dropdown
               ref={dropdownRef}
-              style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
+              style={dropdownStyle}
               containerStyle={styles.dropdownListContainer}
               placeholderStyle={styles.placeholderStyle}
               selectedTextStyle={styles.selectedTextStyle}
@@ -173,57 +231,10 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
               value={value}
               onFocus={() => setIsFocus(true)}
               onBlur={() => setIsFocus(false)}
-              onChange={item => {
-                setValue(item.baby_id)
-                dispatch(setCurrentBabyIdPersist(item.baby_id))
-                dispatch(fetchBabyProfile(item.baby_id))
-                setIsFocus(false)
-              }}
-              renderLeftIcon={() => {
-                const selectedItem = babiesList.find(
-                  item => item.baby_id === value
-                )
-                if (!selectedItem) {
-                  return (
-                    <Ionicons
-                      style={styles.icon}
-                      color={'#ccc'}
-                      name="person"
-                      size={20}
-                    />
-                  )
-                }
-                return selectedItem.avatar ? (
-                  <Image
-                    source={{ uri: selectedItem.avatar }}
-                    style={styles.selectedIcon}
-                  />
-                ) : (
-                  <View style={[styles.selectedIcon, styles.placeholderIcon]}>
-                    <Ionicons name="person" size={16} color="#ccc" />
-                  </View>
-                )
-              }}
+              onChange={handleBabyChange}
+              renderLeftIcon={renderLeftIcon}
               renderItem={renderItem}
-              flatListProps={{
-                ListHeaderComponent: (
-                  <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={() => {
-                      dropdownRef.current?.close()
-                      setIsFocus(false)
-                      navigation.navigate('AddBaby')
-                    }}
-                  >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={24}
-                      color="#007AFF"
-                    />
-                    <Text style={styles.addButtonText}>新增宝宝</Text>
-                  </TouchableOpacity>
-                )
-              }}
+              flatListProps={dropdownFlatListProps}
             />
           </View>
 
@@ -394,6 +405,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3
+  },
+  dropdownFocused: {
+    borderColor: 'blue'
   },
   dropdownListContainer: {
     borderRadius: 16,

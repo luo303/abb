@@ -1,17 +1,18 @@
 import { createSlice, PayloadAction, Dispatch } from '@reduxjs/toolkit'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
 import { Message, HistoryItem, ChatState } from '../../types/AIchat'
-import { GetSessionMessages } from '../../api/ai'
 
 const STORAGE_KEY_HISTORY = 'chat_history_list'
+const STORAGE_KEY_SESSION_PREFIX = 'chat_messages_'
 
 const initialState: ChatState = {
   messages: [],
   historyList: [],
   currentConversationId: null,
-  isLoading: false,
-  search_private: false,
-  search_public: true
+  isLoading: true,
+  hasHydrated: false,
+  search_private: false
 }
 
 const chatSlice = createSlice({
@@ -19,9 +20,6 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     resetChatState: () => initialState,
-    togglePublicEnabled: state => {
-      state.search_public = true
-    },
     togglePrivateEnabled: state => {
       state.search_private = !state.search_private
     },
@@ -59,13 +57,8 @@ const chatSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
     },
-    updateLastMessageContent: (state, action: PayloadAction<string>) => {
-      if (state.messages.length > 0) {
-        const lastMsg = state.messages[state.messages.length - 1]
-        if (lastMsg.role === 'assistant') {
-          lastMsg.content += action.payload
-        }
-      }
+    setHydrated: (state, action: PayloadAction<boolean>) => {
+      state.hasHydrated = action.payload
     },
     togglePinHistoryItem: (state, action: PayloadAction<string>) => {
       const id = action.payload
@@ -103,10 +96,9 @@ export const {
   deleteHistoryItem,
   setCurrentConversationId,
   selectConversation,
-  togglePublicEnabled,
   togglePrivateEnabled,
   setLoading,
-  updateLastMessageContent,
+  setHydrated,
   togglePinHistoryItem
 } = chatSlice.actions
 
@@ -119,6 +111,43 @@ const saveHistoryToStorage = async (list: HistoryItem[]) => {
   }
 }
 
+const loadSessionMessagesFromStorage = async (
+  sessionId: string
+): Promise<Message[] | null> => {
+  try {
+    const cache = await AsyncStorage.getItem(
+      `${STORAGE_KEY_SESSION_PREFIX}${sessionId}`
+    )
+    if (!cache) return null
+    return JSON.parse(cache)
+  } catch (error) {
+    console.error('Failed to load session messages cache:', error)
+    return null
+  }
+}
+
+export const saveSessionMessagesToStorage = async (
+  sessionId: string,
+  messages: Message[]
+) => {
+  try {
+    await AsyncStorage.setItem(
+      `${STORAGE_KEY_SESSION_PREFIX}${sessionId}`,
+      JSON.stringify(messages)
+    )
+  } catch (error) {
+    console.error('Failed to save session messages cache:', error)
+  }
+}
+
+const removeSessionMessagesFromStorage = async (sessionId: string) => {
+  try {
+    await AsyncStorage.removeItem(`${STORAGE_KEY_SESSION_PREFIX}${sessionId}`)
+  } catch (error) {
+    console.error('Failed to remove session messages cache:', error)
+  }
+}
+
 // 异步 Action：切换置顶状态并同步存储
 export const togglePin =
   (id: string) => async (dispatch: Dispatch, getState: any) => {
@@ -127,30 +156,16 @@ export const togglePin =
     saveHistoryToStorage(state.historyList)
   }
 
-// 异步 Action：从 API 获取消息记录
-export const fetchHistoryMessages =
-  (sessionId: string | null) => async (dispatch: Dispatch) => {
-    if (!sessionId) return
-    dispatch(setLoading(true))
-    try {
-      const res: any = await GetSessionMessages(sessionId)
-      if (res.code === 0 && res.data) {
-        dispatch(setMessages(res.data.messages))
-      } else {
-        dispatch(setMessages([]))
-      }
-    } catch (error) {
-      console.error('Failed to fetch session messages:', error)
-      dispatch(setMessages([]))
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
-
 // 异步 Action：加载初始数据（历史列表和上次会话）
 export const loadInitialData =
   () => async (dispatch: Dispatch, getState: any) => {
+    if (getState().chat.hasHydrated) {
+      return
+    }
+
     try {
+      dispatch(setLoading(true))
+
       // 1. 加载历史列表
       const historyJson = await SecureStore.getItemAsync(STORAGE_KEY_HISTORY)
       if (historyJson) {
@@ -162,12 +177,18 @@ export const loadInitialData =
       const savedId = await SecureStore.getItemAsync('currentConversationId')
       if (savedId) {
         dispatch(selectConversation(savedId))
-        // 从 API 获取消息
-        // @ts-ignore
-        dispatch(fetchHistoryMessages(savedId))
+        const cachedMessages = await loadSessionMessagesFromStorage(savedId)
+        if (cachedMessages) {
+          dispatch(setMessages(cachedMessages))
+        } else {
+          dispatch(clearMessages())
+        }
       }
     } catch (error) {
       console.error('Failed to load initial data:', error)
+    } finally {
+      dispatch(setHydrated(true))
+      dispatch(setLoading(false))
     }
   }
 
@@ -177,15 +198,20 @@ export const removeHistoryItem =
     dispatch(deleteHistoryItem(id))
     const state = getState().chat
     saveHistoryToStorage(state.historyList)
+    await removeSessionMessagesFromStorage(id)
   }
 
 // 异步 Action：切换并持久化会话 ID
 export const switchConversation =
-  (id: string) => async (dispatch: Dispatch, getState: any) => {
+  (id: string) => async (dispatch: Dispatch) => {
     dispatch(selectConversation(id))
-    // 从 API 获取消息
-    // @ts-ignore
-    dispatch(fetchHistoryMessages(id))
+    const cachedMessages = await loadSessionMessagesFromStorage(id)
+    if (cachedMessages) {
+      dispatch(setMessages(cachedMessages))
+    } else {
+      dispatch(clearMessages())
+    }
+    dispatch(setLoading(false))
 
     try {
       await SecureStore.setItemAsync('currentConversationId', id)
@@ -198,6 +224,7 @@ export const switchConversation =
 export const resetSession = () => async (dispatch: Dispatch) => {
   dispatch(setCurrentConversationId(null))
   dispatch(clearMessages())
+  dispatch(setLoading(false))
   try {
     await SecureStore.deleteItemAsync('currentConversationId')
   } catch (error) {

@@ -38,8 +38,8 @@ export interface ChatState {
   historyList: HistoryItem[]
   currentConversationId: string | null
   isLoading: boolean
+  hasHydrated: boolean
   search_private: boolean
-  search_public: boolean
 }
 
 //基本对话请求体

@@ -25,6 +25,14 @@ const imageWidth = width - contentPadding * 2
 // 计算网格中每个图片的大小（3列）
 const gridImageSize = (imageWidth - imageGap * 2) / 3
 
+const getMediaKey = (media: any) => {
+  if (typeof media === 'string') return media
+  if (media && typeof media === 'object' && 'uri' in media && media.uri) {
+    return String(media.uri)
+  }
+  return String(media)
+}
+
 export default function PostBody({
   title,
   content,
@@ -46,7 +54,7 @@ export default function PostBody({
           return parsed.text || ''
         }
       }
-    } catch (error) {
+    } catch {
       // 解析失败，返回原始字符串
     }
     return content || ''
@@ -67,7 +75,7 @@ export default function PostBody({
           return parsed.images
         }
       }
-    } catch (error) {
+    } catch {
       // 解析失败，返回传入的 images
     }
     return images
@@ -99,8 +107,8 @@ export default function PostBody({
 
       {tags && tags.length > 0 && (
         <View style={styles.tagsContainer}>
-          {tags.map((tag, index) => (
-            <View key={`tag-${index}`} style={styles.tagWrapper}>
+          {tags.map(tag => (
+            <View key={`tag-${tag}`} style={styles.tagWrapper}>
               <Text style={styles.tag}>#{tag}</Text>
             </View>
           ))}
@@ -132,7 +140,7 @@ export default function PostBody({
             <View style={styles.imageGrid}>
               {displayImages.map((img, index) => (
                 <TouchableOpacity
-                  key={`img-${index}`}
+                  key={getMediaKey(img)}
                   activeOpacity={0.9}
                   onPress={() => handleImagePress(index)}
                   style={[
@@ -164,7 +172,11 @@ export default function PostBody({
         onRequestClose={() => setIsVisible(false)}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
-        keyExtractor={(_, index) => `preview-img-${index}`}
+        keyExtractor={item =>
+          item && typeof item === 'object' && 'uri' in item && item.uri
+            ? String(item.uri)
+            : String(item)
+        }
       />
 
       <View style={styles.metaInfo}>

@@ -6,13 +6,13 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  KeyboardAvoidingView,
   DeviceEventEmitter,
   Alert
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { useSelector, useDispatch } from 'react-redux'
+import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 import { RootState, AppDispatch } from '../store'
 import {
   Option,
@@ -209,7 +209,7 @@ const DiaperFormScreen = () => {
       end={{ x: 0.5, y: 1 }}
       style={styles.container}
     >
-      <KeyboardAvoidingView
+      <AppKeyboardAvoidingView
         behavior={undefined}
         style={styles.keyboardAvoidingView}
       >
@@ -352,7 +352,7 @@ const DiaperFormScreen = () => {
           {/* 占位空间 */}
           <View style={{ height: 20 }} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </AppKeyboardAvoidingView>
     </LinearGradient>
   )
 }

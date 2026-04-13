@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingHorizontal: 16,
-    height: 72 // 加高输入框
+    height: 56
   },
   iconBox: {
     width: 44,

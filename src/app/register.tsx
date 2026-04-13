@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import AuthBackground from '../components/common/AuthBackground'
+import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign, Ionicons } from '@expo/vector-icons'
@@ -192,10 +192,7 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <AuthBackground />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
+        <AppKeyboardAvoidingView style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
@@ -431,7 +428,7 @@ export default function RegisterScreen() {
               </View>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
+        </AppKeyboardAvoidingView>
       </SafeAreaView>
     </View>
   )

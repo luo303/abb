@@ -1,11 +1,6 @@
-import React, { memo } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator
-} from 'react-native'
+import React, { memo, useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { PostItem } from '../../types/home'
 import HomeCommunityCard from '../home/HomeCommunityCard'
 
@@ -33,11 +28,11 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   hasMore,
   onLoadMore
 }) => {
-  const renderItem = ({ item }: { item: PostItem }) => (
-    <HomeCommunityCard data={item} />
-  )
+  const renderItem = useCallback(({ item }: { item: PostItem }) => {
+    return <HomeCommunityCard data={item} />
+  }, [])
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!loading) return null
     return (
       <View style={styles.footer}>
@@ -45,9 +40,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         <Text style={styles.footerText}>正在为您搜索相关内容...</Text>
       </View>
     )
-  }
+  }, [loading])
 
-  const renderEmpty = () => {
+  const renderEmpty = useCallback(() => {
     if (loading) return null
     return (
       <View style={styles.empty}>
@@ -55,25 +50,32 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         <Text style={styles.emptySubText}>试试其他关键词</Text>
       </View>
     )
-  }
+  }, [loading])
+
+  const keyExtractor = useCallback((item: PostItem) => {
+    if (item.post_id) return `post-${item.post_id}`
+    if (item.id) return `post-${item.id}`
+    return `post-${getHashCode(JSON.stringify(item))}`
+  }, [])
+
+  const contentContainerStyle = useMemo(() => {
+    return results.length === 0 ? styles.emptyContainer : styles.list
+  }, [results.length])
+
+  const handleEndReached = useCallback(() => {
+    if (!hasMore) return
+    onLoadMore()
+  }, [hasMore, onLoadMore])
 
   return (
-    <FlatList
+    <FlashList
       data={results}
       renderItem={renderItem}
-      keyExtractor={item => {
-        // 使用更稳定的唯一标识符
-        if (item.post_id) return `post-${item.post_id}`
-        if (item.id) return `post-${item.id}`
-        // 作为最后的 fallback，使用内容的哈希值
-        return `post-${getHashCode(JSON.stringify(item))}`
-      }}
-      contentContainerStyle={
-        results.length === 0 ? styles.emptyContainer : styles.list
-      }
+      keyExtractor={keyExtractor}
+      contentContainerStyle={contentContainerStyle}
       ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
-      onEndReached={hasMore ? onLoadMore : null}
+      onEndReached={handleEndReached}
       onEndReachedThreshold={0.1}
     />
   )

@@ -2,20 +2,25 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   ActivityIndicator,
-  Platform
+  Platform,
+  TextInput,
+  Keyboard,
+  LayoutChangeEvent
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
+import type { FlashListRef } from '@shopify/flash-list'
 import { AntDesign } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRoute, RouteProp } from '@react-navigation/native'
 
+import KeyboardStickyFooter from '../../components/common/KeyboardStickyFooter'
 import PostHeader from '../../components/post/PostHeader'
 import PostBody from '../../components/post/PostBody'
 import CommentItem from '../../components/post/CommentItem'
 import PostFooter from '../../components/post/PostFooter'
-import ReplyInput from '../../components/post/ReplyInput'
+
 import DoubleTapLike from '../../components/post/DoubleTapLike'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
@@ -49,6 +54,110 @@ type PostDetailRouteProp = RouteProp<
   'params'
 >
 
+const formatDate = (timestamp?: number) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return `${date.getFullYear()}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+}
+
+const mapApiItemToComment = (
+  item: CommentApiItem,
+  replies: Comment[]
+): Comment => {
+  return {
+    comment_id: item.comment_id,
+    user_id: item.user_id,
+    username: item.username || '稚慧宝用户',
+    avatar: item.avatar,
+    content: item.content,
+    like_count: item.like_count,
+    reply_count: item.reply_count,
+    ctime: item.ctime,
+    utime: item.utime,
+    has_liked: item.has_liked,
+    replies
+  }
+}
+
+const fetchRepliesTree = async (
+  targetPostId: string,
+  parentCommentId: string
+): Promise<Comment[]> => {
+  const allItems: CommentApiItem[] = []
+  const seenIds = new Set<string>()
+  let page = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const res = await getPostCommentReplies(targetPostId, parentCommentId, {
+      page,
+      page_size: 10,
+      strategy: 'ctime'
+    })
+    if (res.code !== 0 || !res.data) {
+      break
+    }
+    for (const item of res.data.items) {
+      if (seenIds.has(item.comment_id)) continue
+      seenIds.add(item.comment_id)
+      allItems.push(item)
+    }
+    hasMore = res.data.has_more
+    page = res.data.page + 1
+  }
+
+  const result: Comment[] = []
+  for (const item of allItems) {
+    let children: Comment[] = []
+    if (item.reply_count && item.reply_count > 0) {
+      children = await fetchRepliesTree(targetPostId, item.comment_id)
+    }
+    result.push(mapApiItemToComment(item, children))
+  }
+  return result
+}
+
+const findCommentById = (
+  items: Comment[],
+  targetId: string
+): Comment | null => {
+  for (const item of items) {
+    if (item.comment_id === targetId) return item
+    if (item.replies && item.replies.length > 0) {
+      const found = findCommentById(item.replies, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+const updateCommentLikeState = (
+  items: Comment[],
+  targetId: string,
+  isLikedBefore: boolean
+): Comment[] => {
+  return items.map(item => {
+    if (item.comment_id === targetId) {
+      const currentLikes = item.like_count || 0
+      const newLikes = currentLikes + (isLikedBefore ? -1 : 1)
+      return {
+        ...item,
+        like_count: newLikes < 0 ? 0 : newLikes,
+        has_liked: !isLikedBefore
+      }
+    }
+    if (item.replies && item.replies.length > 0) {
+      return {
+        ...item,
+        replies: updateCommentLikeState(item.replies, targetId, isLikedBefore)
+      }
+    }
+    return item
+  })
+}
+
 export default function PostDetail() {
   const route = useRoute<PostDetailRouteProp>()
   const { id, post_id } = route.params || {}
@@ -71,14 +180,17 @@ export default function PostDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [isCommentsLoading, setIsCommentsLoading] = useState(false)
-  const [isInputVisible, setInputVisible] = useState(false)
   const [replyPlaceholder, setReplyPlaceholder] = useState('说点什么...')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
 
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
-  const scrollViewRef = useRef<ScrollView>(null)
+  const listRef = useRef<FlashListRef<any>>(null)
   const scrollOffsetRef = useRef(0)
+  const inputRef = useRef<TextInput>(null)
+  const [inputText, setInputText] = useState('')
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const [footerHeight, setFooterHeight] = useState(76)
 
   // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
   const isFollowingFromStore = useAppSelector(state => {
@@ -113,7 +225,7 @@ export default function PostDetail() {
       setIsDisliked(!!(currentPost.is_dislike ?? currentPost.is_disliked))
       setIsFavorited(!!(currentPost.is_collect ?? currentPost.is_collected))
     }
-  }, [currentPost?.post_id])
+  }, [currentPost])
 
   useEffect(() => {
     if (!postId) return
@@ -187,123 +299,22 @@ export default function PostDetail() {
     return typeof currentPost.content === 'string'
       ? currentPost.content
       : JSON.stringify(currentPost.content)
-  }, [currentPost?.content])
+  }, [currentPost])
 
   const restoreScrollPosition = useCallback(() => {
     if (Platform.OS !== 'android') return
     requestAnimationFrame(() => {
-      scrollViewRef.current?.scrollTo({
-        y: scrollOffsetRef.current,
+      listRef.current?.scrollToOffset({
+        offset: scrollOffsetRef.current,
         animated: false
       })
     })
   }, [])
 
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return ''
-    const date = new Date(timestamp)
-    return `${date.getFullYear()}-${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
-  }
-
-  const mapApiItemToComment = (item: CommentApiItem, replies: Comment[]) => {
-    return {
-      comment_id: item.comment_id,
-      user_id: item.user_id,
-      username: item.username || '稚慧宝用户',
-      avatar: item.avatar,
-      content: item.content,
-      like_count: item.like_count,
-      reply_count: item.reply_count,
-      ctime: item.ctime,
-      utime: item.utime,
-      has_liked: item.has_liked,
-      replies
-    }
-  }
-
-  const fetchRepliesTree = async (
-    targetPostId: string,
-    parentCommentId: string
-  ): Promise<Comment[]> => {
-    const allItems: CommentApiItem[] = []
-    const seenIds = new Set<string>()
-    let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-      const res = await getPostCommentReplies(targetPostId, parentCommentId, {
-        page,
-        page_size: 10,
-        strategy: 'ctime'
-      })
-      if (res.code !== 0 || !res.data) {
-        break
-      }
-      for (const item of res.data.items) {
-        if (seenIds.has(item.comment_id)) continue
-        seenIds.add(item.comment_id)
-        allItems.push(item)
-      }
-      hasMore = res.data.has_more
-      page = res.data.page + 1
-    }
-
-    const result: Comment[] = []
-    for (const item of allItems) {
-      let children: Comment[] = []
-      if (item.reply_count && item.reply_count > 0) {
-        children = await fetchRepliesTree(targetPostId, item.comment_id)
-      }
-      result.push(mapApiItemToComment(item, children))
-    }
-    return result
-  }
-
-  const findCommentById = (
-    items: Comment[],
-    targetId: string
-  ): Comment | null => {
-    for (const item of items) {
-      if (item.comment_id === targetId) return item
-      if (item.replies && item.replies.length > 0) {
-        const found = findCommentById(item.replies, targetId)
-        if (found) return found
-      }
-    }
-    return null
-  }
-
-  const updateCommentLikeState = (
-    items: Comment[],
-    targetId: string,
-    isLikedBefore: boolean
-  ): Comment[] => {
-    return items.map(item => {
-      if (item.comment_id === targetId) {
-        const currentLikes = item.like_count || 0
-        const newLikes = currentLikes + (isLikedBefore ? -1 : 1)
-        return {
-          ...item,
-          like_count: newLikes < 0 ? 0 : newLikes,
-          has_liked: !isLikedBefore
-        }
-      }
-      if (item.replies && item.replies.length > 0) {
-        return {
-          ...item,
-          replies: updateCommentLikeState(item.replies, targetId, isLikedBefore)
-        }
-      }
-      return item
-    })
-  }
-
   const [isLikeLoading, setIsLikeLoading] = useState(false)
   const [isCollectLoading, setIsCollectLoading] = useState(false)
 
-  const handleLikePost = () => {
+  const handleLikePost = useCallback(() => {
     if (!currentPost) return
     if (isLikeLoading) return
 
@@ -350,7 +361,7 @@ export default function PostDetail() {
           const res = await unlikePost(currentPost.post_id)
           console.log('unlike post res:', res)
         }
-      } catch (error) {
+      } catch {
         const rollbackLikes = newIsLiked
           ? Math.max(0, newLikes - 1)
           : newLikes + 1
@@ -370,12 +381,12 @@ export default function PostDetail() {
         setIsLikeLoading(false)
       }
     })()
-  }
+  }, [currentPost, dispatch, isDisliked, isLikeLoading, isLiked, showMessage])
 
-  const handleDoubleTapLike = () => {
+  const handleDoubleTapLike = useCallback(() => {
     if (isLiked) return
     handleLikePost()
-  }
+  }, [handleLikePost, isLiked])
 
   const handleDislikePost = () => {
     if (!currentPost) return
@@ -443,7 +454,7 @@ export default function PostDetail() {
         } else {
           await uncollectPost(currentPost.post_id)
         }
-      } catch (error) {
+      } catch {
         const rollbackCount = newIsFavorited
           ? Math.max(0, newFavorites - 1)
           : newFavorites + 1
@@ -468,7 +479,7 @@ export default function PostDetail() {
   // 防抖处理：防止连续快速点击
   const [isFollowingLoading, setIsFollowingLoading] = useState(false)
 
-  const handleFollowAuthor = async () => {
+  const handleFollowAuthor = useCallback(async () => {
     if (!currentPost || isFollowingLoading) return
     const newIsFollowing = !isFollowing
 
@@ -540,41 +551,53 @@ export default function PostDetail() {
         setIsFollowingLoading(false)
       }, 500)
     }
-  }
+  }, [currentPost, dispatch, isFollowing, isFollowingLoading, showMessage])
 
-  const handleLikeComment = (id: string) => {
-    const target = findCommentById(comments, id)
-    if (!target) return
+  const handleLikeComment = useCallback(
+    (id: string) => {
+      const target = findCommentById(comments, id)
+      if (!target) return
 
-    const prevIsLiked = !!target.has_liked
+      const prevIsLiked = !!target.has_liked
 
-    setComments(prev => updateCommentLikeState(prev, id, prevIsLiked))
-    ;(async () => {
-      try {
-        if (prevIsLiked) {
-          await unlikeComment(id)
-        } else {
-          await likeComment(id)
+      setComments(prev => updateCommentLikeState(prev, id, prevIsLiked))
+      ;(async () => {
+        try {
+          if (prevIsLiked) {
+            await unlikeComment(id)
+          } else {
+            await likeComment(id)
+          }
+        } catch (error) {
+          console.error('评论点赞接口失败：', error)
+          setComments(prev => updateCommentLikeState(prev, id, !prevIsLiked))
+          showMessage('操作失败，请稍后重试')
         }
-      } catch (error) {
-        console.error('评论点赞接口失败：', error)
-        setComments(prev => updateCommentLikeState(prev, id, !prevIsLiked))
-        showMessage('操作失败，请稍后重试')
-      }
-    })()
-  }
+      })()
+    },
+    [comments, showMessage]
+  )
 
-  const handleReply = (comment: Comment) => {
+  const handleStartInput = useCallback(() => {
+    if (!isInputFocused && !inputText.trim()) {
+      setReplyTarget(null)
+      setReplyPlaceholder('说点什么...')
+    }
+    setIsInputFocused(true)
+    inputRef.current?.focus()
+  }, [inputText, isInputFocused])
+
+  const handleReply = useCallback((comment: Comment) => {
     setReplyTarget(comment)
     setReplyPlaceholder(`回复 ${comment.username}：`)
-    setInputVisible(true)
-  }
+    setIsInputFocused(true)
+    inputRef.current?.focus()
+  }, [])
 
-  const handleStartInput = () => {
-    setReplyTarget(null)
-    setReplyPlaceholder('说点什么...')
-    setInputVisible(true)
-  }
+  const handleFooterLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextHeight = Math.ceil(event.nativeEvent.layout.height)
+    setFooterHeight(prev => (prev === nextHeight ? prev : nextHeight))
+  }, [])
 
   const handleSend = (text: string) => {
     const content = text.trim()
@@ -630,7 +653,6 @@ export default function PostDetail() {
       }
     }
 
-    setInputVisible(false)
     ;(async () => {
       try {
         const res = await createPostComment(postId, {
@@ -663,7 +685,7 @@ export default function PostDetail() {
         }
 
         setComments(prev => replaceId(prev))
-      } catch (error) {
+      } catch {
         const removeTemp = (items: Comment[]): Comment[] => {
           const result: Comment[] = []
           for (const item of items) {
@@ -688,54 +710,28 @@ export default function PostDetail() {
     })()
   }
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#f43f5e" />
-        <Text style={styles.loadingText}>加载中...</Text>
-      </View>
-    )
-  }
-
-  if (!currentPost) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.loadingText}>未找到帖子内容</Text>
-      </View>
-    )
-  }
-
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}
-        ref={scrollViewRef}
-        onScroll={event => {
-          scrollOffsetRef.current = event.nativeEvent.contentOffset.y
-        }}
-        scrollEventThrottle={16}
-      >
+  const ListHeaderComponent = useCallback(
+    () => (
+      <>
         <PostHeader
           avatar={displayAvatar}
-          nickname={currentPost.author_name}
-          description={currentPost.baby_age_text}
+          nickname={currentPost?.author_name || ''}
+          description={currentPost?.baby_age_text || ''}
           isFollowing={isFollowing}
           onFollow={handleFollowAuthor}
           showFollow={!isOwnPost}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
-            title={currentPost.title}
+            title={currentPost?.title || ''}
             content={displayContent}
-            tags={currentPost.tags}
+            tags={currentPost?.tags || []}
             images={displayImages}
-            publishTime={formatDate(currentPost.ctime)}
+            publishTime={formatDate(currentPost?.ctime || Date.now())}
             location={
-              currentPost.author_province && currentPost.author_city
+              currentPost?.author_province && currentPost?.author_city
                 ? `${currentPost.author_province} ${currentPost.author_city}`
-                : currentPost.author_city
+                : currentPost?.author_city || ''
             }
           />
         </DoubleTapLike>
@@ -756,40 +752,117 @@ export default function PostDetail() {
           </View>
         </View>
 
-        {isCommentsLoading ? (
+        {isCommentsLoading && (
           <View style={styles.commentsLoading}>
             <ActivityIndicator size="small" color="#f43f5e" />
             <Text style={{ color: '#999', marginTop: 8 }}>加载评论中...</Text>
           </View>
-        ) : comments.length === 0 ? (
+        )}
+
+        {!isCommentsLoading && comments.length === 0 && (
           <View style={styles.commentsEmpty}>
             <Text style={styles.commentsEmptyText}>
               还没有评论，来做第一个吧
             </Text>
           </View>
-        ) : (
-          <View style={styles.commentsList}>
-            {comments.map((comment, index) => (
-              <CommentItem
-                key={`comment-${comment.comment_id}-${index}`}
-                comment={comment}
-                onLike={handleLikeComment}
-                onReply={handleReply}
-              />
-            ))}
-          </View>
         )}
-      </ScrollView>
+      </>
+    ),
+    [
+      currentPost,
+      displayAvatar,
+      isFollowing,
+      handleFollowAuthor,
+      isOwnPost,
+      handleDoubleTapLike,
+      displayContent,
+      displayImages,
+      comments.length,
+      isCommentsLoading
+    ]
+  )
 
-      {/* 底部常驻栏 */}
-      <View
-        style={[
-          styles.footerWrapper,
-          { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0 }
-        ]}
-      >
+  const keyExtractor = useCallback((item: Comment) => item.comment_id, [])
+
+  const renderCommentItem = useCallback(
+    ({ item }: { item: Comment }) => {
+      return (
+        <CommentItem
+          comment={item}
+          onLike={handleLikeComment}
+          onReply={handleReply}
+        />
+      )
+    },
+    [handleLikeComment, handleReply]
+  )
+
+  const handleListScroll = useCallback((event: any) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y
+  }, [])
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f43f5e" />
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    )
+  }
+
+  if (!currentPost) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>未找到帖子内容</Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlashList
+        ref={listRef}
+        data={comments}
+        keyExtractor={keyExtractor}
+        renderItem={renderCommentItem}
+        ListHeaderComponent={ListHeaderComponent}
+        contentContainerStyle={{
+          paddingBottom: footerHeight + 12
+        }}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleListScroll}
+        scrollEventThrottle={16}
+      />
+
+      <KeyboardStickyFooter style={styles.inputSticky}>
         <PostFooter
+          onLayout={handleFooterLayout}
           onInputPress={handleStartInput}
+          inputRef={inputRef}
+          inputValue={inputText}
+          inputPlaceholder={replyPlaceholder}
+          onInputChangeText={setInputText}
+          onInputFocus={() => {
+            setIsInputFocused(true)
+          }}
+          onInputBlur={() => {
+            if (!inputText.trim()) {
+              setReplyTarget(null)
+              setReplyPlaceholder('说点什么...')
+              setIsInputFocused(false)
+            }
+          }}
+          onSend={() => {
+            if (!inputText.trim()) return
+            handleSend(inputText)
+            setInputText('')
+            setReplyTarget(null)
+            setReplyPlaceholder('说点什么...')
+            setIsInputFocused(false)
+            Keyboard.dismiss()
+          }}
+          isComposerActive={isInputFocused}
+          bottomInset={Platform.OS === 'ios' ? insets.bottom : 0}
           likeCount={currentPost.like_count}
           dislikeCount={currentPost.dislike_count}
           collectCount={currentPost.collect_count}
@@ -801,14 +874,7 @@ export default function PostDetail() {
           onDislike={handleDislikePost}
           onFavorite={handleFavoritePost}
         />
-      </View>
-
-      <ReplyInput
-        visible={isInputVisible}
-        placeholder={replyPlaceholder}
-        onSend={handleSend}
-        onDismiss={() => setInputVisible(false)}
-      />
+      </KeyboardStickyFooter>
     </View>
   )
 }
@@ -825,18 +891,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: '#999'
-  },
-  scrollView: {
-    flex: 1
-  },
-  footerWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
   },
   divider: {
     height: 8,
@@ -862,44 +916,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999'
   },
-  tipContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-    marginHorizontal: 16,
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8
-  },
-  tipIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#eee',
-    marginRight: 8
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#999'
-  },
-  uIcon: {
-    backgroundColor: '#ffba00',
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  uText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold'
-  },
-  commentsList: {
-    paddingBottom: 20
-  },
   commentsLoading: {
     paddingVertical: 16,
     alignItems: 'center',
@@ -912,5 +928,12 @@ const styles = StyleSheet.create({
   commentsEmptyText: {
     color: '#999',
     fontSize: 13
+  },
+  inputSticky: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000
   }
 })

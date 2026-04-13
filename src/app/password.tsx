@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native'
 import { useState } from 'react'
@@ -13,6 +12,7 @@ import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
 import AuthBackground from '../components/common/AuthBackground'
+import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
@@ -152,7 +152,7 @@ export default function PasswordScreen() {
     <View style={styles.container}>
       <AuthBackground />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <AppKeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {/* 返回箭头 */}
             <View style={styles.header}>
@@ -270,7 +270,7 @@ export default function PasswordScreen() {
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
+        </AppKeyboardAvoidingView>
       </SafeAreaView>
     </View>
   )

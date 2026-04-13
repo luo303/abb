@@ -14,8 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../store'
 import {
-  addFeedingItem,
-  updateFeedingItem,
   saveFeedingRecord,
   updateFeedingRecord
 } from '../store/modules/feedingStore'
@@ -28,15 +26,6 @@ import {
   RemarkInput
 } from '../components/DailyRecord/FeedingRecord'
 import { useMessage } from '../components/Message'
-import dayjs from 'dayjs'
-import { generateTempId } from '../utils/idGenerator'
-
-interface FeedingRecord {
-  type: '奶粉' | '母乳' | '辅食'
-  amount: string
-  time: string
-  remark: string
-}
 
 interface RouteParams {
   feeding_id?: string
@@ -51,7 +40,6 @@ const FeedingRecordScreen = () => {
   const reduxBabyId = useSelector(
     (state: RootState) => state.baby.currentBabyId
   )
-  const babyState = useSelector((state: RootState) => state.baby)
   const babyId = routeParams?.baby_id || reduxBabyId
 
   const feedingList = useSelector(
@@ -82,12 +70,10 @@ const FeedingRecordScreen = () => {
     return new Date()
   })
   const [remark, setRemark] = useState('')
-  const [isFormModified, setIsFormModified] = useState(false)
   const { showMessage } = useMessage()
 
   // 当feedId存在时，从feedingList中找到对应的记录并回显数据
   useEffect(() => {
-    console.log('收到的路由参数:', route.params)
     if (feedId) {
       const feedingRecord = feedingList.find(item => item.feeding_id === feedId)
       if (feedingRecord) {
@@ -201,18 +187,6 @@ const FeedingRecordScreen = () => {
     }
   }
 
-  const formatDate = (date: Date) => {
-    if (!date || !(date instanceof Date)) {
-      return ''
-    }
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  }
-
   const handleSave = async () => {
     // 将UI中的喂养类型转换为FeedingType枚举
     let feedType: FeedingType
@@ -273,7 +247,7 @@ const FeedingRecordScreen = () => {
           DeviceEventEmitter.emit('refreshDashboard')
           // 导航回“日常记录”列表页
           navigation.goBack()
-        } catch (error) {
+        } catch {
           showMessage('保存失败，请重试')
         }
       }
@@ -328,10 +302,7 @@ const FeedingRecordScreen = () => {
         <ScrollView style={styles.content}>
           <FeedingTypeTabs
             selectedType={selectedType}
-            onTypeChange={value => {
-              setSelectedType(value)
-              setIsFormModified(true)
-            }}
+            onTypeChange={setSelectedType}
           />
 
           {/* 表单卡片 */}
@@ -339,10 +310,7 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <AmountInput
                 value={amount}
-                onChange={value => {
-                  setAmount(value)
-                  setIsFormModified(true)
-                }}
+                onChange={setAmount}
                 type={selectedType}
                 placeholder="请输入数值"
               />
@@ -351,10 +319,7 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <TimePicker
                 value={feedingTime}
-                onChange={value => {
-                  setFeedingTime(value)
-                  setIsFormModified(true)
-                }}
+                onChange={setFeedingTime}
                 label="时间"
                 type={selectedType}
               />
@@ -363,10 +328,7 @@ const FeedingRecordScreen = () => {
             <View style={styles.formItem}>
               <RemarkInput
                 value={remark}
-                onChange={value => {
-                  setRemark(value)
-                  setIsFormModified(true)
-                }}
+                onChange={setRemark}
                 label="喂养状态"
                 placeholder="宝宝今天胃口怎么样？可以记录在这里哦..."
                 type={selectedType}
@@ -395,9 +357,9 @@ const FeedingRecordScreen = () => {
                   </Text>
                 </View>
                 <View style={styles.tipContent}>
-                  {tipInfo.tips.map((tip, index) => (
+                  {tipInfo.tips.map(tip => (
                     <Text
-                      key={index}
+                      key={tip}
                       style={[styles.tipText, { color: tipInfo.color }]}
                     >
                       {tip}

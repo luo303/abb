@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   View,
   StyleSheet,
-  ScrollView,
   Platform,
   TouchableOpacity,
   Text,
   Animated,
   DeviceEventEmitter
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { Stack } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -415,9 +415,12 @@ export default function DailyRecordScreen() {
   }, [statistics, animatedBackgroundValue])
 
   // 处理底部按钮点击
-  const handleActionPress = (type: RecordType) => {
-    navigateToRecord(type)
-  }
+  const handleActionPress = useCallback(
+    (type: RecordType) => {
+      navigateToRecord(type)
+    },
+    [navigateToRecord]
+  )
 
   // 处理日期选择器确认
   const handleDatePickerConfirm = (event: any, date?: Date) => {
@@ -485,6 +488,74 @@ export default function DailyRecordScreen() {
     inputRange: [0, 25, 50, 75, 100],
     outputRange: ['#ffffff', '#ffeeee', '#ffdddd', '#ffcccc', '#ffaaaa']
   })
+
+  const ListHeaderComponent = useCallback(
+    () => (
+      <View style={styles.dashboardContainer}>
+        <LinearGradient
+          colors={['#ffffff', '#fef5f5']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={styles.dashboardCard}
+        >
+          <DashboardRing
+            type="feeding"
+            value={getDisplayValue(statistics.feedingCount, '次')}
+            percent={currentRecords.length > 0 ? feedingPercent : 0}
+            onPress={() => handleActionPress('feeding')}
+          />
+          <DashboardRing
+            type="sleep"
+            value={getDisplayValue(statistics.sleepDuration, 'h')}
+            percent={currentRecords.length > 0 ? sleepPercent : 0}
+            onPress={() => handleActionPress('sleep')}
+          />
+          <DashboardRing
+            type="diaper"
+            value={getDisplayValue(statistics.diaperCount, '次')}
+            percent={currentRecords.length > 0 ? diaperPercent : 0}
+            onPress={() => handleActionPress('diaper')}
+          />
+        </LinearGradient>
+      </View>
+    ),
+    [
+      statistics,
+      currentRecords.length,
+      feedingPercent,
+      sleepPercent,
+      diaperPercent,
+      handleActionPress
+    ]
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: RecordItem }) => (
+      <View style={styles.recordsListContainer}>
+        <RecordCard item={item} />
+      </View>
+    ),
+    []
+  )
+
+  const ListEmptyComponent = useCallback(
+    () => (
+      <View style={styles.recordsListContainer}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>加载中...</Text>
+          </View>
+        ) : (
+          <EmptyState />
+        )}
+      </View>
+    ),
+    [isLoading]
+  )
+
+  const ListFooterComponent = useCallback(() => {
+    return <View style={styles.listFooterSpacer} />
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -567,56 +638,16 @@ export default function DailyRecordScreen() {
         </View>
       </View>
 
-      {/* 2. 主滚动区域 */}
-      <ScrollView
-        style={styles.mainScroll}
+      {/* 2. 主列表区域 */}
+      <FlashList
+        data={currentRecords}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
-      >
-        {/* 三环仪表盘 */}
-        <View style={styles.dashboardContainer}>
-          <LinearGradient
-            colors={['#ffffff', '#fef5f5']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={styles.dashboardCard}
-          >
-            <DashboardRing
-              type="feeding"
-              value={getDisplayValue(statistics.feedingCount, '次')}
-              percent={currentRecords.length > 0 ? feedingPercent : 0}
-              onPress={() => handleActionPress('feeding')}
-            />
-            <DashboardRing
-              type="sleep"
-              value={getDisplayValue(statistics.sleepDuration, 'h')}
-              percent={currentRecords.length > 0 ? sleepPercent : 0}
-              onPress={() => handleActionPress('sleep')}
-            />
-            <DashboardRing
-              type="diaper"
-              value={getDisplayValue(statistics.diaperCount, '次')}
-              percent={currentRecords.length > 0 ? diaperPercent : 0}
-              onPress={() => handleActionPress('diaper')}
-            />
-          </LinearGradient>
-        </View>
-
-        {/* 记录列表 - 这里不再嵌套 FlatList */}
-        <View style={styles.recordsListContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>加载中...</Text>
-            </View>
-          ) : currentRecords.length > 0 ? (
-            currentRecords.map(item => <RecordCard key={item.id} item={item} />)
-          ) : (
-            <EmptyState />
-          )}
-        </View>
-
-        {/* 底部留白，防止内容被遮挡 */}
-        <View style={{ height: 40 }} />
-      </ScrollView>
+      />
     </View>
   )
 }
@@ -714,5 +745,8 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#f43f5e'
+  },
+  listFooterSpacer: {
+    height: 40
   }
 })

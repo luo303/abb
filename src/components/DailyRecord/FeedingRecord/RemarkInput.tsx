@@ -78,9 +78,9 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
         showsHorizontalScrollIndicator={false}
         style={styles.stickerContainer}
       >
-        {stickers.map((sticker, index) => (
+        {stickers.map(sticker => (
           <TouchableOpacity
-            key={index}
+            key={sticker.text}
             style={[
               styles.tag,
               { borderColor: tagColor, backgroundColor: backgroundColor }

@@ -8,7 +8,6 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -24,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { RootState } from '../../store'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useMessage } from '../Message'
+import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
 
 export default function AddBabyScreen() {
   const navigation = useNavigation()
@@ -62,16 +62,23 @@ export default function AddBabyScreen() {
   }
 
   const handleSubmit = async () => {
-    if (!name) {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
       showMessage('请输入宝宝姓名')
       return
     }
 
+    if (!avatar) {
+      showMessage('请上传宝宝头像')
+      return
+    }
+
     const babyData = {
-      name,
+      name: trimmedName,
       gender,
       birthday: birthday.getTime(),
-      avatar: avatar || undefined,
+      avatar,
       height: height ? parseFloat(height) : undefined,
       weight: weight ? parseFloat(weight) : undefined,
       head_circumference: headCircumference
@@ -106,13 +113,16 @@ export default function AddBabyScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <AppKeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarSection}>
+          <Text style={styles.avatarLabel}>
+            宝宝头像 <Text style={styles.required}>*</Text>
+          </Text>
           <TouchableOpacity
             onPress={handlePickImage}
             style={styles.avatarWrapper}
@@ -284,7 +294,7 @@ export default function AddBabyScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   )
 }
 
@@ -318,6 +328,13 @@ const styles = StyleSheet.create({
   avatarSection: {
     alignItems: 'center',
     marginBottom: 24
+  },
+  avatarLabel: {
+    alignSelf: 'flex-start',
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 12,
+    fontWeight: '500'
   },
   avatarWrapper: {
     width: 100,

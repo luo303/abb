@@ -1,19 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
   ActivityIndicator
 } from 'react-native'
-import type { FlatList as RNFlatList } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
+import type { FlashListRef } from '@shopify/flash-list'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRoute } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
+import { useSharedValue } from 'react-native-reanimated'
+
 import ChatMessage from '../../components/ai/ChatMessage'
+import useChatAutoScroll from '../../components/common/useChatAutoScroll'
+import { useKeyboardChatScrollRenderer } from '../../components/common/useKeyboardChatList'
 import { Message } from '../../types/AIchat'
 import { GrowthAnalysisPayload, SendGrowthAnalysisStream } from '../../api/ai'
 import * as Speech from 'expo-speech'
@@ -22,52 +24,87 @@ type GrowthAnalysisRouteParams = {
   growthAnalysis?: GrowthAnalysisPayload
 }
 
+const MESSAGE_ITEM_SPACING = 10
+
+type AnalysisMessage = Message & {
+  id: string
+}
+
 export default function GrowthAnalysis() {
   const route = useRoute<any>()
   const payload: GrowthAnalysisPayload | undefined = (
     route?.params as GrowthAnalysisRouteParams | undefined
   )?.growthAnalysis
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<AnalysisMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
-  const [showScrollBottom, setShowScrollBottom] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
-  const flatListRef = useRef<RNFlatList<any>>(null)
   const startedRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
-  const speakingIndexRef = useRef<number | null>(null)
+  const extraContentPadding = useSharedValue(0)
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(
+    null
+  )
+  const speakingMessageIdRef = useRef<string | null>(null)
+  const conversationKey = useMemo(() => {
+    if (!payload) return 'growth-analysis'
 
-  const updateSpeakingIndex = (index: number | null) => {
-    speakingIndexRef.current = index
-    setSpeakingIndex(index)
-  }
+    return `growth-analysis-${payload.metric}-${payload.items.length}`
+  }, [payload])
 
-  const handleSpeak = (index: number, text: string) => {
-    if (speakingIndexRef.current === index) {
-      Speech.stop()
-      updateSpeakingIndex(null)
-    } else {
-      Speech.stop()
-      updateSpeakingIndex(index)
-      Speech.speak(text, {
-        onDone: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
+  const {
+    scrollRef,
+    showScrollBottom,
+    scrollToBottom,
+    handleScroll,
+    handleContentSizeChange,
+    handleListLoad
+  } = useChatAutoScroll({
+    conversationKey,
+    showButtonThreshold: 120
+  })
+
+  const listRef =
+    scrollRef as React.MutableRefObject<FlashListRef<AnalysisMessage> | null>
+
+  const renderChatScrollComponent = useKeyboardChatScrollRenderer({
+    extraContentPadding,
+    keyboardLiftBehavior: 'whenAtEnd'
+  })
+
+  const updateSpeakingMessageId = useCallback((id: string | null) => {
+    speakingMessageIdRef.current = id
+    setSpeakingMessageId(id)
+  }, [])
+
+  const handleSpeak = useCallback(
+    (id: string, text: string) => {
+      if (speakingMessageIdRef.current === id) {
+        Speech.stop()
+        updateSpeakingMessageId(null)
+      } else {
+        Speech.stop()
+        updateSpeakingMessageId(id)
+        Speech.speak(text, {
+          onDone: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
+          },
+          onStopped: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
+          },
+          onError: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
           }
-        },
-        onStopped: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
-          }
-        },
-        onError: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
-          }
-        }
-      })
-    }
-  }
+        })
+      }
+    },
+    [updateSpeakingMessageId]
+  )
 
   useEffect(() => {
     if (!payload || startedRef.current) {
@@ -84,12 +121,14 @@ export default function GrowthAnalysis() {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    const userMsg: Message = {
+    const userMsg: AnalysisMessage = {
+      id: 'growth-analysis-user',
       content: `成长曲线智能分析：${payload.metric}（${payload.items.length}条）`,
       role: 'user',
       timestamp: Date.now()
     }
-    const aiPlaceholderMsg: Message = {
+    const aiPlaceholderMsg: AnalysisMessage = {
+      id: 'growth-analysis-assistant',
       content: '',
       role: 'assistant',
       timestamp: Date.now()
@@ -178,33 +217,33 @@ export default function GrowthAnalysis() {
   }, [payload])
 
   useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1]
-      if (lastMessage.role === 'assistant' || messages.length === 1) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
-        }, 100)
-      }
-    }
-  }, [messages])
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset } = event.nativeEvent
-    setShowScrollBottom(contentOffset.y > 200)
-  }
-
-  const scrollToBottom = () => {
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
-  }
-
-  useEffect(() => {
     return () => {
       Speech.stop()
     }
   }, [])
 
+  const renderMessageSeparator = useCallback(() => {
+    return <View style={styles.messageSeparator} />
+  }, [])
+
+  const keyExtractor = useCallback((item: AnalysisMessage) => item.id, [])
+
+  const renderMessageItem = useCallback(
+    ({ item, index }: { item: AnalysisMessage; index: number }) => {
+      return (
+        <ChatMessage
+          message={item}
+          isSpeaking={item.id === speakingMessageId}
+          onSpeak={() => handleSpeak(item.id, item.content)}
+          isTyping={isStreaming && index === messages.length - 1}
+        />
+      )
+    },
+    [handleSpeak, isStreaming, messages.length, speakingMessageId]
+  )
+
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       {messages.length === 0 ? (
         <View style={styles.placeholderContainer}>
           {isStreaming ? (
@@ -217,36 +256,31 @@ export default function GrowthAnalysis() {
         </View>
       ) : (
         <View style={styles.contentContainer}>
-          <FlatList
-            ref={flatListRef}
-            data={[...messages].reverse()}
-            keyExtractor={(_, index) => index.toString()}
-            inverted={true}
-            renderItem={({ item, index }) => {
-              const originalIndex = messages.length - 1 - index
-              return (
-                <ChatMessage
-                  message={item}
-                  isSpeaking={originalIndex === speakingIndex}
-                  onSpeak={() => handleSpeak(originalIndex, item.content)}
-                  isTyping={
-                    isStreaming && originalIndex === messages.length - 1
-                  }
-                />
-              )
-            }}
+          <FlashList
+            key={conversationKey}
+            ref={listRef}
+            data={messages}
+            keyExtractor={keyExtractor}
+            renderItem={renderMessageItem}
+            ItemSeparatorComponent={renderMessageSeparator}
+            renderScrollComponent={renderChatScrollComponent}
             contentContainerStyle={styles.listContent}
-            ListHeaderComponent={<View style={{ height: 40 }} />}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
+            onContentSizeChange={handleContentSizeChange}
+            onLoad={handleListLoad}
             scrollEventThrottle={16}
+            maintainVisibleContentPosition={{
+              autoscrollToBottomThreshold: 0.2,
+              animateAutoScrollToBottom: false
+            }}
             style={styles.flatList}
           />
 
           {messages.length > 0 && showScrollBottom && (
             <TouchableOpacity
               style={styles.scrollToBottomButton}
-              onPress={scrollToBottom}
+              onPress={() => scrollToBottom(true)}
               activeOpacity={0.8}
             >
               <Ionicons name="arrow-down" size={24} color="#666" />
@@ -271,13 +305,16 @@ const styles = StyleSheet.create({
     flex: 1
   },
   listContent: {
-    padding: 16,
-    flexGrow: 1,
-    justifyContent: 'flex-end'
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16
+  },
+  messageSeparator: {
+    height: MESSAGE_ITEM_SPACING
   },
   scrollToBottomButton: {
     position: 'absolute',
-    alignSelf: 'center',
+    right: 20,
     bottom: 20,
     width: 44,
     height: 44,
