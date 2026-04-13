@@ -5,8 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Keyboard,
   ActivityIndicator,
@@ -14,6 +12,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
+import AppKeyboardAvoidingView from '../../components/common/AppKeyboardAvoidingView'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
@@ -69,6 +68,18 @@ const SearchScreen = () => {
     loadHistory()
   }, [])
 
+  // 生成模糊搜索建议
+  const generateSuggestions = useCallback(
+    (text: string) => {
+      const allPossibleSuggestions = [...searchHistory, ...HOT_SEARCHES]
+      const uniqueSuggestions = [...new Set(allPossibleSuggestions)]
+      return uniqueSuggestions
+        .filter(item => item.toLowerCase().includes(text.toLowerCase()))
+        .slice(0, 5)
+    },
+    [searchHistory]
+  )
+
   // 实时生成搜索建议（isPerformingSearch 为 true 时跳过，防止闪烁）
   useEffect(() => {
     if (isPerformingSearch.current) return
@@ -81,16 +92,7 @@ const SearchScreen = () => {
       setSearchSuggestions([])
       setIsSuggestionsVisible(false)
     }
-  }, [searchText, searchHistory])
-
-  // 生成模糊搜索建议
-  const generateSuggestions = (text: string) => {
-    const allPossibleSuggestions = [...searchHistory, ...HOT_SEARCHES]
-    const uniqueSuggestions = [...new Set(allPossibleSuggestions)]
-    return uniqueSuggestions
-      .filter(item => item.toLowerCase().includes(text.toLowerCase()))
-      .slice(0, 5)
-  }
+  }, [generateSuggestions, searchText])
 
   // 执行搜索的核心方法，所有入口统一调用此方法
   const performSearch = useCallback(
@@ -278,10 +280,7 @@ const SearchScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <AppKeyboardAvoidingView style={styles.keyboardAvoid}>
         {/* 顶部背景装饰 */}
         <View
           style={[
@@ -316,14 +315,6 @@ const SearchScreen = () => {
               autoFocus
               returnKeyType="search"
             />
-            {searchText.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchText('')}
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={20} color="#999" />
-              </TouchableOpacity>
-            )}
             <LinearGradient
               colors={['#ff9a9e', '#f43f5e']}
               start={{ x: 0, y: 0 }}
@@ -348,7 +339,7 @@ const SearchScreen = () => {
 
         {/* 主内容区域 */}
         {renderContent()}
-      </KeyboardAvoidingView>
+      </AppKeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -414,11 +405,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 14,
     color: '#333'
-  },
-  clearButton: {
-    paddingHorizontal: 10,
-    justifyContent: 'center',
-    alignItems: 'center'
   },
   searchButton: {
     height: '100%',

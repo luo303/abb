@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import {
   View,
   Text,
@@ -29,7 +29,7 @@ interface HomeCommunityCardProps {
   data: PostItem
 }
 
-export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
+function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
   const [avatarLoadError, setAvatarLoadError] = React.useState(false)
 
@@ -322,6 +322,16 @@ export default function HomeCommunityCard({ data }: HomeCommunityCardProps) {
     </TouchableOpacity>
   )
 }
+
+export default memo(HomeCommunityCard, (prev, next) => {
+  // 仅在数据核心 ID 或内容变化时重渲染
+  return (
+    prev.data.post_id === next.data.post_id &&
+    prev.data.utime === next.data.utime &&
+    prev.data.like_count === next.data.like_count &&
+    prev.data.comment_count === next.data.comment_count
+  )
+})
 
 const styles = StyleSheet.create({
   communityContainer: {

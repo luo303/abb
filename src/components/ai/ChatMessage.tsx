@@ -1,20 +1,20 @@
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  ActivityIndicator,
   Image,
   ScrollView,
-  ActivityIndicator
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native'
-import { memo, useCallback, useMemo, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import Markdown from 'react-native-markdown-display'
+import ImageViewing from 'react-native-image-viewing'
 
 import { useMessage } from '../Message'
 import { Message } from '../../types/AIchat'
-import ImageViewing from 'react-native-image-viewing'
 
 interface ChatMessageProps {
   message: Message
@@ -25,7 +25,7 @@ interface ChatMessageProps {
 
 function ChatMessage({
   message,
-  isSpeaking,
+  isSpeaking = false,
   onSpeak,
   isTyping = false
 }: ChatMessageProps) {
@@ -37,6 +37,132 @@ function ChatMessage({
     return message.images?.map(uri => ({ uri })) || []
   }, [message.images])
 
+  const shouldRenderMarkdown = useMemo(() => {
+    if (message.role !== 'assistant' || isTyping || !message.content) {
+      return false
+    }
+
+    return /(^#{1,6}\s)|(```)|(`[^`]+`)|(\[[^\]]+\]\([^)]+\))|(^-\s)|(^\d+\.\s)|(\*\*)|(__)|(\|)/m.test(
+      message.content
+    )
+  }, [isTyping, message.content, message.role])
+
+  const markdownStyle = useMemo(() => {
+    return {
+      body: {
+        width: '100%',
+        color: '#333'
+      },
+      text: {
+        fontSize: 16,
+        lineHeight: 26,
+        color: '#333'
+      },
+      paragraph: {
+        width: '100%',
+        marginTop: 0,
+        marginBottom: 10,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'flex-start'
+      },
+      ordered_list: {
+        width: '100%',
+        marginVertical: 0
+      },
+      bullet_list: {
+        width: '100%',
+        marginVertical: 0
+      },
+      list_item: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 6
+      },
+      ordered_list_icon: {
+        width: 28,
+        marginLeft: 0,
+        marginRight: 6,
+        lineHeight: 26,
+        color: '#333'
+      },
+      ordered_list_content: {
+        flex: 1,
+        flexShrink: 1
+      },
+      bullet_list_icon: {
+        width: 22,
+        marginLeft: 0,
+        marginRight: 6,
+        lineHeight: 26,
+        color: '#333'
+      },
+      bullet_list_content: {
+        flex: 1,
+        flexShrink: 1
+      },
+      heading1: {
+        fontSize: 24,
+        lineHeight: 32,
+        fontWeight: '700',
+        marginBottom: 10,
+        color: '#222'
+      },
+      heading2: {
+        fontSize: 22,
+        lineHeight: 30,
+        fontWeight: '700',
+        marginBottom: 10,
+        color: '#222'
+      },
+      heading3: {
+        fontSize: 19,
+        lineHeight: 28,
+        fontWeight: '700',
+        marginBottom: 8,
+        color: '#222'
+      },
+      strong: {
+        fontWeight: '700',
+        color: '#222'
+      },
+      blockquote: {
+        marginVertical: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderLeftWidth: 3,
+        borderLeftColor: '#D8E3EA',
+        backgroundColor: '#F7FAFC'
+      },
+      code_inline: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: '#F5F7FA',
+        borderRadius: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        color: '#334155'
+      },
+      code_block: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: '#F5F7FA',
+        borderRadius: 10,
+        padding: 12,
+        color: '#334155'
+      },
+      fence: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: '#F5F7FA',
+        borderRadius: 10,
+        padding: 12,
+        color: '#334155'
+      }
+    }
+  }, [])
+
   const closePreview = useCallback(() => {
     setIsPreviewVisible(false)
   }, [])
@@ -46,7 +172,7 @@ function ChatMessage({
     showMessage('复制成功')
   }, [message.content, showMessage])
 
-  const handleSpeak = useCallback(() => {
+  const handleSpeakPress = useCallback(() => {
     onSpeak(message.timestamp, message.content)
   }, [message.content, message.timestamp, onSpeak])
 
@@ -72,7 +198,7 @@ function ChatMessage({
           >
             {message.images.map((img, index) => (
               <TouchableOpacity
-                key={index}
+                key={`${img}-${index}`}
                 onPress={() => {
                   setCurrentImageIndex(index)
                   setIsPreviewVisible(true)
@@ -89,6 +215,7 @@ function ChatMessage({
             ))}
           </ScrollView>
         )}
+
         {(message.content || (message.role === 'assistant' && isTyping)) && (
           <View
             style={[
@@ -100,34 +227,29 @@ function ChatMessage({
               <Text style={[styles.text, styles.userText]}>
                 {message.content}
               </Text>
-            ) : message.content ? (
-              isTyping ? (
+            ) : isTyping ? (
+              message.content ? (
                 <Text style={[styles.text, styles.aiText]}>
                   {message.content}
                 </Text>
               ) : (
-                <Markdown
-                  style={{
-                    body: {
-                      fontSize: 16,
-                      color: '#333'
-                    },
-                    paragraph: {
-                      marginVertical: 0
-                    }
-                  }}
-                >
-                  {message.content}
-                </Markdown>
+                <View style={styles.loadingBlock}>
+                  <ActivityIndicator size="small" color="#1f99b0" />
+                  <Text style={styles.loadingText}>AI 正在思考...</Text>
+                </View>
               )
-            ) : (
-              <View style={styles.loadingBlock}>
-                <ActivityIndicator size="small" color="#1f99b0" />
-                <Text style={styles.loadingText}>AI 正在思考...</Text>
+            ) : shouldRenderMarkdown ? (
+              <View style={styles.markdownHost}>
+                <Markdown style={markdownStyle}>{message.content}</Markdown>
               </View>
+            ) : (
+              <Text style={[styles.text, styles.aiText]}>
+                {message.content}
+              </Text>
             )}
           </View>
         )}
+
         {message.role === 'assistant' && !isTyping && message.content ? (
           <View style={styles.aiFooter}>
             <TouchableOpacity
@@ -138,7 +260,7 @@ function ChatMessage({
               <Ionicons name="copy-outline" size={16} color="#999" />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleSpeak}
+              onPress={handleSpeakPress}
               style={styles.actionButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -157,44 +279,38 @@ function ChatMessage({
         imageIndex={currentImageIndex}
         visible={isPreviewVisible}
         onRequestClose={closePreview}
-        swipeToCloseEnabled={true}
-        doubleTapToZoomEnabled={true}
+        swipeToCloseEnabled
+        doubleTapToZoomEnabled
         keyExtractor={(_, index) => `chat-message-preview-${index}`}
       />
     </View>
   )
 }
 
-export default memo(ChatMessage, (prev, next) => {
+const MemoChatMessage = memo(ChatMessage, (prev, next) => {
+  const prevImages = prev.message.images || []
+  const nextImages = next.message.images || []
+
   return (
-    prev.message === next.message &&
     prev.isSpeaking === next.isSpeaking &&
     prev.isTyping === next.isTyping &&
-    prev.onSpeak === next.onSpeak
+    prev.message.role === next.message.role &&
+    prev.message.content === next.message.content &&
+    prev.message.timestamp === next.message.timestamp &&
+    prevImages.length === nextImages.length &&
+    prevImages.every((img, index) => img === nextImages[index])
   )
 })
+
+MemoChatMessage.displayName = 'ChatMessage'
+export default MemoChatMessage
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 10,
     alignItems: 'flex-start',
     paddingHorizontal: 4
-  },
-  imageContainer: {
-    marginBottom: 8,
-    maxHeight: 200
-  },
-  imageContentContainer: {
-    paddingRight: 4
-  },
-  imageWrapper: {
-    marginRight: 8
-  },
-  messageImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 8
   },
   userContainer: {
     justifyContent: 'flex-end'
@@ -211,23 +327,40 @@ const styles = StyleSheet.create({
   },
   aiColumn: {
     alignItems: 'flex-start',
-    flex: 1
+    width: '100%',
+    flexShrink: 1
+  },
+  imageContainer: {
+    marginBottom: 8,
+    maxHeight: 200
+  },
+  imageContentContainer: {
+    paddingRight: 4
+  },
+  imageWrapper: {
+    marginRight: 8
+  },
+  messageImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 8
   },
   contentWrapper: {
-    padding: 12,
     minHeight: 24
   },
   userBubble: {
-    backgroundColor: '#f0f0f0', // 极简浅灰背景
-    borderRadius: 18, // 统一圆角
+    backgroundColor: '#F0F0F0',
+    borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 14
-    // 移除阴影和尖角，追求扁平化
   },
   aiContent: {
-    // 无背景，无边框，仅文本区域
-    paddingLeft: 0,
+    width: '100%',
     paddingRight: 8
+  },
+  markdownHost: {
+    width: '100%',
+    flexShrink: 1
   },
   text: {
     fontSize: 16,
@@ -241,7 +374,7 @@ const styles = StyleSheet.create({
   },
   aiFooter: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: 6,
     gap: 16,
     paddingLeft: 0
   },

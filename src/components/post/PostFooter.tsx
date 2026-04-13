@@ -1,9 +1,24 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ViewProps
+} from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
+import {
+  composerFieldFocusShadow,
+  composerFieldShadow,
+  composerFooterShadow,
+  composerSendShadow,
+  composerTheme
+} from '../common/composerTheme'
+
 interface PostFooterProps {
-  onInputPress: () => void
+  onInputPress?: () => void
   likeCount: number
   dislikeCount: number
   collectCount: number
@@ -11,6 +26,16 @@ interface PostFooterProps {
   isLiked?: boolean
   isDisliked?: boolean
   isFavorited?: boolean
+  inputValue?: string
+  inputPlaceholder?: string
+  inputRef?: React.RefObject<TextInput | null>
+  onInputChangeText?: (text: string) => void
+  onInputFocus?: () => void
+  onInputBlur?: () => void
+  onSend?: () => void
+  isComposerActive?: boolean
+  bottomInset?: number
+  onLayout?: ViewProps['onLayout']
   onLike?: () => void
   onDislike?: () => void
   onFavorite?: () => void
@@ -25,61 +50,134 @@ export default function PostFooter({
   isLiked = false,
   isDisliked = false,
   isFavorited = false,
+  inputValue = '',
+  inputPlaceholder = '说点什么...',
+  inputRef,
+  onInputChangeText,
+  onInputFocus,
+  onInputBlur,
+  onSend,
+  isComposerActive = false,
+  bottomInset = 0,
+  onLayout,
   onLike,
   onDislike,
   onFavorite
 }: PostFooterProps) {
-  return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.inputContainer}
-        onPress={onInputPress}
-        activeOpacity={0.9}
-      >
-        <Text style={styles.placeholderText}>说点什么...</Text>
+  const showComposer = typeof onInputChangeText === 'function'
+  const sendDisabled = !inputValue.trim() || !onSend
+
+  const renderActionButton = (
+    name: React.ComponentProps<typeof Ionicons>['name'],
+    count: number,
+    onPress?: () => void,
+    active?: boolean,
+    activeColor?: string
+  ) => {
+    const tint = active
+      ? activeColor || composerTheme.accent
+      : composerTheme.muted
+
+    return (
+      <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
+        <Ionicons name={name} size={20} color={tint} />
+        <Text style={[styles.actionText, active && { color: tint }]}>
+          {count}
+        </Text>
       </TouchableOpacity>
+    )
+  }
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={onLike}>
-          <Ionicons
-            name={isLiked ? 'heart' : 'heart-outline'}
-            size={24}
-            color={isLiked ? '#ff4d4f' : '#333'}
-          />
-          <Text style={[styles.actionText, isLiked && { color: '#ff4d4f' }]}>
-            {likeCount}
-          </Text>
-        </TouchableOpacity>
+  const actionButtons = (
+    <View style={styles.actions}>
+      {renderActionButton(
+        isLiked ? 'heart' : 'heart-outline',
+        likeCount,
+        onLike,
+        isLiked,
+        '#E97070'
+      )}
+      {renderActionButton(
+        isDisliked ? 'heart-dislike' : 'heart-dislike-outline',
+        dislikeCount || 0,
+        onDislike,
+        isDisliked,
+        '#7D8797'
+      )}
+      {renderActionButton(
+        isFavorited ? 'star' : 'star-outline',
+        collectCount,
+        onFavorite,
+        isFavorited,
+        '#E6A23C'
+      )}
+      {renderActionButton('chatbubble-outline', commentCount)}
+    </View>
+  )
 
-        <TouchableOpacity style={styles.actionBtn} onPress={onDislike}>
-          <Ionicons
-            name={isDisliked ? 'heart-dislike' : 'heart-dislike-outline'}
-            size={24}
-            color={isDisliked ? '#666' : '#333'}
-          />
-          <Text style={[styles.actionText, isDisliked && { color: '#666' }]}>
-            {dislikeCount || 0}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn} onPress={onFavorite}>
-          <Ionicons
-            name={isFavorited ? 'star' : 'star-outline'}
-            size={24}
-            color={isFavorited ? '#ffba00' : '#333'}
-          />
-          <Text
-            style={[styles.actionText, isFavorited && { color: '#ffba00' }]}
+  return (
+    <View
+      style={[
+        styles.container,
+        { paddingBottom: 10 + Math.max(0, bottomInset) }
+      ]}
+      onLayout={onLayout}
+    >
+      {showComposer ? (
+        <>
+          <View
+            style={[
+              styles.composerContainer,
+              isComposerActive && styles.composerContainerActive
+            ]}
           >
-            {collectCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="chatbubble-outline" size={24} color="#333" />
-          <Text style={styles.actionText}>{commentCount}</Text>
-        </TouchableOpacity>
-      </View>
+            <TextInput
+              ref={inputRef}
+              style={[
+                styles.composerInput,
+                isComposerActive && styles.composerInputActive
+              ]}
+              placeholder={inputPlaceholder}
+              placeholderTextColor={composerTheme.placeholder}
+              multiline
+              maxLength={200}
+              value={inputValue}
+              onChangeText={onInputChangeText}
+              onFocus={onInputFocus}
+              onBlur={onInputBlur}
+              onPressIn={onInputPress}
+              textAlignVertical="top"
+              underlineColorAndroid="transparent"
+            />
+          </View>
+          {isComposerActive ? (
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                sendDisabled && styles.sendButtonDisabled
+              ]}
+              onPress={onSend}
+              disabled={sendDisabled}
+              activeOpacity={sendDisabled ? 1 : 0.85}
+            >
+              <Text style={styles.sendButtonText}>发送</Text>
+            </TouchableOpacity>
+          ) : (
+            actionButtons
+          )}
+        </>
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.inputContainer}
+            onPress={onInputPress}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.placeholderText}>{inputPlaceholder}</Text>
+          </TouchableOpacity>
+          {actionButtons}
+        </>
+      )}
     </View>
   )
 }
@@ -87,40 +185,99 @@ export default function PostFooter({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+    paddingTop: 10,
+    backgroundColor: composerTheme.footerBackground,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingBottom: 20 // Add some padding for safety on bottom
+    borderTopColor: composerTheme.footerBorder,
+    ...composerFooterShadow
   },
   inputContainer: {
     flex: 1,
-    height: 36,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 18,
+    height: 42,
+    backgroundColor: composerTheme.shellBackground,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: composerTheme.shellBorder,
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    marginRight: 16
+    paddingHorizontal: 14,
+    marginRight: 12,
+    ...composerFieldShadow
   },
   placeholderText: {
+    fontSize: 14,
+    color: composerTheme.placeholder
+  },
+  composerContainer: {
+    flex: 1,
+    minHeight: 42,
+    maxHeight: 120,
+    backgroundColor: composerTheme.shellBackground,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: composerTheme.shellBorder,
+    paddingLeft: 14,
+    paddingRight: 14,
+    marginRight: 12,
+    ...composerFieldShadow
+  },
+  composerContainerActive: {
+    backgroundColor: composerTheme.shellBackgroundFocused,
+    borderRadius: 21,
+    borderColor: composerTheme.shellBorderFocused,
+    ...composerFieldFocusShadow
+  },
+  composerInput: {
+    minHeight: 42,
+    maxHeight: 120,
+    fontSize: 14,
+    lineHeight: 20,
+    color: composerTheme.text,
+    paddingTop: 11,
+    paddingBottom: 11,
+    paddingLeft: 0,
+    paddingRight: 0
+  },
+  composerInputActive: {
+    minHeight: 42,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  sendButton: {
+    width: 58,
+    height: 42,
+    backgroundColor: composerTheme.accent,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...composerSendShadow
+  },
+  sendButtonDisabled: {
+    backgroundColor: composerTheme.accentDisabled,
+    shadowOpacity: 0.08,
+    elevation: 1
+  },
+  sendButtonText: {
+    color: composerTheme.accentText,
     fontSize: 13,
-    color: '#999'
+    fontWeight: '700',
+    letterSpacing: 0.2
   },
   actions: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: 42
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 16
+    marginLeft: 12
   },
   actionText: {
     fontSize: 12,
-    color: '#333',
+    color: composerTheme.muted,
     marginLeft: 4,
-    fontWeight: '500'
+    fontWeight: '600'
   }
 })

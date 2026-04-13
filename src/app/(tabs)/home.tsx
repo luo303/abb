@@ -1,13 +1,21 @@
-import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react'
+import React, {
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  memo
+} from 'react'
 import {
   View,
   Text,
-  FlatList,
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
+import type { FlashListRef } from '@shopify/flash-list'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -30,7 +38,7 @@ export default function Home() {
   const navigation = useNavigation()
   const route = useRoute<any>()
   const insets = useSafeAreaInsets()
-  const flatListRef = useRef<FlatList>(null)
+  const listRef = useRef<FlashListRef<any>>(null)
   const communityHeaderRef = useRef<View>(null)
   const isEndReachedRef = useRef(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -60,8 +68,8 @@ export default function Home() {
   // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
   const flatListData = useMemo(() => {
     return [
-      { type: 'header', id: '__header__' }, // index 0：顶部内容
-      { type: 'tabs', id: '__tabs__' }, // index 1：Tab 栏（吸顶）
+      { type: 'spacer', id: '__spacer__' }, // index 0: 增加一个空占位符，解决 FlashList 在有 ListHeaderComponent 时 index 0 的吸顶 Bug
+      { type: 'tabs', id: '__tabs__' }, // index 1 (Sticky)
       ...sortedPosts.map((post: any) => ({
         type: 'post',
         id: post.post_id || `unknown-${Math.random()}`,
@@ -72,28 +80,34 @@ export default function Home() {
 
   // 渲染 FlatList 项
   const renderItem = useCallback(
-    ({ item }: { item: any }) => {
-      // 顶部轮播图等 Header 区域
-      if (item.type === 'header') {
-        return <MemoHeaderSections style={styles.topSection} />
+    ({ item, target }: { item: any; target?: string }) => {
+      // 0. 占位符
+      if (item.type === 'spacer') {
+        return <View style={{ height: 0 }} />
       }
 
-      // ✅ Tab 标签栏（吸顶项）
-      // 底层透明，Animated.View 叠加渐变背景随吸顶进度淡入
-      // 吸顶前：背景透明（视觉与顶部渐变区域连贯）
-      // 标签栏：使用动态背景透明度效果，与首页背景颜色一致
+      // 1. ✅ Tab 标签栏（吸顶项，index 1）
       if (item.type === 'tabs') {
+        const isSticky = target === 'StickyHeader'
         return (
-          <View style={localStyles.tabsWrapper}>
-            {/* 渐变背景：与首页背景颜色一致 */}
-            <LinearGradient
-              colors={['#fff1f2', '#ffe4e6']}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-
-            {/* Tab 内容层 */}
+          <View
+            style={[
+              localStyles.tabsWrapper,
+              {
+                backgroundColor: '#ffe4e6' // 始终使用实色背景，防止透底
+              },
+              isSticky && {
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                // 吸顶时增加阴影
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 5
+              }
+            ]}
+          >
             <View ref={communityHeaderRef} onLayout={measureCommunityHeader}>
               <StickyTabHeader
                 activeTab={activeTab}
@@ -118,10 +132,23 @@ export default function Home() {
     [activeTab, setActiveTab, measureCommunityHeader]
   )
 
+  // 1. 抽离独立的顶部 Header 内容组件（包含搜索栏 + 模块入口）
+  // 这个组件会被 SafeAreaView 包裹，且位于 FlashList 顶部
+  const ListHeaderComponent = useCallback(() => {
+    return (
+      <View>
+        <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
+          <HomeSearchBar />
+        </View>
+        <MemoHeaderSections style={styles.topSection} />
+      </View>
+    )
+  }, [measureSearchBar])
+
   // 滚动到社区模块
   const handleScrollToCommunity = useCallback(() => {
     communityHeaderRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      flatListRef.current?.scrollToOffset({
+      listRef.current?.scrollToOffset({
         offset: pageY - insets.top,
         animated: true
       })
@@ -129,7 +156,7 @@ export default function Home() {
   }, [insets.top])
 
   const handleScrollToTop = useCallback(() => {
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+    listRef.current?.scrollToOffset({ offset: 0, animated: true })
   }, [])
 
   const handleListScroll = useCallback(
@@ -280,41 +307,56 @@ export default function Home() {
     setActiveTab
   ])
 
+  // 1. 抽离独立的 ScrollTop 按钮组件
+  const ScrollTopButton = memo(
+    ({
+      visible,
+      onPress,
+      bottom
+    }: {
+      visible: boolean
+      onPress: () => void
+      bottom: number
+    }) => {
+      if (!visible) return null
+      return (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onPress}
+          style={[localStyles.scrollTopButton, { bottom }]}
+        >
+          <Ionicons name="arrow-up" size={20} color="#fff" />
+        </TouchableOpacity>
+      )
+    }
+  )
+  ScrollTopButton.displayName = 'ScrollTopButton'
+
   return (
     <HomeScrollToContext.Provider
       value={{ scrollToCommunity: handleScrollToCommunity }}
     >
       <View style={styles.mainContainer}>
-        {/* 顶部背景装饰 */}
-        <View style={styles.headerBackgroundContainer}>
-          <LinearGradient
-            colors={['#fff1f2', '#ffe4e6']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={[styles.headerGradient, { height: 280 + insets.top }]}
-          />
-        </View>
+        {/* 1. 背景渐变 (全屏背景，包含状态栏) */}
+        <LinearGradient
+          colors={['#fff1f2', '#ffe4e6']}
+          style={StyleSheet.absoluteFill}
+        />
 
+        {/* 使用 SafeAreaView 处理顶部安全区域，FlashList 会在安全区域内滚动 */}
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          {/* 搜索栏固定，不参与滚动 */}
-          <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
-            <HomeSearchBar />
-          </View>
-
-          {/* FlatList：stickyHeaderIndices={[1]} 让 tabs 项原生吸顶 */}
-          <FlatList
-            ref={flatListRef}
+          <FlashList
+            ref={listRef}
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}
             data={flatListData}
             keyExtractor={(item, index) => item.id || `item-${index}`}
             renderItem={renderItem}
-            initialNumToRender={5}
-            maxToRenderPerBatch={10}
-            windowSize={21}
-            // ✅ index=1 的 tabs 项吸顶
+            getItemType={item => item.type}
+            // ✅ index=1 的 tabs 项吸顶 (因为 index 0 是 spacer，ListHeaderComponent 位于上方)
             stickyHeaderIndices={[1]}
+            ListHeaderComponent={ListHeaderComponent}
             ListFooterComponent={ListFooterComponent}
             onScroll={handleListScroll}
             scrollEventThrottle={16}
@@ -326,21 +368,16 @@ export default function Home() {
                 onRefresh={handleRefresh}
                 colors={['#f43f5e']}
                 tintColor="#f43f5e"
-                progressViewOffset={100}
               />
             }
           />
         </SafeAreaView>
       </View>
-      {showScrollTop && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleScrollToTop}
-          style={[localStyles.scrollTopButton, { bottom: 90 + insets.bottom }]}
-        >
-          <Ionicons name="arrow-up" size={20} color="#fff" />
-        </TouchableOpacity>
-      )}
+      <ScrollTopButton
+        visible={showScrollTop}
+        onPress={handleScrollToTop}
+        bottom={90 + insets.bottom}
+      />
     </HomeScrollToContext.Provider>
   )
 }

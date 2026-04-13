@@ -1,45 +1,128 @@
 import React, {
-  useState,
-  useRef,
-  useEffect,
+  memo,
   useCallback,
+  useEffect,
+  useLayoutEffect,
   useMemo,
-  useLayoutEffect
+  useRef,
+  useState
 } from 'react'
 import {
-  View,
-  Text,
+  Alert,
+  Image,
+  Keyboard,
+  Platform,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  Keyboard,
   TouchableWithoutFeedback,
-  Image
+  View
 } from 'react-native'
-import { useSelector, useDispatch } from 'react-redux'
+import { FlashList } from '@shopify/flash-list'
+import type { FlashListRef } from '@shopify/flash-list'
+import { useDispatch, useSelector } from 'react-redux'
 import { Ionicons, AntDesign } from '@expo/vector-icons'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { v4 as uuidv4 } from 'uuid'
+
+import AppKeyboardAvoidingView from '../../components/common/AppKeyboardAvoidingView'
+import KeyboardStickyFooter from '../../components/common/KeyboardStickyFooter'
+import TextSendComposer from '../../components/common/TextSendComposer'
+import useChatAutoScroll from '../../components/common/useChatAutoScroll'
+import {
+  useChatComposerMetrics,
+  useKeyboardChatScrollRenderer
+} from '../../components/common/useKeyboardChatList'
+import {
+  composerFooterShadow,
+  composerTheme
+} from '../../components/common/composerTheme'
 import { RootState } from '../../store'
 import {
-  setPartner,
   addMessage,
-  setConnectionStatus
+  setConnectionStatus,
+  setPartner
 } from '../../store/modules/PartnerStore'
 import {
-  fetchPartner,
+  PARTNER_WS_BASE_URL,
   bindPartner,
-  connectPartnerSocket,
   closePartnerSocket,
-  sendPartnerSocket,
-  PARTNER_WS_BASE_URL
+  connectPartnerSocket,
+  fetchPartner,
+  sendPartnerSocket
 } from '@/api/ws'
+
+const PARTNER_BASE_INPUT_HEIGHT = Platform.OS === 'ios' ? 88 : 74
+const LIST_BOTTOM_GAP = 12
+
+type PartnerMessage = {
+  id: string
+  text: string
+  sender: 'me' | 'partner'
+  timestamp: number
+}
+
+type PartnerMessageItemProps = {
+  item: PartnerMessage
+  partnerAvatar: string | null
+  myAvatar: string | null | undefined
+}
+
+const PartnerMessageItem = memo(function PartnerMessageItem({
+  item,
+  partnerAvatar,
+  myAvatar
+}: PartnerMessageItemProps) {
+  const isMe = item.sender === 'me'
+  const partnerAvatarSource = partnerAvatar ? { uri: partnerAvatar } : null
+  const myAvatarSource = myAvatar ? { uri: myAvatar } : null
+
+  return (
+    <View
+      style={[
+        styles.messageRow,
+        isMe ? styles.messageRowRight : styles.messageRowLeft
+      ]}
+    >
+      {!isMe &&
+        (partnerAvatarSource ? (
+          <Image source={partnerAvatarSource} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>TA</Text>
+          </View>
+        ))}
+
+      <View
+        style={[
+          styles.messageBubble,
+          isMe ? styles.messageBubbleRight : styles.messageBubbleLeft
+        ]}
+      >
+        <Text
+          style={[
+            styles.messageText,
+            isMe ? styles.messageTextRight : styles.messageTextLeft
+          ]}
+        >
+          {item.text}
+        </Text>
+      </View>
+
+      {isMe &&
+        (myAvatarSource ? (
+          <Image source={myAvatarSource} style={styles.myAvatarImage} />
+        ) : (
+          <View style={[styles.avatar, styles.myAvatar]}>
+            <Text style={[styles.avatarText, styles.myAvatarText]}>我</Text>
+          </View>
+        ))}
+    </View>
+  )
+})
 
 export default function PartnerChat() {
   const dispatch = useDispatch()
@@ -51,67 +134,71 @@ export default function PartnerChat() {
   const token = useSelector((state: RootState) => state.user.token)
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
-  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0)
   const hasFetchedPartnerRef = useRef(false)
-
-  // 绑定信息
-  const [inputPartnerAccount, setInputPartnerAccount] = useState('')
-  const [inputPartnerPassword, setInputPartnerPassword] = useState('')
-  const [isBinding, setIsBinding] = useState(false)
-  const [isPartnerLoading, setIsPartnerLoading] = useState(!partnerId)
-
-  // 聊天输入
-  const [inputText, setInputText] = useState('')
-  const flatListRef = useRef<FlatList>(null)
   const clientIdRef = useRef(
     `client-${Date.now()}-${Math.random().toString(16).slice(2)}`
   )
 
-  const scrollToBottom = useCallback((animated: boolean) => {
-    requestAnimationFrame(() => {
-      flatListRef.current?.scrollToOffset({ offset: 0, animated })
+  const [inputPartnerAccount, setInputPartnerAccount] = useState('')
+  const [inputPartnerPassword, setInputPartnerPassword] = useState('')
+  const [isBinding, setIsBinding] = useState(false)
+  const [isPartnerLoading, setIsPartnerLoading] = useState(!partnerId)
+  const [inputText, setInputText] = useState('')
+
+  const {
+    baseHeight: baseInputBarHeight,
+    extraContentPadding,
+    handleComposerLayout
+  } = useChatComposerMetrics({
+    initialHeight: PARTNER_BASE_INPUT_HEIGHT
+  })
+
+  const { scrollRef, handleScroll, handleContentSizeChange } =
+    useChatAutoScroll({
+      conversationKey: partnerId
     })
-  }, [])
+  const listRef =
+    scrollRef as React.MutableRefObject<FlashListRef<PartnerMessage> | null>
 
-  const listData = useMemo(() => {
-    return [...messages].reverse()
-  }, [messages])
+  const renderChatScrollComponent = useKeyboardChatScrollRenderer({
+    extraContentPadding,
+    keyboardLiftBehavior: 'whenAtEnd'
+  })
 
-  // 消息变化时滚动到底部
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom(false)
-    }
-  }, [messages, scrollToBottom])
+  const listContentStyle = useMemo(
+    () => ({
+      paddingHorizontal: 15,
+      paddingTop: 12,
+      paddingBottom: baseInputBarHeight + LIST_BOTTOM_GAP
+    }),
+    [baseInputBarHeight]
+  )
 
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      const showSubscription = Keyboard.addListener('keyboardDidShow', e => {
-        setAndroidKeyboardHeight(e.endCoordinates.height)
-      })
-      const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
-        setAndroidKeyboardHeight(0)
-      })
-      return () => {
-        showSubscription.remove()
-        hideSubscription.remove()
-      }
-    }
-  }, [])
+  const listExtraData = useMemo(
+    () => ({
+      partnerAvatar,
+      myAvatar: userInfo?.avatar ?? null
+    }),
+    [partnerAvatar, userInfo?.avatar]
+  )
 
   useEffect(() => {
     let isActive = true
+
     const loadPartner = async () => {
       if (hasFetchedPartnerRef.current) return
       hasFetchedPartnerRef.current = true
       if (partnerId) return
+
       try {
         setIsPartnerLoading(true)
         const res = await fetchPartner()
         if (!isActive) return
+
         const serverPartnerId = res?.data?.partner_id
         const serverPartnerUsername = res?.data?.partner_username
         const serverPartnerAvatar = res?.data?.partner_avatar
+
         if (res?.code === 0 && serverPartnerId) {
           dispatch(
             setPartner({
@@ -121,7 +208,7 @@ export default function PartnerChat() {
             })
           )
         }
-      } catch (error) {
+      } catch {
         if (!isActive) return
       } finally {
         if (isActive) {
@@ -129,7 +216,9 @@ export default function PartnerChat() {
         }
       }
     }
+
     loadPartner()
+
     return () => {
       isActive = false
     }
@@ -167,14 +256,11 @@ export default function PartnerChat() {
         return
       }
 
-      const senderValue =
-        incomingClientId === clientIdRef.current ? 'me' : 'partner'
-
       dispatch(
         addMessage({
           id: uuidv4(),
           text: textValue,
-          sender: senderValue,
+          sender: 'partner',
           timestamp: Date.now()
         })
       )
@@ -189,43 +275,39 @@ export default function PartnerChat() {
 
   const connectSocket = useCallback(() => {
     if (!partnerId || !token) {
-      console.warn('[伴侣聊天] 跳过 connectSocket：缺少必要参数', {
+      console.warn('[PartnerChat] 跳过 connectSocket，缺少必要参数', {
         hasPartnerId: !!partnerId,
         hasToken: !!token
       })
       return
     }
+
     const wsUrl = `${PARTNER_WS_BASE_URL}?token=${encodeURIComponent(
       token
     )}&user_id=${encodeURIComponent(partnerId)}`
-    console.log('[伴侣聊天] 调用 connectSocket', {
-      partnerId,
-      hasToken: !!token
-    })
+
     connectPartnerSocket(wsUrl, {
       onOpen: () => {
-        console.log('[伴侣聊天] socket 已连接')
         dispatch(setConnectionStatus(true))
       },
       onClose: () => {
-        console.log('[伴侣聊天] socket 已关闭')
         dispatch(setConnectionStatus(false))
       },
       onError: () => {
-        console.log('[伴侣聊天] socket 发生错误')
         dispatch(setConnectionStatus(false))
       },
       onMessage: handleIncomingMessage
     })
-  }, [dispatch, partnerId, token, handleIncomingMessage])
+  }, [dispatch, handleIncomingMessage, partnerId, token])
 
   useEffect(() => {
     if (partnerId) {
       connectSocket()
-    } else {
-      closeSocket()
+      return
     }
-  }, [partnerId, connectSocket, closeSocket])
+
+    closeSocket()
+  }, [closeSocket, connectSocket, partnerId])
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -238,17 +320,18 @@ export default function PartnerChat() {
       Alert.alert('提示', '请完整填写账号和密码')
       return
     }
+
     try {
       setIsBinding(true)
       const res = await bindPartner({
         account: inputPartnerAccount.trim(),
         password: inputPartnerPassword
       })
-      console.log(res)
 
       const serverPartnerId = res?.data?.partner_id
       const serverPartnerUsername = res?.data?.partner_username
       const serverPartnerAvatar = res?.data?.partner_avatar
+
       if (res?.code === 0 && serverPartnerId) {
         dispatch(
           setPartner({
@@ -259,9 +342,10 @@ export default function PartnerChat() {
         )
         setInputPartnerAccount('')
         setInputPartnerPassword('')
-        Alert.alert('成功', '已成功添加另一半')
+        Alert.alert('成功', '已成功绑定另一半')
         return
       }
+
       Alert.alert('提示', res?.message || '绑定失败')
     } catch (error: any) {
       Alert.alert('提示', error?.message || '绑定失败，请稍后重试')
@@ -270,14 +354,14 @@ export default function PartnerChat() {
     }
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(() => {
     const content = inputText.trim()
     if (!content) return
 
-    const newMessage = {
+    const newMessage: PartnerMessage = {
       id: uuidv4(),
       text: content,
-      sender: 'me' as const,
+      sender: 'me',
       timestamp: Date.now()
     }
 
@@ -292,19 +376,33 @@ export default function PartnerChat() {
       timestamp: Date.now()
     }
     const ok = sendPartnerSocket(payload)
+
     if (!ok) {
-      console.warn('[伴侣聊天] 发送失败，准备重连', {
+      console.warn('[PartnerChat] 发送失败，准备重连', {
         partnerId,
         hasToken: !!token
       })
       connectSocket()
       Alert.alert('提示', '连接已断开，正在尝试重新连接')
     }
-  }
+  }, [connectSocket, dispatch, inputText, partnerId, token])
+
+  const renderMessageItem = useCallback(
+    ({ item }: { item: PartnerMessage }) => {
+      return (
+        <PartnerMessageItem
+          item={item}
+          partnerAvatar={partnerAvatar}
+          myAvatar={userInfo?.avatar}
+        />
+      )
+    },
+    [partnerAvatar, userInfo?.avatar]
+  )
 
   const renderNoPartner = () => (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
+      <AppKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
         style={styles.container}
@@ -347,7 +445,7 @@ export default function PartnerChat() {
                 placeholder="请输入对方密码"
                 value={inputPartnerPassword}
                 onChangeText={setInputPartnerPassword}
-                secureTextEntry={true}
+                secureTextEntry
                 placeholderTextColor="#B0B0B0"
               />
             </View>
@@ -358,124 +456,58 @@ export default function PartnerChat() {
               disabled={isBinding}
             >
               <Text style={styles.addButtonText}>
-                {isBinding ? '绑定中..' : '立即绑定'}
+                {isBinding ? '绑定中...' : '立即绑定'}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </AppKeyboardAvoidingView>
     </TouchableWithoutFeedback>
   )
 
-  const renderMessageItem = ({ item }: { item: any }) => {
-    const isMe = item.sender === 'me'
-    const partnerAvatarSource = partnerAvatar ? { uri: partnerAvatar } : null
-    const myAvatarSource = userInfo?.avatar ? { uri: userInfo.avatar } : null
-    return (
-      <View
-        style={[
-          styles.messageRow,
-          isMe ? styles.messageRowRight : styles.messageRowLeft
-        ]}
-      >
-        {!isMe &&
-          (partnerAvatarSource ? (
-            <Image source={partnerAvatarSource} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>TA</Text>
-            </View>
-          ))}
-        <View
-          style={[
-            styles.messageBubble,
-            isMe ? styles.messageBubbleRight : styles.messageBubbleLeft
-          ]}
-        >
-          <Text
-            style={[
-              styles.messageText,
-              isMe ? styles.messageTextRight : styles.messageTextLeft
-            ]}
-          >
-            {item.text}
-          </Text>
-        </View>
-        {isMe &&
-          (myAvatarSource ? (
-            <Image source={myAvatarSource} style={styles.myAvatarImage} />
-          ) : (
-            <View style={[styles.avatar, styles.myAvatar]}>
-              <Text style={[styles.avatarText, { color: '#fff' }]}>我</Text>
-            </View>
-          ))}
-      </View>
-    )
-  }
-
   const renderChat = () => (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
-        style={{ flex: 1 }}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={listData}
-          style={{ flex: 1 }}
-          renderItem={renderMessageItem}
-          keyExtractor={item => item.id}
-          inverted={true}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => {
-            if (messages.length > 0) {
-              scrollToBottom(false)
-            }
-          }}
-        />
+      <FlashList
+        ref={listRef}
+        data={messages}
+        keyExtractor={item => item.id}
+        renderItem={renderMessageItem}
+        renderScrollComponent={renderChatScrollComponent}
+        style={styles.chatScroll}
+        contentContainerStyle={listContentStyle}
+        onScroll={handleScroll}
+        onContentSizeChange={handleContentSizeChange}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+        drawDistance={320}
+        extraData={listExtraData}
+      />
 
+      <KeyboardStickyFooter style={styles.chatInputSticky}>
         <View
+          onLayout={handleComposerLayout}
           style={[
             styles.inputContainer,
-            Platform.OS === 'ios' && { paddingBottom: insets.bottom }
+            Platform.OS === 'ios' && {
+              paddingBottom: Math.max(insets.bottom, 10)
+            }
           ]}
         >
-          <TextInput
-            style={styles.chatInput}
+          <TextSendComposer
             value={inputText}
             onChangeText={setInputText}
-            placeholder="发消息.."
+            onSend={handleSendMessage}
+            placeholder="发消息..."
             placeholderTextColor="#9CA3AF"
-            multiline
-            maxLength={200}
           />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled
-            ]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-          >
-            <Ionicons name="send" size={20} color="#fff" />
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardStickyFooter>
     </View>
   )
 
   return (
-    <SafeAreaView
-      edges={['left', 'right', 'bottom']}
-      style={[
-        styles.safeArea,
-        Platform.OS === 'android' && {
-          paddingBottom: androidKeyboardHeight + insets.bottom
-        }
-      ]}
-    >
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
       {partnerId ? (
         renderChat()
       ) : isPartnerLoading ? (
@@ -495,7 +527,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
-  // 绑定样式
   bindBackground: {
     ...StyleSheet.absoluteFillObject
   },
@@ -606,18 +637,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700'
   },
-  addPartnerFootnote: {
-    marginTop: 12,
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#9CA3AF'
-  },
-
-  // 聊天样式
-  listContent: {
-    padding: 15,
-    flexGrow: 1,
-    justifyContent: 'flex-end'
+  chatScroll: {
+    flex: 1
   },
   messageRow: {
     flexDirection: 'row',
@@ -659,6 +680,9 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     backgroundColor: '#FF6B6B'
   },
+  myAvatarText: {
+    color: '#fff'
+  },
   avatarText: {
     fontSize: 14,
     color: '#666',
@@ -688,48 +712,17 @@ const styles = StyleSheet.create({
   messageTextRight: {
     color: '#fff'
   },
-
-  // 输入区域
+  chatInputSticky: {
+    zIndex: 20
+  },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: composerTheme.footerBackground,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0'
-  },
-  chatInput: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    paddingTop: 10,
-    fontSize: 16,
-    maxHeight: 100,
-    marginRight: 10
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF6B6B',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#FFCACA'
-  },
-  headerButton: {
-    marginRight: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#FEE2E2'
-  },
-  headerButtonText: {
-    fontSize: 12,
-    color: '#DC2626'
+    borderTopColor: composerTheme.footerBorder,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    ...composerFooterShadow
   }
 })

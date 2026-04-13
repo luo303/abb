@@ -42,6 +42,7 @@ import DiaperFormScreen from './DiaperFormScreen'
 
 import KnowledgeUploadScreen from './KnowledgeUpload'
 import SearchScreen from './search/SearchScreen'
+import AppKeyboardProvider from '../components/common/AppKeyboardProvider'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
@@ -286,10 +287,12 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Provider store={store}>
-        <MessageProvider>
-          <AppInitializer onReady={() => setAppReady(true)} />
-          <RootNavigator appReady={appReady} />
-        </MessageProvider>
+        <AppKeyboardProvider>
+          <MessageProvider>
+            <AppInitializer onReady={() => setAppReady(true)} />
+            <RootNavigator appReady={appReady} />
+          </MessageProvider>
+        </AppKeyboardProvider>
       </Provider>
     </GestureHandlerRootView>
   )

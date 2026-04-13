@@ -2,11 +2,11 @@ import React, { useCallback, useState } from 'react'
 import {
   View,
   StyleSheet,
-  FlatList,
   RefreshControl,
   ActivityIndicator,
   Text
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
@@ -114,7 +114,7 @@ export default function MyFavorites() {
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlashList
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: 24 + insets.bottom }

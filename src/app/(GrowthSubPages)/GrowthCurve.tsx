@@ -6,12 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Platform,
-  KeyboardAvoidingView
+  Platform
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import AppKeyboardAvoidingView from '../../components/common/AppKeyboardAvoidingView'
 
 // 导入拆分后的组件
 import CurveTabs from '../../components/growth/curve/CurveTabs'
@@ -171,9 +171,10 @@ export default function GrowthCurveScreen() {
         />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+      <AppKeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
           style={styles.scrollView}
@@ -181,6 +182,7 @@ export default function GrowthCurveScreen() {
             hasBaby ? styles.scrollContent : styles.scrollContentEmpty
           }
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {!hasBaby && (
             <View style={styles.emptyState}>
@@ -208,96 +210,98 @@ export default function GrowthCurveScreen() {
           {hasBaby && activeTab === 'weight' && <CurveWeightChart />}
           {hasBaby && activeTab === 'head' && <CurveHeadChart />}
         </ScrollView>
-      </KeyboardAvoidingView>
 
-      {/* 底部按钮 */}
-      {activeTab === 'record' ? (
-        hasBaby && (
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                (!isFormValid || isSubmitting) && styles.saveButtonDisabled
-              ]}
-              disabled={!isFormValid || isSubmitting}
-              onPress={handleSaveRecord}
+        {/* 底部按钮 */}
+        {activeTab === 'record' ? (
+          hasBaby && (
+            <View
+              style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}
             >
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.saveButtonText,
-                  (!isFormValid || isSubmitting) &&
-                    styles.saveButtonTextDisabled
+                  styles.saveButton,
+                  (!isFormValid || isSubmitting) && styles.saveButtonDisabled
                 ]}
+                disabled={!isFormValid || isSubmitting}
+                onPress={handleSaveRecord}
               >
-                {isSubmitting
-                  ? '保存中...'
-                  : isFormValid
-                    ? '保存记录'
-                    : '请填写数据'}
-              </Text>
-              {isFormValid && !isSubmitting && (
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color="#fff"
-                  style={{ marginLeft: 8 }}
-                />
-              )}
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.saveButtonText,
+                    (!isFormValid || isSubmitting) &&
+                      styles.saveButtonTextDisabled
+                  ]}
+                >
+                  {isSubmitting
+                    ? '保存中...'
+                    : isFormValid
+                      ? '保存记录'
+                      : '请填写数据'}
+                </Text>
+                {isFormValid && !isSubmitting && (
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color="#fff"
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          )
+        ) : (
+          <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+            {hasBaby ? (
+              <TouchableOpacity
+                style={styles.aiButton}
+                onPress={() => {
+                  if (!currentBabyDetail) {
+                    showMessage('未获取到宝宝信息')
+                    return
+                  }
+                  let metric: GrowthAnalysisMetric = 'height'
+                  let unit: GrowthAnalysisUnit = 'cm'
+                  let items: { time: number; value: number }[] = []
+                  if (activeTab === 'height') {
+                    metric = 'height'
+                    unit = 'cm'
+                    items = growthCurve.height
+                  } else if (activeTab === 'weight') {
+                    metric = 'weight'
+                    unit = 'kg'
+                    items = growthCurve.weight
+                  } else {
+                    metric = 'head_circumference'
+                    unit = 'cm'
+                    items = growthCurve.head
+                  }
+                  const payload: GrowthAnalysisPayload = {
+                    birthday: currentBabyDetail.birthday!,
+                    metric,
+                    unit,
+                    items
+                  }
+                  // @ts-ignore
+                  navigation.navigate('GrowthAnalysis', {
+                    growthAnalysis: payload
+                  })
+                }}
+              >
+                <View style={styles.aiButtonContent}>
+                  <Ionicons name="sparkles" size={20} color="#fff" />
+                  <Text style={styles.aiButtonText}>AI 智能分析</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color="#fff"
+                    style={{ marginLeft: 4 }}
+                  />
+                </View>
+              </TouchableOpacity>
+            ) : null}
           </View>
-        )
-      ) : (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-          {hasBaby ? (
-            <TouchableOpacity
-              style={styles.aiButton}
-              onPress={() => {
-                if (!currentBabyDetail) {
-                  showMessage('未获取到宝宝信息')
-                  return
-                }
-                let metric: GrowthAnalysisMetric = 'height'
-                let unit: GrowthAnalysisUnit = 'cm'
-                let items: { time: number; value: number }[] = []
-                if (activeTab === 'height') {
-                  metric = 'height'
-                  unit = 'cm'
-                  items = growthCurve.height
-                } else if (activeTab === 'weight') {
-                  metric = 'weight'
-                  unit = 'kg'
-                  items = growthCurve.weight
-                } else {
-                  metric = 'head_circumference'
-                  unit = 'cm'
-                  items = growthCurve.head
-                }
-                const payload: GrowthAnalysisPayload = {
-                  birthday: currentBabyDetail.birthday!,
-                  metric,
-                  unit,
-                  items
-                }
-                // @ts-ignore
-                navigation.navigate('GrowthAnalysis', {
-                  growthAnalysis: payload
-                })
-              }}
-            >
-              <View style={styles.aiButtonContent}>
-                <Ionicons name="sparkles" size={20} color="#fff" />
-                <Text style={styles.aiButtonText}>AI 智能分析</Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color="#fff"
-                  style={{ marginLeft: 4 }}
-                />
-              </View>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      )}
+        )}
+      </AppKeyboardAvoidingView>
     </View>
   )
 }
@@ -305,26 +309,25 @@ export default function GrowthCurveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA' // 浅灰蓝背景
+    backgroundColor: '#F5F7FA'
+  },
+  keyboardView: {
+    flex: 1
   },
   scrollView: {
     flex: 1
   },
   scrollContent: {
-    paddingBottom: 100
+    paddingBottom: 20
   },
   scrollContentEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100
+    paddingBottom: 20
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#F5F7FA', // 与背景同色
+    backgroundColor: '#F5F7FA',
     paddingHorizontal: 20,
     paddingTop: 10
   },

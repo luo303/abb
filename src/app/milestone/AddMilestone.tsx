@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
   Text
@@ -11,6 +10,7 @@ import {
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MaterialIcons } from '@expo/vector-icons'
+import AppKeyboardAvoidingView from '@/components/common/AppKeyboardAvoidingView'
 
 import AddPostHeader from '@/components/post/add/AddPostHeader'
 import PostInput from '@/components/post/add/PostInput'
@@ -141,7 +141,7 @@ export default function AddMilestoneScreen() {
   return (
     <View style={styles.container}>
       <AddPostHeader title="大事记" />
-      <KeyboardAvoidingView
+      <AppKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
@@ -234,7 +234,7 @@ export default function AddMilestoneScreen() {
             eventTime: eventTime || undefined
           }}
         />
-      </KeyboardAvoidingView>
+      </AppKeyboardAvoidingView>
     </View>
   )
 }

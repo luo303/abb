@@ -1,11 +1,6 @@
 import React, { memo } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator
-} from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { PostItem } from '../../types/home'
 import HomeCommunityCard from '../home/HomeCommunityCard'
 
@@ -58,7 +53,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   }
 
   return (
-    <FlatList
+    <FlashList
       data={results}
       renderItem={renderItem}
       keyExtractor={item => {

@@ -2,20 +2,25 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   ActivityIndicator,
-  Platform
+  Platform,
+  TextInput,
+  Keyboard,
+  LayoutChangeEvent
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
+import type { FlashListRef } from '@shopify/flash-list'
 import { AntDesign } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRoute, RouteProp } from '@react-navigation/native'
 
+import KeyboardStickyFooter from '../../components/common/KeyboardStickyFooter'
 import PostHeader from '../../components/post/PostHeader'
 import PostBody from '../../components/post/PostBody'
 import CommentItem from '../../components/post/CommentItem'
 import PostFooter from '../../components/post/PostFooter'
-import ReplyInput from '../../components/post/ReplyInput'
+
 import DoubleTapLike from '../../components/post/DoubleTapLike'
 import { Comment } from '@/types/post'
 import { useMessage } from '@/components/Message'
@@ -71,14 +76,17 @@ export default function PostDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [isCommentsLoading, setIsCommentsLoading] = useState(false)
-  const [isInputVisible, setInputVisible] = useState(false)
   const [replyPlaceholder, setReplyPlaceholder] = useState('说点什么...')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
 
   const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
-  const scrollViewRef = useRef<ScrollView>(null)
+  const listRef = useRef<FlashListRef<any>>(null)
   const scrollOffsetRef = useRef(0)
+  const inputRef = useRef<TextInput>(null)
+  const [inputText, setInputText] = useState('')
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const [footerHeight, setFooterHeight] = useState(76)
 
   // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
   const isFollowingFromStore = useAppSelector(state => {
@@ -192,8 +200,8 @@ export default function PostDetail() {
   const restoreScrollPosition = useCallback(() => {
     if (Platform.OS !== 'android') return
     requestAnimationFrame(() => {
-      scrollViewRef.current?.scrollTo({
-        y: scrollOffsetRef.current,
+      listRef.current?.scrollToOffset({
+        offset: scrollOffsetRef.current,
         animated: false
       })
     })
@@ -564,17 +572,26 @@ export default function PostDetail() {
     })()
   }
 
+  const handleStartInput = () => {
+    if (!isInputFocused && !inputText.trim()) {
+      setReplyTarget(null)
+      setReplyPlaceholder('说点什么...')
+    }
+    setIsInputFocused(true)
+    inputRef.current?.focus()
+  }
+
   const handleReply = (comment: Comment) => {
     setReplyTarget(comment)
     setReplyPlaceholder(`回复 ${comment.username}：`)
-    setInputVisible(true)
+    setIsInputFocused(true)
+    inputRef.current?.focus()
   }
 
-  const handleStartInput = () => {
-    setReplyTarget(null)
-    setReplyPlaceholder('说点什么...')
-    setInputVisible(true)
-  }
+  const handleFooterLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextHeight = Math.ceil(event.nativeEvent.layout.height)
+    setFooterHeight(prev => (prev === nextHeight ? prev : nextHeight))
+  }, [])
 
   const handleSend = (text: string) => {
     const content = text.trim()
@@ -630,7 +647,6 @@ export default function PostDetail() {
       }
     }
 
-    setInputVisible(false)
     ;(async () => {
       try {
         const res = await createPostComment(postId, {
@@ -688,54 +704,28 @@ export default function PostDetail() {
     })()
   }
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#f43f5e" />
-        <Text style={styles.loadingText}>加载中...</Text>
-      </View>
-    )
-  }
-
-  if (!currentPost) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.loadingText}>未找到帖子内容</Text>
-      </View>
-    )
-  }
-
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}
-        ref={scrollViewRef}
-        onScroll={event => {
-          scrollOffsetRef.current = event.nativeEvent.contentOffset.y
-        }}
-        scrollEventThrottle={16}
-      >
+  const ListHeaderComponent = useCallback(
+    () => (
+      <>
         <PostHeader
           avatar={displayAvatar}
-          nickname={currentPost.author_name}
-          description={currentPost.baby_age_text}
+          nickname={currentPost?.author_name || ''}
+          description={currentPost?.baby_age_text || ''}
           isFollowing={isFollowing}
           onFollow={handleFollowAuthor}
           showFollow={!isOwnPost}
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
-            title={currentPost.title}
+            title={currentPost?.title || ''}
             content={displayContent}
-            tags={currentPost.tags}
+            tags={currentPost?.tags || []}
             images={displayImages}
-            publishTime={formatDate(currentPost.ctime)}
+            publishTime={formatDate(currentPost?.ctime || Date.now())}
             location={
-              currentPost.author_province && currentPost.author_city
+              currentPost?.author_province && currentPost?.author_city
                 ? `${currentPost.author_province} ${currentPost.author_city}`
-                : currentPost.author_city
+                : currentPost?.author_city || ''
             }
           />
         </DoubleTapLike>
@@ -756,40 +746,106 @@ export default function PostDetail() {
           </View>
         </View>
 
-        {isCommentsLoading ? (
+        {isCommentsLoading && (
           <View style={styles.commentsLoading}>
             <ActivityIndicator size="small" color="#f43f5e" />
             <Text style={{ color: '#999', marginTop: 8 }}>加载评论中...</Text>
           </View>
-        ) : comments.length === 0 ? (
+        )}
+
+        {!isCommentsLoading && comments.length === 0 && (
           <View style={styles.commentsEmpty}>
             <Text style={styles.commentsEmptyText}>
               还没有评论，来做第一个吧
             </Text>
           </View>
-        ) : (
-          <View style={styles.commentsList}>
-            {comments.map((comment, index) => (
-              <CommentItem
-                key={`comment-${comment.comment_id}-${index}`}
-                comment={comment}
-                onLike={handleLikeComment}
-                onReply={handleReply}
-              />
-            ))}
-          </View>
         )}
-      </ScrollView>
+      </>
+    ),
+    [
+      currentPost,
+      displayAvatar,
+      isFollowing,
+      handleFollowAuthor,
+      isOwnPost,
+      handleDoubleTapLike,
+      displayContent,
+      displayImages,
+      comments.length,
+      isCommentsLoading
+    ]
+  )
 
-      {/* 底部常驻栏 */}
-      <View
-        style={[
-          styles.footerWrapper,
-          { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0 }
-        ]}
-      >
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f43f5e" />
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    )
+  }
+
+  if (!currentPost) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>未找到帖子内容</Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlashList
+        ref={listRef}
+        data={comments}
+        keyExtractor={(item, index) => `comment-${item.comment_id}-${index}`}
+        renderItem={({ item }) => (
+          <CommentItem
+            comment={item}
+            onLike={handleLikeComment}
+            onReply={handleReply}
+          />
+        )}
+        ListHeaderComponent={ListHeaderComponent}
+        contentContainerStyle={{
+          paddingBottom: footerHeight + 12
+        }}
+        showsVerticalScrollIndicator={false}
+        onScroll={event => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y
+        }}
+        scrollEventThrottle={16}
+      />
+
+      <KeyboardStickyFooter style={styles.inputSticky}>
         <PostFooter
+          onLayout={handleFooterLayout}
           onInputPress={handleStartInput}
+          inputRef={inputRef}
+          inputValue={inputText}
+          inputPlaceholder={replyPlaceholder}
+          onInputChangeText={setInputText}
+          onInputFocus={() => {
+            setIsInputFocused(true)
+          }}
+          onInputBlur={() => {
+            if (!inputText.trim()) {
+              setReplyTarget(null)
+              setReplyPlaceholder('说点什么...')
+              setIsInputFocused(false)
+            }
+          }}
+          onSend={() => {
+            if (!inputText.trim()) return
+            handleSend(inputText)
+            setInputText('')
+            setReplyTarget(null)
+            setReplyPlaceholder('说点什么...')
+            setIsInputFocused(false)
+            Keyboard.dismiss()
+          }}
+          isComposerActive={isInputFocused}
+          bottomInset={Platform.OS === 'ios' ? insets.bottom : 0}
           likeCount={currentPost.like_count}
           dislikeCount={currentPost.dislike_count}
           collectCount={currentPost.collect_count}
@@ -801,14 +857,7 @@ export default function PostDetail() {
           onDislike={handleDislikePost}
           onFavorite={handleFavoritePost}
         />
-      </View>
-
-      <ReplyInput
-        visible={isInputVisible}
-        placeholder={replyPlaceholder}
-        onSend={handleSend}
-        onDismiss={() => setInputVisible(false)}
-      />
+      </KeyboardStickyFooter>
     </View>
   )
 }
@@ -825,18 +874,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: '#999'
-  },
-  scrollView: {
-    flex: 1
-  },
-  footerWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
   },
   divider: {
     height: 8,
@@ -862,44 +899,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999'
   },
-  tipContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-    marginHorizontal: 16,
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8
-  },
-  tipIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#eee',
-    marginRight: 8
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#999'
-  },
-  uIcon: {
-    backgroundColor: '#ffba00',
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  uText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold'
-  },
-  commentsList: {
-    paddingBottom: 20
-  },
   commentsLoading: {
     paddingVertical: 16,
     alignItems: 'center',
@@ -912,5 +911,12 @@ const styles = StyleSheet.create({
   commentsEmptyText: {
     color: '#999',
     fontSize: 13
+  },
+  inputSticky: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000
   }
 })

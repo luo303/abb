@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Platform,
   ActivityIndicator
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '@/types/navigation'
 import { useSelector, useDispatch } from 'react-redux'
@@ -296,7 +296,7 @@ export default function VaccineRecordScreen() {
           <ActivityIndicator size="large" color="#10b981" />
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={vaccines}
           keyExtractor={item => item.dose_id}
           renderItem={({ item }) => (
@@ -315,9 +315,7 @@ export default function VaccineRecordScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {currentBabyId ? '暂无记录' : '请先添加或选择宝宝'}
-              </Text>
+              <Text style={styles.emptyText}>暂无相关疫苗记录</Text>
             </View>
           }
         />

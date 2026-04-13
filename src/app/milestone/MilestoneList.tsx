@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 import {
   View,
   StyleSheet,
-  FlatList,
   RefreshControl,
   ActivityIndicator,
   Text,
@@ -10,6 +9,7 @@ import {
   Image,
   ScrollView
 } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -258,7 +258,7 @@ export default function MilestoneList() {
         style={StyleSheet.absoluteFill}
       />
 
-      <FlatList
+      <FlashList
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: 24 + insets.bottom }

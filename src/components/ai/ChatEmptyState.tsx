@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
-export default function ChatEmptyState() {
+
+function ChatEmptyState() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -15,12 +16,14 @@ export default function ChatEmptyState() {
   )
 }
 
+export default memo(ChatEmptyState)
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100 // 留出底部输入框的空间
+    paddingVertical: 32
   },
   content: {
     alignItems: 'center',

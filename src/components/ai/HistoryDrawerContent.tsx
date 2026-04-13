@@ -1,11 +1,6 @@
-import React, { useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView
-} from 'react-native'
+import React, { useState, useMemo, useCallback } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
 import { AntDesign, Ionicons, SimpleLineIcons } from '@expo/vector-icons'
@@ -77,6 +72,57 @@ export default function HistoryDrawerContent(
     dispatch(resetSession())
     props.navigation.closeDrawer()
   }
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      return 0
+    })
+  }, [items])
+
+  const renderHistoryItem = useCallback(
+    ({ item }: { item: HistoryItem }) => {
+      const isActive = item.session_id === currentConversationId
+      return (
+        <TouchableOpacity
+          key={item.session_id}
+          style={[styles.historyItem, isActive && styles.activeHistoryItem]}
+          activeOpacity={0.7}
+          onLongPress={() => handleLongPress(item)}
+          onPress={() => handleItemPress(item)}
+        >
+          <View style={styles.iconContainer}>
+            <AntDesign
+              name="message"
+              size={16}
+              color={isActive ? '#1890ff' : '#666'}
+            />
+            {item.isPinned && (
+              <AntDesign
+                name="pushpin"
+                size={12}
+                color="#1890ff"
+                style={styles.pinIcon}
+              />
+            )}
+          </View>
+          <View style={styles.itemContent}>
+            <Text
+              style={[styles.itemTitle, isActive && styles.activeItemText]}
+              numberOfLines={1}
+            >
+              {item.session_title}
+            </Text>
+            <Text style={[styles.itemDate, isActive && styles.activeItemText]}>
+              {item.session_date}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )
+    },
+    [currentConversationId, handleLongPress, handleItemPress]
+  )
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.actionContainer}>
@@ -105,61 +151,13 @@ export default function HistoryDrawerContent(
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
-        {[...items]
-          .sort((a, b) => {
-            if (a.isPinned && !b.isPinned) return -1
-            if (!a.isPinned && b.isPinned) return 1
-            return 0
-          })
-          .map(item => {
-            const isActive = item.session_id === currentConversationId
-            return (
-              <TouchableOpacity
-                key={item.session_id}
-                style={[
-                  styles.historyItem,
-                  isActive && styles.activeHistoryItem
-                ]}
-                activeOpacity={0.7}
-                onLongPress={() => handleLongPress(item)}
-                onPress={() => handleItemPress(item)}
-              >
-                <View style={styles.iconContainer}>
-                  <AntDesign
-                    name="message"
-                    size={16}
-                    color={isActive ? '#1890ff' : '#666'}
-                  />
-                  {item.isPinned && (
-                    <AntDesign
-                      name="pushpin"
-                      size={12}
-                      color="#1890ff"
-                      style={styles.pinIcon}
-                    />
-                  )}
-                </View>
-                <View style={styles.itemContent}>
-                  <Text
-                    style={[
-                      styles.itemTitle,
-                      isActive && styles.activeItemText
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {item.session_title}
-                  </Text>
-                  <Text
-                    style={[styles.itemDate, isActive && styles.activeItemText]}
-                  >
-                    {item.session_date}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )
-          })}
-      </ScrollView>
+      <FlashList
+        data={sortedItems}
+        renderItem={renderHistoryItem}
+        keyExtractor={(item: HistoryItem) => item.session_id}
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
       <HistoryActionModal
         visible={menuVisible}
         isPinned={activeItem?.isPinned || false}

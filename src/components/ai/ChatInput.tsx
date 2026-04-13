@@ -6,7 +6,6 @@ import {
   Platform,
   Image,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Text
 } from 'react-native'
@@ -16,6 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import ImageViewing from 'react-native-image-viewing'
 
+import { uploadFile } from '../../api/upload'
+import { useMessage } from '../Message'
+
 export interface ImageItem {
   uri: string
   status: 'uploading' | 'done' | 'error'
@@ -23,31 +25,67 @@ export interface ImageItem {
 }
 
 interface ChatInputProps {
-  value: string
-  onChangeText: (text: string) => void
-  onSend: () => void
+  onSend: (text: string, images: string[]) => void
   disabled?: boolean
-  images: ImageItem[]
-  onAddImages: (uris: string[]) => void
-  onRemoveImage: (index: number) => void
   privateKbEnabled?: boolean
   onTogglePrivateKb?: () => void
+  inputNativeID?: string
 }
 
 function ChatInput({
-  value,
-  onChangeText,
   onSend,
   disabled,
-  images = [],
-  onAddImages,
-  onRemoveImage,
   privateKbEnabled = false,
-  onTogglePrivateKb
+  onTogglePrivateKb,
+  inputNativeID
 }: ChatInputProps) {
   const insets = useSafeAreaInsets()
+  const { showMessage } = useMessage()
+  const [value, setValue] = useState('')
+  const [images, setImages] = useState<ImageItem[]>([])
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  // 处理图片添加和自动上传
+  const handleAddImages = useCallback((uris: string[]) => {
+    const newImages: ImageItem[] = uris.map(uri => ({
+      uri,
+      status: 'uploading'
+    }))
+    setImages(prev => [...prev, ...newImages])
+
+    // 对每个新图片进行上传
+    newImages.forEach(async img => {
+      try {
+        const response = await uploadFile(img.uri)
+        let url = ''
+        if (typeof response.data === 'string') {
+          url = response.data
+        } else if (response.data && typeof response.data.url === 'string') {
+          url = response.data.url
+        }
+
+        if (url) {
+          setImages(prev =>
+            prev.map(p =>
+              p.uri === img.uri ? { ...p, status: 'done', url } : p
+            )
+          )
+        } else {
+          throw new Error('Invalid upload response')
+        }
+      } catch (error) {
+        console.warn('Image upload failed:', error)
+        setImages(prev =>
+          prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
+        )
+      }
+    })
+  }, [])
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }, [])
 
   const paddingBottom = useMemo(() => {
     return Platform.OS === 'android' ? 16 : Math.max(insets.bottom, 16)
@@ -61,20 +99,17 @@ function ChatInput({
     return images.map(img => ({ uri: img.uri }))
   }, [images])
 
-  const hasBlockedImage = useMemo(() => {
-    return images.some(
-      img => img.status === 'uploading' || img.status === 'error'
-    )
+  const hasUploadingImage = useMemo(() => {
+    return images.some(img => img.status === 'uploading')
   }, [images])
 
   const isSendDisabled = useMemo(() => {
-    return !!disabled || hasBlockedImage
-  }, [disabled, hasBlockedImage])
+    return !!disabled || hasUploadingImage || value.trim().length === 0
+  }, [disabled, hasUploadingImage, value])
 
-  const canSend = useMemo(() => {
-    if (isSendDisabled) return false
-    return value.trim().length > 0
-  }, [isSendDisabled, value])
+  const isPickDisabled = useMemo(() => {
+    return !!disabled || images.length >= 9
+  }, [disabled, images.length])
 
   const openPreviewAtIndex = useCallback((index: number) => {
     setCurrentImageIndex(index)
@@ -86,31 +121,44 @@ function ChatInput({
   }, [])
 
   const pickImage = useCallback(async () => {
-    // 请求权限
+    if (isPickDisabled) return
+    const remainCount = 9 - images.length
+    if (remainCount <= 0) {
+      showMessage('最多可添加9张图片')
+      return
+    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('需要权限', '需要访问相册权限以选择图片')
+      showMessage('需要访问相册权限以选择图片')
       return
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false, // 允许选择多张时通常不支持编辑
+      allowsEditing: false,
       quality: 0.8,
-      allowsMultipleSelection: true, // 允许选择多张
-      selectionLimit: 9 - images.length // 限制总数
+      allowsMultipleSelection: true,
+      selectionLimit: remainCount
     })
 
     if (!result.canceled) {
       const newUris = result.assets.map(asset => asset.uri)
-      onAddImages(newUris)
+      handleAddImages(newUris)
     }
-  }, [images.length, onAddImages])
+  }, [handleAddImages, images.length, isPickDisabled, showMessage])
 
   const handleSend = useCallback(() => {
-    if (value.trim().length === 0) return
-    onSend()
-  }, [onSend, value])
+    const text = value.trim()
+    if (text.length === 0 || isSendDisabled) return
+
+    const imagesToSend = images
+      .filter(img => img.status === 'done' && img.url)
+      .map(img => img.url!)
+
+    onSend(text, imagesToSend)
+    setValue('')
+    setImages([])
+  }, [onSend, value, images, isSendDisabled])
 
   return (
     <View style={containerStyle} pointerEvents="box-none">
@@ -123,14 +171,14 @@ function ChatInput({
             contentContainerStyle={styles.imageListContent}
           >
             {images.map((img, index) => (
-              <View key={index} style={styles.imagePreview}>
+              <View key={`${img.uri}-${index}`} style={styles.imagePreview}>
                 <TouchableOpacity
                   onPress={() => {
                     openPreviewAtIndex(index)
                   }}
                 >
                   <Image
-                    source={{ uri: img.url }}
+                    source={{ uri: img.url || img.uri }}
                     style={[
                       styles.image,
                       img.status === 'uploading' && styles.uploadingImage
@@ -149,7 +197,7 @@ function ChatInput({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => onRemoveImage(index)}
+                  onPress={() => handleRemoveImage(index)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons
@@ -164,13 +212,15 @@ function ChatInput({
         )}
 
         <TextInput
+          nativeID={inputNativeID}
           style={styles.input}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={setValue}
           placeholder="问问小稚"
           placeholderTextColor="#B0B0B0"
           multiline
           maxLength={1000}
+          editable={!disabled}
         />
 
         <View style={styles.bottomRow}>
@@ -197,22 +247,33 @@ function ChatInput({
 
           <View style={styles.rightActions}>
             <TouchableOpacity
-              style={styles.iconButton}
+              style={[
+                styles.iconButton,
+                isPickDisabled && styles.iconButtonDisabled
+              ]}
               onPress={pickImage}
               activeOpacity={0.85}
+              disabled={isPickDisabled}
             >
-              <Ionicons name="add" size={28} color="#111" />
+              <Ionicons
+                name="add"
+                size={28}
+                color={isPickDisabled ? '#CFD8DC' : '#111'}
+              />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
+              style={[
+                styles.sendButton,
+                isSendDisabled && styles.sendButtonDisabled
+              ]}
               onPress={handleSend}
-              disabled={!canSend}
+              disabled={isSendDisabled}
               activeOpacity={0.85}
             >
               <Ionicons
                 name="arrow-up"
                 size={20}
-                color={!canSend ? '#CFD8DC' : '#fff'}
+                color={isSendDisabled ? '#CFD8DC' : '#fff'}
               />
             </TouchableOpacity>
           </View>
@@ -232,19 +293,7 @@ function ChatInput({
   )
 }
 
-export default memo(ChatInput, (prev, next) => {
-  return (
-    prev.value === next.value &&
-    prev.disabled === next.disabled &&
-    prev.images === next.images &&
-    prev.onChangeText === next.onChangeText &&
-    prev.onSend === next.onSend &&
-    prev.onAddImages === next.onAddImages &&
-    prev.onRemoveImage === next.onRemoveImage &&
-    prev.privateKbEnabled === next.privateKbEnabled &&
-    prev.onTogglePrivateKb === next.onTogglePrivateKb
-  )
-})
+export default memo(ChatInput)
 
 const styles = StyleSheet.create({
   container: {
@@ -302,6 +351,9 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  iconButtonDisabled: {
+    opacity: 0.7
   },
   sendButton: {
     width: 40,

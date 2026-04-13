@@ -8,7 +8,6 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -24,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { RootState } from '../../store'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useMessage } from '../Message'
+import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
 
 export default function AddBabyScreen() {
   const navigation = useNavigation()
@@ -106,7 +106,7 @@ export default function AddBabyScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <AppKeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
@@ -284,7 +284,7 @@ export default function AddBabyScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   )
 }
 
