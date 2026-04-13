@@ -48,7 +48,6 @@ export default function TimeRangeSelector({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
     marginVertical: 10
   },
   selectorContainer: {

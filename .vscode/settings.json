@@ -57,5 +57,6 @@
   "git.terminalAuthentication": true,
   "commitlint.enable": true,
   "commitlint.configPath": "./commitlint.config.js",
-  "npm.packageManager": "pnpm"
+  "npm.packageManager": "pnpm",
+  "Codegeex.RepoIndex": true
 }
