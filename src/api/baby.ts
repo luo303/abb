@@ -4,7 +4,7 @@ export interface BabyData {
   name: string
   gender: string
   birthday: number
-  avatar?: string
+  avatar: string
   height?: number
   weight?: number
   head_circumference?: number
