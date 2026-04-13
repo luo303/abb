@@ -171,7 +171,7 @@ function ChatInput({
             contentContainerStyle={styles.imageListContent}
           >
             {images.map((img, index) => (
-              <View key={`${img.uri}-${index}`} style={styles.imagePreview}>
+              <View key={img.uri} style={styles.imagePreview}>
                 <TouchableOpacity
                   onPress={() => {
                     openPreviewAtIndex(index)
@@ -287,7 +287,14 @@ function ChatInput({
         onRequestClose={closePreview}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
-        keyExtractor={(_, index) => `chat-input-preview-${index}`}
+        keyExtractor={item =>
+          item &&
+          typeof item === 'object' &&
+          'uri' in item &&
+          typeof item.uri === 'string'
+            ? item.uri
+            : String(item)
+        }
       />
     </View>
   )

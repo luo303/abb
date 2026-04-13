@@ -119,9 +119,9 @@ export default function CommentItem({
 
         {flatReplies.length > 0 && (
           <View style={styles.repliesContainer}>
-            {flatReplies.map(({ node, parentNickname }, index) => (
+            {flatReplies.map(({ node, parentNickname }) => (
               <ReplyItem
-                key={`sub-reply-${node.comment_id}-${index}`}
+                key={node.comment_id}
                 comment={node}
                 parentNickname={parentNickname}
                 onReply={onReply}

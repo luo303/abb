@@ -37,17 +37,7 @@ function ChatMessage({
     return message.images?.map(uri => ({ uri })) || []
   }, [message.images])
 
-  const shouldRenderMarkdown = useMemo(() => {
-    if (message.role !== 'assistant' || isTyping || !message.content) {
-      return false
-    }
-
-    return /(^#{1,6}\s)|(```)|(`[^`]+`)|(\[[^\]]+\]\([^)]+\))|(^-\s)|(^\d+\.\s)|(\*\*)|(__)|(\|)/m.test(
-      message.content
-    )
-  }, [isTyping, message.content, message.role])
-
-  const markdownStyle = useMemo(() => {
+  const markdownStyle = useMemo<any>(() => {
     return {
       body: {
         width: '100%',
@@ -176,6 +166,10 @@ function ChatMessage({
     onSpeak(message.timestamp, message.content)
   }, [message.content, message.timestamp, onSpeak])
 
+  const shouldShowThinking =
+    message.role === 'assistant' && isTyping && !message.content
+  const shouldRenderMarkdown = message.role === 'assistant' && !!message.content
+
   return (
     <View
       style={[
@@ -198,7 +192,7 @@ function ChatMessage({
           >
             {message.images.map((img, index) => (
               <TouchableOpacity
-                key={`${img}-${index}`}
+                key={img}
                 onPress={() => {
                   setCurrentImageIndex(index)
                   setIsPreviewVisible(true)
@@ -227,17 +221,11 @@ function ChatMessage({
               <Text style={[styles.text, styles.userText]}>
                 {message.content}
               </Text>
-            ) : isTyping ? (
-              message.content ? (
-                <Text style={[styles.text, styles.aiText]}>
-                  {message.content}
-                </Text>
-              ) : (
-                <View style={styles.loadingBlock}>
-                  <ActivityIndicator size="small" color="#1f99b0" />
-                  <Text style={styles.loadingText}>AI 正在思考...</Text>
-                </View>
-              )
+            ) : shouldShowThinking ? (
+              <View style={styles.loadingBlock}>
+                <ActivityIndicator size="small" color="#1f99b0" />
+                <Text style={styles.loadingText}>AI 正在思考...</Text>
+              </View>
             ) : shouldRenderMarkdown ? (
               <View style={styles.markdownHost}>
                 <Markdown style={markdownStyle}>{message.content}</Markdown>
@@ -281,7 +269,14 @@ function ChatMessage({
         onRequestClose={closePreview}
         swipeToCloseEnabled
         doubleTapToZoomEnabled
-        keyExtractor={(_, index) => `chat-message-preview-${index}`}
+        keyExtractor={item =>
+          item &&
+          typeof item === 'object' &&
+          'uri' in item &&
+          typeof item.uri === 'string'
+            ? item.uri
+            : String(item)
+        }
       />
     </View>
   )

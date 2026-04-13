@@ -7,20 +7,17 @@ import {
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import type { FlashListRef } from '@shopify/flash-list'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useDispatch, useSelector } from 'react-redux'
 import 'react-native-get-random-values'
 import { v4 as uuidv4 } from 'uuid'
 import * as Speech from 'expo-speech'
-import {
-  KeyboardGestureArea,
-  KeyboardStickyView
-} from 'react-native-keyboard-controller'
 
 import ChatEmptyState from './ChatEmptyState'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
+import KeyboardStickyFooter from '../common/KeyboardStickyFooter'
 import useChatAutoScroll from '../common/useChatAutoScroll'
 import {
   useChatComposerMetrics,
@@ -39,6 +36,8 @@ import {
 import { Message } from '../../types/AIchat'
 
 const MESSAGE_ITEM_SPACING = 10
+const LIST_BOTTOM_GAP = 12
+const AI_CHAT_BASE_INPUT_HEIGHT = 136
 const AI_CHAT_INPUT_NATIVE_ID = 'ai-chat-input'
 
 export default function ChatScreen() {
@@ -53,7 +52,6 @@ export default function ChatScreen() {
   )
 
   const dispatch = useDispatch()
-  const insets = useSafeAreaInsets()
   const { showMessage } = useMessage()
   const abortControllerRef = useRef<AbortController | null>(null)
   const streamingFrameRef = useRef<number | null>(null)
@@ -66,8 +64,12 @@ export default function ChatScreen() {
     null
   )
 
-  const { extraContentPadding, handleComposerLayout } = useChatComposerMetrics({
-    initialHeight: 136
+  const {
+    baseHeight: baseInputBarHeight,
+    extraContentPadding,
+    handleComposerLayout
+  } = useChatComposerMetrics({
+    initialHeight: AI_CHAT_BASE_INPUT_HEIGHT
   })
 
   const {
@@ -85,7 +87,6 @@ export default function ChatScreen() {
 
   const renderChatScrollComponent = useKeyboardChatScrollRenderer({
     extraContentPadding,
-    offset: insets.bottom,
     keyboardLiftBehavior: 'whenAtEnd'
   })
 
@@ -102,9 +103,14 @@ export default function ChatScreen() {
     () => ({
       paddingHorizontal: 16,
       paddingTop: 12,
-      paddingBottom: 12
+      paddingBottom: baseInputBarHeight + LIST_BOTTOM_GAP
     }),
-    []
+    [baseInputBarHeight]
+  )
+
+  const scrollToBottomOverlayStyle = useMemo(
+    () => [styles.scrollToBottomOverlay, { bottom: baseInputBarHeight + 16 }],
+    [baseInputBarHeight]
   )
 
   const listExtraData = useMemo(
@@ -381,13 +387,13 @@ export default function ChatScreen() {
     return <View style={styles.messageSeparator} />
   }, [])
 
+  const keyExtractor = useCallback((item: Message) => {
+    return `${item.timestamp}-${item.role}`
+  }, [])
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <KeyboardGestureArea
-        interpolator="ios"
-        style={styles.layout}
-        textInputNativeID={AI_CHAT_INPUT_NATIVE_ID}
-      >
+      <View style={styles.layout}>
         <View style={styles.messagesContainer}>
           {isLoading && !hasDisplayMessages ? (
             <View style={styles.loadingContainer}>
@@ -397,20 +403,12 @@ export default function ChatScreen() {
             <ChatEmptyState />
           ) : (
             <FlashList
-              key={currentConversationId ?? 'ai-chat'}
               ref={listRef}
               data={displayMessages}
-              keyExtractor={(item, index) =>
-                `${item.timestamp}-${item.role}-${index}`
-              }
+              keyExtractor={keyExtractor}
               renderItem={renderMessageItem}
               ItemSeparatorComponent={renderMessageSeparator}
               renderScrollComponent={renderChatScrollComponent}
-              estimatedItemSize={180}
-              maintainVisibleContentPosition={{
-                autoscrollToBottomThreshold: 0.2,
-                animateAutoScrollToBottom: false
-              }}
               contentContainerStyle={listContentStyle}
               onScroll={handleScroll}
               onContentSizeChange={handleContentSizeChange}
@@ -425,7 +423,7 @@ export default function ChatScreen() {
           )}
 
           {hasDisplayMessages && showScrollBottom && (
-            <View pointerEvents="box-none" style={styles.scrollToBottomOverlay}>
+            <View pointerEvents="box-none" style={scrollToBottomOverlayStyle}>
               <TouchableOpacity
                 style={styles.scrollToBottomButton}
                 onPress={() => scrollToBottom(true)}
@@ -437,7 +435,7 @@ export default function ChatScreen() {
           )}
         </View>
 
-        <KeyboardStickyView style={styles.inputBarSticky}>
+        <KeyboardStickyFooter style={styles.inputBarSticky}>
           <View style={styles.inputBar} onLayout={handleComposerLayout}>
             <ChatInput
               inputNativeID={AI_CHAT_INPUT_NATIVE_ID}
@@ -447,8 +445,8 @@ export default function ChatScreen() {
               onTogglePrivateKb={handleTogglePrivateKb}
             />
           </View>
-        </KeyboardStickyView>
-      </KeyboardGestureArea>
+        </KeyboardStickyFooter>
+      </View>
     </SafeAreaView>
   )
 }

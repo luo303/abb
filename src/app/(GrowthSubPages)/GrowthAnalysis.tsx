@@ -26,19 +26,25 @@ type GrowthAnalysisRouteParams = {
 
 const MESSAGE_ITEM_SPACING = 10
 
+type AnalysisMessage = Message & {
+  id: string
+}
+
 export default function GrowthAnalysis() {
   const route = useRoute<any>()
   const payload: GrowthAnalysisPayload | undefined = (
     route?.params as GrowthAnalysisRouteParams | undefined
   )?.growthAnalysis
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<AnalysisMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const startedRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const extraContentPadding = useSharedValue(0)
-  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null)
-  const speakingIndexRef = useRef<number | null>(null)
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(
+    null
+  )
+  const speakingMessageIdRef = useRef<string | null>(null)
   const conversationKey = useMemo(() => {
     if (!payload) return 'growth-analysis'
 
@@ -58,44 +64,47 @@ export default function GrowthAnalysis() {
   })
 
   const listRef =
-    scrollRef as React.MutableRefObject<FlashListRef<Message> | null>
+    scrollRef as React.MutableRefObject<FlashListRef<AnalysisMessage> | null>
 
   const renderChatScrollComponent = useKeyboardChatScrollRenderer({
     extraContentPadding,
     keyboardLiftBehavior: 'whenAtEnd'
   })
 
-  const updateSpeakingIndex = (index: number | null) => {
-    speakingIndexRef.current = index
-    setSpeakingIndex(index)
-  }
+  const updateSpeakingMessageId = useCallback((id: string | null) => {
+    speakingMessageIdRef.current = id
+    setSpeakingMessageId(id)
+  }, [])
 
-  const handleSpeak = (index: number, text: string) => {
-    if (speakingIndexRef.current === index) {
-      Speech.stop()
-      updateSpeakingIndex(null)
-    } else {
-      Speech.stop()
-      updateSpeakingIndex(index)
-      Speech.speak(text, {
-        onDone: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
+  const handleSpeak = useCallback(
+    (id: string, text: string) => {
+      if (speakingMessageIdRef.current === id) {
+        Speech.stop()
+        updateSpeakingMessageId(null)
+      } else {
+        Speech.stop()
+        updateSpeakingMessageId(id)
+        Speech.speak(text, {
+          onDone: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
+          },
+          onStopped: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
+          },
+          onError: () => {
+            if (speakingMessageIdRef.current === id) {
+              updateSpeakingMessageId(null)
+            }
           }
-        },
-        onStopped: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
-          }
-        },
-        onError: () => {
-          if (speakingIndexRef.current === index) {
-            updateSpeakingIndex(null)
-          }
-        }
-      })
-    }
-  }
+        })
+      }
+    },
+    [updateSpeakingMessageId]
+  )
 
   useEffect(() => {
     if (!payload || startedRef.current) {
@@ -112,12 +121,14 @@ export default function GrowthAnalysis() {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    const userMsg: Message = {
+    const userMsg: AnalysisMessage = {
+      id: 'growth-analysis-user',
       content: `成长曲线智能分析：${payload.metric}（${payload.items.length}条）`,
       role: 'user',
       timestamp: Date.now()
     }
-    const aiPlaceholderMsg: Message = {
+    const aiPlaceholderMsg: AnalysisMessage = {
+      id: 'growth-analysis-assistant',
       content: '',
       role: 'assistant',
       timestamp: Date.now()
@@ -215,6 +226,22 @@ export default function GrowthAnalysis() {
     return <View style={styles.messageSeparator} />
   }, [])
 
+  const keyExtractor = useCallback((item: AnalysisMessage) => item.id, [])
+
+  const renderMessageItem = useCallback(
+    ({ item, index }: { item: AnalysisMessage; index: number }) => {
+      return (
+        <ChatMessage
+          message={item}
+          isSpeaking={item.id === speakingMessageId}
+          onSpeak={() => handleSpeak(item.id, item.content)}
+          isTyping={isStreaming && index === messages.length - 1}
+        />
+      )
+    },
+    [handleSpeak, isStreaming, messages.length, speakingMessageId]
+  )
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       {messages.length === 0 ? (
@@ -233,18 +260,10 @@ export default function GrowthAnalysis() {
             key={conversationKey}
             ref={listRef}
             data={messages}
-            keyExtractor={item => `${item.timestamp}-${item.role}`}
-            renderItem={({ item, index }) => (
-              <ChatMessage
-                message={item}
-                isSpeaking={index === speakingIndex}
-                onSpeak={() => handleSpeak(index, item.content)}
-                isTyping={isStreaming && index === messages.length - 1}
-              />
-            )}
+            keyExtractor={keyExtractor}
+            renderItem={renderMessageItem}
             ItemSeparatorComponent={renderMessageSeparator}
             renderScrollComponent={renderChatScrollComponent}
-            estimatedItemSize={180}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}

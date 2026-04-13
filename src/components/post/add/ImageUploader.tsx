@@ -54,8 +54,8 @@ export default function ImageUploader({
         {/* 显示待上传的图片 */}
         {pendingImages
           .filter(img => img.status === 'uploading')
-          .map((img, index) => (
-            <View key={`pending-${index}`} style={styles.imageWrapper}>
+          .map(img => (
+            <View key={img.uri} style={styles.imageWrapper}>
               <Image source={{ uri: img.uri }} style={styles.image} />
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="small" color="#f43f5e" />
@@ -64,7 +64,7 @@ export default function ImageUploader({
           ))}
         {/* 显示已上传的图片 */}
         {images.map((uri, index) => (
-          <View key={index} style={styles.imageWrapper}>
+          <View key={uri} style={styles.imageWrapper}>
             <Image source={{ uri }} style={styles.image} />
             <TouchableOpacity
               style={styles.deleteButton}

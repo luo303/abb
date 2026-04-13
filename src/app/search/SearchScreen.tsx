@@ -216,9 +216,9 @@ const SearchScreen = () => {
         <ScrollView style={styles.searchSuggestions}>
           <View style={styles.suggestionsContainer}>
             <Text style={styles.suggestionsTitle}>搜索建议</Text>
-            {searchSuggestions.map((suggestion, index) => (
+            {searchSuggestions.map(suggestion => (
               <TouchableOpacity
-                key={index}
+                key={suggestion}
                 style={styles.suggestionItem}
                 onPress={() => handleSuggestionPress(suggestion)}
               >

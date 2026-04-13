@@ -348,7 +348,14 @@ export default function AlbumScreen() {
         onRequestClose={() => setPreviewVisible(false)}
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
-        keyExtractor={(_, index) => `album-preview-${index}`}
+        keyExtractor={item =>
+          item &&
+          typeof item === 'object' &&
+          'uri' in item &&
+          typeof item.uri === 'string'
+            ? item.uri
+            : String(item)
+        }
       />
 
       {/* 底部功能区 */}

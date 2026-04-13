@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   View,
   StyleSheet,
@@ -415,9 +415,12 @@ export default function DailyRecordScreen() {
   }, [statistics, animatedBackgroundValue])
 
   // 处理底部按钮点击
-  const handleActionPress = (type: RecordType) => {
-    navigateToRecord(type)
-  }
+  const handleActionPress = useCallback(
+    (type: RecordType) => {
+      navigateToRecord(type)
+    },
+    [navigateToRecord]
+  )
 
   // 处理日期选择器确认
   const handleDatePickerConfirm = (event: any, date?: Date) => {
@@ -521,7 +524,8 @@ export default function DailyRecordScreen() {
       currentRecords.length,
       feedingPercent,
       sleepPercent,
-      diaperPercent
+      diaperPercent,
+      handleActionPress
     ]
   )
 
@@ -548,6 +552,10 @@ export default function DailyRecordScreen() {
     ),
     [isLoading]
   )
+
+  const ListFooterComponent = useCallback(() => {
+    return <View style={styles.listFooterSpacer} />
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -637,7 +645,7 @@ export default function DailyRecordScreen() {
         keyExtractor={item => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={() => <View style={{ height: 40 }} />}
+        ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -737,5 +745,8 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#f43f5e'
+  },
+  listFooterSpacer: {
+    height: 40
   }
 })

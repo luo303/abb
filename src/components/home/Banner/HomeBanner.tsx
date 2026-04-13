@@ -94,9 +94,9 @@ const HomeBanner = React.memo(function HomeBanner() {
       {/* 轮播图指示器 */}
       {RAW_DATA.length > 1 && (
         <View style={styles.pagination}>
-          {RAW_DATA.map((_, index) => (
+          {RAW_DATA.map((item, index) => (
             <PaginationDot
-              key={index}
+              key={item.id}
               index={index}
               progress={progress}
               dataLength={RAW_DATA.length}

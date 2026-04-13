@@ -41,8 +41,8 @@ export default function HomeSearchManager({
       {/* 仅在搜索状态下显示结果列表 */}
       {isSearching && (
         <View style={{ marginTop: 15 }}>
-          {filteredPosts.map((post, index) => (
-            <HomeCommunityCard key={post.post_id || index} data={post} />
+          {filteredPosts.map(post => (
+            <HomeCommunityCard key={post.post_id} data={post} />
           ))}
         </View>
       )}

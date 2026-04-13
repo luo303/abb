@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   Image,
+  type ImageSourcePropType,
   ScrollView
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
@@ -32,59 +33,97 @@ interface PostListResponse {
 
 const PAGE_SIZE = 10
 
-// 大事记卡片组件
-const MilestoneCard = ({ item }: { item: PostItem }) => {
-  const parseContent = (content: any) => {
-    if (!content) return { text: '', images: [], eventTime: null }
+const parseMilestoneContent = (content: any) => {
+  if (!content) return { text: '', images: [], eventTime: null }
 
-    // 如果是字符串，尝试解析 JSON
-    if (typeof content === 'string') {
-      try {
-        // 如果是 JSON 字符串，解析为对象
-        if (content.trim().startsWith('{')) {
-          const parsed = JSON.parse(content)
-          return {
-            text: parsed.text || '',
-            images: parsed.images || [],
-            eventTime: parsed.event_time ? new Date(parsed.event_time) : null
-          }
+  if (typeof content === 'string') {
+    try {
+      if (content.trim().startsWith('{')) {
+        const parsed = JSON.parse(content)
+        return {
+          text: parsed.text || '',
+          images: parsed.images || [],
+          eventTime: parsed.event_time ? new Date(parsed.event_time) : null
         }
-        // 普通字符串直接作为文本
-        return { text: content, images: [], eventTime: null }
-      } catch (e) {
-        return { text: content, images: [], eventTime: null }
       }
-    }
 
-    // 如果已经是对象
-    if (typeof content === 'object') {
-      return {
-        text: content.text || '',
-        images: Array.isArray(content.images) ? content.images : [],
-        eventTime: content.event_time ? new Date(content.event_time) : null
-      }
+      return { text: content, images: [], eventTime: null }
+    } catch {
+      return { text: content, images: [], eventTime: null }
     }
-
-    return { text: '', images: [], eventTime: null }
   }
 
+  if (typeof content === 'object') {
+    return {
+      text: content.text || '',
+      images: Array.isArray(content.images) ? content.images : [],
+      eventTime: content.event_time ? new Date(content.event_time) : null
+    }
+  }
+
+  return { text: '', images: [], eventTime: null }
+}
+
+const getMediaKeyBase = (media: unknown) => {
+  if (typeof media === 'string') return media
+  if (typeof media === 'number') return String(media)
+  if (media && typeof media === 'object') {
+    if ('uri' in media && media.uri) {
+      return String(media.uri)
+    }
+    if ('url' in media && media.url) {
+      return String(media.url)
+    }
+  }
+
+  return String(media)
+}
+
+const buildMediaEntries = (items: unknown[]) => {
+  const seen = new Map<string, number>()
+
+  return items.map(item => {
+    const baseKey = getMediaKeyBase(item)
+    const duplicateCount = seen.get(baseKey) ?? 0
+    seen.set(baseKey, duplicateCount + 1)
+
+    return {
+      key: duplicateCount === 0 ? baseKey : `${baseKey}-${duplicateCount}`,
+      source: (typeof item === 'string'
+        ? { uri: item }
+        : item) as ImageSourcePropType
+    }
+  })
+}
+
+// 大事记卡片组件
+const MilestoneCard = memo(function MilestoneCard({
+  item
+}: {
+  item: PostItem
+}) {
   const {
     text: contentText,
     images,
     eventTime: parsedEventTime
-  } = parseContent(item.content)
+  } = useMemo(() => parseMilestoneContent(item.content), [item.content])
 
   // 优先使用解析出的 eventTime，如果为 null 则回退到 ctime
-  const eventTime =
-    parsedEventTime instanceof Date && !isNaN(parsedEventTime.getTime())
+  const eventTime = useMemo(() => {
+    return parsedEventTime instanceof Date && !isNaN(parsedEventTime.getTime())
       ? parsedEventTime
       : item.ctime
         ? new Date(item.ctime)
         : new Date()
+  }, [item.ctime, parsedEventTime])
 
-  const dateStr = `${eventTime.getFullYear()}.${(eventTime.getMonth() + 1)
-    .toString()
-    .padStart(2, '0')}.${eventTime.getDate().toString().padStart(2, '0')}`
+  const dateStr = useMemo(() => {
+    return `${eventTime.getFullYear()}.${(eventTime.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}.${eventTime.getDate().toString().padStart(2, '0')}`
+  }, [eventTime])
+
+  const imageEntries = useMemo(() => buildMediaEntries(images), [images])
 
   return (
     <View style={styles.cardContainer}>
@@ -113,16 +152,16 @@ const MilestoneCard = ({ item }: { item: PostItem }) => {
           </Text>
         ) : null}
 
-        {images.length > 0 && (
+        {imageEntries.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.imageScroll}
           >
-            {images.map((img: string, index: number) => (
+            {imageEntries.map(entry => (
               <Image
-                key={index}
-                source={typeof img === 'string' ? { uri: img } : img}
+                key={entry.key}
+                source={entry.source}
                 style={styles.image}
               />
             ))}
@@ -131,7 +170,7 @@ const MilestoneCard = ({ item }: { item: PostItem }) => {
       </View>
     </View>
   )
-}
+})
 
 const getEventTime = (item: PostItem): number => {
   if (item.content) {
@@ -141,7 +180,7 @@ const getEventTime = (item: PostItem): number => {
         if (item.content.trim().startsWith('{')) {
           parsed = JSON.parse(item.content)
         }
-      } catch (e) {}
+      } catch {}
     }
     if (
       typeof parsed === 'object' &&
@@ -189,7 +228,7 @@ export default function MilestoneList() {
         setPosts(prev => {
           const allItems = targetPage === 1 ? items : [...prev, ...items]
           // 前端按 event_time 降序排序
-          return allItems.sort((a, b) => getEventTime(b) - getEventTime(a))
+          return [...allItems].sort((a, b) => getEventTime(b) - getEventTime(a))
         })
 
         setPage(targetPage)
@@ -214,34 +253,42 @@ export default function MilestoneList() {
     }, [fetchPage])
   )
 
-  const handleRefresh = () => fetchPage(1, true)
+  const handleRefresh = useCallback(() => {
+    void fetchPage(1, true)
+  }, [fetchPage])
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!initialLoaded) return
     if (loading || refreshing) return
     if (hasMore) {
-      fetchPage(page + 1)
+      void fetchPage(page + 1)
     }
-  }
+  }, [fetchPage, hasMore, initialLoaded, loading, page, refreshing])
 
-  const renderItem = ({ item }: { item: PostItem }) => (
-    <MilestoneCard item={item} />
-  )
+  const renderItem = useCallback(({ item }: { item: PostItem }) => {
+    return <MilestoneCard item={item} />
+  }, [])
 
-  const ListEmptyComponent = () => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>暂无大事记</Text>
-      <Text style={styles.emptySubtitle}>记录宝宝成长的每一个重要时刻</Text>
-      <TouchableOpacity
-        style={styles.emptyButton}
-        onPress={() => navigation.navigate('AddMilestone')}
-      >
-        <Text style={styles.emptyButtonText}>去记录</Text>
-      </TouchableOpacity>
-    </View>
-  )
+  const handleNavigateToAddMilestone = useCallback(() => {
+    navigation.navigate('AddMilestone')
+  }, [navigation])
 
-  const ListFooterComponent = () => {
+  const ListEmptyComponent = useCallback(() => {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyTitle}>暂无大事记</Text>
+        <Text style={styles.emptySubtitle}>记录宝宝成长的每一个重要时刻</Text>
+        <TouchableOpacity
+          style={styles.emptyButton}
+          onPress={handleNavigateToAddMilestone}
+        >
+          <Text style={styles.emptyButtonText}>去记录</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }, [handleNavigateToAddMilestone])
+
+  const ListFooterComponent = useCallback(() => {
     if (!loading) return <View style={{ height: 80 }} /> // 底部留白，避免被FAB遮挡
     return (
       <View style={styles.footerLoading}>
@@ -249,7 +296,9 @@ export default function MilestoneList() {
         <Text style={styles.footerText}>加载中...</Text>
       </View>
     )
-  }
+  }, [loading])
+
+  const keyExtractor = useCallback((item: PostItem) => item.post_id, [])
 
   return (
     <View style={styles.container}>
@@ -264,7 +313,7 @@ export default function MilestoneList() {
           { paddingBottom: 24 + insets.bottom }
         ]}
         data={posts}
-        keyExtractor={(item, index) => item.post_id || `milestone-${index}`}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}

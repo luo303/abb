@@ -79,30 +79,36 @@ export default function MyFavorites() {
     }, [fetchPage])
   )
 
-  const handleRefresh = () => fetchPage(1, true)
+  const handleRefresh = useCallback(() => {
+    void fetchPage(1, true)
+  }, [fetchPage])
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!initialLoaded) return
     if (loading || refreshing) return
     if (hasMore) {
-      fetchPage(page + 1)
+      void fetchPage(page + 1)
     }
-  }
+  }, [fetchPage, hasMore, initialLoaded, loading, page, refreshing])
 
-  const renderItem = ({ item }: { item: PostItem }) => (
-    <View style={styles.cardWrapper}>
-      <HomeCommunityCard data={item} />
-    </View>
-  )
+  const renderItem = useCallback(({ item }: { item: PostItem }) => {
+    return (
+      <View style={styles.cardWrapper}>
+        <HomeCommunityCard data={item} />
+      </View>
+    )
+  }, [])
 
-  const ListEmptyComponent = () => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>暂无收藏</Text>
-      <Text style={styles.emptySubtitle}>快去发现感兴趣的内容并收藏吧</Text>
-    </View>
-  )
+  const ListEmptyComponent = useCallback(() => {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyTitle}>暂无收藏</Text>
+        <Text style={styles.emptySubtitle}>快去发现感兴趣的内容并收藏吧</Text>
+      </View>
+    )
+  }, [])
 
-  const ListFooterComponent = () => {
+  const ListFooterComponent = useCallback(() => {
     if (!loading) return null
     return (
       <View style={styles.footerLoading}>
@@ -110,7 +116,9 @@ export default function MyFavorites() {
         <Text style={styles.footerText}>加载中...</Text>
       </View>
     )
-  }
+  }, [loading])
+
+  const keyExtractor = useCallback((item: PostItem) => item.post_id, [])
 
   return (
     <View style={styles.container}>
@@ -120,7 +128,7 @@ export default function MyFavorites() {
           { paddingBottom: 24 + insets.bottom }
         ]}
         data={posts}
-        keyExtractor={(item, index) => item.post_id || `fav-${index}`}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}

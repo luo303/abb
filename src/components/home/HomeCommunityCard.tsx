@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React, { memo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -37,14 +37,13 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const PostImage = ({ item }: { item: any }) => {
     const [imageLoading, setImageLoading] = React.useState(true)
     const [imageError, setImageError] = React.useState(false)
-    const imageUrl = typeof item === 'string' ? item : undefined
 
     const handleImageLoad = () => {
       setImageLoading(false)
       setImageError(false)
     }
 
-    const handleImageError = (error: any) => {
+    const handleImageError = () => {
       setImageLoading(false)
       setImageError(true)
     }
@@ -80,9 +79,13 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   }
 
   // 渲染轮播项
-  const renderCarouselItem = ({ item }: { item: any }) => (
-    <PostImage item={item} />
-  )
+  const renderCarouselItem = useCallback(({ item }: { item: any }) => {
+    return <PostImage item={item} />
+  }, [])
+
+  const renderCarouselSeparator = useCallback(() => {
+    return <View style={styles.carouselSeparator} />
+  }, [])
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return ''
@@ -125,7 +128,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
               images: []
             }
           }
-        } catch (parseError) {
+        } catch {
           // 解析失败，使用原始内容
           return {
             success: false,
@@ -150,7 +153,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           (typeof data.content === 'string' ? data.content : ''),
         images: []
       }
-    } catch (error) {
+    } catch {
       // 解析失败，返回原始 content
       return {
         success: false,
@@ -254,8 +257,8 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         {/* 标签展示 */}
         {data.tags && data.tags.length > 0 && (
           <View style={styles.tagsContainer}>
-            {data.tags.map((tag: string, index: number) => (
-              <Text key={index} style={styles.tag}>
+            {data.tags.map((tag: string) => (
+              <Text key={`${data.post_id}-${tag}`} style={styles.tag}>
                 #{tag}
               </Text>
             ))}
@@ -269,9 +272,11 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
               data={displayImages}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(_, index) => index.toString()}
+              keyExtractor={item =>
+                typeof item === 'string' ? item : String(item?.uri ?? item)
+              }
               renderItem={renderCarouselItem}
-              ItemSeparatorComponent={() => <View style={{ width: GAP }} />}
+              ItemSeparatorComponent={renderCarouselSeparator}
               // 模拟 Carousel 的吸附效果
               snapToInterval={ITEM_WIDTH + GAP}
               decelerationRate="fast"
@@ -437,6 +442,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#f5f5f5'
+  },
+  carouselSeparator: {
+    width: GAP
   },
   postImage: {
     width: '100%',

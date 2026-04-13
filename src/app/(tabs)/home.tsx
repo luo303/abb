@@ -34,11 +34,40 @@ import { useHomeData } from '@/hooks/useHomeData'
 import { useHomeAnimations } from '@/hooks/useHomeAnimations'
 import { styles } from '@/styles/Home.styles'
 
+type HomeListItem =
+  | { type: 'spacer'; id: '__spacer__' }
+  | { type: 'tabs'; id: '__tabs__' }
+  | { type: 'post'; id: string; data: any }
+
+const ScrollTopButton = memo(function ScrollTopButton({
+  visible,
+  onPress,
+  bottom
+}: {
+  visible: boolean
+  onPress: () => void
+  bottom: number
+}) {
+  if (!visible) return null
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[localStyles.scrollTopButton, { bottom }]}
+    >
+      <Ionicons name="arrow-up" size={20} color="#fff" />
+    </TouchableOpacity>
+  )
+})
+
+ScrollTopButton.displayName = 'ScrollTopButton'
+
 export default function Home() {
   const navigation = useNavigation()
   const route = useRoute<any>()
   const insets = useSafeAreaInsets()
-  const listRef = useRef<FlashListRef<any>>(null)
+  const listRef = useRef<FlashListRef<HomeListItem>>(null)
   const communityHeaderRef = useRef<View>(null)
   const isEndReachedRef = useRef(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -66,13 +95,13 @@ export default function Home() {
   }, [posts, isTabLoading])
 
   // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
-  const flatListData = useMemo(() => {
+  const flatListData = useMemo<HomeListItem[]>(() => {
     return [
       { type: 'spacer', id: '__spacer__' }, // index 0: 增加一个空占位符，解决 FlashList 在有 ListHeaderComponent 时 index 0 的吸顶 Bug
       { type: 'tabs', id: '__tabs__' }, // index 1 (Sticky)
       ...sortedPosts.map((post: any) => ({
-        type: 'post',
-        id: post.post_id || `unknown-${Math.random()}`,
+        type: 'post' as const,
+        id: String(post.post_id),
         data: post
       }))
     ]
@@ -159,6 +188,10 @@ export default function Home() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true })
   }, [])
 
+  const handleGoToRecommend = useCallback(() => {
+    setActiveTab('推荐')
+  }, [setActiveTab])
+
   const handleListScroll = useCallback(
     (event: any) => {
       handleScroll(event)
@@ -222,7 +255,7 @@ export default function Home() {
     }
 
     if (activeTab === '关注' && sortedPosts.length === 0) {
-      return <FollowEmptyState onGoToRecommend={() => setActiveTab('推荐')} />
+      return <FollowEmptyState onGoToRecommend={handleGoToRecommend} />
     }
     if (activeTab === '推荐' && sortedPosts.length === 0) {
       return (
@@ -304,33 +337,10 @@ export default function Home() {
     isLoadingMore,
     hasMore,
     posts,
-    setActiveTab
+    handleGoToRecommend
   ])
 
-  // 1. 抽离独立的 ScrollTop 按钮组件
-  const ScrollTopButton = memo(
-    ({
-      visible,
-      onPress,
-      bottom
-    }: {
-      visible: boolean
-      onPress: () => void
-      bottom: number
-    }) => {
-      if (!visible) return null
-      return (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onPress}
-          style={[localStyles.scrollTopButton, { bottom }]}
-        >
-          <Ionicons name="arrow-up" size={20} color="#fff" />
-        </TouchableOpacity>
-      )
-    }
-  )
-  ScrollTopButton.displayName = 'ScrollTopButton'
+  const keyExtractor = useCallback((item: HomeListItem) => item.id, [])
 
   return (
     <HomeScrollToContext.Provider
@@ -351,7 +361,7 @@ export default function Home() {
             contentContainerStyle={{ paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}
             data={flatListData}
-            keyExtractor={(item, index) => item.id || `item-${index}`}
+            keyExtractor={keyExtractor}
             renderItem={renderItem}
             getItemType={item => item.type}
             // ✅ index=1 的 tabs 项吸顶 (因为 index 0 是 spacer，ListHeaderComponent 位于上方)

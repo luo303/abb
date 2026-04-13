@@ -54,6 +54,110 @@ type PostDetailRouteProp = RouteProp<
   'params'
 >
 
+const formatDate = (timestamp?: number) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return `${date.getFullYear()}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+}
+
+const mapApiItemToComment = (
+  item: CommentApiItem,
+  replies: Comment[]
+): Comment => {
+  return {
+    comment_id: item.comment_id,
+    user_id: item.user_id,
+    username: item.username || '稚慧宝用户',
+    avatar: item.avatar,
+    content: item.content,
+    like_count: item.like_count,
+    reply_count: item.reply_count,
+    ctime: item.ctime,
+    utime: item.utime,
+    has_liked: item.has_liked,
+    replies
+  }
+}
+
+const fetchRepliesTree = async (
+  targetPostId: string,
+  parentCommentId: string
+): Promise<Comment[]> => {
+  const allItems: CommentApiItem[] = []
+  const seenIds = new Set<string>()
+  let page = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const res = await getPostCommentReplies(targetPostId, parentCommentId, {
+      page,
+      page_size: 10,
+      strategy: 'ctime'
+    })
+    if (res.code !== 0 || !res.data) {
+      break
+    }
+    for (const item of res.data.items) {
+      if (seenIds.has(item.comment_id)) continue
+      seenIds.add(item.comment_id)
+      allItems.push(item)
+    }
+    hasMore = res.data.has_more
+    page = res.data.page + 1
+  }
+
+  const result: Comment[] = []
+  for (const item of allItems) {
+    let children: Comment[] = []
+    if (item.reply_count && item.reply_count > 0) {
+      children = await fetchRepliesTree(targetPostId, item.comment_id)
+    }
+    result.push(mapApiItemToComment(item, children))
+  }
+  return result
+}
+
+const findCommentById = (
+  items: Comment[],
+  targetId: string
+): Comment | null => {
+  for (const item of items) {
+    if (item.comment_id === targetId) return item
+    if (item.replies && item.replies.length > 0) {
+      const found = findCommentById(item.replies, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+const updateCommentLikeState = (
+  items: Comment[],
+  targetId: string,
+  isLikedBefore: boolean
+): Comment[] => {
+  return items.map(item => {
+    if (item.comment_id === targetId) {
+      const currentLikes = item.like_count || 0
+      const newLikes = currentLikes + (isLikedBefore ? -1 : 1)
+      return {
+        ...item,
+        like_count: newLikes < 0 ? 0 : newLikes,
+        has_liked: !isLikedBefore
+      }
+    }
+    if (item.replies && item.replies.length > 0) {
+      return {
+        ...item,
+        replies: updateCommentLikeState(item.replies, targetId, isLikedBefore)
+      }
+    }
+    return item
+  })
+}
+
 export default function PostDetail() {
   const route = useRoute<PostDetailRouteProp>()
   const { id, post_id } = route.params || {}
@@ -121,7 +225,7 @@ export default function PostDetail() {
       setIsDisliked(!!(currentPost.is_dislike ?? currentPost.is_disliked))
       setIsFavorited(!!(currentPost.is_collect ?? currentPost.is_collected))
     }
-  }, [currentPost?.post_id])
+  }, [currentPost])
 
   useEffect(() => {
     if (!postId) return
@@ -195,7 +299,7 @@ export default function PostDetail() {
     return typeof currentPost.content === 'string'
       ? currentPost.content
       : JSON.stringify(currentPost.content)
-  }, [currentPost?.content])
+  }, [currentPost])
 
   const restoreScrollPosition = useCallback(() => {
     if (Platform.OS !== 'android') return
@@ -207,111 +311,10 @@ export default function PostDetail() {
     })
   }, [])
 
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return ''
-    const date = new Date(timestamp)
-    return `${date.getFullYear()}-${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
-  }
-
-  const mapApiItemToComment = (item: CommentApiItem, replies: Comment[]) => {
-    return {
-      comment_id: item.comment_id,
-      user_id: item.user_id,
-      username: item.username || '稚慧宝用户',
-      avatar: item.avatar,
-      content: item.content,
-      like_count: item.like_count,
-      reply_count: item.reply_count,
-      ctime: item.ctime,
-      utime: item.utime,
-      has_liked: item.has_liked,
-      replies
-    }
-  }
-
-  const fetchRepliesTree = async (
-    targetPostId: string,
-    parentCommentId: string
-  ): Promise<Comment[]> => {
-    const allItems: CommentApiItem[] = []
-    const seenIds = new Set<string>()
-    let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-      const res = await getPostCommentReplies(targetPostId, parentCommentId, {
-        page,
-        page_size: 10,
-        strategy: 'ctime'
-      })
-      if (res.code !== 0 || !res.data) {
-        break
-      }
-      for (const item of res.data.items) {
-        if (seenIds.has(item.comment_id)) continue
-        seenIds.add(item.comment_id)
-        allItems.push(item)
-      }
-      hasMore = res.data.has_more
-      page = res.data.page + 1
-    }
-
-    const result: Comment[] = []
-    for (const item of allItems) {
-      let children: Comment[] = []
-      if (item.reply_count && item.reply_count > 0) {
-        children = await fetchRepliesTree(targetPostId, item.comment_id)
-      }
-      result.push(mapApiItemToComment(item, children))
-    }
-    return result
-  }
-
-  const findCommentById = (
-    items: Comment[],
-    targetId: string
-  ): Comment | null => {
-    for (const item of items) {
-      if (item.comment_id === targetId) return item
-      if (item.replies && item.replies.length > 0) {
-        const found = findCommentById(item.replies, targetId)
-        if (found) return found
-      }
-    }
-    return null
-  }
-
-  const updateCommentLikeState = (
-    items: Comment[],
-    targetId: string,
-    isLikedBefore: boolean
-  ): Comment[] => {
-    return items.map(item => {
-      if (item.comment_id === targetId) {
-        const currentLikes = item.like_count || 0
-        const newLikes = currentLikes + (isLikedBefore ? -1 : 1)
-        return {
-          ...item,
-          like_count: newLikes < 0 ? 0 : newLikes,
-          has_liked: !isLikedBefore
-        }
-      }
-      if (item.replies && item.replies.length > 0) {
-        return {
-          ...item,
-          replies: updateCommentLikeState(item.replies, targetId, isLikedBefore)
-        }
-      }
-      return item
-    })
-  }
-
   const [isLikeLoading, setIsLikeLoading] = useState(false)
   const [isCollectLoading, setIsCollectLoading] = useState(false)
 
-  const handleLikePost = () => {
+  const handleLikePost = useCallback(() => {
     if (!currentPost) return
     if (isLikeLoading) return
 
@@ -358,7 +361,7 @@ export default function PostDetail() {
           const res = await unlikePost(currentPost.post_id)
           console.log('unlike post res:', res)
         }
-      } catch (error) {
+      } catch {
         const rollbackLikes = newIsLiked
           ? Math.max(0, newLikes - 1)
           : newLikes + 1
@@ -378,12 +381,12 @@ export default function PostDetail() {
         setIsLikeLoading(false)
       }
     })()
-  }
+  }, [currentPost, dispatch, isDisliked, isLikeLoading, isLiked, showMessage])
 
-  const handleDoubleTapLike = () => {
+  const handleDoubleTapLike = useCallback(() => {
     if (isLiked) return
     handleLikePost()
-  }
+  }, [handleLikePost, isLiked])
 
   const handleDislikePost = () => {
     if (!currentPost) return
@@ -451,7 +454,7 @@ export default function PostDetail() {
         } else {
           await uncollectPost(currentPost.post_id)
         }
-      } catch (error) {
+      } catch {
         const rollbackCount = newIsFavorited
           ? Math.max(0, newFavorites - 1)
           : newFavorites + 1
@@ -476,7 +479,7 @@ export default function PostDetail() {
   // 防抖处理：防止连续快速点击
   const [isFollowingLoading, setIsFollowingLoading] = useState(false)
 
-  const handleFollowAuthor = async () => {
+  const handleFollowAuthor = useCallback(async () => {
     if (!currentPost || isFollowingLoading) return
     const newIsFollowing = !isFollowing
 
@@ -548,45 +551,48 @@ export default function PostDetail() {
         setIsFollowingLoading(false)
       }, 500)
     }
-  }
+  }, [currentPost, dispatch, isFollowing, isFollowingLoading, showMessage])
 
-  const handleLikeComment = (id: string) => {
-    const target = findCommentById(comments, id)
-    if (!target) return
+  const handleLikeComment = useCallback(
+    (id: string) => {
+      const target = findCommentById(comments, id)
+      if (!target) return
 
-    const prevIsLiked = !!target.has_liked
+      const prevIsLiked = !!target.has_liked
 
-    setComments(prev => updateCommentLikeState(prev, id, prevIsLiked))
-    ;(async () => {
-      try {
-        if (prevIsLiked) {
-          await unlikeComment(id)
-        } else {
-          await likeComment(id)
+      setComments(prev => updateCommentLikeState(prev, id, prevIsLiked))
+      ;(async () => {
+        try {
+          if (prevIsLiked) {
+            await unlikeComment(id)
+          } else {
+            await likeComment(id)
+          }
+        } catch (error) {
+          console.error('评论点赞接口失败：', error)
+          setComments(prev => updateCommentLikeState(prev, id, !prevIsLiked))
+          showMessage('操作失败，请稍后重试')
         }
-      } catch (error) {
-        console.error('评论点赞接口失败：', error)
-        setComments(prev => updateCommentLikeState(prev, id, !prevIsLiked))
-        showMessage('操作失败，请稍后重试')
-      }
-    })()
-  }
+      })()
+    },
+    [comments, showMessage]
+  )
 
-  const handleStartInput = () => {
+  const handleStartInput = useCallback(() => {
     if (!isInputFocused && !inputText.trim()) {
       setReplyTarget(null)
       setReplyPlaceholder('说点什么...')
     }
     setIsInputFocused(true)
     inputRef.current?.focus()
-  }
+  }, [inputText, isInputFocused])
 
-  const handleReply = (comment: Comment) => {
+  const handleReply = useCallback((comment: Comment) => {
     setReplyTarget(comment)
     setReplyPlaceholder(`回复 ${comment.username}：`)
     setIsInputFocused(true)
     inputRef.current?.focus()
-  }
+  }, [])
 
   const handleFooterLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = Math.ceil(event.nativeEvent.layout.height)
@@ -679,7 +685,7 @@ export default function PostDetail() {
         }
 
         setComments(prev => replaceId(prev))
-      } catch (error) {
+      } catch {
         const removeTemp = (items: Comment[]): Comment[] => {
           const result: Comment[] = []
           for (const item of items) {
@@ -776,6 +782,25 @@ export default function PostDetail() {
     ]
   )
 
+  const keyExtractor = useCallback((item: Comment) => item.comment_id, [])
+
+  const renderCommentItem = useCallback(
+    ({ item }: { item: Comment }) => {
+      return (
+        <CommentItem
+          comment={item}
+          onLike={handleLikeComment}
+          onReply={handleReply}
+        />
+      )
+    },
+    [handleLikeComment, handleReply]
+  )
+
+  const handleListScroll = useCallback((event: any) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y
+  }, [])
+
   if (isLoading) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -798,22 +823,14 @@ export default function PostDetail() {
       <FlashList
         ref={listRef}
         data={comments}
-        keyExtractor={(item, index) => `comment-${item.comment_id}-${index}`}
-        renderItem={({ item }) => (
-          <CommentItem
-            comment={item}
-            onLike={handleLikeComment}
-            onReply={handleReply}
-          />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderCommentItem}
         ListHeaderComponent={ListHeaderComponent}
         contentContainerStyle={{
           paddingBottom: footerHeight + 12
         }}
         showsVerticalScrollIndicator={false}
-        onScroll={event => {
-          scrollOffsetRef.current = event.nativeEvent.contentOffset.y
-        }}
+        onScroll={handleListScroll}
         scrollEventThrottle={16}
       />
 
