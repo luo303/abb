@@ -51,34 +51,40 @@ export default function ExportModal({
           </View>
 
           <ScrollView style={styles.formatList}>
-            {exportFormats.map(format => (
-              <TouchableOpacity
-                key={format.value}
-                style={[
-                  styles.formatItem,
-                  selectedFormat === format.value && styles.formatItemSelected
-                ]}
-                onPress={() => setSelectedFormat(format.value)}
-              >
-                <Ionicons
-                  name={format.icon as any}
-                  size={24}
-                  color={selectedFormat === format.value ? '#10b981' : '#666'}
-                />
-                <Text
+            {exportFormats.map(format => {
+              // 对于日常记录，不显示图片导出选项
+              if (recordType === 'daily' && format.value === 'image') {
+                return null
+              }
+              return (
+                <TouchableOpacity
+                  key={format.value}
                   style={[
-                    styles.formatLabel,
-                    selectedFormat === format.value &&
-                      styles.formatLabelSelected
+                    styles.formatItem,
+                    selectedFormat === format.value && styles.formatItemSelected
                   ]}
+                  onPress={() => setSelectedFormat(format.value)}
                 >
-                  {format.label}
-                </Text>
-                {selectedFormat === format.value && (
-                  <Ionicons name="checkmark" size={20} color="#10b981" />
-                )}
-              </TouchableOpacity>
-            ))}
+                  <Ionicons
+                    name={format.icon as any}
+                    size={24}
+                    color={selectedFormat === format.value ? '#10b981' : '#666'}
+                  />
+                  <Text
+                    style={[
+                      styles.formatLabel,
+                      selectedFormat === format.value &&
+                        styles.formatLabelSelected
+                    ]}
+                  >
+                    {format.label}
+                  </Text>
+                  {selectedFormat === format.value && (
+                    <Ionicons name="checkmark" size={20} color="#10b981" />
+                  )}
+                </TouchableOpacity>
+              )
+            })}
           </ScrollView>
 
           <TouchableOpacity
@@ -97,7 +103,8 @@ function getRecordTypeName(recordType: string): string {
   const typeMap: Record<string, string> = {
     growth: '成长',
     vaccine: '疫苗',
-    feeding: '喂养'
+    feeding: '喂养',
+    daily: '日常'
   }
   return typeMap[recordType] || recordType
 }

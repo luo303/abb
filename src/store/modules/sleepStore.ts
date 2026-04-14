@@ -79,6 +79,10 @@ export const addSleepRecord = createAsyncThunk<
       return sleepRecord
     } catch (error: any) {
       // API 调用失败，使用传入的参数创建一个有效的 SleepRecord 对象
+      console.log(
+        'API 调用失败，使用传入的参数创建一个有效的 SleepRecord 对象',
+        error
+      )
       const duration_ms = ended_at - started_at
       const sleepRecord: SleepRecord = {
         session_id: session_id,

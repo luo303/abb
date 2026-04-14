@@ -17,6 +17,7 @@ import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigationHelper } from '../../utils/navigation'
+import ExportButton from '../../components/export/ExportButton'
 
 // 导入日常记录组件
 import DashboardRing from '../../components/DailyRecord/DashboardRing'
@@ -647,6 +648,17 @@ export default function DailyRecordScreen() {
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
+      />
+
+      {/* 导出按钮 */}
+      <ExportButton
+        recordType="daily"
+        data={{
+          babyId: babyId,
+          date: selectedDate,
+          records: currentRecords,
+          statistics: statistics
+        }}
       />
     </View>
   )

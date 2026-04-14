@@ -1,7 +1,7 @@
 // 导出相关类型定义
 
 export type ExportType = 'pdf' | 'excel' | 'image'
-export type RecordType = 'growth' | 'vaccine' | 'feeding'
+export type RecordType = 'growth' | 'vaccine' | 'feeding' | 'daily'
 
 export interface ExportOptions {
   type: ExportType
@@ -75,7 +75,33 @@ export interface FeedingExportData {
   viewRef?: any // 用于图片导出
 }
 
+export interface DailyExportData {
+  babyId: string
+  date: string
+  records: {
+    id: string
+    type: 'feeding' | 'sleep' | 'diaper'
+    time: number | string
+    details: string
+    icon: string
+    name: string
+    title: string
+    description: string
+    remark?: string
+    data?: any
+  }[]
+  statistics: {
+    feedingCount: number
+    feedingVolume: number
+    sleepCount: number
+    sleepDuration: number
+    diaperCount: number
+  }
+  viewRef?: any // 用于图片导出
+}
+
 export type ExportData =
   | GrowthExportData
   | VaccineExportData
   | FeedingExportData
+  | DailyExportData

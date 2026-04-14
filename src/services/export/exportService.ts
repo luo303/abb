@@ -250,7 +250,7 @@ export function validateExportData(
   data: ExportData,
   recordType: RecordType
 ): boolean {
-  if (!data || !data.babyInfo) {
+  if (!data) {
     return false
   }
 
@@ -258,15 +258,25 @@ export function validateExportData(
     case 'growth':
       const growthData = data as any
       return (
-        growthData.heightData && growthData.weightData && growthData.headData
+        growthData.babyInfo &&
+        growthData.heightData &&
+        growthData.weightData &&
+        growthData.headData
       )
     case 'vaccine':
       const vaccineData = data as any
-      return vaccineData.vaccines && Array.isArray(vaccineData.vaccines)
-    case 'feeding':
-      const feedingData = data as any
       return (
-        feedingData.feedingRecords && Array.isArray(feedingData.feedingRecords)
+        vaccineData.babyInfo &&
+        vaccineData.vaccines &&
+        Array.isArray(vaccineData.vaccines)
+      )
+    case 'daily':
+      const dailyData = data as any
+      return (
+        dailyData.babyId &&
+        dailyData.date &&
+        dailyData.records &&
+        Array.isArray(dailyData.records)
       )
     default:
       return false

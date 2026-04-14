@@ -12,7 +12,8 @@ import {
 import {
   transformGrowthDataToTable,
   transformVaccineDataToTable,
-  transformFeedingDataToTable
+  transformFeedingDataToTable,
+  transformDailyDataToTable
 } from '../../utils/dataTransformUtils'
 import { getExportFileName } from './exportUtils'
 
@@ -45,6 +46,9 @@ export async function exportToExcel(
         break
       case 'feeding':
         generateFeedingExcelSheets(wb, data as FeedingExportData, options)
+        break
+      case 'daily':
+        generateDailyExcelSheets(wb, data as any, options)
         break
       default:
         throw new Error('不支持的记录类型')
@@ -265,6 +269,43 @@ function generateFeedingStatsSheet(data: FeedingExportData) {
         .reduce((sum, amount) => sum + amount, 0)
         .toFixed(0)
     ]
+  ]
+
+  return XLSX.utils.aoa_to_sheet(statsData)
+}
+
+/**
+ * 生成日常记录Excel工作表
+ * @param wb 工作簿
+ * @param data 日常记录数据
+ * @param options 导出选项
+ */
+function generateDailyExcelSheets(wb: any, data: any, options: ExportOptions) {
+  // 生成日常记录明细工作表
+  const dailyTable = transformDailyDataToTable(data)
+  const dailySheet = XLSX.utils.aoa_to_sheet(dailyTable)
+  XLSX.utils.book_append_sheet(wb, dailySheet, '日常记录明细')
+
+  // 生成日常记录统计工作表
+  if (options.includeStatistics) {
+    const statsSheet = generateDailyStatsSheet(data)
+    XLSX.utils.book_append_sheet(wb, statsSheet, '日常记录统计')
+  }
+}
+
+/**
+ * 生成日常记录统计工作表
+ * @param data 日常记录数据
+ * @returns 工作表
+ */
+function generateDailyStatsSheet(data: any) {
+  const statsData = [
+    ['统计项', '数量'],
+    ['总记录数', data.records.length.toString()],
+    ['喂养次数', data.statistics.feedingCount.toString()],
+    ['睡眠次数', data.statistics.sleepCount.toString()],
+    ['睡眠时长(小时)', data.statistics.sleepDuration.toString()],
+    ['尿布更换次数', data.statistics.diaperCount.toString()]
   ]
 
   return XLSX.utils.aoa_to_sheet(statsData)

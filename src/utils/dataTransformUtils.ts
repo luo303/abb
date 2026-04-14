@@ -6,11 +6,7 @@ import {
   FeedingExportData
 } from '../types/export'
 import { formatDate } from './dateUtils'
-import {
-  calculatePercentile,
-  getGrowthDataStats,
-  formatGrowthDataWithPercentile
-} from './growthUtils'
+import { calculatePercentile, getGrowthDataStats } from './growthUtils'
 
 /**
  * 转换成长曲线数据为表格格式
@@ -333,6 +329,116 @@ export function transformFeedingDataToHtml(data: FeedingExportData): string {
       
       <div style="margin: 20px 0;">
         <h2>喂养记录</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            ${tableData[0].map(cell => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">${cell}</th>`).join('')}
+          </thead>
+          <tbody>
+            ${tableHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `
+}
+
+/**
+ * 转换日常记录数据为表格格式
+ * @param data 日常记录数据
+ * @returns 二维数组格式的表格数据
+ */
+export function transformDailyDataToTable(data: any): string[][] {
+  const sortedRecords = data.records.sort((a: any, b: any) => {
+    const timeA =
+      typeof a.time === 'string' ? new Date(a.time).getTime() : a.time
+    const timeB =
+      typeof b.time === 'string' ? new Date(b.time).getTime() : b.time
+    return timeB - timeA
+  })
+
+  const tableData = sortedRecords.map((record: any) => {
+    const typeMap: Record<string, string> = {
+      feeding: '喂养',
+      sleep: '睡眠',
+      diaper: '尿布'
+    }
+
+    return [
+      formatDate(
+        typeof record.time === 'string' ? record.time : record.time,
+        'YYYY-MM-DD HH:mm'
+      ),
+      typeMap[record.type] || record.type,
+      record.details || '',
+      record.remark || ''
+    ]
+  })
+
+  return [['时间', '类型', '详情', '备注'], ...tableData]
+}
+
+/**
+ * 转换日常记录数据为HTML格式
+ * @param data 日常记录数据
+ * @returns HTML字符串
+ */
+export function transformDailyDataToHtml(data: any): string {
+  const tableData = transformDailyDataToTable(data)
+
+  // 生成表格HTML（跳过表头行）
+  const tableHtml = tableData
+    .slice(1) // 跳过表头行
+    .map(row => {
+      return `<tr>${row.map(cell => `<td style="border: 1px solid #ddd; padding: 8px;">${cell}</td>`).join('')}</tr>`
+    })
+    .join('')
+
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h1 style="text-align: center; color: #333;">宝宝的日常记录</h1>
+      
+      <div style="margin: 20px 0;">
+        <h2>基本信息</h2>
+        <p>宝宝ID: ${data.babyId}</p>
+        <p>记录日期: ${data.date}</p>
+      </div>
+      
+      <div style="margin: 20px 0;">
+        <h2>日常记录统计</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">统计项</th>
+              <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">数量</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">总记录数</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${data.records.length}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">喂养次数</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${data.statistics.feedingCount}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">睡眠次数</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${data.statistics.sleepCount}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">睡眠时长(小时)</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${data.statistics.sleepDuration}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">尿布更换次数</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${data.statistics.diaperCount}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="margin: 20px 0;">
+        <h2>日常记录详情</h2>
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             ${tableData[0].map(cell => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">${cell}</th>`).join('')}
