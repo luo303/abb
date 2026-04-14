@@ -109,11 +109,61 @@ function generateGrowthExcelSheets(
   // 生成成长数据明细工作表
   const growthTable = transformGrowthDataToTable(data)
   const growthSheet = XLSX.utils.aoa_to_sheet(growthTable)
+  autoFitColumns(growthSheet, growthTable)
   XLSX.utils.book_append_sheet(wb, growthSheet, '成长数据明细')
 
   // 生成成长统计工作表
   if (options.includeStatistics) {
     const statsSheet = generateGrowthStatsSheet(data)
+    const statsData = [
+      ['统计项', '身高(cm)', '体重(kg)', '头围(cm)'],
+      [
+        '平均值',
+        data.heightData.length > 0
+          ? data.heightData.map(item => item.value).reduce((a, b) => a + b, 0) /
+            data.heightData.length
+          : 0,
+        data.weightData.length > 0
+          ? data.weightData.map(item => item.value).reduce((a, b) => a + b, 0) /
+            data.weightData.length
+          : 0,
+        data.headData.length > 0
+          ? data.headData.map(item => item.value).reduce((a, b) => a + b, 0) /
+            data.headData.length
+          : 0
+      ],
+      [
+        '最大值',
+        data.heightData.length > 0
+          ? Math.max(...data.heightData.map(item => item.value))
+          : 0,
+        data.weightData.length > 0
+          ? Math.max(...data.weightData.map(item => item.value))
+          : 0,
+        data.headData.length > 0
+          ? Math.max(...data.headData.map(item => item.value))
+          : 0
+      ],
+      [
+        '最小值',
+        data.heightData.length > 0
+          ? Math.min(...data.heightData.map(item => item.value))
+          : 0,
+        data.weightData.length > 0
+          ? Math.min(...data.weightData.map(item => item.value))
+          : 0,
+        data.headData.length > 0
+          ? Math.min(...data.headData.map(item => item.value))
+          : 0
+      ],
+      [
+        '数据点数量',
+        data.heightData.length,
+        data.weightData.length,
+        data.headData.length
+      ]
+    ]
+    autoFitColumns(statsSheet, statsData)
     XLSX.utils.book_append_sheet(wb, statsSheet, '成长统计')
   }
 }
@@ -132,11 +182,29 @@ function generateVaccineExcelSheets(
   // 生成疫苗接种记录工作表
   const vaccineTable = transformVaccineDataToTable(data)
   const vaccineSheet = XLSX.utils.aoa_to_sheet(vaccineTable)
+  autoFitColumns(vaccineSheet, vaccineTable)
   XLSX.utils.book_append_sheet(wb, vaccineSheet, '疫苗接种记录')
 
   // 生成疫苗分类统计工作表
   if (options.includeStatistics) {
     const statsSheet = generateVaccineStatsSheet(data)
+    const statsData = [
+      ['统计项', '数量'],
+      ['总疫苗数', data.vaccines.length.toString()],
+      [
+        '已接种',
+        data.vaccines.filter(v => v.status === 'given').length.toString()
+      ],
+      [
+        '未接种',
+        data.vaccines.filter(v => v.status === 'not_given').length.toString()
+      ],
+      [
+        '接种率',
+        `${((data.vaccines.filter(v => v.status === 'given').length / data.vaccines.length) * 100).toFixed(2)}%`
+      ]
+    ]
+    autoFitColumns(statsSheet, statsData)
     XLSX.utils.book_append_sheet(wb, statsSheet, '疫苗统计')
   }
 }
@@ -155,11 +223,41 @@ function generateFeedingExcelSheets(
   // 生成喂养记录明细工作表
   const feedingTable = transformFeedingDataToTable(data)
   const feedingSheet = XLSX.utils.aoa_to_sheet(feedingTable)
+  autoFitColumns(feedingSheet, feedingTable)
   XLSX.utils.book_append_sheet(wb, feedingSheet, '喂养记录明细')
 
   // 生成喂养统计工作表
   if (options.includeStatistics) {
     const statsSheet = generateFeedingStatsSheet(data)
+    const feedTypeCount: Record<string, number> = {}
+    const feedTypeAmount: Record<string, number> = {}
+
+    data.feedingRecords.forEach(record => {
+      const type = record.feed_type
+      feedTypeCount[type] = (feedTypeCount[type] || 0) + 1
+      if (record.amount) {
+        feedTypeAmount[type] = (feedTypeAmount[type] || 0) + record.amount
+      }
+    })
+
+    const statsData = [
+      ['喂养类型', '次数', '总喂养量(ml)'],
+      ...Object.entries(feedTypeCount).map(([type, count]) => [
+        getFeedTypeName(type),
+        count.toString(),
+        (feedTypeAmount[type] || 0).toFixed(0)
+      ]),
+      [
+        '总计',
+        Object.values(feedTypeCount)
+          .reduce((sum, count) => sum + count, 0)
+          .toString(),
+        Object.values(feedTypeAmount)
+          .reduce((sum, amount) => sum + amount, 0)
+          .toFixed(0)
+      ]
+    ]
+    autoFitColumns(statsSheet, statsData)
     XLSX.utils.book_append_sheet(wb, statsSheet, '喂养统计')
   }
 }
@@ -284,11 +382,21 @@ function generateDailyExcelSheets(wb: any, data: any, options: ExportOptions) {
   // 生成日常记录明细工作表
   const dailyTable = transformDailyDataToTable(data)
   const dailySheet = XLSX.utils.aoa_to_sheet(dailyTable)
+  autoFitColumns(dailySheet, dailyTable)
   XLSX.utils.book_append_sheet(wb, dailySheet, '日常记录明细')
 
   // 生成日常记录统计工作表
   if (options.includeStatistics) {
     const statsSheet = generateDailyStatsSheet(data)
+    const statsData = [
+      ['统计项', '数量'],
+      ['总记录数', data.records.length.toString()],
+      ['喂养次数', data.statistics.feedingCount.toString()],
+      ['睡眠次数', data.statistics.sleepCount.toString()],
+      ['睡眠时长(小时)', data.statistics.sleepDuration.toString()],
+      ['尿布更换次数', data.statistics.diaperCount.toString()]
+    ]
+    autoFitColumns(statsSheet, statsData)
     XLSX.utils.book_append_sheet(wb, statsSheet, '日常记录统计')
   }
 }
@@ -346,4 +454,43 @@ function getFeedTypeName(type: string): string {
     food: '辅食'
   }
   return typeMap[type] || type
+}
+
+/**
+ * 自动调整工作表列宽
+ * @param worksheet 工作表
+ * @param data 数据数组
+ */
+function autoFitColumns(worksheet: any, data: any[]) {
+  if (!data || data.length === 0) return
+
+  // 计算每列的最大宽度
+  const maxWidths = data[0].map((_: any, colIndex: number) =>
+    Math.max(...data.map(row => (row[colIndex] || '').toString().length))
+  )
+
+  // 设置列宽（适当增加一些余量，增加上限到150）
+  worksheet['!cols'] = maxWidths.map((width: number) => ({
+    wch: Math.min(width * 1.5 + 10, 150)
+  }))
+
+  // 设置行高，增加一些高度以容纳可能的换行
+  worksheet['!rows'] = data.map(() => ({ hpt: 25 }))
+
+  // 为所有单元格设置自动换行
+  for (const cell in worksheet) {
+    // 跳过特殊单元格（如!cols, !rows等）
+    if (cell.startsWith('!')) continue
+
+    // 为单元格添加自动换行属性
+    if (worksheet[cell] && typeof worksheet[cell] === 'object') {
+      if (!worksheet[cell].s) {
+        worksheet[cell].s = {}
+      }
+      if (!worksheet[cell].s.alignment) {
+        worksheet[cell].s.alignment = {}
+      }
+      worksheet[cell].s.alignment.wrapText = true
+    }
+  }
 }
