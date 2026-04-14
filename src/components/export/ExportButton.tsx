@@ -1,6 +1,6 @@
 // 导出按钮组件
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   TouchableOpacity,
@@ -9,7 +9,6 @@ import {
   ActivityIndicator
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import ViewShot from 'react-native-view-shot'
 import ExportModal from './ExportModal'
 import {
   exportData,
@@ -19,6 +18,7 @@ import {
 interface ExportButtonProps {
   recordType: string
   data: any
+  viewRef?: any
   style?: any
   disabled?: boolean
 }
@@ -26,12 +26,12 @@ interface ExportButtonProps {
 export default function ExportButton({
   recordType,
   data,
+  viewRef,
   style,
   disabled = false
 }: ExportButtonProps) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const chartRef = useRef<ViewShot>(null)
 
   const handleExport = async (type: string) => {
     if (disabled) return
@@ -40,7 +40,7 @@ export default function ExportButton({
     try {
       const exportDataObj = {
         ...data,
-        viewRef: chartRef.current
+        viewRef: viewRef?.current
       }
 
       const result = await exportData(

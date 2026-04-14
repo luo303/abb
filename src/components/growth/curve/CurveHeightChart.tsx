@@ -162,6 +162,7 @@ export default function CurveHeightChart({
               weightData: growthCurve.weight,
               headData: growthCurve.head
             }}
+            viewRef={chartRef}
             style={styles.exportButtonContainer}
           />
         </View>
