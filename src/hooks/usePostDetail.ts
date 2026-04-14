@@ -44,7 +44,7 @@ export function usePostDetail(post_id: string): UsePostDetailReturn {
                   images: parsedContent.images || []
                 }
               }
-            } catch (parseError) {
+            } catch {
               // 如果解析失败，保持原 content 不变
             }
           }

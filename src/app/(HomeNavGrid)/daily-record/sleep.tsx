@@ -13,18 +13,17 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector, useDispatch } from 'react-redux'
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native'
 import { RootState } from '../../../store'
-import { startSleep, getActiveSleep, endSleep } from '../../../api/sleep'
+import { startSleep, getActiveSleep } from '../../../api/sleep'
 import {
   saveOngoingTimer,
   getOngoingTimer,
   clearOngoingTimer
 } from '../../../utils/sleepStorage'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { SleepSession, SleepRecord } from '../../../types/sleep'
+import { SleepRecord } from '../../../types/sleep'
 import { useNavigationHelper } from '../../../utils/navigation'
 import {
   addSleepItem,
-  addSleepRecord,
   updateSleepItem
 } from '../../../store/modules/sleepStore'
 import type { AppDispatch } from '../../../store'
@@ -158,8 +157,8 @@ const SleepRecordScreen = () => {
               setIsTimerRunning(false)
               setSeconds(0)
             }
-          } catch (error) {
-            console.error('获取睡眠状态失败:', error)
+          } catch {
+            console.error('获取睡眠状态失败:')
             // 服务器请求失败，尝试从本地正在进行的计时器获取
             if (ongoingTimer) {
               // 计算已过秒数，恢复计时
@@ -192,8 +191,8 @@ const SleepRecordScreen = () => {
             await AsyncStorage.removeItem(CACHE_KEY)
           }
         }
-      } catch (error) {
-        console.error('检查睡眠状态失败:', error)
+      } catch {
+        console.error('检查睡眠状态失败:')
         // 发生错误时重置状态
         setIsTimerRunning(false)
         setSeconds(0)
@@ -277,7 +276,7 @@ const SleepRecordScreen = () => {
       setSeconds(0)
       secondsRef.current = 0
       startTimer()
-    } catch (error) {
+    } catch {
       Alert.alert('操作失败', '请重试')
     }
   }
@@ -341,7 +340,7 @@ const SleepRecordScreen = () => {
               setSeconds(0)
               sessionIdRef.current = null
               navigation.goBack()
-            } catch (error) {
+            } catch {
               Alert.alert('操作失败', '请重试')
               startTimer()
             }
@@ -404,13 +403,9 @@ const SleepRecordScreen = () => {
       0,
       adjustedEndTime.getTime() - startTime.getTime()
     )
-    const durationHours = Math.floor(durationMs / (1000 * 60 * 60))
-    // 计算分钟数时加 1，防止因为本地操作时间导致时间计算错误
-    const durationMinutes =
-      Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)) + 1
 
     // 模拟API返回数据，用于测试
-    // 调整 duration_ms，确保与 durationMinutes 的计算一致
+    // 调整 duration_ms，增加 1 分钟的毫秒数
     const adjustedDurationMs = durationMs + 60000 // 增加 1 分钟的毫秒数
     const sleepRecord: SleepRecord = {
       session_id: sessionId || `manual-session-${Date.now()}`,

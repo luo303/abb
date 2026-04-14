@@ -38,13 +38,6 @@ export function useHomeSearch() {
       setSearchResults([])
 
       try {
-        // 构建完整 URL 并打印
-        const params = new URLSearchParams({
-          page: '1',
-          page_size: '10',
-          keyword,
-          strategy: 'time'
-        })
         // 传递正确的参数给 searchPosts 函数
         const response = await searchPosts(keyword, 1, 10, undefined, 'time')
 
@@ -86,13 +79,6 @@ export function useHomeSearch() {
     setSearchLoading(true)
     try {
       const nextPage = searchPage + 1
-      // 构建完整 URL 并打印
-      const params = new URLSearchParams({
-        page: String(nextPage),
-        page_size: '10',
-        keyword: searchText,
-        strategy: 'time'
-      })
       // 传递正确的参数给 searchPosts 函数
       const response = await searchPosts(
         searchText,

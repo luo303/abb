@@ -1,20 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { RootState } from '..'
-import { fetchDiaperList as fetchDiaperListAction } from './diaperStore'
-import { fetchFeedingList as fetchFeedingListAction } from './feedingStore'
-import { fetchSleepList as fetchSleepListAction } from './sleepStore'
-import {
-  getDailyStatistics as getDailyStatisticsApi,
-  DailyStatisticsResponse
-} from '../../api/daily'
+
+import { getDailyStatistics as getDailyStatisticsApi } from '../../api/daily'
 import { DiaperItem } from '../../types/diaper'
 import { FeedingItem } from '../../types/feeding'
 import { SleepRecord } from '../../types/sleep'
 import { DailyStatistics as DailyStatisticsType } from '../../types/daily'
 import {
   saveDailyStatistics,
-  getDailyStatistics,
-  clearDailyStatistics
+  getDailyStatistics
 } from '../../utils/dailyStorage'
 
 interface DailyState {
@@ -47,9 +41,9 @@ export const updateDateAndRefresh = createAsyncThunk<
 
   // 同时触发四个仓库的 fetch 请求，包括统计信息
   await Promise.all([
-    dispatch(fetchDiaperListAction({ babyId, date })),
-    dispatch(fetchFeedingListAction({ babyId, date })),
-    dispatch(fetchSleepListAction({ babyId, date })),
+    dispatch({ type: 'diaper/fetchDiaperList', payload: { babyId, date } }),
+    dispatch({ type: 'feeding/fetchFeedingList', payload: { babyId, date } }),
+    dispatch({ type: 'sleep/fetchSleepList', payload: { babyId, date } }),
     dispatch(fetchDailyStatistics({ babyId, date }))
   ])
 })
@@ -61,9 +55,9 @@ export const initDailyData = createAsyncThunk<void, string>(
 
     // 同时触发三个仓库的 fetch 请求
     await Promise.all([
-      dispatch(fetchDiaperListAction({ babyId, date })),
-      dispatch(fetchFeedingListAction({ babyId, date })),
-      dispatch(fetchSleepListAction({ babyId, date })),
+      dispatch({ type: 'diaper/fetchDiaperList', payload: { babyId, date } }),
+      dispatch({ type: 'feeding/fetchFeedingList', payload: { babyId, date } }),
+      dispatch({ type: 'sleep/fetchSleepList', payload: { babyId, date } }),
       dispatch(fetchDailyStatistics({ babyId, date }))
     ])
   }

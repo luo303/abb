@@ -10,7 +10,6 @@ import {
 import { exportToPdf } from './pdfExporter'
 import { exportToExcel } from './excelExporter'
 import { exportToImage } from './imageExporter'
-import { getExportFileName } from './exportUtils'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import AsyncStorage from '@react-native-async-storage/async-storage'

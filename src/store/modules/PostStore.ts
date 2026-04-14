@@ -49,7 +49,7 @@ const parsePostContent = (post: PostItem): PostItem => {
             images: []
           })
         }
-      } catch (parseError) {
+      } catch {
         // 如果解析失败，使用默认显示方案
         return normalizePostInteractionFlags({
           ...post,
@@ -421,7 +421,7 @@ const postSlice = createSlice({
               newPost.content = parsedContent
               newPost.images = parsedContent.images || newPost.images
             }
-          } catch (parseError) {
+          } catch {
             // 如果解析失败，使用默认显示方案
             newPost.content = {
               text: newPost.content,

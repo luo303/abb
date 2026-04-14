@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Platform,
   DeviceEventEmitter,
   Alert
 } from 'react-native'
@@ -23,9 +22,8 @@ import {
   DiaperRecordRequest,
   DiaperItem
 } from '../types/diaper'
-import { addDiaperRecordReq, updateDiaperRecordReq } from '../api/diaper'
+
 import {
-  fetchDiaperList,
   addDiaperRecord,
   updateDiaperRecord,
   addDiaperItem,
@@ -195,7 +193,7 @@ const DiaperFormScreen = () => {
       // 通知主页面刷新
       DeviceEventEmitter.emit('refreshDashboard')
       navigation.goBack()
-    } catch (error) {
+    } catch {
       showMessage('保存失败，请重试')
     } finally {
       setIsLoading(false)

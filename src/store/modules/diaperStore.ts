@@ -61,7 +61,7 @@ export const fetchDiaperList = createAsyncThunk<
         message: '从本地存储获取数据',
         data: { items: localRecords }
       } as DiaperListResponse
-    } catch (localError) {
+    } catch {
       return rejectWithValue(
         error.response?.data?.message || error.message || '获取尿布记录失败'
       )

@@ -9,14 +9,9 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
-import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { createPost } from '@/api/home'
-import request from '@/utils/request'
-import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
-import { addNewPost, fetchPostList } from '@/store/modules/PostStore'
 import { NavigationProps } from '@/types/navigation'
-import { RootState } from '@/store'
 
 interface MilestoneData {
   title?: string

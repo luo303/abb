@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { getSleepByDate, endSleep, startSleep } from '../../api/sleep'
-import { SleepRecord, SleepSession } from '../../types/sleep'
+import { getSleepByDate, endSleep } from '../../api/sleep'
+import { SleepRecord } from '../../types/sleep'
 import {
   saveSleepRecords,
   getSleepRecords,
@@ -38,7 +38,7 @@ export const fetchSleepList = createAsyncThunk<
       if (localRecords.length > 0) {
         return localRecords
       }
-    } catch (localError) {}
+    } catch {}
     return rejectWithValue(error.response?.data?.message || error.message)
   }
 })
@@ -53,7 +53,7 @@ export const addSleepRecord = createAsyncThunk<
     { rejectWithValue, getState }
   ) => {
     try {
-      const response = await endSleep(babyId, session_id)
+      await endSleep(babyId, session_id)
       // 总是使用传入的参数创建睡眠记录，因为这些值是基于用户实际计时的时间计算的
       const duration_ms = ended_at - started_at
       const sleepRecord: SleepRecord = {
@@ -74,7 +74,7 @@ export const addSleepRecord = createAsyncThunk<
         // 将新的睡眠记录添加到列表的开头
         const updatedRecords = [sleepRecord, ...existingRecords]
         await saveSleepRecords(babyId, date, updatedRecords)
-      } catch (storageError) {}
+      } catch {}
 
       return sleepRecord
     } catch (error: any) {
@@ -98,7 +98,7 @@ export const addSleepRecord = createAsyncThunk<
         // 将新的睡眠记录添加到列表的开头
         const updatedRecords = [sleepRecord, ...existingRecords]
         await saveSleepRecords(babyId, date, updatedRecords)
-      } catch (storageError) {}
+      } catch {}
 
       return sleepRecord
     }
