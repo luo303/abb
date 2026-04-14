@@ -52,8 +52,11 @@ export default function ExportModal({
 
           <ScrollView style={styles.formatList}>
             {exportFormats.map(format => {
-              // 对于日常记录，不显示图片导出选项
-              if (recordType === 'daily' && format.value === 'image') {
+              // 对于日常记录和疫苗记录，不显示图片导出选项
+              if (
+                (recordType === 'daily' || recordType === 'vaccine') &&
+                format.value === 'image'
+              ) {
                 return null
               }
               return (

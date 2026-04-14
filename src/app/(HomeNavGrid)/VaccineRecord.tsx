@@ -24,6 +24,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker'
 import { openDatePicker } from '@/utils/datePicker'
 import { useMessage } from '@/components/Message'
+import ExportButton from '@/components/export/ExportButton'
 
 type FilterType = 'all' | 'completed' | 'pending'
 
@@ -372,6 +373,25 @@ export default function VaccineRecordScreen() {
           </View>
         </View>
       )}
+
+      {/* 导出按钮 */}
+      <ExportButton
+        recordType="vaccine"
+        data={{
+          babyInfo: currentBabyDetail
+            ? {
+                name: currentBabyDetail.name || '',
+                gender: currentBabyDetail.gender || '',
+                birthday: currentBabyDetail.birthday || 0
+              }
+            : {
+                name: '',
+                gender: '',
+                birthday: 0
+              },
+          vaccines: vaccines
+        }}
+      />
     </View>
   )
 }
