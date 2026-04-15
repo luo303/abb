@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react'
 import { Platform, StyleProp, ViewStyle } from 'react-native'
 import {
   KeyboardAvoidingView as ControllerKeyboardAvoidingView,
+  KeyboardGestureArea as ControllerKeyboardGestureArea,
   KeyboardStickyView as ControllerKeyboardStickyView,
   KeyboardChatScrollView as ControllerKeyboardChatScrollView
 } from 'react-native-keyboard-controller'
@@ -22,6 +23,10 @@ type StickyProps = {
     opened?: number
   }
 }
+
+type GestureAreaProps = React.ComponentProps<
+  typeof ControllerKeyboardGestureArea
+>
 
 export default function AppKeyboardAvoidingView({
   children,
@@ -55,6 +60,10 @@ export function AppKeyboardStickyView({
   )
 }
 
+export function AppKeyboardGestureArea(props: GestureAreaProps) {
+  return <ControllerKeyboardGestureArea {...props} />
+}
+
 export const AppKeyboardChatScrollView = forwardRef<
   any,
   KeyboardChatScrollViewProps
@@ -63,6 +72,8 @@ export const AppKeyboardChatScrollView = forwardRef<
     {
       children,
       style,
+      automaticallyAdjustContentInsets = false,
+      contentInsetAdjustmentBehavior = 'never',
       keyboardDismissMode = Platform.OS === 'ios' ? 'interactive' : 'on-drag',
       keyboardShouldPersistTaps = 'handled',
       applyWorkaroundForContentInsetHitTestBug = Platform.OS === 'ios',
@@ -74,6 +85,8 @@ export const AppKeyboardChatScrollView = forwardRef<
       <ControllerKeyboardChatScrollView
         ref={ref}
         style={style}
+        automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
+        contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
         keyboardDismissMode={keyboardDismissMode}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         applyWorkaroundForContentInsetHitTestBug={

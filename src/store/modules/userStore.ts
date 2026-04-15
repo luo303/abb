@@ -5,6 +5,7 @@ import { UserMeResponse } from '../../api/profile'
 import { resetPostState } from './PostStore'
 import { clearAllChatData } from './ChatStore'
 import { clearAllBabyData } from './BabyStore'
+import { clearMessengerState, shutdownMessenger } from './MessengerStore'
 import { removePartner } from './PartnerStore'
 
 interface UserState {
@@ -53,11 +54,13 @@ export const {
 } = userSlice.actions
 
 export const logoutAndClearAll = () => async (dispatch: any) => {
+  await dispatch(shutdownMessenger())
   dispatch(clearToken())
   dispatch(clearUserInfo())
   dispatch(resetPostState())
   dispatch(clearAllChatData())
   dispatch(clearAllBabyData())
+  await dispatch(clearMessengerState())
   dispatch(removePartner())
 }
 export default userSlice.reducer

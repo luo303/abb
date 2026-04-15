@@ -228,11 +228,11 @@ export default function TabsLayout() {
         listeners={{
           tabPress: e => {
             e.preventDefault()
-            navigation.navigate('PartnerChat')
+            navigation.navigate('ChatHome')
           }
         }}
         options={{
-          title: '另一半',
+          title: '聊天',
           tabBarIcon: ({ color }) => (
             <AntDesign name="message" size={24} color={color} />
           )
