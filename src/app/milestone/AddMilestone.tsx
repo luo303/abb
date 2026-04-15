@@ -16,7 +16,7 @@ import AddPostHeader from '@/components/post/add/AddPostHeader'
 import PostInput from '@/components/post/add/PostInput'
 import ImageUploader from '@/components/post/add/ImageUploader'
 import MilestoneFooter from '@/components/post/milestone/MilestoneFooter'
-import PostUserInfo from '@/components/post/add/PostUserInfo'
+
 import DateTimePicker, {
   DateTimePickerEvent
 } from '@react-native-community/datetimepicker'
@@ -123,7 +123,7 @@ export default function AddMilestoneScreen() {
             )
           )
           setImages(prev => [...prev, url])
-        } catch (e) {
+        } catch {
           setPendingImages(prev =>
             prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
           )

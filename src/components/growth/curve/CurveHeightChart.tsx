@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef } from 'react'
+import { View, StyleSheet } from 'react-native'
 import BaseGrowthChart from './BaseGrowthChart'
+import ViewShot from 'react-native-view-shot'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
 import DataDescription from './DataDescription'
+import ExportButton from '../../export/ExportButton'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
 
@@ -20,6 +23,7 @@ export default function CurveHeightChart({
   showStandardWhenNoHistory = true
 }: CurveHeightChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(initialRange)
+  const chartRef = useRef<ViewShot>(null)
   const { growthCurve, currentBabyDetail } = useSelector(
     (state: RootState) => state.baby
   )
@@ -144,20 +148,39 @@ export default function CurveHeightChart({
   return (
     <>
       {!compact && (
-        <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+        <View style={styles.headerContainer}>
+          <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+          <ExportButton
+            recordType="growth"
+            data={{
+              babyInfo: {
+                name: currentBabyDetail?.name || '',
+                gender: currentBabyDetail?.gender || 'male',
+                birthday: currentBabyDetail?.birthday || Date.now()
+              },
+              heightData: growthCurve.height,
+              weightData: growthCurve.weight,
+              headData: growthCurve.head
+            }}
+            viewRef={chartRef}
+            style={styles.exportButtonContainer}
+          />
+        </View>
       )}
-      <BaseGrowthChart
-        title="身高发育曲线"
-        unit="cm"
-        xAxisName={xAxisName}
-        standardData={standardData}
-        babyData={babyData}
-        headlineValue={headlineValue}
-        yMin={yMin}
-        yMax={yMax}
-        showDataZoomSlider={!compact}
-        // 使用默认颜色：标准数据蓝线，宝宝数据红线
-      />
+      <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.9 }}>
+        <BaseGrowthChart
+          title="身高发育曲线"
+          unit="cm"
+          xAxisName={xAxisName}
+          standardData={standardData}
+          babyData={babyData}
+          headlineValue={headlineValue}
+          yMin={yMin}
+          yMax={yMax}
+          showDataZoomSlider={!compact}
+          // 使用默认颜色：标准数据蓝线，宝宝数据红线
+        />
+      </ViewShot>
       {!compact && <DataDescription type="height" />}
     </>
   )
@@ -172,3 +195,19 @@ const getDayDiff = (startTime: number, endTime: number) => {
   end.setHours(0, 0, 0, 0)
   return Math.floor((end.getTime() - start.getTime()) / DAY_MS)
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginVertical: 10
+  },
+  exportButtonContainer: {
+    position: 'relative',
+    bottom: 0,
+    right: 0,
+    zIndex: 100
+  }
+})

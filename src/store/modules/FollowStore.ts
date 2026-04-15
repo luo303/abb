@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { toggleFollow } from '@/api/follow'
-import { saveFollowingIds, getFollowingIds } from '@/utils/followStorage'
+import { saveFollowingIds } from '@/utils/followStorage'
 
 interface FollowState {
   followingIds: string[]

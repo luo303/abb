@@ -173,7 +173,15 @@ export function useHomeData() {
     showMessage,
     isFollowLoading,
     followHasMore,
-    followPage
+    followPage,
+    followingPosts.length,
+    hotHasMore,
+    hotPage,
+    hotPostList.length,
+    isHotLoadingMore,
+    localPublishedPosts.length,
+    postList.length,
+    refreshing
   ])
 
   // 添加新帖子

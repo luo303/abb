@@ -30,39 +30,42 @@ export default function HistoryDrawerContent(
   const [menuVisible, setMenuVisible] = useState(false)
   const [activeItem, setActiveItem] = useState<HistoryItem | null>(null)
 
-  const handleLongPress = (item: HistoryItem) => {
+  const handleLongPress = useCallback((item: HistoryItem) => {
     setActiveItem(item)
     setMenuVisible(true)
-  }
+  }, [])
 
-  const handleCloseMenu = () => {
+  const handleCloseMenu = useCallback(() => {
     setMenuVisible(false)
     setActiveItem(null)
-  }
+  }, [])
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!activeItem) return
     // @ts-ignore
     dispatch(removeHistoryItem(activeItem.session_id))
     handleCloseMenu()
     props.navigation.closeDrawer()
-  }
+  }, [activeItem, dispatch, handleCloseMenu, props.navigation])
 
-  const handlePin = () => {
+  const handlePin = useCallback(() => {
     if (!activeItem) return
     // @ts-ignore
     dispatch(togglePin(activeItem.session_id))
     handleCloseMenu()
     props.navigation.closeDrawer()
-  }
+  }, [activeItem, dispatch, handleCloseMenu, props.navigation])
 
-  const handleItemPress = (item: HistoryItem) => {
-    // 先停止当前正在播放的语音
-    Speech.stop()
-    // @ts-ignore - Thunk action type issue
-    dispatch(switchConversation(item.session_id))
-    props.navigation.closeDrawer()
-  }
+  const handleItemPress = useCallback(
+    (item: HistoryItem) => {
+      // 先停止当前正在播放的语音
+      Speech.stop()
+      // @ts-ignore - Thunk action type issue
+      dispatch(switchConversation(item.session_id))
+      props.navigation.closeDrawer()
+    },
+    [dispatch, props.navigation]
+  )
 
   const handleNewChat = () => {
     if (messages.length === 0) {

@@ -17,9 +17,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lovebaby.app",
       "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "需要访问相册以保存导出的文件",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -82,6 +84,7 @@
       "eas": {
         "projectId": "ae44b3bd-e089-4237-a803-f82fa6976629"
       }
-    }
+    },
+    "owner": "abb.com"
   }
 }

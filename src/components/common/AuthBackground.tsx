@@ -2,8 +2,6 @@ import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 
-const THEME_PRIMARY = '#f43f5e'
-
 export default function AuthBackground() {
   return (
     <View style={styles.container} pointerEvents="none">

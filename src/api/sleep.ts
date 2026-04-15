@@ -67,7 +67,7 @@ export const getSleepByDate = async (
     // 当API返回null时，尝试从本地存储获取数据
     try {
       items = await getSleepRecords(babyId, date)
-    } catch (error) {
+    } catch {
       items = []
     }
   } else {

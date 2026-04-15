@@ -11,7 +11,6 @@ import {
   FeedingRecordRequest,
   FeedingType
 } from '../../types/feeding'
-import { fetchDailyStatistics } from './dailyStore'
 
 interface FeedingState {
   feedingList: FeedingItem[]
@@ -53,7 +52,10 @@ export const addFeedingRecord = createAsyncThunk(
         // 获取当前日期
         const currentDate = (getState() as any).daily.currentDate
         // 触发统计信息更新
-        dispatch(fetchDailyStatistics({ babyId, date: currentDate }))
+        dispatch({
+          type: 'daily/fetchDailyStatistics',
+          payload: { babyId, date: currentDate }
+        })
         return { ...(response.data as { feeding_id: string }), data, babyId }
       } else {
         return rejectWithValue(response.message || '添加喂养记录失败')
@@ -79,7 +81,10 @@ export const updateFeedingRecord = createAsyncThunk<
       // 获取当前日期
       const currentDate = (getState() as any).daily.currentDate
       // 触发统计信息更新
-      dispatch(fetchDailyStatistics({ babyId, date: currentDate }))
+      dispatch({
+        type: 'daily/fetchDailyStatistics',
+        payload: { babyId, date: currentDate }
+      })
       return response.data as { message: string }
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message)
@@ -110,7 +115,10 @@ export const saveFeedingRecord = createAsyncThunk(
         // 获取当前日期
         const currentDate = (getState() as any).daily.currentDate
         // 触发统计信息更新
-        dispatch(fetchDailyStatistics({ babyId, date: currentDate }))
+        dispatch({
+          type: 'daily/fetchDailyStatistics',
+          payload: { babyId, date: currentDate }
+        })
         return { ...(response.data as { feeding_id: string }), data, babyId }
       } else {
         return rejectWithValue(response.message || '添加喂养记录失败')
