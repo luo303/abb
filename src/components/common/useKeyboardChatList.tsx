@@ -1,10 +1,12 @@
 import React, { forwardRef, useCallback, useRef, useState } from 'react'
 import type { LayoutChangeEvent, ScrollViewProps } from 'react-native'
-import type { KeyboardChatScrollViewProps } from 'react-native-keyboard-controller'
 import type { SharedValue } from 'react-native-reanimated'
 import { useSharedValue } from 'react-native-reanimated'
 
-import { AppKeyboardChatScrollView } from './AppKeyboardAvoidingView'
+import {
+  AppKeyboardChatScrollView,
+  type AppKeyboardChatScrollViewProps
+} from './AppKeyboardAvoidingView'
 
 type KeyboardChatScrollViewRef = React.ElementRef<
   typeof AppKeyboardChatScrollView
@@ -15,7 +17,7 @@ type UseChatComposerMetricsOptions = {
 }
 
 type VirtualizedKeyboardChatScrollViewProps = ScrollViewProps &
-  KeyboardChatScrollViewProps & {
+  AppKeyboardChatScrollViewProps & {
     chatScrollViewRef?: React.MutableRefObject<KeyboardChatScrollViewRef | null>
   }
 
@@ -24,7 +26,7 @@ type UseKeyboardChatScrollRendererOptions = {
   blankSpace?: SharedValue<number>
   offset?: number
   keyboardLiftBehavior?: NonNullable<
-    KeyboardChatScrollViewProps['keyboardLiftBehavior']
+    AppKeyboardChatScrollViewProps['keyboardLiftBehavior']
   >
   chatScrollViewRef?: React.MutableRefObject<KeyboardChatScrollViewRef | null>
 }
