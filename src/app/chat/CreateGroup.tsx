@@ -1,7 +1,5 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react'
 import {
-  ActivityIndicator,
-  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
+import { Button } from 'react-native-paper'
 
 import {
   AppKeyboardChatScrollView,
@@ -20,6 +19,7 @@ import {
 } from '@/components/common/AppKeyboardAvoidingView'
 import { uploadFile } from '@/api/upload'
 import ChatAvatar from '@/components/chat/ChatAvatar'
+import PaperAvatar from '@/components/common/PaperAvatar'
 import {
   chatCardShadow,
   chatGradients,
@@ -95,15 +95,20 @@ export default function CreateGroup() {
   }
 
   const handleSubmit = async () => {
+    if (submitting || uploading) return
+
+    const trimmedName = name.trim()
+    const trimmedDescription = description.trim()
+
     if (!avatar) {
       showMessage('请先上传群头像')
       return
     }
-    if (!name.trim()) {
+    if (!trimmedName) {
       showMessage('请输入群名称')
       return
     }
-    if (!description.trim()) {
+    if (!trimmedDescription) {
       showMessage('请输入群简介')
       return
     }
@@ -117,16 +122,13 @@ export default function CreateGroup() {
       const res = await dispatch(
         createGroupConversation({
           avatar,
-          description: description.trim(),
+          description: trimmedDescription,
           member_limit: parsedLimit,
-          name: name.trim()
+          name: trimmedName
         })
       )
 
-      const nextGroupId = res?.data?.group_id
-      if (!nextGroupId) {
-        throw new Error(res?.message || '创建群聊失败')
-      }
+      const nextGroupId = res?.data?.group_id?.trim()
 
       navigation.replace('ChatDetail', {
         conversationType: 'group',
@@ -173,13 +175,24 @@ export default function CreateGroup() {
             >
               {uploading ? (
                 <View style={styles.avatarLoading}>
-                  <ActivityIndicator
-                    size="small"
-                    color={chatPalette.accentStrong}
-                  />
+                  <Button
+                    compact
+                    disabled
+                    loading
+                    mode="text"
+                    style={styles.avatarLoadingButton}
+                    uppercase={false}
+                  >
+                    {' '}
+                  </Button>
                 </View>
               ) : avatar ? (
-                <Image source={{ uri: avatar }} style={styles.avatarPreview} />
+                <PaperAvatar
+                  shape="roundedSquare"
+                  size={78}
+                  source={avatar}
+                  style={styles.avatarPreview}
+                />
               ) : (
                 <ChatAvatar
                   label={name || '群'}
@@ -230,27 +243,19 @@ export default function CreateGroup() {
               onChangeText={setMemberLimit}
             />
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              disabled={submitting}
+            <Button
+              mode="contained"
+              disabled={submitting || uploading}
               onPress={handleSubmit}
               style={styles.submitWrap}
+              contentStyle={styles.submitButton}
+              labelStyle={styles.submitButtonText}
+              loading={submitting}
+              buttonColor={chatPalette.accentStrong}
+              uppercase={false}
             >
-              <LinearGradient
-                colors={
-                  submitting
-                    ? ['#F2C8D6', '#F2C8D6']
-                    : [...chatGradients.accent]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.submitButton}
-              >
-                <Text style={styles.submitButtonText}>
-                  {submitting ? '创建中...' : '创建群聊'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              创建群聊
+            </Button>
           </View>
         </AppKeyboardChatScrollView>
       </AppKeyboardAvoidingView>
@@ -337,6 +342,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  avatarLoadingButton: {
+    width: 40
+  },
   avatarTextWrap: {
     flex: 1,
     marginLeft: 14
@@ -369,13 +377,16 @@ const styles = StyleSheet.create({
   },
   submitWrap: {
     marginTop: 22,
-    borderRadius: 18
+    borderRadius: 18,
+    shadowColor: chatPalette.accentStrong,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 4
   },
   submitButton: {
     height: 54,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center'
+    borderRadius: 18
   },
   submitButtonText: {
     fontSize: 15,

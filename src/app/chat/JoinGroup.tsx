@@ -13,13 +13,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { v4 as uuidv4 } from 'uuid'
+import { Button } from 'react-native-paper'
 
 import {
   ChatGroupDiscoverDto,
@@ -283,24 +283,23 @@ export default function JoinGroup() {
               {item.member_count}/{item.member_limit} 人
             </Text>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.85}
+          <Button
+            compact
+            mode="contained"
             disabled={joining}
             onPress={() => handleJoin(item)}
             style={[
               styles.actionButton,
-              joined ? styles.enterButton : styles.joinButton,
               joining && styles.actionButtonDisabled
             ]}
+            contentStyle={styles.actionButtonContent}
+            labelStyle={styles.actionButtonText}
+            buttonColor={joined ? '#3B82F6' : '#FF6B8A'}
+            loading={joining}
+            uppercase={false}
           >
-            {joining ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.actionButtonText}>
-                {joined ? '进入' : '加入'}
-              </Text>
-            )}
-          </TouchableOpacity>
+            {joined ? '进入' : '加入'}
+          </Button>
         </View>
       )
     },
@@ -322,8 +321,8 @@ export default function JoinGroup() {
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyTitle}>加载失败</Text>
           <Text style={styles.emptyText}>{activeError}</Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
+          <Button
+            mode="contained"
             onPress={() => {
               if (isSearchMode) {
                 void runSearchGroups(normalizedKeyword)
@@ -334,9 +333,13 @@ export default function JoinGroup() {
               void loadDiscoverGroups()
             }}
             style={styles.retryButton}
+            contentStyle={styles.retryButtonContent}
+            labelStyle={styles.retryButtonText}
+            buttonColor="#FF6B8A"
+            uppercase={false}
           >
-            <Text style={styles.retryButtonText}>重试</Text>
-          </TouchableOpacity>
+            重试
+          </Button>
         </View>
       )
     }
@@ -465,17 +468,11 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minWidth: 68,
+    borderRadius: 17
+  },
+  actionButtonContent: {
     height: 34,
-    borderRadius: 17,
-    paddingHorizontal: 14,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  joinButton: {
-    backgroundColor: '#FF6B8A'
-  },
-  enterButton: {
-    backgroundColor: '#3B82F6'
+    paddingHorizontal: 6
   },
   actionButtonDisabled: {
     opacity: 0.7
@@ -504,12 +501,11 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 14,
     minWidth: 88,
+    borderRadius: 18
+  },
+  retryButtonContent: {
     height: 36,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    backgroundColor: '#FF6B8A',
-    justifyContent: 'center',
-    alignItems: 'center'
+    paddingHorizontal: 10
   },
   retryButtonText: {
     fontSize: 13,

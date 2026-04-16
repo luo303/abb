@@ -8,6 +8,7 @@ import {
   ViewProps
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 
 import {
   composerFieldFocusShadow,
@@ -151,17 +152,21 @@ export default function PostFooter({
             />
           </View>
           {isComposerActive ? (
-            <TouchableOpacity
+            <Button
+              mode="contained"
               style={[
                 styles.sendButton,
                 sendDisabled && styles.sendButtonDisabled
               ]}
+              contentStyle={styles.sendButtonContent}
+              labelStyle={styles.sendButtonText}
               onPress={onSend}
               disabled={sendDisabled}
-              activeOpacity={sendDisabled ? 1 : 0.85}
+              buttonColor={composerTheme.accent}
+              uppercase={false}
             >
-              <Text style={styles.sendButtonText}>发送</Text>
-            </TouchableOpacity>
+              发送
+            </Button>
           ) : (
             actionButtons
           )}
@@ -246,12 +251,11 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     width: 58,
-    height: 42,
-    backgroundColor: composerTheme.accent,
     borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
     ...composerSendShadow
+  },
+  sendButtonContent: {
+    height: 42
   },
   sendButtonDisabled: {
     backgroundColor: composerTheme.accentDisabled,

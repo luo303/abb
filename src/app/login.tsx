@@ -4,12 +4,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  ActivityIndicator
+  ScrollView
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
+import { Button } from 'react-native-paper'
 import AuthBackground from '../components/common/AuthBackground'
 
 import { useEffect, useState } from 'react'
@@ -69,13 +69,12 @@ export default function LoginScreen() {
 
     if (isLoading) return
 
-    setIsLoading(true)
-
     if (activeTab === 'account') {
       if (!account || !password) {
         showMessage('请输入账号和密码')
         return
       }
+      setIsLoading(true)
       try {
         const res: resLogin = await apiLogin({
           account,
@@ -103,6 +102,7 @@ export default function LoginScreen() {
         showMessage('请输入邮箱和验证码')
         return
       }
+      setIsLoading(true)
       try {
         const res: resLogin = await apiLogin({
           email,
@@ -179,34 +179,42 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabItem]}
-            onPress={() => setActiveTab('account')}
-          >
-            <Text
-              style={[
+          <View style={styles.tabButtonWrap}>
+            <Button
+              compact
+              mode="text"
+              onPress={() => setActiveTab('account')}
+              style={styles.tabButton}
+              contentStyle={styles.tabButtonContent}
+              labelStyle={[
                 styles.tabText,
                 activeTab === 'account' && styles.activeTabText
               ]}
+              rippleColor="rgba(244, 63, 94, 0.12)"
+              uppercase={false}
             >
               账号登录
-            </Text>
+            </Button>
             {activeTab === 'account' && <View style={styles.activeLine} />}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabItem]}
-            onPress={() => setActiveTab('code')}
-          >
-            <Text
-              style={[
+          </View>
+          <View style={styles.tabButtonWrap}>
+            <Button
+              compact
+              mode="text"
+              onPress={() => setActiveTab('code')}
+              style={styles.tabButton}
+              contentStyle={styles.tabButtonContent}
+              labelStyle={[
                 styles.tabText,
                 activeTab === 'code' && styles.activeTabText
               ]}
+              rippleColor="rgba(244, 63, 94, 0.12)"
+              uppercase={false}
             >
               邮箱登录
-            </Text>
+            </Button>
             {activeTab === 'code' && <View style={styles.activeLine} />}
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* 登录表单 */}
@@ -266,11 +274,16 @@ export default function LoginScreen() {
                   </View>
                   <Text style={styles.optionText}>记住我</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                <Button
+                  compact
+                  mode="text"
                   onPress={() => navigation.navigate('Password')}
+                  contentStyle={styles.inlineTextButtonContent}
+                  labelStyle={styles.forgotText}
+                  uppercase={false}
                 >
-                  <Text style={styles.forgotText}>忘记密码</Text>
-                </TouchableOpacity>
+                  忘记密码
+                </Button>
               </View>
             </>
           ) : (
@@ -313,47 +326,44 @@ export default function LoginScreen() {
                     onFocus={() => setFocusedField('code')}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <TouchableOpacity
+                  <Button
+                    compact
+                    mode="text"
                     style={styles.getCodeBtn}
+                    contentStyle={styles.getCodeButtonContent}
+                    labelStyle={[
+                      styles.getCodeButtonLabel,
+                      countdown > 0 && styles.getCodeButtonLabelDisabled
+                    ]}
                     onPress={handleGetCode}
                     disabled={countdown > 0 || isCodeLoading}
+                    loading={isCodeLoading}
+                    uppercase={false}
                   >
-                    {isCodeLoading ? (
-                      <ActivityIndicator color={THEME_PRIMARY} />
-                    ) : (
-                      <Text
-                        style={[
-                          styles.getCodeText,
-                          countdown > 0 && styles.getCodeTextDisabled
-                        ]}
-                      >
-                        {countdown > 0
-                          ? `${countdown}秒后重新获取`
-                          : '获取验证码'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                    {countdown > 0 ? `${countdown}秒后重新获取` : '获取验证码'}
+                  </Button>
                 </View>
               </View>
               <View style={{ height: 10 }} />
             </>
           )}
 
-          <TouchableOpacity
+          <Button
+            mode="contained"
             style={[
-              styles.loginBtn,
-              isLoading && { backgroundColor: THEME_PRIMARY_DISABLED }
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled
             ]}
+            contentStyle={styles.loginButtonContent}
+            labelStyle={styles.loginButtonLabel}
             onPress={handleLogin}
             disabled={isLoading}
-            activeOpacity={0.8}
+            loading={isLoading}
+            buttonColor={THEME_PRIMARY}
+            uppercase={false}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginBtnText}>登录</Text>
-            )}
-          </TouchableOpacity>
+            登录
+          </Button>
 
           {/* 用户协议和隐私授权 */}
           <View style={styles.agreementContainer}>
@@ -380,14 +390,16 @@ export default function LoginScreen() {
 
         {/* 底部注册链接 */}
         <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.registerLink}
+          <Button
+            compact
+            mode="text"
             onPress={() => navigation.navigate('Register')}
+            contentStyle={styles.footerLinkContent}
+            labelStyle={styles.footerLinkLabel}
+            uppercase={false}
           >
-            <Text style={styles.registerLinkText}>
-              还没有账户？<Text style={styles.registerHighlight}>去注册</Text>
-            </Text>
-          </TouchableOpacity>
+            还没有账户？去注册
+          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -429,10 +441,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 30
   },
-  tabItem: {
+  tabButtonWrap: {
     marginRight: 30,
-    paddingBottom: 5,
     position: 'relative'
+  },
+  tabButton: {
+    borderRadius: 20
+  },
+  tabButtonContent: {
+    minHeight: 32,
+    paddingHorizontal: 0
   },
   tabText: {
     fontSize: 16,
@@ -491,14 +509,17 @@ const styles = StyleSheet.create({
     gap: 10
   },
   getCodeBtn: {
-    height: 50,
-    justifyContent: 'center'
+    alignSelf: 'center'
   },
-  getCodeText: {
+  getCodeButtonContent: {
+    minHeight: 40,
+    paddingHorizontal: 0
+  },
+  getCodeButtonLabel: {
     color: THEME_PRIMARY,
     fontSize: 14
   },
-  getCodeTextDisabled: {
+  getCodeButtonLabelDisabled: {
     color: '#999'
   },
   optionsRow: {
@@ -554,12 +575,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: THEME_PRIMARY
   },
-  loginBtn: {
-    height: 50,
-    backgroundColor: THEME_PRIMARY,
+  inlineTextButtonContent: {
+    minHeight: 32,
+    paddingHorizontal: 0
+  },
+  loginButton: {
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
     shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
@@ -567,7 +588,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5
   },
-  loginBtnText: {
+  loginButtonDisabled: {
+    backgroundColor: THEME_PRIMARY_DISABLED
+  },
+  loginButtonContent: {
+    height: 50
+  },
+  loginButtonLabel: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold'
@@ -606,15 +633,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 10
   },
-  registerLink: {
-    padding: 10
+  footerLinkContent: {
+    minHeight: 36
   },
-  registerLinkText: {
+  footerLinkLabel: {
     fontSize: 14,
     color: '#999'
-  },
-  registerHighlight: {
-    color: THEME_PRIMARY,
-    fontWeight: 'bold'
   }
 })

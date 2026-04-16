@@ -15,10 +15,14 @@ import {
   chatPalette
 } from '@/components/chat/chatTheme'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { refreshGroupMembers } from '@/store/modules/MessengerStore'
+import {
+  ChatGroupMember,
+  refreshGroupMembers
+} from '@/store/modules/MessengerStore'
 import { RootStackParamList } from '@/types/navigation'
 
 type GroupInfoRoute = RouteProp<RootStackParamList, 'GroupInfo'>
+const EMPTY_GROUP_MEMBERS: ChatGroupMember[] = []
 
 export default function GroupInfo() {
   const route = useRoute<GroupInfoRoute>()
@@ -30,7 +34,8 @@ export default function GroupInfo() {
     state.messenger.groups.items.find(item => item.groupId === groupId)
   )
   const members = useAppSelector(
-    state => state.messenger.groups.membersByGroupId[groupId] || []
+    state =>
+      state.messenger.groups.membersByGroupId[groupId] || EMPTY_GROUP_MEMBERS
   )
 
   useLayoutEffect(() => {

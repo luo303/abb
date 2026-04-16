@@ -1,12 +1,7 @@
 import React from 'react'
-import { Image, StyleSheet, Text } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 
-import {
-  chatGradients,
-  chatPalette,
-  chatSoftShadow
-} from '@/components/chat/chatTheme'
+import PaperAvatar from '@/components/common/PaperAvatar'
+import { chatPalette } from '@/components/chat/chatTheme'
 
 type Props = {
   uri?: string | null
@@ -16,12 +11,6 @@ type Props = {
   shape?: 'circle' | 'roundedSquare'
 }
 
-const getInitials = (label: string) => {
-  const normalized = label.trim()
-  if (!normalized) return '聊'
-  return normalized.slice(0, 1).toUpperCase()
-}
-
 export default function ChatAvatar({
   uri,
   label,
@@ -29,61 +18,22 @@ export default function ChatAvatar({
   style,
   shape = 'circle'
 }: Props) {
-  const radius =
+  const borderRadius =
     shape === 'roundedSquare' ? Math.max(size * 0.26, 14) : size / 2
 
-  if (uri) {
-    return (
-      <Image
-        source={{ uri }}
-        style={[
-          styles.image,
-          {
-            width: size,
-            height: size,
-            borderRadius: radius
-          },
-          style
-        ]}
-      />
-    )
-  }
-
   return (
-    <LinearGradient
-      colors={chatGradients.avatar}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <PaperAvatar
+      accessibilityLabel={label}
+      backgroundColor={chatPalette.surfaceSoftAlt}
+      shape={shape}
+      size={size}
+      source={uri}
       style={[
-        styles.fallback,
         {
-          width: size,
-          height: size,
-          borderRadius: radius
+          borderRadius
         },
         style
       ]}
-    >
-      <Text
-        style={[styles.fallbackText, { fontSize: Math.max(size * 0.34, 14) }]}
-      >
-        {getInitials(label)}
-      </Text>
-    </LinearGradient>
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  image: {
-    backgroundColor: chatPalette.surfaceSoftAlt
-  },
-  fallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...chatSoftShadow
-  },
-  fallbackText: {
-    color: '#fff',
-    fontWeight: '800'
-  }
-})

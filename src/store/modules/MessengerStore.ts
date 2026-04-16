@@ -492,19 +492,26 @@ export const connectPartnerRealtime =
     const partnerId = state.messenger.partner.partnerId as string | null
 
     if (!token || !partnerId) {
+      console.log(
+        `[聊天初始化] 跳过伴侣连接：token=${!!token} partnerId=${partnerId || '空'}`
+      )
       closePartnerSocket()
       dispatch(setPartnerConnectionStatus(false))
       return
     }
 
+    console.log(`[聊天初始化] 开始连接伴侣 WS，partnerId=${partnerId}`)
     connectPartnerSocket(token, partnerId, {
       onOpen: () => {
+        console.log('[聊天初始化] 伴侣 WS 已连接')
         dispatch(setPartnerConnectionStatus(true))
       },
       onClose: () => {
+        console.log('[聊天初始化] 伴侣 WS 已断开')
         dispatch(setPartnerConnectionStatus(false))
       },
       onError: () => {
+        console.log('[聊天初始化] 伴侣 WS 触发错误')
         dispatch(setPartnerConnectionStatus(false))
       },
       onMessage: (raw: string) => {
@@ -519,13 +526,16 @@ export const connectGroupRealtime =
     const token = state.user.token as string
 
     if (!token) {
+      console.log('[聊天初始化] 跳过群聊连接：token 为空')
       closeGroupSocket()
       dispatch(setGroupConnectionStatus(false))
       return
     }
 
+    console.log('[聊天初始化] 开始连接群聊 WS')
     connectGroupSocket(token, {
       onOpen: () => {
+        console.log('[聊天初始化] 群聊 WS 已连接')
         dispatch(setGroupConnectionStatus(true))
         const groupIds = (
           getState().messenger.groups.items as ChatGroupSummary[]
@@ -535,9 +545,11 @@ export const connectGroupRealtime =
         updateGroupSubscriptions(groupIds)
       },
       onClose: () => {
+        console.log('[聊天初始化] 群聊 WS 已断开')
         dispatch(setGroupConnectionStatus(false))
       },
       onError: () => {
+        console.log('[聊天初始化] 群聊 WS 触发错误')
         dispatch(setGroupConnectionStatus(false))
       },
       onMessage: (raw: string) => {
@@ -556,6 +568,7 @@ export const connectGroupRealtime =
 export const refreshPartnerInfo =
   () => async (dispatch: any, getState: any) => {
     try {
+      console.log('[聊天初始化] 开始拉取另一半信息')
       const previousPartnerId = getState().messenger.partner.partnerId as
         | string
         | null
@@ -563,11 +576,14 @@ export const refreshPartnerInfo =
       const nextPartnerId = res?.data?.partner_id?.trim()
 
       if (!nextPartnerId) {
+        console.log('[聊天初始化] 当前没有绑定另一半')
         dispatch(setPartnerInfo(null))
         closePartnerSocket()
         dispatch(setPartnerConnectionStatus(false))
         return
       }
+
+      console.log(`[聊天初始化] 拉取另一半成功，partnerId=${nextPartnerId}`)
 
       dispatch(
         setPartnerInfo({
@@ -612,12 +628,14 @@ export const bindPartnerAccount =
 
 export const refreshGroupList = () => async (dispatch: any, getState: any) => {
   try {
+    console.log('[聊天初始化] 开始拉取我的群列表')
     const res = await fetchMyGroups()
     const remoteItems = (res?.data?.items || []).map(mapGroupSummary)
     const mockItems = (
       getState().messenger.groups.items as ChatGroupSummary[]
     ).filter(item => isMockGroupId(item.groupId))
     const items = [...remoteItems, ...mockItems]
+    console.log(`[聊天初始化] 拉取群列表成功，count=${items.length}`)
     dispatch(setGroups(items))
     updateGroupSubscriptions(
       items.map(item => item.groupId).filter(groupId => !isMockGroupId(groupId))
@@ -627,6 +645,21 @@ export const refreshGroupList = () => async (dispatch: any, getState: any) => {
     console.error('Failed to refresh group list:', error)
   }
 }
+
+export const syncMessengerHomeEntry =
+  () => async (dispatch: any, getState: any) => {
+    if (!getState().user.token) {
+      console.log('[聊天初始化] 跳过首页聊天初始化：token 为空')
+      return
+    }
+
+    console.log('[聊天初始化] 首页触发聊天初始化')
+    await Promise.all([
+      dispatch(refreshPartnerInfo()),
+      dispatch(refreshGroupList())
+    ])
+    console.log('[聊天初始化] 首页聊天初始化完成')
+  }
 
 export const refreshGroupMessages =
   (groupId: string, limit = 50) =>
@@ -706,7 +739,6 @@ export const processPartnerSocketMessage =
     }
 
     if (!message.content) return
-
     dispatch(upsertPartnerMessage(message))
 
     const isMine = !!currentUserId && message.fromUserId === currentUserId
@@ -907,10 +939,39 @@ export const sendGroupConversationMessage =
   }
 
 export const createGroupConversation =
-  (payload: CreateGroupPayload) => async (dispatch: any) => {
+  (payload: CreateGroupPayload) => async (dispatch: any, getState: any) => {
     const res = await createChatGroup(payload)
-    await dispatch(refreshGroupList())
-    return res
+    const groupId = res?.data?.group_id?.trim()
+
+    if (!groupId) {
+      throw new Error(res?.message || '创建群聊失败')
+    }
+
+    const now = Date.now()
+    dispatch(
+      upsertGroupSummary({
+        groupId,
+        name: payload.name,
+        avatar: payload.avatar,
+        description: payload.description,
+        memberLimit: payload.member_limit,
+        memberCount: 1,
+        role: 'owner',
+        unreadCount: 0,
+        ctime: now,
+        utime: now
+      })
+    )
+    await persistState(getState)
+    dispatch(connectGroupRealtime())
+
+    return {
+      ...res,
+      data: {
+        ...res?.data,
+        group_id: groupId
+      }
+    }
   }
 
 export const joinGroupConversation =

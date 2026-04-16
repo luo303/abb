@@ -10,7 +10,7 @@ import { initFollowingIds } from '../store/modules/FollowStore'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
 import { getUserMeReq } from '../api/profile'
 import { fetchPostList, fetchFollowingPosts } from '../store/modules/PostStore'
-import { bootstrapMessenger } from '../store/modules/MessengerStore'
+import { loadMessengerCache } from '../store/modules/MessengerStore'
 import { setUserInfo } from '../store/modules/userStore'
 import {
   fetchBabies,
@@ -18,6 +18,7 @@ import {
   loadCurrentBabyId
 } from '../store/modules/BabyStore'
 import * as SplashScreen from 'expo-splash-screen'
+import { Provider as PaperProvider } from 'react-native-paper'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -56,6 +57,7 @@ import GroupInfo from './chat/GroupInfo'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
+import { appPaperTheme } from '../theme/paperTheme'
 // 忽略特定的日志警告
 LogBox.ignoreLogs([
   'Unsupported top level event type "topSvgLayout" dispatched'
@@ -84,7 +86,7 @@ function AppInitializer({ onReady }: { onReady?: () => void }) {
           console.error('Failed to preload user info:', error)
         }
 
-        await dispatch(bootstrapMessenger())
+        await dispatch(loadMessengerCache())
         await dispatch(initFollowingIds())
         await dispatch(loadCurrentBabyId() as any)
         await dispatch(fetchBabies())
@@ -350,12 +352,14 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Provider store={store}>
-        <AppKeyboardProvider>
-          <MessageProvider>
-            <AppInitializer onReady={() => setAppReady(true)} />
-            <RootNavigator appReady={appReady} />
-          </MessageProvider>
-        </AppKeyboardProvider>
+        <PaperProvider theme={appPaperTheme}>
+          <AppKeyboardProvider>
+            <MessageProvider>
+              <AppInitializer onReady={() => setAppReady(true)} />
+              <RootNavigator appReady={appReady} />
+            </MessageProvider>
+          </AppKeyboardProvider>
+        </PaperProvider>
       </Provider>
     </GestureHandlerRootView>
   )

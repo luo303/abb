@@ -18,6 +18,33 @@ let lastReceivedAt = 0
 const HEARTBEAT_INTERVAL = 60000
 const HEARTBEAT_TIMEOUT = 180000
 
+const readyStateText = (state: number) => {
+  switch (state) {
+    case WebSocket.CONNECTING:
+      return '连接中'
+    case WebSocket.OPEN:
+      return '已连接'
+    case WebSocket.CLOSING:
+      return '关闭中'
+    case WebSocket.CLOSED:
+      return '已关闭'
+    default:
+      return `未知状态(${state})`
+  }
+}
+
+const sanitizeWsUrl = (url: string) => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.searchParams.has('token')) {
+      parsed.searchParams.set('token', '***')
+    }
+    return parsed.toString()
+  } catch {
+    return url.replace(/token=[^&]+/gi, 'token=***')
+  }
+}
+
 const clearReconnectTimer = () => {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
@@ -35,10 +62,16 @@ const clearHeartbeatTimer = () => {
 const startHeartbeat = () => {
   clearHeartbeatTimer()
   lastReceivedAt = Date.now()
+  console.log(
+    `[伴侣WS] 心跳已启动（间隔=${HEARTBEAT_INTERVAL}ms，超时=${HEARTBEAT_TIMEOUT}ms）`
+  )
   heartbeatTimer = setInterval(() => {
     if (!socket || socket.readyState !== WebSocket.OPEN) return
 
     if (Date.now() - lastReceivedAt > HEARTBEAT_TIMEOUT) {
+      console.warn(
+        `[伴侣WS] 心跳超时（${Date.now() - lastReceivedAt}ms 未收到消息），准备重连`
+      )
       socket.close()
       return
     }
@@ -59,16 +92,21 @@ const innerConnect = () => {
     (socket.readyState === WebSocket.OPEN ||
       socket.readyState === WebSocket.CONNECTING)
   ) {
+    console.log(
+      `[伴侣WS] 跳过连接：当前状态=${readyStateText(socket.readyState)}`
+    )
     return
   }
 
   clearReconnectTimer()
   clearHeartbeatTimer()
   manualClose = false
+  console.log(`[伴侣WS] 开始连接：${sanitizeWsUrl(currentUrl)}`)
   socket = new WebSocket(currentUrl)
 
   socket.onopen = () => {
     lastReceivedAt = Date.now()
+    console.log('[伴侣WS] 连接成功')
     callbacks?.onOpen?.()
     startHeartbeat()
   }
@@ -97,15 +135,22 @@ const innerConnect = () => {
       return
     }
 
+    console.log(
+      `[伴侣WS] 收到业务消息（type=${payload?.type || '未知'}，长度=${rawText.length}）`
+    )
     callbacks?.onMessage(rawText)
   }
 
   socket.onerror = event => {
+    console.warn('[伴侣WS] 连接异常', event)
     callbacks?.onError?.(event)
   }
 
-  socket.onclose = () => {
+  socket.onclose = event => {
     clearHeartbeatTimer()
+    console.warn(
+      `[伴侣WS] 连接关闭（code=${(event as any)?.code ?? '未知'}, reason=${(event as any)?.reason ?? '未知'}, wasClean=${(event as any)?.wasClean ?? '未知'}, manualClose=${manualClose})`
+    )
     callbacks?.onClose?.()
     socket = null
 
@@ -113,6 +158,7 @@ const innerConnect = () => {
 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
+      console.log('[伴侣WS] 开始执行重连')
       innerConnect()
     }, 2500)
   }
@@ -124,6 +170,7 @@ export const connectPartnerSocket = (
   cb: PartnerSocketCallbacks
 ) => {
   const nextUrl = `${PARTNER_WS_BASE_URL}?token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(partnerId)}`
+  console.log(`[伴侣WS] 调用 connectPartnerSocket：${sanitizeWsUrl(nextUrl)}`)
 
   if (socket && currentUrl !== nextUrl) {
     socket.close()
@@ -137,11 +184,15 @@ export const connectPartnerSocket = (
 }
 
 export const closePartnerSocket = () => {
+  console.log('[伴侣WS] 调用 closePartnerSocket')
   manualClose = true
   clearReconnectTimer()
   clearHeartbeatTimer()
 
   if (socket) {
+    console.log(
+      `[伴侣WS] 主动关闭连接，当前状态=${readyStateText(socket.readyState)}`
+    )
     socket.close()
     socket = null
   }
@@ -149,10 +200,15 @@ export const closePartnerSocket = () => {
 
 export const sendPartnerSocket = (data: unknown) => {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.warn(
+      `[伴侣WS] 发送失败：连接未就绪（exists=${!!socket}, state=${socket ? readyStateText(socket.readyState) : '空'})`
+    )
     return false
   }
 
-  socket.send(typeof data === 'string' ? data : JSON.stringify(data ?? {}))
+  const payload = typeof data === 'string' ? data : JSON.stringify(data ?? {})
+  console.log(`[伴侣WS] 发送消息（长度=${payload.length}）`)
+  socket.send(payload)
   return true
 }
 

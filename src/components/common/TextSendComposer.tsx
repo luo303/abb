@@ -2,13 +2,12 @@ import React, { useState } from 'react'
 import {
   StyleProp,
   StyleSheet,
-  Text,
   TextInput,
   TextStyle,
-  TouchableOpacity,
   View,
   ViewStyle
 } from 'react-native'
+import { Button } from 'react-native-paper'
 
 import {
   composerFieldFocusShadow,
@@ -94,19 +93,23 @@ export default function TextSendComposer({
           onSubmitEditing={handleSend}
         />
       </View>
-      <TouchableOpacity
+      <Button
+        mode="contained"
         style={[
           styles.sendButton,
           sendButtonStyle,
           isDisabled && styles.sendButtonDisabled,
           isDisabled && sendButtonDisabledStyle
         ]}
+        contentStyle={styles.sendButtonContent}
+        labelStyle={[styles.sendButtonText, sendTextStyle]}
         onPress={handleSend}
         disabled={isDisabled}
-        activeOpacity={0.88}
+        buttonColor={composerTheme.accent}
+        uppercase={false}
       >
-        <Text style={[styles.sendButtonText, sendTextStyle]}>发送</Text>
-      </TouchableOpacity>
+        发送
+      </Button>
     </View>
   )
 }
@@ -146,12 +149,11 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     width: 58,
-    height: 42,
-    backgroundColor: composerTheme.accent,
     borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
     ...composerSendShadow
+  },
+  sendButtonContent: {
+    height: 42
   },
   sendButtonDisabled: {
     backgroundColor: composerTheme.accentDisabled,

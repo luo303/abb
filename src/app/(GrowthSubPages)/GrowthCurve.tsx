@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Alert,
   Platform
 } from 'react-native'
@@ -12,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import AppKeyboardAvoidingView from '../../components/common/AppKeyboardAvoidingView'
+import { Button } from 'react-native-paper'
 
 // 导入拆分后的组件
 import CurveTabs from '../../components/growth/curve/CurveTabs'
@@ -217,42 +217,33 @@ export default function GrowthCurveScreen() {
             <View
               style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}
             >
-              <TouchableOpacity
+              <Button
+                mode="contained"
                 style={[
                   styles.saveButton,
                   (!isFormValid || isSubmitting) && styles.saveButtonDisabled
                 ]}
                 disabled={!isFormValid || isSubmitting}
                 onPress={handleSaveRecord}
+                contentStyle={styles.saveButtonContent}
+                labelStyle={[
+                  styles.saveButtonText,
+                  (!isFormValid || isSubmitting) &&
+                    styles.saveButtonTextDisabled
+                ]}
+                loading={isSubmitting}
+                buttonColor="#EE6666"
+                uppercase={false}
               >
-                <Text
-                  style={[
-                    styles.saveButtonText,
-                    (!isFormValid || isSubmitting) &&
-                      styles.saveButtonTextDisabled
-                  ]}
-                >
-                  {isSubmitting
-                    ? '保存中...'
-                    : isFormValid
-                      ? '保存记录'
-                      : '请填写数据'}
-                </Text>
-                {isFormValid && !isSubmitting && (
-                  <Ionicons
-                    name="arrow-forward"
-                    size={20}
-                    color="#fff"
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
-              </TouchableOpacity>
+                {isFormValid ? '保存记录' : '请填写数据'}
+              </Button>
             </View>
           )
         ) : (
           <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
             {hasBaby ? (
-              <TouchableOpacity
+              <Button
+                mode="contained"
                 style={styles.aiButton}
                 onPress={() => {
                   if (!currentBabyDetail) {
@@ -286,18 +277,13 @@ export default function GrowthCurveScreen() {
                     growthAnalysis: payload
                   })
                 }}
+                contentStyle={styles.aiButtonContent}
+                labelStyle={styles.aiButtonText}
+                buttonColor="#5470C6"
+                uppercase={false}
               >
-                <View style={styles.aiButtonContent}>
-                  <Ionicons name="sparkles" size={20} color="#fff" />
-                  <Text style={styles.aiButtonText}>AI 智能分析</Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color="#fff"
-                    style={{ marginLeft: 4 }}
-                  />
-                </View>
-              </TouchableOpacity>
+                AI 智能分析
+              </Button>
             ) : null}
           </View>
         )}
@@ -332,12 +318,7 @@ const styles = StyleSheet.create({
     paddingTop: 10
   },
   saveButton: {
-    flexDirection: 'row',
-    backgroundColor: '#EE6666',
-    height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#EE6666',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, // 降低阴影不透明度
@@ -349,6 +330,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0
   },
+  saveButtonContent: {
+    height: 56
+  },
   saveButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -358,11 +342,7 @@ const styles = StyleSheet.create({
     color: '#CCC'
   },
   aiButton: {
-    backgroundColor: '#5470C6',
-    height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#5470C6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -370,15 +350,12 @@ const styles = StyleSheet.create({
     elevation: 4
   },
   aiButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
+    height: 56
   },
   aiButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
-    marginLeft: 8
+    color: '#fff'
   },
   emptyState: {
     padding: 40,

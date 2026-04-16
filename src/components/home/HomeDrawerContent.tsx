@@ -3,14 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  Image,
   ActivityIndicator,
   ScrollView
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
-import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
+
+import PaperAvatar from '@/components/common/PaperAvatar'
 import { useAppSelector } from '@/hooks/redux'
 import { getFollowerUsers, getFollowingUsers } from '@/api/follow'
 
@@ -19,27 +20,33 @@ const QUICK_LINKS = [
     key: 'growth',
     label: '成长曲线',
     target: 'GrowthCurve',
-    icon: <MaterialCommunityIcons name="chart-line" size={22} color="#111827" />
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
+    )
   },
   {
     key: 'daily',
     label: '日常记录',
     target: 'DailyRecord',
-    icon: (
-      <MaterialCommunityIcons name="pencil-outline" size={22} color="#111827" />
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="pencil-outline" size={size} color={color} />
     )
   },
   {
     key: 'vaccine',
     label: '疫苗接种',
     target: 'VaccineRecord',
-    icon: <MaterialCommunityIcons name="needle" size={22} color="#111827" />
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="needle" size={size} color={color} />
+    )
   },
   {
     key: 'milestone',
     label: '大事记',
     target: 'AddMilestone',
-    icon: <Ionicons name="book-outline" size={22} color="#111827" />
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <Ionicons name="book-outline" size={size} color={color} />
+    )
   }
 ]
 
@@ -130,14 +137,6 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
     [userInfo?.account, userInfo?.email]
   )
 
-  const avatarSource = useMemo(() => {
-    if (userInfo?.avatar) {
-      return { uri: userInfo.avatar }
-    }
-
-    return require('@/assets/testAvatar.png')
-  }, [userInfo?.avatar])
-
   const handleShortcutPress = (target: string) => {
     props.navigation.closeDrawer()
 
@@ -166,7 +165,12 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
       >
         <View style={styles.profileSection}>
           <View style={styles.avatarShell}>
-            <Image source={avatarSource} style={styles.avatar} />
+            <PaperAvatar
+              accessibilityLabel={displayName}
+              size={72}
+              source={userInfo?.avatar}
+              style={styles.avatar}
+            />
           </View>
 
           <Text style={styles.name}>{displayName}</Text>
@@ -192,16 +196,21 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
 
         <View style={styles.shortcutsSection}>
           {QUICK_LINKS.map(item => (
-            <TouchableOpacity
+            <Button
               key={item.key}
-              style={styles.shortcutItem}
-              activeOpacity={0.8}
+              mode="contained-tonal"
+              icon={item.icon}
               onPress={() => handleShortcutPress(item.target)}
+              rippleColor="rgba(244, 63, 94, 0.18)"
+              buttonColor="#fff1f2"
+              textColor="#111827"
+              style={styles.shortcutItem}
+              contentStyle={styles.shortcutContent}
+              labelStyle={styles.shortcutLabel}
+              uppercase={false}
             >
-              <View style={styles.shortcutIcon}>{item.icon}</View>
-              <Text style={styles.shortcutLabel}>{item.label}</Text>
-              <Feather name="chevron-right" size={18} color="#9ca3af" />
-            </TouchableOpacity>
+              {item.label}
+            </Button>
           ))}
         </View>
       </ScrollView>
@@ -269,18 +278,15 @@ const styles = StyleSheet.create({
     paddingTop: 18
   },
   shortcutItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16
+    borderRadius: 18,
+    marginBottom: 10
   },
-  shortcutIcon: {
-    width: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12
+  shortcutContent: {
+    height: 56,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 8
   },
   shortcutLabel: {
-    flex: 1,
     fontSize: 18,
     fontWeight: '600',
     color: '#111827'

@@ -2,6 +2,8 @@ import React, { memo, useMemo } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
+
+import PaperAvatar from '@/components/common/PaperAvatar'
 import { NavigationProps } from '../../types/navigation'
 import { PostItem } from '@/types/home'
 
@@ -11,7 +13,6 @@ interface HomeCommunityCardProps {
 
 function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
-  const [avatarLoadError, setAvatarLoadError] = React.useState(false)
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return ''
@@ -22,18 +23,6 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 
     return `${month}-${day}`
   }
-
-  const getImageSource = (img: string | any) => {
-    if (typeof img === 'string') {
-      return img ? { uri: img } : require('@/assets/testAvatar.png')
-    }
-
-    return img
-  }
-
-  React.useEffect(() => {
-    setAvatarLoadError(false)
-  }, [data.author_avatar])
 
   const parsedContent = useMemo(() => {
     try {
@@ -128,14 +117,11 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
       onPress={handlePress}
     >
       <View style={styles.userRow}>
-        <Image
-          source={
-            avatarLoadError
-              ? require('@/assets/testAvatar.png')
-              : getImageSource(data.author_avatar)
-          }
+        <PaperAvatar
+          accessibilityLabel={data.author_name || '匿名用户'}
+          size={36}
+          source={data.author_avatar}
           style={styles.avatar}
-          onError={() => setAvatarLoadError(true)}
         />
         <View style={styles.userMeta}>
           <Text style={styles.userName} numberOfLines={1}>

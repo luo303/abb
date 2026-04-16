@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Platform,
-  ActivityIndicator
-} from 'react-native'
+import { View, Text, StyleSheet, TextInput, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useNavigation } from '@react-navigation/native'
-import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector } from 'react-redux'
+import { Button } from 'react-native-paper'
 import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
 
 import {
@@ -224,84 +215,75 @@ export default function EditProfile() {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>生日</Text>
-          <TouchableOpacity
+          <Button
+            mode="outlined"
             style={styles.dateButton}
+            contentStyle={styles.dateButtonContent}
+            labelStyle={styles.dateButtonLabel}
+            icon="calendar-outline"
             onPress={() => setShowDatePicker(true)}
+            uppercase={false}
           >
-            <Text style={styles.dateText}>
-              {birthday ? formatDateDisplay(birthday) : '请选择生日'}
-            </Text>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-          </TouchableOpacity>
+            {birthday ? formatDateDisplay(birthday) : '请选择生日'}
+          </Button>
         </View>
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>性别</Text>
           <View style={styles.genderContainer}>
-            <TouchableOpacity
+            <Button
+              mode={gender === 'male' ? 'contained' : 'outlined'}
               style={[
                 styles.genderButton,
                 gender === 'male' && styles.genderButtonActive
               ]}
+              contentStyle={styles.genderButtonContent}
+              labelStyle={[
+                styles.genderButtonLabel,
+                gender === 'male' && styles.genderTextActive
+              ]}
               onPress={() => setGender('male')}
+              buttonColor="#87CEEB"
+              textColor={gender === 'male' ? '#fff' : '#666'}
+              uppercase={false}
             >
-              <Ionicons
-                name="male"
-                size={20}
-                color={gender === 'male' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'male' && styles.genderTextActive
-                ]}
-              >
-                男
-              </Text>
-            </TouchableOpacity>
+              男
+            </Button>
 
-            <TouchableOpacity
+            <Button
+              mode={gender === 'female' ? 'contained' : 'outlined'}
               style={[
                 styles.genderButton,
                 gender === 'female' && styles.genderButtonActiveFemale
               ]}
+              contentStyle={styles.genderButtonContent}
+              labelStyle={[
+                styles.genderButtonLabel,
+                gender === 'female' && styles.genderTextActive
+              ]}
               onPress={() => setGender('female')}
+              buttonColor="#FF69B4"
+              textColor={gender === 'female' ? '#fff' : '#666'}
+              uppercase={false}
             >
-              <Ionicons
-                name="female"
-                size={20}
-                color={gender === 'female' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'female' && styles.genderTextActive
-                ]}
-              >
-                女
-              </Text>
-            </TouchableOpacity>
+              女
+            </Button>
           </View>
         </View>
 
-        <TouchableOpacity
+        <Button
+          mode="contained"
           onPress={handleSubmit}
           disabled={loading}
           style={styles.submitButtonContainer}
+          contentStyle={styles.submitButton}
+          labelStyle={styles.submitButtonText}
+          loading={loading}
+          buttonColor="#FF69B4"
+          uppercase={false}
         >
-          <LinearGradient
-            colors={['#FFB6C1', '#FF69B4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitButton}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>保存</Text>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
+          保存
+        </Button>
 
         {showDatePicker && (
           <DateTimePicker
@@ -343,16 +325,14 @@ const styles = StyleSheet.create({
     borderColor: '#eee'
   },
   dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f9f9f9',
     borderRadius: 8,
-    padding: 12,
     borderWidth: 1,
     borderColor: '#eee'
   },
-  dateText: {
+  dateButtonContent: {
+    minHeight: 48
+  },
+  dateButtonLabel: {
     fontSize: 14,
     color: '#333'
   },
@@ -362,25 +342,20 @@ const styles = StyleSheet.create({
   },
   genderButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: 'transparent'
+    borderRadius: 8
+  },
+  genderButtonContent: {
+    minHeight: 48
+  },
+  genderButtonLabel: {
+    fontSize: 14,
+    color: '#666'
   },
   genderButtonActive: {
     backgroundColor: '#87CEEB'
   },
   genderButtonActiveFemale: {
     backgroundColor: '#FF69B4'
-  },
-  genderText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666'
   },
   genderTextActive: {
     color: '#fff',
@@ -391,9 +366,8 @@ const styles = StyleSheet.create({
     marginBottom: 40
   },
   submitButton: {
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center'
+    height: 52,
+    borderRadius: 30
   },
   submitButtonText: {
     fontSize: 16,

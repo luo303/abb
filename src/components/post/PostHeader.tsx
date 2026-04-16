@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import React from 'react'
+import { View, Text, StyleSheet, ImageSourcePropType } from 'react-native'
+import { TouchableRipple } from 'react-native-paper'
+
+import PaperAvatar from '@/components/common/PaperAvatar'
 
 interface PostHeaderProps {
-  avatar: any
+  avatar: string | ImageSourcePropType | null | undefined
   nickname: string
   description?: string
   isFollowing?: boolean
@@ -18,52 +21,36 @@ export default function PostHeader({
   onFollow,
   showFollow = true
 }: PostHeaderProps) {
-  const [avatarLoadError, setAvatarLoadError] = useState(false)
-
-  useEffect(() => {
-    setAvatarLoadError(false)
-  }, [avatar])
-
-  const avatarSource = useMemo(() => {
-    if (avatarLoadError) {
-      return require('@/assets/testAvatar.png')
-    }
-    return avatar || require('@/assets/testAvatar.png')
-  }, [avatar, avatarLoadError])
-
   return (
     <View style={styles.container}>
       <View style={styles.userInfo}>
-        <Image
-          source={avatarSource}
+        <PaperAvatar
+          accessibilityLabel={nickname}
+          size={40}
+          source={avatar}
           style={styles.avatar}
-          onError={() => setAvatarLoadError(true)}
         />
         <View style={styles.textContainer}>
           <Text style={styles.nickname}>{nickname}</Text>
-          {description && <Text style={styles.description}>{description}</Text>}
+          {description ? (
+            <Text style={styles.description}>{description}</Text>
+          ) : null}
         </View>
       </View>
 
-      {showFollow && (
-        <TouchableOpacity
+      {showFollow ? (
+        <TouchableRipple
+          onPress={onFollow}
+          rippleColor="rgba(244, 63, 94, 0.08)"
           style={[styles.followBtn, isFollowing && styles.followingBtn]}
-          onPress={e => {
-            if (e && e.stopPropagation) {
-              e.stopPropagation()
-            }
-            if (onFollow) {
-              onFollow()
-            }
-          }}
         >
           <Text
             style={[styles.followText, isFollowing && styles.followingText]}
           >
             {isFollowing ? '已关注' : '关注'}
           </Text>
-        </TouchableOpacity>
-      )}
+        </TouchableRipple>
+      ) : null}
     </View>
   )
 }
@@ -107,7 +94,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#ff4d4f',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    overflow: 'hidden'
   },
   followingBtn: {
     borderColor: '#ccc',

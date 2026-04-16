@@ -1,6 +1,7 @@
 import React from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import dayjs from 'dayjs'
+import { Badge, TouchableRipple } from 'react-native-paper'
 
 import ChatAvatar from '@/components/chat/ChatAvatar'
 
@@ -40,44 +41,44 @@ export default function ConversationListItem({
   onPress
 }: ConversationListItemProps) {
   return (
-    <TouchableOpacity activeOpacity={0.82} onPress={onPress} style={styles.row}>
-      <ChatAvatar
-        uri={avatar}
-        label={title}
-        shape="roundedSquare"
-        size={54}
-        style={styles.avatar}
-      />
+    <TouchableRipple onPress={onPress} rippleColor="rgba(244, 63, 94, 0.08)">
+      <View style={styles.row}>
+        <ChatAvatar
+          uri={avatar}
+          label={title}
+          shape="roundedSquare"
+          size={54}
+          style={styles.avatar}
+        />
 
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <View style={styles.titleRow}>
-            <Text numberOfLines={1} style={styles.title}>
-              {title}
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <View style={styles.titleRow}>
+              <Text numberOfLines={1} style={styles.title}>
+                {title}
+              </Text>
+              {tag ? (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.time}>{formatConversationTime(time)}</Text>
+          </View>
+
+          <View style={styles.bottomRow}>
+            <Text numberOfLines={1} style={styles.subtitle}>
+              {subtitle}
             </Text>
-            {tag ? (
-              <View style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
+            {unreadCount > 0 ? (
+              <Badge size={20} style={styles.badge}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
             ) : null}
           </View>
-          <Text style={styles.time}>{formatConversationTime(time)}</Text>
-        </View>
-
-        <View style={styles.bottomRow}>
-          <Text numberOfLines={1} style={styles.subtitle}>
-            {subtitle}
-          </Text>
-          {unreadCount > 0 ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Text>
-            </View>
-          ) : null}
         </View>
       </View>
-    </TouchableOpacity>
+    </TouchableRipple>
   )
 }
 
@@ -146,17 +147,6 @@ const styles = StyleSheet.create({
     marginRight: 10
   },
   badge: {
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-    backgroundColor: '#FA5151',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  badgeText: {
-    fontSize: 11,
-    color: '#fff',
-    fontWeight: '700'
+    backgroundColor: '#FA5151'
   }
 })

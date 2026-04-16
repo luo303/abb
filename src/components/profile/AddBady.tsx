@@ -6,24 +6,24 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
-  ActivityIndicator,
   Platform
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useDispatch, useSelector } from 'react-redux'
+import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
+
 import {
   addBaby,
-  resetBabyState,
-  fetchBabyProfile
+  fetchBabyProfile,
+  resetBabyState
 } from '../../store/modules/BabyStore'
-import { Ionicons } from '@expo/vector-icons'
 import { RootState } from '../../store'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useMessage } from '../Message'
 import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
+import PaperAvatar from '../common/PaperAvatar'
 
 export default function AddBabyScreen() {
   const navigation = useNavigation()
@@ -54,7 +54,7 @@ export default function AddBabyScreen() {
     }
   }
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (_event: any, selectedDate?: Date) => {
     setShowDatePicker(false)
     if (selectedDate) {
       setBirthday(selectedDate)
@@ -82,7 +82,7 @@ export default function AddBabyScreen() {
       height: height ? parseFloat(height) : undefined,
       weight: weight ? parseFloat(weight) : undefined,
       head_circumference: headCircumference
-        ? parseInt(headCircumference)
+        ? parseInt(headCircumference, 10)
         : undefined,
       remark: remark || undefined
     }
@@ -91,7 +91,6 @@ export default function AddBabyScreen() {
       const resultAction = await dispatch(addBaby(babyData))
       if (addBaby.fulfilled.match(resultAction)) {
         if (resultAction.payload?.code === 0) {
-          // 获取并存储详细信息
           if (resultAction.payload.data?.baby_id) {
             await dispatch(fetchBabyProfile(resultAction.payload.data.baby_id))
           }
@@ -106,17 +105,17 @@ export default function AddBabyScreen() {
       } else {
         showMessage((resultAction.payload as string) || '创建失败')
       }
-    } catch (err) {
-      console.error(err)
+    } catch (error) {
+      console.error(error)
       showMessage('发生未知错误')
     }
   }
 
   return (
     <AppKeyboardAvoidingView
-      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarSection}>
@@ -127,14 +126,13 @@ export default function AddBabyScreen() {
             onPress={handlePickImage}
             style={styles.avatarWrapper}
           >
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatar} />
-            ) : (
-              <View style={styles.placeholderAvatar}>
-                <Ionicons name="camera-outline" size={32} color="#999" />
-                <Text style={styles.avatarText}>上传头像</Text>
-              </View>
-            )}
+            <PaperAvatar size={100} source={avatar} style={styles.avatar} />
+            <View style={styles.placeholderAvatar}>
+              <Ionicons name="camera-outline" size={28} color="#fff" />
+              <Text style={styles.avatarText}>
+                {avatar ? '重新选择' : '上传头像'}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -143,12 +141,12 @@ export default function AddBabyScreen() {
             宝宝姓名 <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
-            style={styles.input}
+            maxLength={20}
+            onChangeText={setName}
             placeholder="请输入宝宝姓名"
             placeholderTextColor="#9CA3AF"
+            style={styles.input}
             value={name}
-            onChangeText={setName}
-            maxLength={20}
           />
         </View>
 
@@ -157,48 +155,42 @@ export default function AddBabyScreen() {
             性别 <Text style={styles.required}>*</Text>
           </Text>
           <View style={styles.genderContainer}>
-            <TouchableOpacity
+            <Button
+              mode={gender === 'male' ? 'contained' : 'outlined'}
+              onPress={() => setGender('male')}
               style={[
                 styles.genderButton,
                 gender === 'male' && styles.genderButtonActive
               ]}
-              onPress={() => setGender('male')}
+              contentStyle={styles.genderButtonContent}
+              labelStyle={[
+                styles.genderButtonLabel,
+                gender === 'male' && styles.genderTextActive
+              ]}
+              buttonColor="#87CEEB"
+              textColor={gender === 'male' ? '#fff' : '#666'}
+              uppercase={false}
             >
-              <Ionicons
-                name="male"
-                size={20}
-                color={gender === 'male' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'male' && styles.genderTextActive
-                ]}
-              >
-                男宝宝
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              男宝宝
+            </Button>
+            <Button
+              mode={gender === 'female' ? 'contained' : 'outlined'}
+              onPress={() => setGender('female')}
               style={[
                 styles.genderButton,
                 gender === 'female' && styles.genderButtonActiveFemale
               ]}
-              onPress={() => setGender('female')}
+              contentStyle={styles.genderButtonContent}
+              labelStyle={[
+                styles.genderButtonLabel,
+                gender === 'female' && styles.genderTextActive
+              ]}
+              buttonColor="#FF69B4"
+              textColor={gender === 'female' ? '#fff' : '#666'}
+              uppercase={false}
             >
-              <Ionicons
-                name="female"
-                size={20}
-                color={gender === 'female' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.genderText,
-                  gender === 'female' && styles.genderTextActive
-                ]}
-              >
-                女宝宝
-              </Text>
-            </TouchableOpacity>
+              女宝宝
+            </Button>
           </View>
         </View>
 
@@ -206,45 +198,49 @@ export default function AddBabyScreen() {
           <Text style={styles.label}>
             出生日期 <Text style={styles.required}>*</Text>
           </Text>
-          <TouchableOpacity
-            style={styles.dateButton}
+          <Button
+            mode="outlined"
             onPress={() => setShowDatePicker(true)}
+            style={styles.dateButton}
+            contentStyle={styles.dateButtonContent}
+            labelStyle={styles.dateButtonLabel}
+            icon="calendar-outline"
+            uppercase={false}
           >
-            <Text style={styles.dateText}>{birthday.toLocaleDateString()}</Text>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-          </TouchableOpacity>
-          {showDatePicker && (
+            {birthday.toLocaleDateString()}
+          </Button>
+          {showDatePicker ? (
             <DateTimePicker
-              value={birthday}
-              mode="date"
               display="default"
-              onChange={handleDateChange}
               maximumDate={new Date()}
+              mode="date"
+              onChange={handleDateChange}
+              value={birthday}
             />
-          )}
+          ) : null}
         </View>
 
         <View style={styles.row}>
           <View style={[styles.formGroup, { flex: 1, marginRight: 10 }]}>
             <Text style={styles.label}>身高 (cm)</Text>
             <TextInput
-              style={styles.input}
+              keyboardType="numeric"
+              onChangeText={setHeight}
               placeholder="0.0"
               placeholderTextColor="#9CA3AF"
+              style={styles.input}
               value={height}
-              onChangeText={setHeight}
-              keyboardType="numeric"
             />
           </View>
           <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
             <Text style={styles.label}>体重 (kg)</Text>
             <TextInput
-              style={styles.input}
+              keyboardType="numeric"
+              onChangeText={setWeight}
               placeholder="0.0"
               placeholderTextColor="#9CA3AF"
+              style={styles.input}
               value={weight}
-              onChangeText={setWeight}
-              keyboardType="numeric"
             />
           </View>
         </View>
@@ -252,47 +248,42 @@ export default function AddBabyScreen() {
         <View style={styles.formGroup}>
           <Text style={styles.label}>头围 (cm)</Text>
           <TextInput
-            style={styles.input}
+            keyboardType="numeric"
+            onChangeText={setHeadCircumference}
             placeholder="0.0"
             placeholderTextColor="#9CA3AF"
+            style={styles.input}
             value={headCircumference}
-            onChangeText={setHeadCircumference}
-            keyboardType="numeric"
           />
         </View>
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>备注</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="备注信息，可填可不填"
-            placeholderTextColor="#9CA3AF"
-            value={remark}
-            onChangeText={setRemark}
             multiline
             numberOfLines={3}
+            onChangeText={setRemark}
+            placeholder="备注信息，可填可不填"
+            placeholderTextColor="#9CA3AF"
+            style={[styles.input, styles.textArea]}
             textAlignVertical="top"
+            value={remark}
           />
         </View>
 
-        <TouchableOpacity
-          onPress={handleSubmit}
+        <Button
+          mode="contained"
           disabled={loading}
+          onPress={handleSubmit}
           style={styles.submitButtonContainer}
+          contentStyle={styles.submitButton}
+          labelStyle={styles.submitButtonText}
+          loading={loading}
+          buttonColor="#FF69B4"
+          uppercase={false}
         >
-          <LinearGradient
-            colors={['#FFB6C1', '#FF69B4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitButton}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>保存</Text>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
+          保存
+        </Button>
       </ScrollView>
     </AppKeyboardAvoidingView>
   )
@@ -302,25 +293,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff'
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  backButton: {
-    padding: 4
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333'
   },
   scrollContent: {
     padding: 20
@@ -349,14 +321,21 @@ const styles = StyleSheet.create({
   },
   avatar: {
     width: '100%',
-    height: '100%'
+    height: '100%',
+    borderRadius: 50
   },
   placeholderAvatar: {
-    alignItems: 'center'
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.38)'
   },
   avatarText: {
     fontSize: 12,
-    color: '#999',
+    color: '#fff',
     marginTop: 4
   },
   formGroup: {
@@ -389,41 +368,34 @@ const styles = StyleSheet.create({
   },
   genderButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: 'transparent'
+    borderRadius: 8
   },
-  genderButtonActive: {
-    backgroundColor: '#87CEEB' // Blue for male
+  genderButtonContent: {
+    minHeight: 48
   },
-  genderButtonActiveFemale: {
-    backgroundColor: '#FF69B4' // Pink for female
-  },
-  genderText: {
-    marginLeft: 8,
+  genderButtonLabel: {
     fontSize: 14,
     color: '#666'
+  },
+  genderButtonActive: {
+    backgroundColor: '#87CEEB'
+  },
+  genderButtonActiveFemale: {
+    backgroundColor: '#FF69B4'
   },
   genderTextActive: {
     color: '#fff',
     fontWeight: '600'
   },
   dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f9f9f9',
     borderRadius: 8,
-    padding: 12,
     borderWidth: 1,
     borderColor: '#eee'
   },
-  dateText: {
+  dateButtonContent: {
+    minHeight: 48
+  },
+  dateButtonLabel: {
     fontSize: 14,
     color: '#333'
   },
@@ -435,9 +407,8 @@ const styles = StyleSheet.create({
     marginBottom: 40
   },
   submitButton: {
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center'
+    height: 52,
+    borderRadius: 30
   },
   submitButtonText: {
     color: '#fff',

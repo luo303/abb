@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { useSelector, useDispatch } from 'react-redux'
+import { Button } from 'react-native-paper'
 import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 import { RootState, AppDispatch } from '../store'
 import {
@@ -336,15 +337,19 @@ const DiaperFormScreen = () => {
 
           {/* 保存按钮 */}
           <View style={styles.footer}>
-            <TouchableOpacity
+            <Button
+              mode="contained"
               style={styles.saveButton}
+              contentStyle={styles.saveButtonContent}
+              labelStyle={styles.saveButtonText}
               onPress={handleSave}
               disabled={isLoading}
+              loading={isLoading}
+              buttonColor="#f43f5e"
+              uppercase={false}
             >
-              <Text style={styles.saveButtonText}>
-                {isLoading ? '保存中...' : '保存'}
-              </Text>
-            </TouchableOpacity>
+              保存
+            </Button>
           </View>
 
           {/* 占位空间 */}
@@ -428,10 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   saveButton: {
-    backgroundColor: '#f43f5e',
     borderRadius: 28,
-    paddingVertical: 16,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -440,6 +442,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3
+  },
+  saveButtonContent: {
+    minHeight: 56
   },
   saveButtonText: {
     color: '#fff',

@@ -1,12 +1,7 @@
 import React from 'react'
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  Platform,
-  View
-} from 'react-native'
+import { StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 
 interface SleepActionButtonProps {
   isTimerRunning: boolean
@@ -28,39 +23,37 @@ const SleepActionButton: React.FC<SleepActionButtonProps> = ({
   }
 
   return (
-    <TouchableOpacity
+    <Button
+      mode={isTimerRunning ? 'contained' : 'outlined'}
       style={[
         styles.actionButton,
         isTimerRunning ? styles.stopButton : styles.startButton
       ]}
+      contentStyle={styles.actionButtonContent}
+      labelStyle={[
+        styles.actionButtonText,
+        isTimerRunning ? styles.stopButtonText : styles.startButtonText
+      ]}
       onPress={handlePress}
-    >
-      <View style={styles.buttonContent}>
+      icon={({ size, color }) => (
         <Ionicons
           name={isTimerRunning ? 'stopwatch' : 'time'}
-          size={24}
-          color={isTimerRunning ? 'white' : '#f43f5e'}
-          style={styles.buttonIcon}
+          size={size}
+          color={color}
         />
-        <Text
-          style={[
-            styles.actionButtonText,
-            isTimerRunning ? styles.stopButtonText : styles.startButtonText
-          ]}
-        >
-          {isTimerRunning ? '结束睡眠' : '开始计时'}
-        </Text>
-      </View>
-    </TouchableOpacity>
+      )}
+      buttonColor={isTimerRunning ? 'rgba(255,255,255,0.3)' : '#ffffff'}
+      textColor={isTimerRunning ? '#ffffff' : '#f43f5e'}
+      uppercase={false}
+    >
+      {isTimerRunning ? '结束睡眠' : '开始计时'}
+    </Button>
   )
 }
 
 const styles = StyleSheet.create({
   actionButton: {
-    paddingHorizontal: 64,
-    paddingVertical: 18,
     borderRadius: 36,
-    alignItems: 'center',
     marginHorizontal: 48,
     marginBottom: 28,
     ...Platform.select({
@@ -75,12 +68,9 @@ const styles = StyleSheet.create({
       }
     })
   },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  buttonIcon: {
-    marginRight: 8
+  actionButtonContent: {
+    minHeight: 60,
+    paddingHorizontal: 24
   },
   startButton: {
     backgroundColor: 'white'

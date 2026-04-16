@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request, { baseURL } from '@/utils/request'
 
 export interface PartnerBindPayload {
   account: string
@@ -122,8 +122,18 @@ export interface GroupMembersResponse {
   }
 }
 
-export const PARTNER_WS_BASE_URL = 'ws://38.76.197.12:8080/ws/chat'
-export const GROUP_WS_BASE_URL = 'ws://38.76.197.12:8080/ws/groups'
+const resolveWsBaseUrl = (pathname: string) => {
+  try {
+    const parsed = new URL(baseURL)
+    const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${wsProtocol}//${parsed.host}${pathname}`
+  } catch {
+    return `ws://tayna-nonredemptible-dissipatedly.ngrok-free.dev${pathname}`
+  }
+}
+
+export const PARTNER_WS_BASE_URL = resolveWsBaseUrl('/ws/chat')
+export const GROUP_WS_BASE_URL = resolveWsBaseUrl('/ws/groups')
 
 export const fetchPartner = () => {
   return request.get('/user/partner') as Promise<PartnerResponse>

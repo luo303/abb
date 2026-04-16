@@ -3,19 +3,17 @@ import {
   View,
   StyleSheet,
   Platform,
-  TouchableOpacity,
   Text,
   Animated,
   DeviceEventEmitter
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { Stack } from 'expo-router'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import dayjs from 'dayjs'
-import { Button } from '@ant-design/react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useSelector, useDispatch } from 'react-redux'
+import { Button } from 'react-native-paper'
 import { useNavigationHelper } from '../../utils/navigation'
 import ExportButton from '../../components/export/ExportButton'
 
@@ -574,20 +572,16 @@ export default function DailyRecordScreen() {
       <View style={styles.calendarHeader}>
         <View style={styles.headerContent}>
           <Button
-            type="ghost"
-            size="large"
+            compact
+            mode="text"
             onPress={handlePreviousDay}
-            style={{
-              borderWidth: 0,
-              paddingVertical: 8,
-              paddingHorizontal: 12
-            }}
+            style={styles.navButton}
+            contentStyle={styles.navButtonContent}
+            labelStyle={styles.navButtonLabel}
+            icon="chevron-left"
+            uppercase={false}
           >
-            <MaterialCommunityIcons
-              name="chevron-left"
-              size={28}
-              color="#f43f5e"
-            />
+            {' '}
           </Button>
 
           <View style={styles.datePickerContainer}>
@@ -601,12 +595,16 @@ export default function DailyRecordScreen() {
               />
             ) : (
               <>
-                <TouchableOpacity
+                <Button
+                  mode="outlined"
                   onPress={() => setShowDatePicker(true)}
                   style={styles.dateTextContainer}
+                  contentStyle={styles.dateButtonContent}
+                  labelStyle={styles.dateText}
+                  uppercase={false}
                 >
-                  <Text style={styles.dateText}>{selectedDate}</Text>
-                </TouchableOpacity>
+                  {selectedDate}
+                </Button>
                 {showDatePicker && (
                   <DateTimePicker
                     value={new Date(selectedDate)}
@@ -621,20 +619,16 @@ export default function DailyRecordScreen() {
           </View>
 
           <Button
-            type="ghost"
-            size="large"
+            compact
+            mode="text"
             onPress={handleNextDay}
-            style={{
-              borderWidth: 0,
-              paddingVertical: 8,
-              paddingHorizontal: 12
-            }}
+            style={styles.navButton}
+            contentStyle={styles.navButtonContent}
+            labelStyle={styles.navButtonLabel}
+            icon="chevron-right"
+            uppercase={false}
           >
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={28}
-              color="#f43f5e"
-            />
+            {' '}
           </Button>
         </View>
       </View>
@@ -695,8 +689,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   dateTextContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 8,
     shadowColor: '#f43f5e',
@@ -705,10 +697,24 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3
   },
+  dateButtonContent: {
+    minHeight: 42,
+    paddingHorizontal: 4
+  },
   dateText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#f43f5e'
+  },
+  navButton: {
+    borderRadius: 20
+  },
+  navButtonContent: {
+    minHeight: 40,
+    width: 40
+  },
+  navButtonLabel: {
+    marginHorizontal: 0
   },
   dateNavigation: {
     flexDirection: 'row',

@@ -8,7 +8,11 @@ import {
   View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import { DrawerActions, useNavigation } from '@react-navigation/native'
+import {
+  DrawerActions,
+  useFocusEffect,
+  useNavigation
+} from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { TabBar, TabView } from 'react-native-tab-view'
 
@@ -19,8 +23,10 @@ import {
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
 import HomeSearchBar from '@/components/home/search/HomeSearchBar'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { normalizeHomeTabKey, useHomeData } from '@/hooks/useHomeData'
 import { HomeFeedTabKey, PostItem } from '@/types/home'
+import { syncMessengerHomeEntry } from '@/store/modules/MessengerStore'
 
 type HomeRoute = {
   key: HomeFeedTabKey
@@ -176,7 +182,9 @@ const HomeFeedScene = memo(function HomeFeedScene({
 
 export default function Home() {
   const navigation = useNavigation<any>()
+  const dispatch = useAppDispatch()
   const layout = useWindowDimensions()
+  const token = useAppSelector(state => state.user.token)
   const {
     activeTab,
     setActiveTab,
@@ -204,6 +212,15 @@ export default function Home() {
       setIndex(nextIndex)
     }
   }, [activeTab, index])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return
+
+      console.log('[首页] 进入首页，准备初始化聊天连接')
+      void dispatch(syncMessengerHomeEntry())
+    }, [dispatch, token])
+  )
 
   const handleIndexChange = useCallback(
     (nextIndex: number) => {

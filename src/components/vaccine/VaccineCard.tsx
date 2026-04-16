@@ -1,6 +1,8 @@
 import React from 'react'
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Switch, TouchableRipple } from 'react-native-paper'
+
 import { VaccineItem } from '@/api/vaccine'
 
 interface VaccineCardProps {
@@ -16,7 +18,6 @@ export default function VaccineCard({
 }: VaccineCardProps) {
   const isCompleted = data.status === 'given'
 
-  // 格式化日期
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return '未知'
     const date = new Date(timestamp)
@@ -44,11 +45,9 @@ export default function VaccineCard({
             ) : null}
           </View>
           <Switch
+            color="#22c55e"
+            onValueChange={value => onToggleStatus?.(data.dose_id, value)}
             value={isCompleted}
-            onValueChange={val => onToggleStatus?.(data.dose_id, val)}
-            trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-            thumbColor={isCompleted ? '#22c55e' : '#f1f5f9'}
-            ios_backgroundColor="#e2e8f0"
           />
         </View>
 
@@ -58,9 +57,10 @@ export default function VaccineCard({
 
         <View style={styles.footerRow}>
           {isCompleted ? (
-            <TouchableOpacity
-              activeOpacity={0.6}
+            <TouchableRipple
               onPress={() => onDatePress?.(data.dose_id, data.actual_time)}
+              rippleColor="rgba(21, 128, 61, 0.08)"
+              style={styles.statusAction}
             >
               <View style={[styles.statusBadge, styles.completedBadge]}>
                 <Ionicons name="checkmark-circle" size={16} color="#15803d" />
@@ -68,7 +68,7 @@ export default function VaccineCard({
                   接种时间: {formatDate(data.actual_time)}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </TouchableRipple>
           ) : (
             <View style={[styles.statusBadge, styles.pendingBadge]}>
               <Ionicons name="calendar-outline" size={16} color="#1d4ed8" />
@@ -147,6 +147,10 @@ const styles = StyleSheet.create({
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center'
+  },
+  statusAction: {
+    borderRadius: 10,
+    overflow: 'hidden'
   },
   statusBadge: {
     flexDirection: 'row',

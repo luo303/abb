@@ -1,16 +1,10 @@
 import React, { useLayoutEffect, useState } from 'react'
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native'
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
+import { Button } from 'react-native-paper'
 
 import {
   AppKeyboardChatScrollView,
@@ -155,27 +149,19 @@ export default function BindPartner() {
               />
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.86}
+            <Button
+              mode="contained"
               disabled={submitting}
               onPress={handleSubmit}
               style={styles.submitWrap}
+              contentStyle={styles.submitButton}
+              labelStyle={styles.submitButtonText}
+              loading={submitting}
+              buttonColor={chatPalette.accentStrong}
+              uppercase={false}
             >
-              <LinearGradient
-                colors={
-                  submitting
-                    ? ['#F2C8D6', '#F2C8D6']
-                    : [...chatGradients.accent]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.submitButton}
-              >
-                <Text style={styles.submitButtonText}>
-                  {submitting ? '绑定中...' : '立即绑定'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              立即绑定
+            </Button>
           </View>
         </AppKeyboardChatScrollView>
       </AppKeyboardAvoidingView>
@@ -285,13 +271,16 @@ const styles = StyleSheet.create({
   },
   submitWrap: {
     marginTop: 22,
-    borderRadius: 18
+    borderRadius: 18,
+    shadowColor: chatPalette.accentStrong,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 4
   },
   submitButton: {
     height: 54,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center'
+    borderRadius: 18
   },
   submitButtonText: {
     fontSize: 15,

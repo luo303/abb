@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   TouchableOpacity,
   ImageBackground
@@ -30,6 +29,7 @@ import {
 import { useMessage } from '../Message'
 import { uploadFile } from '@/api/upload'
 import { setUserInfo } from '../../store/modules/userStore'
+import PaperAvatar from '@/components/common/PaperAvatar'
 
 interface UserInfoProps {
   userInfo: UserMeResponse | null
@@ -64,13 +64,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
   const renderItem = useCallback((item: any) => {
     return (
       <View style={styles.item}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.itemIcon} />
-        ) : (
-          <View style={[styles.itemIcon, styles.placeholderIcon]}>
-            <Ionicons name="person" size={20} color="#ccc" />
-          </View>
-        )}
+        <PaperAvatar size={32} source={item.avatar} style={styles.itemIcon} />
         <Text style={styles.textItem}>{item.name}</Text>
       </View>
     )
@@ -95,20 +89,15 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
   const renderLeftIcon = useCallback(() => {
     const selectedItem = babiesList.find(item => item.baby_id === value)
     if (!selectedItem) {
-      return (
-        <Ionicons style={styles.icon} color={'#ccc'} name="person" size={20} />
-      )
+      return <PaperAvatar size={30} style={styles.selectedIcon} />
     }
 
-    return selectedItem.avatar ? (
-      <Image
-        source={{ uri: selectedItem.avatar }}
+    return (
+      <PaperAvatar
+        size={30}
+        source={selectedItem.avatar}
         style={styles.selectedIcon}
       />
-    ) : (
-      <View style={[styles.selectedIcon, styles.placeholderIcon]}>
-        <Ionicons name="person" size={16} color="#ccc" />
-      </View>
     )
   }, [babiesList, value])
 
@@ -247,17 +236,14 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
                 onPress={handleChangeAvatar}
                 disabled={uploadingAvatar}
               >
-                {userInfo?.avatar ? (
-                  <Image
-                    source={{ uri: userInfo.avatar }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <Image
-                    source={require('../../assets/testAvatar.png')}
-                    style={styles.avatar}
-                  />
-                )}
+                <PaperAvatar
+                  accessibilityLabel={
+                    userInfo?.username || userInfo?.account || '用户头像'
+                  }
+                  size={70}
+                  source={userInfo?.avatar}
+                  style={styles.avatar}
+                />
               </TouchableOpacity>
               <View style={styles.userTexts}>
                 <Text

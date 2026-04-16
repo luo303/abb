@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   Modal,
@@ -11,7 +10,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Switch, Provider } from '@ant-design/react-native'
+import { Switch, TouchableRipple } from 'react-native-paper'
+
 import { getPostTags } from '@/api/post'
 
 interface Tag {
@@ -22,19 +22,6 @@ interface Tag {
 interface PostToolbarProps {
   onTagsChange?: (tagIds: string[], tagNames: string[]) => void
   onPrivacyChange?: (isPublic: boolean) => void
-}
-
-const customTheme = {
-  // 修改主色调为 App 主题色 (Warm Red)
-  brand_primary: '#f43f5e',
-  color_link: '#f43f5e', // 影响“确定”按钮颜色
-
-  // 优化字体颜色
-  color_text_base: '#333333',
-  color_text_caption: '#999999',
-
-  // 边框颜色
-  border_color_base: '#eeeeee'
 }
 
 export default function PostToolbar({
@@ -93,45 +80,42 @@ export default function PostToolbar({
     }
   }, [])
 
+  const getTagName = (tagId: string): string => {
+    const tag = tags.find(item => item.id === tagId)
+    return tag ? tag.name : ''
+  }
+
   const toggleTag = (tagId: string) => {
-    let newTagIds
+    let newTagIds: string[]
     if (selectedTagIds.includes(tagId)) {
       newTagIds = selectedTagIds.filter(id => id !== tagId)
     } else {
       newTagIds = [...selectedTagIds, tagId]
     }
     setSelectedTagIds(newTagIds)
-    if (onTagsChange) {
-      const names = newTagIds.map(id => getTagName(id)).filter(Boolean)
-      onTagsChange(newTagIds, names)
-    }
-  }
-
-  // Helper function to get tag name from ID
-  const getTagName = (tagId: string): string => {
-    const tag = tags.find(t => t.id === tagId)
-    return tag ? tag.name : ''
+    onTagsChange?.(
+      newTagIds,
+      newTagIds.map(id => getTagName(id)).filter(Boolean)
+    )
   }
 
   const handlePrivacyChange = (checked: boolean) => {
     setIsPublic(checked)
-    if (onPrivacyChange) {
-      onPrivacyChange(checked)
-    }
+    onPrivacyChange?.(checked)
   }
 
-  // 点击整个条目切换开关状态
   const togglePrivacy = () => {
     handlePrivacyChange(!isPublic)
   }
 
   return (
-    <Provider theme={customTheme}>
-      <View style={styles.toolbar}>
-        <TouchableOpacity
-          style={styles.toolItem}
-          onPress={() => setShowTagsModal(true)}
-        >
+    <View style={styles.toolbar}>
+      <TouchableRipple
+        onPress={() => setShowTagsModal(true)}
+        rippleColor="rgba(244, 63, 94, 0.08)"
+        style={styles.toolItem}
+      >
+        <>
           <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
             <Ionicons name="pricetag" size={20} color="#f43f5e" />
           </View>
@@ -146,9 +130,9 @@ export default function PostToolbar({
                 </Text>
               ))
             ) : null}
-            {selectedTagIds.length > 2 && (
+            {selectedTagIds.length > 2 ? (
               <Text style={styles.tag}>+{selectedTagIds.length - 2}</Text>
-            )}
+            ) : null}
           </View>
           <Ionicons
             name="chevron-forward"
@@ -156,82 +140,88 @@ export default function PostToolbar({
             color="#ccc"
             style={styles.arrow}
           />
-        </TouchableOpacity>
+        </>
+      </TouchableRipple>
 
-        <Modal
-          visible={showTagsModal}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setShowTagsModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { height: '60%' }]}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>选择话题</Text>
-                <TouchableOpacity onPress={() => setShowTagsModal(false)}>
-                  <Ionicons name="close" size={24} color="#333" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView contentContainerStyle={styles.tagsList}>
-                <View style={styles.tagsWrapper}>
-                  {isTagsLoading ? (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="small" color="#f43f5e" />
-                      <Text style={styles.loadingText}>话题加载中...</Text>
-                    </View>
-                  ) : tags.length > 0 ? (
-                    tags.map(tag => (
-                      <TouchableOpacity
-                        key={tag.id}
-                        style={[
-                          styles.tagItem,
-                          selectedTagIds.includes(tag.id) &&
-                            styles.tagItemActive
-                        ]}
-                        onPress={() => toggleTag(tag.id)}
-                      >
-                        <Text
-                          style={[
-                            styles.tagItemText,
-                            selectedTagIds.includes(tag.id) &&
-                              styles.tagItemTextActive
-                          ]}
-                        >
-                          #{tag.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))
-                  ) : (
-                    <Text style={styles.emptyText}>暂无可选话题</Text>
-                  )}
-                </View>
-              </ScrollView>
-
-              <TouchableOpacity
-                style={styles.confirmButton}
+      <Modal
+        visible={showTagsModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTagsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { height: '60%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>选择话题</Text>
+              <TouchableRipple
+                borderless
                 onPress={() => setShowTagsModal(false)}
+                style={styles.iconButton}
               >
-                <LinearGradient
-                  colors={['#ff9a9e', '#f43f5e']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.confirmGradient}
-                >
-                  <Text style={styles.confirmText}>确定</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableRipple>
             </View>
+
+            <ScrollView contentContainerStyle={styles.tagsList}>
+              <View style={styles.tagsWrapper}>
+                {isTagsLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#f43f5e" />
+                    <Text style={styles.loadingText}>话题加载中...</Text>
+                  </View>
+                ) : tags.length > 0 ? (
+                  tags.map(tag => (
+                    <TouchableRipple
+                      key={tag.id}
+                      onPress={() => toggleTag(tag.id)}
+                      rippleColor="rgba(244, 63, 94, 0.08)"
+                      style={[
+                        styles.tagItem,
+                        selectedTagIds.includes(tag.id) && styles.tagItemActive
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.tagItemText,
+                          selectedTagIds.includes(tag.id) &&
+                            styles.tagItemTextActive
+                        ]}
+                      >
+                        #{tag.name}
+                      </Text>
+                    </TouchableRipple>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>暂无可选话题</Text>
+                )}
+              </View>
+            </ScrollView>
+
+            <TouchableRipple
+              onPress={() => setShowTagsModal(false)}
+              style={styles.confirmButton}
+            >
+              <LinearGradient
+                colors={['#ff9a9e', '#f43f5e']}
+                end={{ x: 1, y: 0 }}
+                start={{ x: 0, y: 0 }}
+                style={styles.confirmGradient}
+              >
+                <Text style={styles.confirmText}>确定</Text>
+              </LinearGradient>
+            </TouchableRipple>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
-        <View style={styles.divider} />
+      <View style={styles.divider} />
 
-        <TouchableOpacity
-          style={styles.toolItem}
-          activeOpacity={0.7}
-          onPress={togglePrivacy}
-        >
+      <TouchableRipple
+        onPress={togglePrivacy}
+        rippleColor="rgba(244, 63, 94, 0.08)"
+        style={styles.toolItem}
+      >
+        <>
           <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
             <Ionicons
               name={isPublic ? 'eye' : 'eye-off'}
@@ -245,32 +235,31 @@ export default function PostToolbar({
               {isPublic ? '公开' : '私密'}
             </Text>
             <Switch
-              checked={isPublic}
-              onChange={handlePrivacyChange}
+              color="#f43f5e"
+              onValueChange={handlePrivacyChange}
               style={{ transform: [{ scale: 0.8 }] }}
-              trackColor={{ false: '#e5e5e5', true: '#f43f5e' }}
-              thumbColor="#fff"
+              value={isPublic}
             />
           </View>
-        </TouchableOpacity>
-        <View style={styles.divider} />
+        </>
+      </TouchableRipple>
 
-        {/* 静态提示卡片 */}
-        <View style={styles.tipsCard}>
-          <View style={styles.tipsHeader}>
-            <Ionicons name="bulb-outline" size={18} color="#f59e0b" />
-            <Text style={styles.tipsTitle}>优质帖子小贴士</Text>
-          </View>
-          <Text style={styles.tipsContent}>
-            1. 分享真实的育儿经验更容易获得共鸣{'\n'}
-            2. 添加清晰的宝宝照片会更受欢迎{'\n'}
-            3. 使用合适的话题标签可以让更多人看到{'\n'}
-            4. 尊重他人隐私，不发布他人敏感信息{'\n'}
-            5. 友善互动，共建温暖的育儿社区
-          </Text>
+      <View style={styles.divider} />
+
+      <View style={styles.tipsCard}>
+        <View style={styles.tipsHeader}>
+          <Ionicons name="bulb-outline" size={18} color="#f59e0b" />
+          <Text style={styles.tipsTitle}>优质帖子小贴士</Text>
         </View>
+        <Text style={styles.tipsContent}>
+          1. 分享真实的育儿经验更容易获得共鸣{'\n'}
+          2. 添加清晰的宝宝照片会更受欢迎{'\n'}
+          3. 使用合适的话题标签可以让更多人看到{'\n'}
+          4. 尊重他人隐私，不发布他人敏感信息{'\n'}
+          5. 友善互动，共建温暖的育儿社区
+        </Text>
       </View>
-    </Provider>
+    </View>
   )
 }
 
@@ -281,7 +270,8 @@ const styles = StyleSheet.create({
   toolItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15
+    padding: 15,
+    overflow: 'hidden'
   },
   iconBg: {
     width: 32,
@@ -344,6 +334,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333'
   },
+  iconButton: {
+    borderRadius: 16
+  },
   switchContainer: {
     flexDirection: 'row',
     alignItems: 'center'
@@ -351,7 +344,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
-    marginLeft: 59 // icon width + margin + padding
+    marginLeft: 59
   },
   tipsCard: {
     margin: 15,
@@ -410,7 +403,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#f8f8f8',
     borderWidth: 1,
-    borderColor: '#f0f0f0'
+    borderColor: '#f0f0f0',
+    overflow: 'hidden'
   },
   tagItemActive: {
     backgroundColor: '#fff1f2',
@@ -437,35 +431,6 @@ const styles = StyleSheet.create({
   confirmText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold'
-  },
-  customTagInputContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    marginBottom: 16,
-    gap: 10
-  },
-  customTagInput: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    backgroundColor: '#f8f8f8'
-  },
-  addTagButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f43f5e',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  addTagButtonText: {
-    color: '#fff',
-    fontSize: 14,
     fontWeight: 'bold'
   }
 })

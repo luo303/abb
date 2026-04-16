@@ -40,6 +40,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { NavigationProps, RootStackParamList } from '@/types/navigation'
 import {
+  ChatGroupMember,
   clearPartnerUnreadCount,
   markGroupConversationSeen,
   MessengerMessage,
@@ -53,6 +54,8 @@ import {
 const MESSAGE_GAP = 12
 const LIST_BOTTOM_GAP = 18
 const CHAT_DETAIL_INPUT_NATIVE_ID = 'chat-detail-input'
+const EMPTY_GROUP_MESSAGES: MessengerMessage[] = []
+const EMPTY_GROUP_MEMBERS: ChatGroupMember[] = []
 
 type ChatDetailRoute = RouteProp<RootStackParamList, 'ChatDetail'>
 
@@ -98,10 +101,15 @@ export default function ChatDetail() {
     state.messenger.groups.items.find(item => item.groupId === groupId)
   )
   const groupMembers = useAppSelector(state =>
-    groupId ? state.messenger.groups.membersByGroupId[groupId] || [] : []
+    groupId
+      ? state.messenger.groups.membersByGroupId[groupId] || EMPTY_GROUP_MEMBERS
+      : EMPTY_GROUP_MEMBERS
   )
   const groupMessages = useAppSelector(state =>
-    groupId ? state.messenger.groups.messagesByGroupId[groupId] || [] : []
+    groupId
+      ? state.messenger.groups.messagesByGroupId[groupId] ||
+        EMPTY_GROUP_MESSAGES
+      : EMPTY_GROUP_MESSAGES
   )
 
   const messages = useMemo(() => {
@@ -324,11 +332,13 @@ export default function ChatDetail() {
   }, [conversationType, dispatch, groupId, partner.partnerId])
 
   useEffect(() => {
-    setPendingMessages(prev =>
-      prev.filter(
+    setPendingMessages(prev => {
+      const next = prev.filter(
         pending => !messages.some(item => item.messageId === pending.messageId)
       )
-    )
+
+      return next.length === prev.length ? prev : next
+    })
   }, [messages])
 
   useEffect(() => {

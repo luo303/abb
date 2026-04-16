@@ -1,14 +1,8 @@
 // 导出按钮组件
 
 import React, { useState } from 'react'
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator
-} from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { Button } from 'react-native-paper'
 import ExportModal from './ExportModal'
 import {
   exportData,
@@ -81,25 +75,21 @@ export default function ExportButton({
   return (
     <>
       <View style={[styles.container, style]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <Button
+          mode="contained"
           onPress={() => setShowExportModal(true)}
           disabled={isExporting || disabled}
+          style={[
+            styles.exportButton,
+            isExporting && styles.exportButtonDisabled
+          ]}
+          contentStyle={styles.exportButtonContent}
+          labelStyle={styles.exportButtonText}
+          buttonColor="#f43f5e"
+          uppercase={false}
         >
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[
-              styles.exportButton,
-              isExporting && styles.exportButtonDisabled
-            ]}
-          >
-            <Text style={styles.exportButtonText}>
-              {isExporting ? '导出中...' : '导出'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          {isExporting ? '导出中...' : '导出'}
+        </Button>
       </View>
 
       <ExportModal
@@ -129,8 +119,6 @@ const styles = StyleSheet.create({
     zIndex: 100
   },
   exportButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 2 },
@@ -140,6 +128,10 @@ const styles = StyleSheet.create({
   },
   exportButtonDisabled: {
     opacity: 0.6
+  },
+  exportButtonContent: {
+    minHeight: 40,
+    paddingHorizontal: 8
   },
   exportButtonText: {
     fontSize: 14,
