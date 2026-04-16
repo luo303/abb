@@ -4,6 +4,8 @@ export interface ParsedContent {
   images?: (string | any)[]
 }
 
+export type HomeFeedTabKey = 'recommend' | 'hot' | 'following'
+
 export interface PostItem {
   post_id: string
   id?: string // 兼容某些接口可能返回 id 而不是 post_id

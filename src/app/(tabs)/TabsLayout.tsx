@@ -9,7 +9,7 @@ import Svg, { Path } from 'react-native-svg'
 import { LinearGradient } from 'expo-linear-gradient'
 
 // 导入页面组件
-import HomeScreen from './home'
+import HomeScreen from './HomeDrawer'
 import GrowthRecordScreen from './growthRecord'
 import ProfileScreen from './profile'
 

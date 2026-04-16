@@ -32,3 +32,19 @@ export interface FollowStatus {
     message: string
   }
 }
+
+export interface FollowUserItem {
+  user_id: string
+  username: string
+  avatar: string
+  follow_time: number
+}
+
+export interface FollowUserListResponse {
+  code: number
+  message: string
+  data: {
+    list: FollowUserItem[]
+    has_more: boolean
+  }
+}
