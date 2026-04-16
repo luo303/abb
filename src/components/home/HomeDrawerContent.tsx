@@ -174,7 +174,7 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
 
           <View style={styles.statsRow}>
             <Text style={styles.statsText}>
-              {renderCount(followingCount)} 正在关注
+              {renderCount(followingCount)} 关注
             </Text>
             <Text style={styles.statsDivider}>|</Text>
             <Text style={styles.statsText}>

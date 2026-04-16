@@ -107,7 +107,9 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   }, [data.cover, data.imageUrls, data.images, parsedContent.images])
 
   const previewImages = displayImages.slice(0, 3)
-  const displayContent = parsedContent.text || data.content_preview || ''
+  const displayContent = (parsedContent.text || data.content_preview || '')
+    .replace(/\s+/g, ' ')
+    .trim()
   const isLiked = data.is_like ?? data.is_liked ?? false
   const isDisliked = data.is_dislike ?? data.is_disliked ?? false
   const isCollected = data.is_collect ?? data.is_collected ?? false
@@ -152,7 +154,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
         </Text>
       ) : null}
 
-      <Text style={styles.content} numberOfLines={2}>
+      <Text style={styles.content} numberOfLines={2} ellipsizeMode="tail">
         {displayContent}
       </Text>
 
@@ -244,9 +246,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb'
+    paddingVertical: 16
   },
   userRow: {
     flexDirection: 'row',
@@ -278,15 +278,16 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 14,
-    fontSize: 22,
-    lineHeight: 30,
-    fontWeight: '700',
+    fontSize: 18,
+    lineHeight: 25,
+    fontWeight: '600',
     color: '#111827'
   },
   content: {
     marginTop: 10,
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '400',
     color: '#6b7280'
   },
   imagesRow: {
@@ -299,14 +300,14 @@ const styles = StyleSheet.create({
   },
   imageCard: {
     flex: 1,
-    height: 92,
+    height: 116,
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: '#f3f4f6'
   },
   imageCardSingle: {
     flex: 0,
-    width: 136
+    width: 170
   },
   postImage: {
     width: '100%',

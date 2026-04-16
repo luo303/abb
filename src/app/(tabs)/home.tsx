@@ -1,30 +1,24 @@
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  RefreshControl,
   StyleSheet,
   Text,
   useWindowDimensions,
   View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerActions, useNavigation } from '@react-navigation/native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { TabBar, TabView } from 'react-native-tab-view'
 
-import HomeSearchBar from '@/components/home/search/HomeSearchBar'
-import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import HomeBanner from '@/components/home/Banner/HomeBanner'
+import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import {
   FollowEmptyState,
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
+import HomeSearchBar from '@/components/home/search/HomeSearchBar'
 import { normalizeHomeTabKey, useHomeData } from '@/hooks/useHomeData'
 import { HomeFeedTabKey, PostItem } from '@/types/home'
 
@@ -34,8 +28,8 @@ type HomeRoute = {
 }
 
 const ROUTES: HomeRoute[] = [
-  { key: 'recommend', title: '推荐' },
   { key: 'hot', title: '热门' },
+  { key: 'recommend', title: '推荐' },
   { key: 'following', title: '关注' }
 ]
 
@@ -47,7 +41,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
   hasMore,
   onRefresh,
   onLoadMore,
-  onGoToRecommend
+  onGoToHot
 }: {
   routeKey: HomeFeedTabKey
   posts: PostItem[]
@@ -56,31 +50,44 @@ const HomeFeedScene = memo(function HomeFeedScene({
   hasMore: boolean
   onRefresh: (tab: HomeFeedTabKey) => void
   onLoadMore: (tab: HomeFeedTabKey) => void
-  onGoToRecommend: () => void
+  onGoToHot: () => void
 }) {
   const endReachedLockRef = useRef(false)
 
+  useEffect(() => {
+    if (!isLoadingMore) {
+      endReachedLockRef.current = false
+    }
+  }, [isLoadingMore])
+
   const handleEndReached = useCallback(() => {
-    if (endReachedLockRef.current || posts.length === 0) {
+    if (
+      endReachedLockRef.current ||
+      isLoadingMore ||
+      refreshing ||
+      posts.length === 0 ||
+      !hasMore
+    ) {
       return
     }
 
     endReachedLockRef.current = true
     onLoadMore(routeKey)
-
-    setTimeout(() => {
-      endReachedLockRef.current = false
-    }, 800)
-  }, [onLoadMore, posts.length, routeKey])
+  }, [hasMore, isLoadingMore, onLoadMore, posts.length, refreshing, routeKey])
 
   const renderItem = useCallback(
     ({ item }: { item: PostItem }) => <HomeCommunityCard data={item} />,
     []
   )
 
+  const renderSeparator = useCallback(
+    () => <View style={styles.postSeparator} />,
+    []
+  )
+
   const renderEmptyState = useCallback(() => {
     if (routeKey === 'following') {
-      return <FollowEmptyState onGoToRecommend={onGoToRecommend} />
+      return <FollowEmptyState onGoToRecommend={onGoToHot} />
     }
 
     if (routeKey === 'hot') {
@@ -100,11 +107,11 @@ const HomeFeedScene = memo(function HomeFeedScene({
         subtitle="下拉刷新试试"
       />
     )
-  }, [onGoToRecommend, routeKey])
+  }, [onGoToHot, routeKey])
 
-  const ListHeaderComponent = useMemo(() => {
-    if (routeKey !== 'recommend') {
-      return <View style={styles.listTopSpacer} />
+  const ListHeaderComponent = useCallback(() => {
+    if (routeKey !== 'hot') {
+      return null
     }
 
     return (
@@ -145,13 +152,21 @@ const HomeFeedScene = memo(function HomeFeedScene({
       renderItem={renderItem}
       keyExtractor={item => String(item.post_id || item.id)}
       showsVerticalScrollIndicator={false}
-      refreshing={refreshing}
-      onRefresh={() => onRefresh(routeKey)}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => onRefresh(routeKey)}
+          tintColor="#f43f5e"
+          colors={['#f43f5e']}
+          progressViewOffset={routeKey === 'hot' ? 10 : 0}
+        />
+      }
       onEndReached={handleEndReached}
-      onEndReachedThreshold={0.4}
+      onEndReachedThreshold={0.3}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={renderEmptyState}
       ListFooterComponent={ListFooterComponent}
+      ItemSeparatorComponent={renderSeparator}
       contentContainerStyle={
         posts.length === 0 ? styles.emptyListContent : styles.listContent
       }
@@ -175,9 +190,13 @@ export default function Home() {
     getTabLoadingMore
   } = useHomeData()
 
-  const [index, setIndex] = useState(() =>
-    ROUTES.findIndex(route => route.key === normalizeHomeTabKey(activeTab))
-  )
+  const [index, setIndex] = useState(() => {
+    const initialIndex = ROUTES.findIndex(
+      route => route.key === normalizeHomeTabKey(activeTab)
+    )
+
+    return initialIndex === -1 ? 0 : initialIndex
+  })
 
   useEffect(() => {
     const nextIndex = ROUTES.findIndex(route => route.key === activeTab)
@@ -198,18 +217,18 @@ export default function Home() {
     navigation.dispatch(DrawerActions.openDrawer())
   }, [navigation])
 
-  const handleGoToRecommend = useCallback(() => {
-    setActiveTab('recommend')
+  const handleGoToHot = useCallback(() => {
+    setActiveTab('hot')
     setIndex(0)
   }, [setActiveTab])
 
   const renderScene = useCallback(
     ({ route }: { route: HomeRoute }) => {
       const posts =
-        route.key === 'recommend'
-          ? recommendPosts
-          : route.key === 'hot'
-            ? hotPosts
+        route.key === 'hot'
+          ? hotPosts
+          : route.key === 'recommend'
+            ? recommendPosts
             : followingFeedPosts
 
       return (
@@ -221,7 +240,7 @@ export default function Home() {
           hasMore={getTabHasMore(route.key)}
           onRefresh={handleRefresh}
           onLoadMore={loadMore}
-          onGoToRecommend={handleGoToRecommend}
+          onGoToHot={handleGoToHot}
         />
       )
     },
@@ -230,7 +249,7 @@ export default function Home() {
       followingFeedPosts,
       getTabHasMore,
       getTabLoadingMore,
-      handleGoToRecommend,
+      handleGoToHot,
       handleRefresh,
       hotPosts,
       loadMore,
@@ -243,24 +262,20 @@ export default function Home() {
     (props: any) => (
       <TabBar
         {...props}
+        scrollEnabled={false}
         style={styles.tabBar}
-        tabStyle={styles.tabItem}
+        tabStyle={[
+          styles.tabItem,
+          { width: layout.width / props.navigationState.routes.length }
+        ]}
         indicatorStyle={styles.tabIndicator}
+        labelStyle={styles.tabLabel}
+        activeColor="#111827"
+        inactiveColor="#9ca3af"
         pressColor="transparent"
-        renderLabel={({
-          route,
-          focused
-        }: {
-          route: HomeRoute
-          focused: boolean
-        }) => (
-          <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>
-            {route.title}
-          </Text>
-        )}
       />
     ),
-    []
+    [layout.width]
   )
 
   return (
@@ -270,9 +285,9 @@ export default function Home() {
       <TabView
         navigationState={{ index, routes: ROUTES }}
         renderScene={renderScene}
+        renderTabBar={renderTabBar}
         onIndexChange={handleIndexChange}
         initialLayout={{ width: layout.width }}
-        renderTabBar={renderTabBar}
         swipeEnabled
         lazy
         style={styles.tabView}
@@ -289,39 +304,29 @@ const styles = StyleSheet.create({
   tabView: {
     flex: 1
   },
-  sceneContainer: {
-    backgroundColor: '#ffffff'
-  },
   tabBar: {
     backgroundColor: '#ffffff',
     elevation: 0,
     shadowOpacity: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb'
+    borderBottomColor: '#eceef2'
   },
   tabItem: {
-    width: 'auto',
-    paddingHorizontal: 20
+    justifyContent: 'center'
   },
   tabLabel: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#9ca3af'
-  },
-  tabLabelActive: {
-    color: '#111827',
-    fontWeight: '700'
+    lineHeight: 22,
+    fontWeight: '600',
+    textTransform: 'none'
   },
   tabIndicator: {
-    backgroundColor: '#f43f5e',
     height: 3,
-    borderRadius: 999
+    borderRadius: 999,
+    backgroundColor: '#f43f5e'
   },
   bannerSection: {
-    paddingBottom: 6
-  },
-  listTopSpacer: {
-    height: 8
+    paddingBottom: 8
   },
   listContent: {
     paddingBottom: 120
@@ -343,5 +348,10 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 24
+  },
+  postSeparator: {
+    height: 1,
+    marginHorizontal: 16,
+    backgroundColor: '#eceef2'
   }
 })

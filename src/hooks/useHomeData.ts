@@ -12,7 +12,8 @@ import { setUserInfo } from '../store/modules/userStore'
 import { HomeFeedTabKey, PostItem } from '../types/home'
 import { useMessage } from '@/components/Message'
 
-const DEFAULT_TAB: HomeFeedTabKey = 'recommend'
+const DEFAULT_TAB: HomeFeedTabKey = 'hot'
+const RECOMMEND_STRATEGY = 'random'
 
 export const normalizeHomeTabKey = (tab?: string | null): HomeFeedTabKey => {
   switch (tab) {
@@ -24,8 +25,9 @@ export const normalizeHomeTabKey = (tab?: string | null): HomeFeedTabKey => {
       return 'following'
     case 'recommend':
     case '推荐':
-    default:
       return 'recommend'
+    default:
+      return 'hot'
   }
 }
 
@@ -51,7 +53,6 @@ export function useHomeData() {
   ) as UserMeResponse | null
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTabState] = useState<HomeFeedTabKey>(DEFAULT_TAB)
-  const isTabLoading = false
 
   const isMountedRef = useRef(true)
   const isLockRef = useRef(false)
@@ -119,22 +120,6 @@ export function useHomeData() {
     [isFollowLoading, isHotLoadingMore, isLoadingMore]
   )
 
-  const getTabPage = useCallback(
-    (tab: HomeFeedTabKey) => {
-      switch (tab) {
-        case 'hot':
-          return hotPage
-        case 'following':
-          return followPage
-        case 'recommend':
-        default:
-          return page
-      }
-    },
-    [followPage, hotPage, page]
-  )
-
-  // 首次进入首页时获取一次用户信息（如果 Redux 中还没有）
   useEffect(() => {
     if (userInfo) return
 
@@ -164,7 +149,7 @@ export function useHomeData() {
           return
         }
 
-        const strategy = tab === 'hot' ? 'hot' : 'random'
+        const strategy = tab === 'hot' ? 'hot' : RECOMMEND_STRATEGY
         await dispatch(
           fetchPostList({ page: 1, strategy, force: true })
         ).unwrap()
@@ -193,9 +178,6 @@ export function useHomeData() {
       const currentHasMore = getTabHasMore(tab)
       if (!currentHasMore) return
 
-      const currentPage = getTabPage(tab)
-      if (tab !== 'following' && currentPage >= 5) return
-
       isLockRef.current = true
 
       try {
@@ -206,7 +188,7 @@ export function useHomeData() {
           return
         }
 
-        const strategy = tab === 'hot' ? 'hot' : 'random'
+        const strategy = tab === 'hot' ? 'hot' : RECOMMEND_STRATEGY
         const nextPage = tab === 'hot' ? hotPage + 1 : page + 1
         await dispatch(loadMorePosts({ page: nextPage, strategy })).unwrap()
       } catch (error) {
@@ -224,7 +206,6 @@ export function useHomeData() {
       followPage,
       getTabHasMore,
       getTabLoadingMore,
-      getTabPage,
       getTabPosts,
       hotPage,
       page,
@@ -250,7 +231,6 @@ export function useHomeData() {
     activeTab,
     setActiveTab,
     refreshing,
-    isTabLoading,
     addNewPost,
     handleRefresh,
     loadMore,

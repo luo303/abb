@@ -519,10 +519,7 @@ const postSlice = createSlice({
             action.payload.data?.items?.map((post: PostItem) =>
               parsePostContent(post)
             ) || []
-          const pageSize = 10
-          const finalHasMore =
-            parsedPostList.length === pageSize &&
-            (action.payload.data?.has_more ?? false)
+          const finalHasMore = action.payload.data?.has_more ?? false
           if (strategy === 'hot') {
             state.hotPostList = parsedPostList
             state.hotPage = 1
@@ -583,33 +580,21 @@ const postSlice = createSlice({
           const uniqueNewItems = parsedPostList.filter(
             (p: PostItem) => !existingIds.has(p.post_id)
           )
+          const nextPage =
+            action.payload.data?.page ?? action.meta?.arg?.page ?? 1
 
-          if (uniqueNewItems.length > 0) {
-            if (strategy === 'hot') {
+          if (strategy === 'hot') {
+            if (uniqueNewItems.length > 0) {
               state.hotPostList = [...state.hotPostList, ...uniqueNewItems]
-              state.hotPage += 1
-              const pageSize = 10
-              const finalHasMore =
-                uniqueNewItems.length === pageSize &&
-                (action.payload.data?.has_more ?? false) &&
-                state.hotPage < 5
-              state.hotHasMore = finalHasMore
-            } else {
-              state.postList = [...state.postList, ...uniqueNewItems]
-              state.page += 1
-              const pageSize = 10
-              const finalHasMore =
-                uniqueNewItems.length === pageSize &&
-                (action.payload.data?.has_more ?? false) &&
-                state.page < 5
-              state.hasMore = finalHasMore
             }
+            state.hotPage = nextPage
+            state.hotHasMore = action.payload.data?.has_more ?? false
           } else {
-            if (strategy === 'hot') {
-              state.hotHasMore = false
-            } else {
-              state.hasMore = false
+            if (uniqueNewItems.length > 0) {
+              state.postList = [...state.postList, ...uniqueNewItems]
             }
+            state.page = nextPage
+            state.hasMore = action.payload.data?.has_more ?? false
           }
         } else {
           state.error = action.payload?.message || '未知错误'
@@ -742,11 +727,10 @@ const postSlice = createSlice({
                 ...state.followingPosts,
                 ...uniqueNewItems
               ]
-              state.followPage += 1
-              state.followHasMore = action.payload.data?.has_more ?? false
-            } else {
-              state.followHasMore = false
             }
+            state.followPage =
+              action.payload.data?.page ?? action.meta?.arg?.page ?? 1
+            state.followHasMore = action.payload.data?.has_more ?? false
           } else {
             state.error = action.payload?.message || '未知错误'
           }

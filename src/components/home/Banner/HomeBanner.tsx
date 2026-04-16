@@ -1,11 +1,8 @@
-import React, { useMemo, useCallback } from 'react'
-import { View, StyleSheet, Dimensions } from 'react-native'
+import React, { useCallback, useMemo } from 'react'
+import { StyleSheet, useWindowDimensions, View } from 'react-native'
 import Carousel from 'react-native-reanimated-carousel'
 import { useIsFocused } from '@react-navigation/native'
 import BannerItem from './BannerItem'
-
-const { width } = Dimensions.get('window')
-const BANNER_WIDTH = width - 32
 
 const RAW_DATA = [
   {
@@ -32,12 +29,14 @@ const RAW_DATA = [
 
 const HomeBanner = React.memo(function HomeBanner() {
   const isFocused = useIsFocused()
+  const { width } = useWindowDimensions()
+  const cardWidth = Math.max(width - 24, 0)
 
   const modeConfig = useMemo(
     () => ({
       parallaxScrollingScale: 0.92,
-      parallaxScrollingOffset: 20,
-      parallaxAdjacentItemScale: 0.88
+      parallaxScrollingOffset: 46,
+      parallaxAdjacentItemScale: 0.86
     }),
     []
   )
@@ -45,7 +44,7 @@ const HomeBanner = React.memo(function HomeBanner() {
   const renderItem = useCallback(
     ({ item }: { item: (typeof RAW_DATA)[number] }) => (
       <View style={styles.itemContainer}>
-        <View style={styles.cardWrapper}>
+        <View style={[styles.cardWrapper, { width: cardWidth }]}>
           <BannerItem
             imageSource={item.imageSource}
             targetPage={item.targetPage}
@@ -53,15 +52,15 @@ const HomeBanner = React.memo(function HomeBanner() {
         </View>
       </View>
     ),
-    []
+    [cardWidth]
   )
 
   return (
     <View style={styles.container}>
       <Carousel
         loop
-        width={BANNER_WIDTH}
-        height={150}
+        width={width}
+        height={156}
         autoPlay={isFocused}
         autoPlayInterval={3200}
         data={RAW_DATA}
@@ -78,9 +77,9 @@ export default HomeBanner
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     marginTop: 10,
-    marginBottom: 4,
-    alignItems: 'center'
+    marginBottom: 6
   },
   itemContainer: {
     flex: 1,
@@ -88,8 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cardWrapper: {
-    width: BANNER_WIDTH,
-    height: 150,
+    height: 156,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#fff',
