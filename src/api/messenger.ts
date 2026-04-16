@@ -41,6 +41,33 @@ export interface ChatGroupSummaryDto {
   last_message_time?: number
 }
 
+export interface ChatGroupDiscoverDto {
+  group_id: string
+  name: string
+  avatar: string
+  member_count: number
+  member_limit: number
+}
+
+export interface ChatGroupDiscoverResponse {
+  code: number
+  message: string
+  data?: {
+    seed: string
+    items: ChatGroupDiscoverDto[]
+    has_more: boolean
+    next_cursor: string
+  }
+}
+
+export interface ChatGroupSearchResponse {
+  code: number
+  message: string
+  data?: {
+    items: ChatGroupDiscoverDto[]
+  }
+}
+
 export interface CreateGroupPayload {
   name: string
   avatar: string
@@ -108,6 +135,25 @@ export const bindPartner = (data: PartnerBindPayload) => {
 
 export const fetchMyGroups = () => {
   return request.get('/chat/groups/mine') as Promise<ChatGroupSummaryResponse>
+}
+
+export const fetchDiscoverGroups = (params: {
+  seed: string
+  limit?: number
+  next_cursor?: string
+}) => {
+  return request.get('/chat/groups/discover', {
+    params
+  }) as Promise<ChatGroupDiscoverResponse>
+}
+
+export const searchDiscoverGroups = (keyword: string, limit = 50) => {
+  return request.get('/chat/groups/search', {
+    params: {
+      keyword,
+      limit
+    }
+  }) as Promise<ChatGroupSearchResponse>
 }
 
 export const createChatGroup = (data: CreateGroupPayload) => {

@@ -8,6 +8,7 @@ import { chatCardShadow, chatPalette } from '@/components/chat/chatTheme'
 type Props = {
   visible: boolean
   onClose: () => void
+  showBindPartner?: boolean
   onBindPartner: () => void
   onCreateGroup: () => void
   onJoinGroup: () => void
@@ -16,19 +17,30 @@ type Props = {
 export default function ChatActionSheet({
   visible,
   onClose,
+  showBindPartner = true,
   onBindPartner,
   onCreateGroup,
   onJoinGroup
 }: Props) {
   const actions = [
-    {
-      key: 'partner',
-      icon: <Feather name="heart" size={19} color={chatPalette.accentStrong} />,
-      title: '绑定另一半',
-      description: '建立专属私聊，会显示在聊天列表里',
-      color: '#FFF0F4',
-      onPress: onBindPartner
-    },
+    ...(showBindPartner
+      ? [
+          {
+            key: 'partner',
+            icon: (
+              <Feather
+                name="heart"
+                size={19}
+                color={chatPalette.accentStrong}
+              />
+            ),
+            title: '绑定另一半',
+            description: '建立专属私聊，会显示在聊天列表里',
+            color: '#FFF0F4',
+            onPress: onBindPartner
+          }
+        ]
+      : []),
     {
       key: 'create',
       icon: (

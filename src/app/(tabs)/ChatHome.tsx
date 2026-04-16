@@ -65,6 +65,7 @@ export default function ChatHome() {
 
   const partner = useAppSelector(state => state.messenger.partner)
   const groups = useAppSelector(state => state.messenger.groups.items)
+  const hasPartnerBound = Boolean(partner.partnerId)
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -204,7 +205,9 @@ export default function ChatHome() {
               />
               <Text style={styles.emptyTitle}>还没有聊天会话</Text>
               <Text style={styles.emptyText}>
-                点击右上角加号，绑定另一半或创建群聊。
+                {hasPartnerBound
+                  ? '点击右上角加号，创建群聊或加入新的群聊。'
+                  : '点击右上角加号，绑定另一半或创建群聊。'}
               </Text>
             </View>
           }
@@ -214,6 +217,7 @@ export default function ChatHome() {
       <ChatActionSheet
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
+        showBindPartner={!hasPartnerBound}
         onBindPartner={() => navigation.navigate('BindPartner')}
         onCreateGroup={() => navigation.navigate('CreateGroup')}
         onJoinGroup={() => navigation.navigate('JoinGroup')}
