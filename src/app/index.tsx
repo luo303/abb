@@ -57,7 +57,11 @@ import GroupInfo from './chat/GroupInfo'
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
-import { appPaperTheme } from '../theme/paperTheme'
+import {
+  appNavigationTheme,
+  appPaperTheme,
+  APP_COLORS
+} from '../theme/paperTheme'
 // 忽略特定的日志警告
 LogBox.ignoreLogs([
   'Unsupported top level event type "topSvgLayout" dispatched'
@@ -116,18 +120,22 @@ function RootNavigator({ appReady }: { appReady: boolean }) {
   if (token && !appReady) return null
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={appNavigationTheme}>
       <Stack.Navigator
         initialRouteName={token ? 'Tabs' : 'Login'}
         screenOptions={{
           title: '', //默认标题为空
           headerTitleAlign: 'center', //安卓系统标题居中
           headerShadowVisible: false, //隐藏标题栏阴影
-          contentStyle: { backgroundColor: '#fff' }, // Native Stack 使用 contentStyle 设置背景
+          contentStyle: { backgroundColor: APP_COLORS.background }, // Native Stack 使用 contentStyle 设置背景
+          headerStyle: {
+            backgroundColor: APP_COLORS.surface
+          },
+          headerTintColor: APP_COLORS.text,
           headerTitleStyle: {
             fontSize: 16,
             fontWeight: '400',
-            color: '#2A2929'
+            color: APP_COLORS.text
           }
           // Windows 开发环境下无法修改 iOS 原生配置，暂时注释掉以避免 Expo Go 红屏报错
           // statusBarAnimation: 'slide',
@@ -349,7 +357,10 @@ export default function Layout() {
   }, [appReady, rootViewReady, minDelayDone, hasHiddenSplash])
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: APP_COLORS.background }}
+      onLayout={onLayoutRootView}
+    >
       <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Provider store={store}>
         <PaperProvider theme={appPaperTheme}>

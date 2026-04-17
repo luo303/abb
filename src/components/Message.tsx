@@ -8,6 +8,7 @@ import React, {
 } from 'react'
 import { Alert, AlertButton, AlertOptions, StyleSheet } from 'react-native'
 import { Button, Dialog, Portal, Snackbar, Text } from 'react-native-paper'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface MessageContextType {
   showMessage: (message: string, duration?: number) => void
@@ -174,14 +175,16 @@ export function MessageProvider({ children }: { children: React.ReactNode }) {
                 <Button
                   buttonColor={
                     button.style === 'destructive' && isPrimaryAction
-                      ? '#fee2e2'
+                      ? APP_COLORS.surfaceVariant
                       : undefined
                   }
                   key={`${button.text || 'button'}-${index}`}
                   mode={isPrimaryAction ? 'contained-tonal' : 'text'}
                   onPress={() => runDialogAction(button)}
                   textColor={
-                    button.style === 'destructive' ? '#ef4444' : undefined
+                    button.style === 'destructive'
+                      ? APP_COLORS.error
+                      : undefined
                   }
                 >
                   {button.text || (index === 0 ? '取消' : '确定')}
@@ -196,6 +199,12 @@ export function MessageProvider({ children }: { children: React.ReactNode }) {
           key={snackbarState.key}
           onDismiss={hideMessage}
           style={styles.snackbar}
+          theme={{
+            colors: {
+              inverseSurface: APP_COLORS.primaryStrong,
+              inverseOnSurface: APP_COLORS.white
+            }
+          }}
           visible={snackbarState.visible}
           wrapperStyle={styles.snackbarWrapper}
         >
@@ -212,6 +221,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16
   },
   snackbar: {
-    borderRadius: 16
+    borderRadius: 16,
+    backgroundColor: APP_COLORS.primaryStrong
   }
 })

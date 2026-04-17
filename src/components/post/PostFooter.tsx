@@ -17,6 +17,7 @@ import {
   composerSendShadow,
   composerTheme
 } from '../common/composerTheme'
+import { POST_ACTION_COLORS } from './postActionColors'
 
 interface PostFooterProps {
   onInputPress?: () => void
@@ -96,21 +97,21 @@ export default function PostFooter({
         likeCount,
         onLike,
         isLiked,
-        '#E97070'
+        POST_ACTION_COLORS.like
       )}
       {renderActionButton(
         isDisliked ? 'heart-dislike' : 'heart-dislike-outline',
         dislikeCount || 0,
         onDislike,
         isDisliked,
-        '#7D8797'
+        POST_ACTION_COLORS.dislike
       )}
       {renderActionButton(
         isFavorited ? 'star' : 'star-outline',
         collectCount,
         onFavorite,
         isFavorited,
-        '#E6A23C'
+        POST_ACTION_COLORS.favorite
       )}
       {renderActionButton('chatbubble-outline', commentCount)}
     </View>

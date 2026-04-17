@@ -9,18 +9,22 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../../types/navigation'
+import { HOME_PINK_THEME, HomeTone } from '../homePalette'
 
 interface HomeSearchBarProps {
   onMenuPress?: () => void
   onSearch?: (text: string) => void
+  tone?: HomeTone
 }
 
 export default function HomeSearchBar({
   onMenuPress,
-  onSearch
+  onSearch,
+  tone = 'default'
 }: HomeSearchBarProps) {
   const navigation = useNavigation<NavigationProps>()
   const [searchText, setSearchText] = useState('')
+  const isPinkTone = tone === 'pink'
 
   const handleOpenSearch = useCallback(() => {
     navigation.navigate('Search')
@@ -35,27 +39,33 @@ export default function HomeSearchBar({
   )
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isPinkTone && styles.containerPink]}>
       <TouchableOpacity
-        style={styles.menuButton}
+        style={[styles.menuButton, isPinkTone && styles.menuButtonPink]}
         activeOpacity={0.85}
         onPress={onMenuPress}
       >
-        <Ionicons name="menu-outline" size={24} color="#111827" />
+        <Ionicons
+          name="menu-outline"
+          size={24}
+          color={isPinkTone ? HOME_PINK_THEME.text : '#111827'}
+        />
       </TouchableOpacity>
 
       {onSearch ? (
-        <View style={styles.searchBox}>
+        <View style={[styles.searchBox, isPinkTone && styles.searchBoxPink]}>
           <Ionicons
             name="search-outline"
             size={18}
-            color="#9ca3af"
+            color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
             style={styles.searchIcon}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, isPinkTone && styles.inputPink]}
             placeholder="搜索您感兴趣的内容..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={
+              isPinkTone ? HOME_PINK_THEME.textMuted : '#9ca3af'
+            }
             value={searchText}
             onChangeText={handleChangeText}
             returnKeyType="search"
@@ -63,17 +73,21 @@ export default function HomeSearchBar({
         </View>
       ) : (
         <TouchableOpacity
-          style={styles.searchBox}
+          style={[styles.searchBox, isPinkTone && styles.searchBoxPink]}
           activeOpacity={0.85}
           onPress={handleOpenSearch}
         >
           <Ionicons
             name="search-outline"
             size={18}
-            color="#9ca3af"
+            color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
             style={styles.searchIcon}
           />
-          <Text style={styles.placeholder}>搜索您感兴趣的内容...</Text>
+          <Text
+            style={[styles.placeholder, isPinkTone && styles.placeholderPink]}
+          >
+            搜索您感兴趣的内容...
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -89,6 +103,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#fff'
   },
+  containerPink: {
+    backgroundColor: HOME_PINK_THEME.background
+  },
   menuButton: {
     width: 42,
     height: 42,
@@ -98,6 +115,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     borderWidth: 1,
     borderColor: '#e5e7eb'
+  },
+  menuButtonPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderColor: HOME_PINK_THEME.border
   },
   searchBox: {
     flex: 1,
@@ -110,6 +131,10 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     paddingHorizontal: 14
   },
+  searchBoxPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderColor: HOME_PINK_THEME.border
+  },
   searchIcon: {
     marginRight: 8
   },
@@ -119,8 +144,14 @@ const styles = StyleSheet.create({
     color: '#111827',
     paddingVertical: 0
   },
+  inputPink: {
+    color: HOME_PINK_THEME.text
+  },
   placeholder: {
     fontSize: 14,
     color: '#9ca3af'
+  },
+  placeholderPink: {
+    color: HOME_PINK_THEME.textMuted
   }
 })

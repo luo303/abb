@@ -453,7 +453,7 @@ const SleepRecordScreen = () => {
     <LinearGradient
       colors={[
         '#ffffff',
-        '#fff5f5',
+        '#fdf3f5',
         '#ffe0e0',
         '#ffd0d0',
         '#ffc0c0',
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fecdd3',
     borderRadius: 12,
-    backgroundColor: '#fff5f5'
+    backgroundColor: '#fdf3f5'
   },
   timeButtonContent: {
     minHeight: 44,

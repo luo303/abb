@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native'
 import Carousel from 'react-native-reanimated-carousel'
 import { useIsFocused } from '@react-navigation/native'
 import BannerItem from './BannerItem'
+import { HOME_PINK_THEME, HomeTone } from '../homePalette'
 
 const RAW_DATA = [
   {
@@ -27,10 +28,17 @@ const RAW_DATA = [
   }
 ]
 
-const HomeBanner = React.memo(function HomeBanner() {
+interface HomeBannerProps {
+  tone?: HomeTone
+}
+
+const HomeBanner = React.memo(function HomeBanner({
+  tone = 'default'
+}: HomeBannerProps) {
   const isFocused = useIsFocused()
   const { width } = useWindowDimensions()
   const cardWidth = Math.max(width - 24, 0)
+  const isPinkTone = tone === 'pink'
 
   const modeConfig = useMemo(
     () => ({
@@ -44,7 +52,13 @@ const HomeBanner = React.memo(function HomeBanner() {
   const renderItem = useCallback(
     ({ item }: { item: (typeof RAW_DATA)[number] }) => (
       <View style={styles.itemContainer}>
-        <View style={[styles.cardWrapper, { width: cardWidth }]}>
+        <View
+          style={[
+            styles.cardWrapper,
+            { width: cardWidth },
+            isPinkTone && styles.cardWrapperPink
+          ]}
+        >
           <BannerItem
             imageSource={item.imageSource}
             targetPage={item.targetPage}
@@ -52,7 +66,7 @@ const HomeBanner = React.memo(function HomeBanner() {
         </View>
       </View>
     ),
-    [cardWidth]
+    [cardWidth, isPinkTone]
   )
 
   return (
@@ -96,5 +110,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     elevation: 4
+  },
+  cardWrapperPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderWidth: 1,
+    borderColor: HOME_PINK_THEME.border,
+    shadowColor: HOME_PINK_THEME.shadow
   }
 })

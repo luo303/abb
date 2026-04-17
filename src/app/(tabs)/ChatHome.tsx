@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
-import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import ChatActionSheet from '@/components/chat/ChatActionSheet'
@@ -86,13 +86,6 @@ export default function ChatHome() {
       )
     })
   }, [navigation])
-
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(refreshPartnerInfo())
-      dispatch(refreshGroupList())
-    }, [dispatch])
-  )
 
   const conversations = useMemo(() => {
     const items: ConversationItem[] = groups.map(group => ({

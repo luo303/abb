@@ -198,11 +198,10 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
           {QUICK_LINKS.map(item => (
             <Button
               key={item.key}
-              mode="contained-tonal"
+              mode="text"
               icon={item.icon}
               onPress={() => handleShortcutPress(item.target)}
               rippleColor="rgba(244, 63, 94, 0.18)"
-              buttonColor="#fff1f2"
               textColor="#111827"
               style={styles.shortcutItem}
               contentStyle={styles.shortcutContent}
@@ -278,7 +277,8 @@ const styles = StyleSheet.create({
     paddingTop: 18
   },
   shortcutItem: {
-    borderRadius: 18,
+    width: '100%',
+    alignSelf: 'stretch',
     marginBottom: 10
   },
   shortcutContent: {

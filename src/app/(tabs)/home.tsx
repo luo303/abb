@@ -8,11 +8,7 @@ import {
   View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import {
-  DrawerActions,
-  useFocusEffect,
-  useNavigation
-} from '@react-navigation/native'
+import { DrawerActions, useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { TabBar, TabView } from 'react-native-tab-view'
 
@@ -22,6 +18,7 @@ import {
   FollowEmptyState,
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
+import { HOME_PINK_THEME } from '@/components/home/homePalette'
 import HomeSearchBar from '@/components/home/search/HomeSearchBar'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { normalizeHomeTabKey, useHomeData } from '@/hooks/useHomeData'
@@ -82,7 +79,9 @@ const HomeFeedScene = memo(function HomeFeedScene({
   }, [hasMore, isLoadingMore, onLoadMore, posts.length, refreshing, routeKey])
 
   const renderItem = useCallback(
-    ({ item }: { item: PostItem }) => <HomeCommunityCard data={item} />,
+    ({ item }: { item: PostItem }) => (
+      <HomeCommunityCard data={item} tone="pink" />
+    ),
     []
   )
 
@@ -93,7 +92,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
 
   const renderEmptyState = useCallback(() => {
     if (routeKey === 'following') {
-      return <FollowEmptyState onGoToRecommend={onGoToHot} />
+      return <FollowEmptyState onGoToRecommend={onGoToHot} tone="pink" />
     }
 
     if (routeKey === 'hot') {
@@ -102,6 +101,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
           iconName="flame-outline"
           title="暂无热门内容"
           subtitle="稍后再来看看"
+          tone="pink"
         />
       )
     }
@@ -111,6 +111,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
         iconName="sparkles-outline"
         title="暂无推荐内容"
         subtitle="下拉刷新试试"
+        tone="pink"
       />
     )
   }, [onGoToHot, routeKey])
@@ -122,7 +123,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
 
     return (
       <View style={styles.bannerSection}>
-        <HomeBanner />
+        <HomeBanner tone="pink" />
       </View>
     )
   }, [routeKey])
@@ -135,7 +136,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
     if (isLoadingMore) {
       return (
         <View style={styles.footerState}>
-          <ActivityIndicator size="small" color="#f43f5e" />
+          <ActivityIndicator size="small" color={HOME_PINK_THEME.primary} />
           <Text style={styles.footerText}>加载更多中...</Text>
         </View>
       )
@@ -154,6 +155,7 @@ const HomeFeedScene = memo(function HomeFeedScene({
 
   return (
     <FlashList
+      style={styles.feedList}
       data={posts}
       renderItem={renderItem}
       keyExtractor={item => String(item.post_id || item.id)}
@@ -162,8 +164,9 @@ const HomeFeedScene = memo(function HomeFeedScene({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => onRefresh(routeKey)}
-          tintColor="#f43f5e"
-          colors={['#f43f5e']}
+          tintColor={HOME_PINK_THEME.primary}
+          colors={[HOME_PINK_THEME.primary]}
+          progressBackgroundColor={HOME_PINK_THEME.surface}
           progressViewOffset={routeKey === 'hot' ? 10 : 0}
         />
       }
@@ -213,14 +216,12 @@ export default function Home() {
     }
   }, [activeTab, index])
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!token) return
+  useEffect(() => {
+    if (!token) return
 
-      console.log('[首页] 进入首页，准备初始化聊天连接')
-      void dispatch(syncMessengerHomeEntry())
-    }, [dispatch, token])
-  )
+    console.log('[首页] 首次进入首页，准备初始化聊天连接')
+    void dispatch(syncMessengerHomeEntry())
+  }, [dispatch, token])
 
   const handleIndexChange = useCallback(
     (nextIndex: number) => {
@@ -287,8 +288,8 @@ export default function Home() {
         ]}
         indicatorStyle={styles.tabIndicator}
         labelStyle={styles.tabLabel}
-        activeColor="#111827"
-        inactiveColor="#9ca3af"
+        activeColor={HOME_PINK_THEME.text}
+        inactiveColor={HOME_PINK_THEME.textMuted}
         pressColor="transparent"
       />
     ),
@@ -297,7 +298,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
-      <HomeSearchBar onMenuPress={handleOpenDrawer} />
+      <HomeSearchBar onMenuPress={handleOpenDrawer} tone="pink" />
 
       <TabView
         navigationState={{ index, routes: ROUTES }}
@@ -316,17 +317,20 @@ export default function Home() {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: '#ffffff'
+    backgroundColor: HOME_PINK_THEME.background
   },
   tabView: {
     flex: 1
   },
+  feedList: {
+    backgroundColor: HOME_PINK_THEME.background
+  },
   tabBar: {
-    backgroundColor: '#ffffff',
+    backgroundColor: HOME_PINK_THEME.background,
     elevation: 0,
     shadowOpacity: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eceef2'
+    borderBottomColor: HOME_PINK_THEME.border
   },
   tabItem: {
     justifyContent: 'center'
@@ -340,7 +344,7 @@ const styles = StyleSheet.create({
   tabIndicator: {
     height: 3,
     borderRadius: 999,
-    backgroundColor: '#f43f5e'
+    backgroundColor: HOME_PINK_THEME.primary
   },
   bannerSection: {
     paddingBottom: 8
@@ -361,7 +365,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#9ca3af'
+    color: HOME_PINK_THEME.textMuted
   },
   footerSpacer: {
     height: 24
@@ -369,6 +373,6 @@ const styles = StyleSheet.create({
   postSeparator: {
     height: 1,
     marginHorizontal: 16,
-    backgroundColor: '#eceef2'
+    backgroundColor: HOME_PINK_THEME.border
   }
 })

@@ -14,9 +14,12 @@ import { getUserMeReq } from '../../api/profile'
 import { logoutAndClearAll } from '../../store/modules/userStore'
 import { NavigationProps } from '../../types/navigation'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 const Tab = createBottomTabNavigator()
 const NullComponent = () => null
+const AI_TAB_GRADIENT = ['#ff9a9e', '#ff5f7a', '#f43f5e'] as const
+const AI_TAB_GLOW = '#f43f5e'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -49,14 +52,14 @@ const CustomTabBarBackground = () => {
         right: 0,
         top: 0,
         bottom: 0,
-        shadowColor: '#000',
+        shadowColor: APP_COLORS.shadow,
         shadowOffset: {
           width: 0,
-          height: -2
+          height: -6
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 0,
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 12,
         backgroundColor: 'transparent'
       }}
     >
@@ -65,7 +68,12 @@ const CustomTabBarBackground = () => {
         height={tabBarHeight}
         style={{ position: 'absolute', top: 0 }}
       >
-        <Path d={path} fill="#fff" stroke="#eee" strokeWidth="1" />
+        <Path
+          d={path}
+          fill={APP_COLORS.surfaceStrong}
+          stroke={APP_COLORS.outlineVariant}
+          strokeWidth="1"
+        />
       </Svg>
     </View>
   )
@@ -121,11 +129,11 @@ export default function TabsLayout() {
         headerTitleAlign: 'center',
         headerTitle: '',
         headerStyle: {
-          backgroundColor: '#ffffff'
+          backgroundColor: APP_COLORS.surface
         },
         headerShadowVisible: false,
-        tabBarActiveTintColor: '#f43f5e',
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: APP_COLORS.primaryStrong,
+        tabBarInactiveTintColor: APP_COLORS.textMuted,
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 46 + insets.bottom : 56,
           backgroundColor: 'transparent',
@@ -138,7 +146,8 @@ export default function TabsLayout() {
         },
         tabBarBackground: () => <CustomTabBarBackground />,
         tabBarLabelStyle: {
-          fontSize: 12
+          fontSize: 12,
+          fontWeight: '600'
         },
         animation: 'none'
       }}
@@ -178,33 +187,35 @@ export default function TabsLayout() {
           title: 'AI助手',
           tabBarIcon: () => (
             <LinearGradient
-              colors={['#ff9a9e', '#f43f5e']}
+              colors={AI_TAB_GRADIENT}
               end={{ x: 1, y: 1 }}
               start={{ x: 0, y: 0 }}
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
+                width: 62,
+                height: 62,
+                borderRadius: 31,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginBottom: Platform.OS === 'ios' ? 0 : 35,
-                marginTop: Platform.OS === 'ios' ? -35 : 0,
-                shadowColor: '#FF5E62',
+                marginBottom: Platform.OS === 'ios' ? 2 : 35,
+                marginTop: Platform.OS === 'ios' ? -40 : -2,
+                shadowColor: AI_TAB_GLOW,
                 shadowOffset: {
                   width: 0,
-                  height: 8
+                  height: 14
                 },
-                shadowOpacity: 0.35,
-                shadowRadius: 10,
-                elevation: 10
+                shadowOpacity: 0.52,
+                shadowRadius: 24,
+                elevation: 20
               }}
             >
-              <AntDesign name="twitch" size={28} color="#fff" />
+              <AntDesign name="twitch" size={30} color="#fff" />
             </LinearGradient>
           ),
           tabBarLabelStyle: {
-            marginTop: Platform.OS === 'ios' ? 0 : 35,
-            fontSize: 12
+            marginTop: Platform.OS === 'ios' ? 2 : 35,
+            fontSize: 12,
+            fontWeight: '700',
+            color: AI_TAB_GLOW
           }
         }}
       />
@@ -218,7 +229,7 @@ export default function TabsLayout() {
           }
         }}
         options={{
-          title: '聊天',
+          title: '社区',
           tabBarBadge:
             totalUnreadCount > 0
               ? totalUnreadCount > 99
@@ -226,7 +237,7 @@ export default function TabsLayout() {
                 : totalUnreadCount
               : undefined,
           tabBarBadgeStyle: {
-            backgroundColor: '#f43f5e',
+            backgroundColor: APP_COLORS.primaryStrong,
             color: '#fff'
           },
           tabBarIcon: ({ color }) => (

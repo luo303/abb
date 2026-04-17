@@ -108,7 +108,7 @@ const FeedingRecordScreen = () => {
       case '奶粉':
         return ['#fff0f0', '#ffb3b3'] // 浅红色（奶粉）
       case '母乳':
-        return ['#fff5f5', '#fecdd3'] // 浅珊瑚粉
+        return ['#fdf3f5', '#fecdd3'] // 浅珊瑚粉
       case '辅食':
         return ['#ffe6e6', '#ff9999'] // 浅红色（辅食）
       default:
@@ -150,7 +150,7 @@ const FeedingRecordScreen = () => {
         return {
           title: '母乳喂养提示',
           color: '#e11d48',
-          backgroundColor: '#fff5f5',
+          backgroundColor: '#fdf3f5',
           borderColor: '#fecdd3',
           tips: [
             '• 母乳喂养时间一般建议在15-20分钟左右',

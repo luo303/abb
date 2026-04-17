@@ -4,15 +4,19 @@ import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 
 import PaperAvatar from '@/components/common/PaperAvatar'
+import { POST_ACTION_COLORS } from '@/components/post/postActionColors'
 import { NavigationProps } from '../../types/navigation'
 import { PostItem } from '@/types/home'
+import { HOME_PINK_THEME, HomeTone } from './homePalette'
 
 interface HomeCommunityCardProps {
   data: PostItem
+  tone?: HomeTone
 }
 
-function HomeCommunityCard({ data }: HomeCommunityCardProps) {
+function HomeCommunityCard({ data, tone = 'default' }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
+  const isPinkTone = tone === 'pink'
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return ''
@@ -102,6 +106,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
   const isLiked = data.is_like ?? data.is_liked ?? false
   const isDisliked = data.is_dislike ?? data.is_disliked ?? false
   const isCollected = data.is_collect ?? data.is_collected ?? false
+  const inactiveActionTint = isPinkTone ? HOME_PINK_THEME.iconMuted : '#6b7280'
 
   const handlePress = () => {
     const postId = data.post_id || data.id
@@ -112,7 +117,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, isPinkTone && styles.containerPink]}
       activeOpacity={0.88}
       onPress={handlePress}
     >
@@ -121,26 +126,41 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           accessibilityLabel={data.author_name || '匿名用户'}
           size={36}
           source={data.author_avatar}
-          style={styles.avatar}
+          style={[styles.avatar, isPinkTone && styles.avatarPink]}
         />
         <View style={styles.userMeta}>
-          <Text style={styles.userName} numberOfLines={1}>
+          <Text
+            style={[styles.userName, isPinkTone && styles.userNamePink]}
+            numberOfLines={1}
+          >
             {data.author_name || '匿名用户'}
           </Text>
-          <Text style={styles.userSubText} numberOfLines={1}>
+          <Text
+            style={[styles.userSubText, isPinkTone && styles.metaTextPink]}
+            numberOfLines={1}
+          >
             {data.baby_age_text || formatDate(data.ctime)}
           </Text>
         </View>
-        <Text style={styles.dateText}>{formatDate(data.ctime)}</Text>
+        <Text style={[styles.dateText, isPinkTone && styles.metaTextPink]}>
+          {formatDate(data.ctime)}
+        </Text>
       </View>
 
       {data.title ? (
-        <Text style={styles.title} numberOfLines={2}>
+        <Text
+          style={[styles.title, isPinkTone && styles.titlePink]}
+          numberOfLines={2}
+        >
           {data.title}
         </Text>
       ) : null}
 
-      <Text style={styles.content} numberOfLines={2} ellipsizeMode="tail">
+      <Text
+        style={[styles.content, isPinkTone && styles.contentPink]}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      >
         {displayContent}
       </Text>
 
@@ -160,6 +180,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
                 key={`${data.post_id}-${index}`}
                 style={[
                   styles.imageCard,
+                  isPinkTone && styles.imageCardPink,
                   previewImages.length === 1 && styles.imageCardSingle
                 ]}
               >
@@ -185,32 +206,66 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
           <Ionicons
             name={isLiked ? 'heart' : 'heart-outline'}
             size={18}
-            color={isLiked ? '#f43f5e' : '#6b7280'}
+            color={isLiked ? POST_ACTION_COLORS.like : inactiveActionTint}
           />
-          <Text style={styles.actionText}>{data.like_count || 0}</Text>
+          <Text
+            style={[
+              styles.actionText,
+              isPinkTone && styles.actionTextPink,
+              isLiked && { color: POST_ACTION_COLORS.like }
+            ]}
+          >
+            {data.like_count || 0}
+          </Text>
         </View>
 
         <View style={styles.actionItem}>
           <Ionicons
             name={isDisliked ? 'heart-dislike' : 'heart-dislike-outline'}
             size={18}
-            color={isDisliked ? '#64748b' : '#6b7280'}
+            color={isDisliked ? POST_ACTION_COLORS.dislike : inactiveActionTint}
           />
-          <Text style={styles.actionText}>{data.dislike_count || 0}</Text>
+          <Text
+            style={[
+              styles.actionText,
+              isPinkTone && styles.actionTextPink,
+              isDisliked && { color: POST_ACTION_COLORS.dislike }
+            ]}
+          >
+            {data.dislike_count || 0}
+          </Text>
         </View>
 
         <View style={styles.actionItem}>
           <Ionicons
             name={isCollected ? 'star' : 'star-outline'}
             size={18}
-            color={isCollected ? '#f59e0b' : '#6b7280'}
+            color={
+              isCollected ? POST_ACTION_COLORS.favorite : inactiveActionTint
+            }
           />
-          <Text style={styles.actionText}>{data.collect_count || 0}</Text>
+          <Text
+            style={[
+              styles.actionText,
+              isPinkTone && styles.actionTextPink,
+              isCollected && { color: POST_ACTION_COLORS.favorite }
+            ]}
+          >
+            {data.collect_count || 0}
+          </Text>
         </View>
 
         <View style={styles.actionItem}>
-          <Ionicons name="chatbubble-outline" size={18} color="#6b7280" />
-          <Text style={styles.actionText}>{data.comment_count || 0}</Text>
+          <Ionicons
+            name="chatbubble-outline"
+            size={18}
+            color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#6b7280'}
+          />
+          <Text
+            style={[styles.actionText, isPinkTone && styles.actionTextPink]}
+          >
+            {data.comment_count || 0}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -219,6 +274,7 @@ function HomeCommunityCard({ data }: HomeCommunityCardProps) {
 
 export default memo(HomeCommunityCard, (prev, next) => {
   return (
+    prev.tone === next.tone &&
     prev.data.post_id === next.data.post_id &&
     prev.data.utime === next.data.utime &&
     prev.data.like_count === next.data.like_count &&
@@ -234,6 +290,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16
   },
+  containerPink: {
+    backgroundColor: HOME_PINK_THEME.surface
+  },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center'
@@ -244,6 +303,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#f3f4f6'
   },
+  avatarPink: {
+    backgroundColor: HOME_PINK_THEME.surfaceSoft
+  },
   userMeta: {
     flex: 1,
     marginLeft: 10
@@ -253,10 +315,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151'
   },
+  userNamePink: {
+    color: HOME_PINK_THEME.text
+  },
   userSubText: {
     marginTop: 2,
     fontSize: 12,
     color: '#9ca3af'
+  },
+  metaTextPink: {
+    color: HOME_PINK_THEME.textMuted
   },
   dateText: {
     fontSize: 12,
@@ -269,12 +337,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827'
   },
+  titlePink: {
+    color: HOME_PINK_THEME.text
+  },
   content: {
     marginTop: 10,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: '400',
     color: '#6b7280'
+  },
+  contentPink: {
+    color: HOME_PINK_THEME.textMuted
   },
   imagesRow: {
     flexDirection: 'row',
@@ -290,6 +364,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: '#f3f4f6'
+  },
+  imageCardPink: {
+    backgroundColor: HOME_PINK_THEME.surfaceSoft
   },
   imageCardSingle: {
     flex: 0,
@@ -325,5 +402,8 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 13,
     color: '#6b7280'
+  },
+  actionTextPink: {
+    color: HOME_PINK_THEME.textMuted
   }
 })
