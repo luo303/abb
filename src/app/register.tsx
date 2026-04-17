@@ -4,8 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  ActivityIndicator
+  ScrollView
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
@@ -13,7 +12,8 @@ import AuthBackground from '../components/common/AuthBackground'
 import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AntDesign, Ionicons } from '@expo/vector-icons'
+import { AntDesign } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 import { apiRegister, apiRegisterCode } from '../api/auth'
 import { useMessage } from '../components/Message'
 
@@ -266,52 +266,48 @@ export default function RegisterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>性别</Text>
                 <View style={styles.genderContainer}>
-                  <TouchableOpacity
+                  <Button
+                    mode={formData.gender === 'male' ? 'contained' : 'outlined'}
                     style={[
                       styles.genderButton,
                       formData.gender === 'male' && styles.genderButtonActive
                     ]}
+                    contentStyle={styles.genderButtonContent}
+                    labelStyle={[
+                      styles.genderButtonLabel,
+                      formData.gender === 'male' && styles.genderTextActive
+                    ]}
                     onPress={() => handleInputChange('gender', 'male')}
                     disabled={isLoading}
+                    buttonColor={THEME_PRIMARY}
+                    textColor={formData.gender === 'male' ? '#fff' : '#666'}
+                    uppercase={false}
                   >
-                    <Ionicons
-                      name="male"
-                      size={20}
-                      color={formData.gender === 'male' ? '#fff' : '#666'}
-                    />
-                    <Text
-                      style={[
-                        styles.genderText,
-                        formData.gender === 'male' && styles.genderTextActive
-                      ]}
-                    >
-                      男
-                    </Text>
-                  </TouchableOpacity>
+                    男
+                  </Button>
 
-                  <TouchableOpacity
+                  <Button
+                    mode={
+                      formData.gender === 'female' ? 'contained' : 'outlined'
+                    }
                     style={[
                       styles.genderButton,
                       formData.gender === 'female' &&
                         styles.genderButtonActiveFemale
                     ]}
+                    contentStyle={styles.genderButtonContent}
+                    labelStyle={[
+                      styles.genderButtonLabel,
+                      formData.gender === 'female' && styles.genderTextActive
+                    ]}
                     onPress={() => handleInputChange('gender', 'female')}
                     disabled={isLoading}
+                    buttonColor={THEME_PRIMARY_DARK}
+                    textColor={formData.gender === 'female' ? '#fff' : '#666'}
+                    uppercase={false}
                   >
-                    <Ionicons
-                      name="female"
-                      size={20}
-                      color={formData.gender === 'female' ? '#fff' : '#666'}
-                    />
-                    <Text
-                      style={[
-                        styles.genderText,
-                        formData.gender === 'female' && styles.genderTextActive
-                      ]}
-                    >
-                      女
-                    </Text>
-                  </TouchableOpacity>
+                    女
+                  </Button>
                 </View>
               </View>
 
@@ -357,41 +353,41 @@ export default function RegisterScreen() {
                     onFocus={() => setFocusedField('code')}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <TouchableOpacity
+                  <Button
+                    compact
+                    mode="text"
                     style={styles.getCodeBtn}
+                    contentStyle={styles.getCodeButtonContent}
+                    labelStyle={[
+                      styles.getCodeButtonLabel,
+                      countdown > 0 && styles.getCodeButtonLabelDisabled
+                    ]}
                     onPress={() => GetCode()}
                     disabled={countdown > 0 || isCodeLoading}
+                    loading={isCodeLoading}
+                    uppercase={false}
                   >
-                    {isCodeLoading ? (
-                      <ActivityIndicator color={THEME_PRIMARY} />
-                    ) : (
-                      <Text
-                        style={[
-                          styles.getCodeText,
-                          countdown > 0 && styles.getCodeTextDisabled
-                        ]}
-                      >
-                        {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                    {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
+                  </Button>
                 </View>
               </View>
 
               <View style={{ height: 20 }} />
 
               {/* 注册按钮 */}
-              <TouchableOpacity
+              <Button
+                mode="contained"
                 style={[styles.loginBtn, isLoading && styles.btnDisabled]}
+                contentStyle={styles.primaryButtonContent}
+                labelStyle={styles.primaryButtonLabel}
                 onPress={handleRegister}
                 disabled={isLoading}
+                loading={isLoading}
+                buttonColor={THEME_PRIMARY}
+                uppercase={false}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginBtnText}>注册</Text>
-                )}
-              </TouchableOpacity>
+                注册
+              </Button>
 
               {/* 用户协议和隐私授权 */}
               <View style={styles.agreementContainer}>
@@ -415,15 +411,16 @@ export default function RegisterScreen() {
                 </Text>
               </View>
               <View style={styles.footer}>
-                <TouchableOpacity
-                  style={styles.registerLink}
+                <Button
+                  compact
+                  mode="text"
                   onPress={() => navigation.goBack()}
+                  contentStyle={styles.footerLinkContent}
+                  labelStyle={styles.footerLinkLabel}
+                  uppercase={false}
                 >
-                  <Text style={styles.registerLinkText}>
-                    已有账户？
-                    <Text style={styles.registerHighlight}>去登录</Text>
-                  </Text>
-                </TouchableOpacity>
+                  已有账户？去登录
+                </Button>
               </View>
             </View>
           </ScrollView>
@@ -505,23 +502,21 @@ const styles = StyleSheet.create({
     gap: 10
   },
   getCodeBtn: {
-    height: 50,
-    justifyContent: 'center',
-    paddingHorizontal: 10
+    alignSelf: 'center'
   },
-  getCodeText: {
+  getCodeButtonContent: {
+    minHeight: 40,
+    paddingHorizontal: 0
+  },
+  getCodeButtonLabel: {
     color: THEME_PRIMARY,
     fontSize: 14
   },
-  getCodeTextDisabled: {
+  getCodeButtonLabelDisabled: {
     color: '#999'
   },
   loginBtn: {
-    height: 50,
-    backgroundColor: THEME_PRIMARY,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
     shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
@@ -532,7 +527,10 @@ const styles = StyleSheet.create({
   btnDisabled: {
     backgroundColor: THEME_PRIMARY_DISABLED
   },
-  loginBtnText: {
+  primaryButtonContent: {
+    height: 50
+  },
+  primaryButtonLabel: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold'
@@ -573,25 +571,20 @@ const styles = StyleSheet.create({
   },
   genderButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 25,
-    backgroundColor: '#F5F7FA',
-    borderWidth: 1,
-    borderColor: 'transparent'
+    borderRadius: 25
+  },
+  genderButtonContent: {
+    minHeight: 48
+  },
+  genderButtonLabel: {
+    fontSize: 14,
+    color: '#666'
   },
   genderButtonActive: {
     backgroundColor: THEME_PRIMARY
   },
   genderButtonActiveFemale: {
     backgroundColor: THEME_PRIMARY_DARK
-  },
-  genderText: {
-    marginLeft: 6,
-    fontSize: 14,
-    color: '#666'
   },
   genderTextActive: {
     color: '#fff',
@@ -601,15 +594,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 20
   },
-  registerLink: {
-    padding: 10
+  footerLinkContent: {
+    minHeight: 36
   },
-  registerLinkText: {
+  footerLinkLabel: {
     fontSize: 14,
     color: '#999'
-  },
-  registerHighlight: {
-    color: THEME_PRIMARY,
-    fontWeight: 'bold'
   }
 })

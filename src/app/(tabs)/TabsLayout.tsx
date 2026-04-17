@@ -2,53 +2,45 @@ import React, { useEffect } from 'react'
 import { View, Platform, Dimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { FontAwesome, AntDesign } from '@expo/vector-icons'
-import { useSelector, useDispatch } from 'react-redux'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
 import { LinearGradient } from 'expo-linear-gradient'
 
-// 导入页面组件
-import HomeScreen from './home'
+import HomeScreen from './HomeDrawer'
 import GrowthRecordScreen from './growthRecord'
 import ProfileScreen from './profile'
-
-// 导入 API
 import { getUserMeReq } from '../../api/profile'
-
-// 导入 Redux action
 import { logoutAndClearAll } from '../../store/modules/userStore'
-
 import { NavigationProps } from '../../types/navigation'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 const Tab = createBottomTabNavigator()
-
-// 定义一个空的占位组件，避免内联函数导致的重渲染警告
 const NullComponent = () => null
+const AI_TAB_GRADIENT = ['#ff9a9e', '#ff5f7a', '#f43f5e'] as const
+const AI_TAB_GLOW = '#f43f5e'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const CustomTabBarBackground = () => {
   const insets = useSafeAreaInsets()
-  const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 46 + insets.bottom : 56
+  const tabBarHeight = Platform.OS === 'ios' ? 46 + insets.bottom : 56
 
-  // Calculate path
-  const centerWidth = 100 // Wider opening for a gentler curve
-  const centerHeight = 28 // Increased depth slightly (was 22)
+  const centerWidth = 100
+  const centerHeight = 28
   const startX = (SCREEN_WIDTH - centerWidth) / 2
   const endX = (SCREEN_WIDTH + centerWidth) / 2
   const centerX = SCREEN_WIDTH / 2
 
-  // Optimized smooth curve using cubic bezier to match the reference image
-  // The curve starts flat, gently dips, and returns flat
   const path = `
-    M0,0 
-    L${startX},0 
-    C${startX + 35},0 ${centerX - 35},${centerHeight} ${centerX},${centerHeight} 
-    C${centerX + 35},${centerHeight} ${endX - 35},0 ${endX},0 
-    L${SCREEN_WIDTH},0 
-    L${SCREEN_WIDTH},${TAB_BAR_HEIGHT + 50} 
-    L0,${TAB_BAR_HEIGHT + 50} 
+    M0,0
+    L${startX},0
+    C${startX + 35},0 ${centerX - 35},${centerHeight} ${centerX},${centerHeight}
+    C${centerX + 35},${centerHeight} ${endX - 35},0 ${endX},0
+    L${SCREEN_WIDTH},0
+    L${SCREEN_WIDTH},${tabBarHeight + 50}
+    L0,${tabBarHeight + 50}
     Z
   `
 
@@ -60,24 +52,28 @@ const CustomTabBarBackground = () => {
         right: 0,
         top: 0,
         bottom: 0,
-        shadowColor: '#000',
+        shadowColor: APP_COLORS.shadow,
         shadowOffset: {
           width: 0,
-          height: -2
+          height: -6
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-
-        elevation: 0,
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 12,
         backgroundColor: 'transparent'
       }}
     >
       <Svg
         width={SCREEN_WIDTH}
-        height={TAB_BAR_HEIGHT}
+        height={tabBarHeight}
         style={{ position: 'absolute', top: 0 }}
       >
-        <Path d={path} fill="#fff" stroke="#eee" strokeWidth="1" />
+        <Path
+          d={path}
+          fill={APP_COLORS.surfaceStrong}
+          stroke={APP_COLORS.outlineVariant}
+          strokeWidth="1"
+        />
       </Svg>
     </View>
   )
@@ -85,12 +81,18 @@ const CustomTabBarBackground = () => {
 
 export default function TabsLayout() {
   const navigation = useNavigation<NavigationProps>()
-  const token = useSelector((state: any) => state.user.token)
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
+  const token = useAppSelector(state => state.user.token)
+  const totalUnreadCount = useAppSelector(state => {
+    const groupUnreadCount = state.messenger.groups.items.reduce(
+      (total, item) => total + item.unreadCount,
+      0
+    )
+
+    return state.messenger.partner.unreadCount + groupUnreadCount
+  })
   const insets = useSafeAreaInsets()
 
-  // 路由鉴权：如果没有token，重定向到登录页
-  // 同时检查 /me 接口，用户不存在时清空 token 并跳转登录页
   useEffect(() => {
     const checkUserExists = async () => {
       if (!token) {
@@ -103,16 +105,12 @@ export default function TabsLayout() {
 
       try {
         await getUserMeReq()
-        // 用户存在，正常进入应用
       } catch (error: any) {
-        // 检查是否是"用户不存在"的错误，且 code 为 -1
         if (
           error.response?.data?.code === -1 &&
           error.response?.data?.message === '用户不存在'
         ) {
-          // 清空 token
           await dispatch(logoutAndClearAll() as any)
-          // 跳转登录页
           navigation.reset({
             index: 0,
             routes: [{ name: 'Login' }]
@@ -131,11 +129,11 @@ export default function TabsLayout() {
         headerTitleAlign: 'center',
         headerTitle: '',
         headerStyle: {
-          backgroundColor: '#ffffff'
+          backgroundColor: APP_COLORS.surface
         },
         headerShadowVisible: false,
-        tabBarActiveTintColor: '#f43f5e', //tab选中颜色 (Warm Red)
-        tabBarInactiveTintColor: '#999999', //tab未选中颜色
+        tabBarActiveTintColor: APP_COLORS.primaryStrong,
+        tabBarInactiveTintColor: APP_COLORS.textMuted,
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 46 + insets.bottom : 56,
           backgroundColor: 'transparent',
@@ -148,7 +146,8 @@ export default function TabsLayout() {
         },
         tabBarBackground: () => <CustomTabBarBackground />,
         tabBarLabelStyle: {
-          fontSize: 12
+          fontSize: 12,
+          fontWeight: '600'
         },
         animation: 'none'
       }}
@@ -180,45 +179,43 @@ export default function TabsLayout() {
         component={NullComponent}
         listeners={{
           tabPress: e => {
-            // 阻止默认的跳转行为
             e.preventDefault()
-            // 跳转到 Stack 中的 AIAssistant 页面
             navigation.navigate('AIAssistant')
           }
         }}
         options={{
           title: 'AI助手',
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: () => (
             <LinearGradient
-              // Theme gradient: Warm Red to Pink-Red (Matching app theme)
-              colors={['#ff9a9e', '#f43f5e']}
-              start={{ x: 0, y: 0 }}
+              colors={AI_TAB_GRADIENT}
               end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0 }}
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
+                width: 62,
+                height: 62,
+                borderRadius: 31,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginBottom: Platform.OS === 'ios' ? 0 : 35,
-                marginTop: Platform.OS === 'ios' ? -35 : 0,
-                // Refined shadow: centered, softer, less directional
-                shadowColor: '#FF5E62',
+                marginBottom: Platform.OS === 'ios' ? 2 : 35,
+                marginTop: Platform.OS === 'ios' ? -40 : -2,
+                shadowColor: AI_TAB_GLOW,
                 shadowOffset: {
                   width: 0,
-                  height: 8 // Increased vertical offset for "floating" effect
+                  height: 14
                 },
-                shadowOpacity: 0.35, // Slightly reduced opacity
-                shadowRadius: 10, // Increased radius for softer diffusion
-                elevation: 10 // Increased elevation for Android
+                shadowOpacity: 0.52,
+                shadowRadius: 24,
+                elevation: 20
               }}
             >
-              <AntDesign name="twitch" size={28} color="#fff" />
+              <AntDesign name="twitch" size={30} color="#fff" />
             </LinearGradient>
           ),
           tabBarLabelStyle: {
-            marginTop: Platform.OS === 'ios' ? 0 : 35,
-            fontSize: 12
+            marginTop: Platform.OS === 'ios' ? 2 : 35,
+            fontSize: 12,
+            fontWeight: '700',
+            color: AI_TAB_GLOW
           }
         }}
       />
@@ -228,11 +225,21 @@ export default function TabsLayout() {
         listeners={{
           tabPress: e => {
             e.preventDefault()
-            navigation.navigate('PartnerChat')
+            navigation.navigate('ChatHome')
           }
         }}
         options={{
-          title: '另一半',
+          title: '社区',
+          tabBarBadge:
+            totalUnreadCount > 0
+              ? totalUnreadCount > 99
+                ? '99+'
+                : totalUnreadCount
+              : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: APP_COLORS.primaryStrong,
+            color: '#fff'
+          },
           tabBarIcon: ({ color }) => (
             <AntDesign name="message" size={24} color={color} />
           )

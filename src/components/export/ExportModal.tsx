@@ -10,6 +10,7 @@ import {
   ScrollView
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 
 interface ExportModalProps {
   visible: boolean
@@ -90,12 +91,17 @@ export default function ExportModal({
             })}
           </ScrollView>
 
-          <TouchableOpacity
+          <Button
+            mode="contained"
             style={styles.exportButton}
+            contentStyle={styles.exportButtonContent}
+            labelStyle={styles.exportButtonText}
             onPress={() => onExport(selectedFormat, recordType)}
+            buttonColor="#10b981"
+            uppercase={false}
           >
-            <Text style={styles.exportButtonText}>确认导出</Text>
-          </TouchableOpacity>
+            确认导出
+          </Button>
         </View>
       </View>
     </Modal>
@@ -163,10 +169,10 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   exportButton: {
-    backgroundColor: '#10b981',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center'
+    borderRadius: 8
+  },
+  exportButtonContent: {
+    minHeight: 46
   },
   exportButtonText: {
     color: '#fff',

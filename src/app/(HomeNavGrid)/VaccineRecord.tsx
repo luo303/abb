@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '@/types/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@/store'
+import { Button } from 'react-native-paper'
 import { fetchBabies, fetchBabyProfile } from '@/store/modules/BabyStore'
 import VaccineCard from '@/components/vaccine/VaccineCard'
 import {
@@ -307,15 +308,18 @@ export default function VaccineRecordScreen() {
   }, [])
 
   const renderTab = (type: FilterType, label: string) => (
-    <TouchableOpacity
+    <Button
+      compact
+      mode={filter === type ? 'contained-tonal' : 'text'}
       style={[styles.tabItem, filter === type && styles.activeTabItem]}
+      contentStyle={styles.tabItemContent}
+      labelStyle={[styles.tabText, filter === type && styles.activeTabText]}
       onPress={() => setFilter(type)}
+      buttonColor={filter === type ? '#ecfdf5' : undefined}
+      uppercase={false}
     >
-      <Text style={[styles.tabText, filter === type && styles.activeTabText]}>
-        {label}
-      </Text>
-      {/* 移除原本的线条，改为胶囊样式，或者在样式表中重新定义 activeTabItem */}
-    </TouchableOpacity>
+      {label}
+    </Button>
   )
 
   return (
@@ -352,13 +356,25 @@ export default function VaccineRecordScreen() {
         <View style={styles.iosPickerOverlay}>
           <View style={styles.iosPickerContent}>
             <View style={styles.iosPickerHeader}>
-              <TouchableOpacity onPress={cancelIOSDate}>
-                <Text style={styles.iosPickerCancel}>取消</Text>
-              </TouchableOpacity>
+              <Button
+                compact
+                mode="text"
+                onPress={cancelIOSDate}
+                labelStyle={styles.iosPickerCancel}
+                uppercase={false}
+              >
+                取消
+              </Button>
               <Text style={styles.iosPickerTitle}>选择接种日期</Text>
-              <TouchableOpacity onPress={confirmIOSDate}>
-                <Text style={styles.iosPickerConfirm}>确认</Text>
-              </TouchableOpacity>
+              <Button
+                compact
+                mode="text"
+                onPress={confirmIOSDate}
+                labelStyle={styles.iosPickerConfirm}
+                uppercase={false}
+              >
+                确认
+              </Button>
             </View>
             <DateTimePicker
               value={selectedDate}
@@ -422,13 +438,13 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 12,
-    justifyContent: 'center'
+    borderRadius: 12
   },
   activeTabItem: {
     backgroundColor: '#ecfdf5' // 选中时的浅绿色背景
+  },
+  tabItemContent: {
+    minHeight: 40
   },
   divider: {
     width: 1,

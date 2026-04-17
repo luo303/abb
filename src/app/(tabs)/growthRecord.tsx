@@ -3,14 +3,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ImageBackground,
   TouchableOpacity
 } from 'react-native'
-import type { ImageSourcePropType } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 
 // 导入组件
@@ -18,6 +16,7 @@ import { NavigationProps } from '../../types/navigation'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { fetchBabyProfile, fetchGrowthCurve } from '@/store/modules/BabyStore'
 import CurveHeightChart from '../../components/growth/curve/CurveHeightChart'
+import PaperAvatar from '@/components/common/PaperAvatar'
 
 function Section({
   title,
@@ -141,7 +140,6 @@ export default function GrowthRecord() {
   const hasHeightHistory = growthCurve.height.length > 0
   const hasWeightHistory = growthCurve.weight.length > 0
   const hasHeadHistory = growthCurve.head.length > 0
-  const [avatarLoadError, setAvatarLoadError] = useState(false)
   const babyAvatar =
     activeBabyDetail?.avatar ||
     babiesList.find(item => item.baby_id === currentBabyId)?.avatar
@@ -149,16 +147,6 @@ export default function GrowthRecord() {
     activeBabyDetail?.name ||
     babiesList.find(item => item.baby_id === currentBabyId)?.name ||
     '宝'
-  const hasAvatar =
-    typeof babyAvatar === 'string' && babyAvatar.trim().length > 0
-  const avatarSource: ImageSourcePropType = hasAvatar
-    ? { uri: babyAvatar }
-    : require('../../assets/testAvatar.png')
-
-  useEffect(() => {
-    setAvatarLoadError(false)
-  }, [currentBabyId, babyAvatar])
-
   useFocusEffect(
     useCallback(() => {
       if (!currentBabyId) return
@@ -228,20 +216,12 @@ export default function GrowthRecord() {
             </Text>
           </View>
           <View style={styles.avatarWrapper}>
-            {hasAvatar && !avatarLoadError ? (
-              <ImageBackground
-                source={avatarSource}
-                style={styles.headerAvatar}
-                imageStyle={{ borderRadius: 28 }}
-                onError={() => setAvatarLoadError(true)}
-              />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarFallbackText}>
-                  {babyName.slice(0, 1)}
-                </Text>
-              </View>
-            )}
+            <PaperAvatar
+              accessibilityLabel={babyName}
+              size={52}
+              source={babyAvatar}
+              style={styles.headerAvatar}
+            />
           </View>
         </View>
 
@@ -366,19 +346,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26
-  },
-  avatarFallback: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#ffe4e6',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  avatarFallbackText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f43f5e'
   },
   editIconBadge: {
     position: 'absolute',

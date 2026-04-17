@@ -2,6 +2,7 @@ import React, { memo, useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Image,
+  LayoutChangeEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,13 +22,15 @@ interface ChatMessageProps {
   isSpeaking: boolean
   onSpeak: (timestamp: number, text: string) => void
   isTyping?: boolean
+  onLayout?: (event: LayoutChangeEvent) => void
 }
 
 function ChatMessage({
   message,
   isSpeaking = false,
   onSpeak,
-  isTyping = false
+  isTyping = false,
+  onLayout
 }: ChatMessageProps) {
   const { showMessage } = useMessage()
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
@@ -172,6 +175,7 @@ function ChatMessage({
 
   return (
     <View
+      onLayout={onLayout}
       style={[
         styles.container,
         message.role === 'user' ? styles.userContainer : styles.aiContainer
@@ -289,6 +293,7 @@ const MemoChatMessage = memo(ChatMessage, (prev, next) => {
   return (
     prev.isSpeaking === next.isSpeaking &&
     prev.isTyping === next.isTyping &&
+    prev.onLayout === next.onLayout &&
     prev.message.role === next.message.role &&
     prev.message.content === next.message.content &&
     prev.message.timestamp === next.message.timestamp &&
@@ -303,7 +308,6 @@ export default MemoChatMessage
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    marginBottom: 10,
     alignItems: 'flex-start',
     paddingHorizontal: 4
   },

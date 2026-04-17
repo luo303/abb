@@ -8,6 +8,7 @@ import {
   ViewProps
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 
 import {
   composerFieldFocusShadow,
@@ -16,6 +17,7 @@ import {
   composerSendShadow,
   composerTheme
 } from '../common/composerTheme'
+import { POST_ACTION_COLORS } from './postActionColors'
 
 interface PostFooterProps {
   onInputPress?: () => void
@@ -95,21 +97,21 @@ export default function PostFooter({
         likeCount,
         onLike,
         isLiked,
-        '#E97070'
+        POST_ACTION_COLORS.like
       )}
       {renderActionButton(
         isDisliked ? 'heart-dislike' : 'heart-dislike-outline',
         dislikeCount || 0,
         onDislike,
         isDisliked,
-        '#7D8797'
+        POST_ACTION_COLORS.dislike
       )}
       {renderActionButton(
         isFavorited ? 'star' : 'star-outline',
         collectCount,
         onFavorite,
         isFavorited,
-        '#E6A23C'
+        POST_ACTION_COLORS.favorite
       )}
       {renderActionButton('chatbubble-outline', commentCount)}
     </View>
@@ -151,17 +153,21 @@ export default function PostFooter({
             />
           </View>
           {isComposerActive ? (
-            <TouchableOpacity
+            <Button
+              mode="contained"
               style={[
                 styles.sendButton,
                 sendDisabled && styles.sendButtonDisabled
               ]}
+              contentStyle={styles.sendButtonContent}
+              labelStyle={styles.sendButtonText}
               onPress={onSend}
               disabled={sendDisabled}
-              activeOpacity={sendDisabled ? 1 : 0.85}
+              buttonColor={composerTheme.accent}
+              uppercase={false}
             >
-              <Text style={styles.sendButtonText}>发送</Text>
-            </TouchableOpacity>
+              发送
+            </Button>
           ) : (
             actionButtons
           )}
@@ -246,12 +252,11 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     width: 58,
-    height: 42,
-    backgroundColor: composerTheme.accent,
     borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
     ...composerSendShadow
+  },
+  sendButtonContent: {
+    height: 42
   },
   sendButtonDisabled: {
     backgroundColor: composerTheme.accentDisabled,

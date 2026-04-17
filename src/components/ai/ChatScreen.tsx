@@ -1,28 +1,33 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Keyboard,
   StyleSheet,
   TouchableOpacity,
   View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import type { FlashListRef } from '@shopify/flash-list'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useDispatch, useSelector } from 'react-redux'
 import 'react-native-get-random-values'
 import { v4 as uuidv4 } from 'uuid'
 import * as Speech from 'expo-speech'
+import {
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue
+} from 'react-native-reanimated'
 
 import ChatEmptyState from './ChatEmptyState'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
-import KeyboardStickyFooter from '../common/KeyboardStickyFooter'
 import useChatAutoScroll from '../common/useChatAutoScroll'
 import {
-  useChatComposerMetrics,
-  useKeyboardChatScrollRenderer
-} from '../common/useKeyboardChatList'
+  Animated,
+  useKeyboardTranslateStyle
+} from '../common/useKeyboardTranslateStyle'
 import { useMessage } from '../Message'
 import { SendMessageStream } from '@/api/ai'
 import { RootState } from '../../store'
@@ -37,10 +42,10 @@ import { Message } from '../../types/AIchat'
 
 const MESSAGE_ITEM_SPACING = 10
 const LIST_BOTTOM_GAP = 12
-const AI_CHAT_BASE_INPUT_HEIGHT = 136
 const AI_CHAT_INPUT_NATIVE_ID = 'ai-chat-input'
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets()
   const messages = useSelector((state: RootState) => state.chat.messages)
   const currentConversationId = useSelector(
     (state: RootState) => state.chat.currentConversationId
@@ -57,20 +62,34 @@ export default function ChatScreen() {
   const streamingFrameRef = useRef<number | null>(null)
   const streamingContentRef = useRef('')
   const speakingTimestampRef = useRef<number | null>(null)
+  const pendingInitialScrollRef = useRef(true)
 
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
   const [speakingTimestamp, setSpeakingTimestamp] = useState<number | null>(
     null
   )
-
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+  const [isListScrollEnabled, setIsListScrollEnabled] = useState(true)
+  const keyboardDismissLock = useSharedValue(0)
   const {
-    baseHeight: baseInputBarHeight,
-    extraContentPadding,
-    handleComposerLayout
-  } = useChatComposerMetrics({
-    initialHeight: AI_CHAT_BASE_INPUT_HEIGHT
+    animatedStyle: keyboardAnimatedStyle,
+    keyboardHeight,
+    keyboardProgress,
+    keyboardTransitionState
+  } = useKeyboardTranslateStyle({
+    bottomInset: insets.bottom
   })
+
+  const displayMessages = useMemo(() => {
+    if (!streamingMessage) return messages
+    return [...messages, streamingMessage]
+  }, [messages, streamingMessage])
+  const listMessages = useMemo(() => {
+    return [...displayMessages].reverse()
+  }, [displayMessages])
+  const hasDisplayMessages = listMessages.length > 0
+  const initialScrollIndex = hasDisplayMessages ? 0 : undefined
 
   const {
     scrollRef,
@@ -79,38 +98,26 @@ export default function ChatScreen() {
     handleScroll,
     handleContentSizeChange,
     handleListLoad,
-    syncScrollState
+    syncScrollState,
+    stopCurrentScroll
   } = useChatAutoScroll({
     conversationKey: currentConversationId,
-    showButtonThreshold: 140
+    showButtonThreshold: 140,
+    inverted: true
   })
-
-  const renderChatScrollComponent = useKeyboardChatScrollRenderer({
-    extraContentPadding,
-    keyboardLiftBehavior: 'whenAtEnd'
-  })
-
-  const displayMessages = useMemo(() => {
-    if (!streamingMessage) return messages
-    return [...messages, streamingMessage]
-  }, [messages, streamingMessage])
-  const hasDisplayMessages = displayMessages.length > 0
 
   const listRef =
     scrollRef as React.MutableRefObject<FlashListRef<Message> | null>
 
   const listContentStyle = useMemo(
     () => ({
+      flexGrow: 1,
+      justifyContent: 'flex-end' as const,
       paddingHorizontal: 16,
       paddingTop: 12,
-      paddingBottom: baseInputBarHeight + LIST_BOTTOM_GAP
+      paddingBottom: LIST_BOTTOM_GAP
     }),
-    [baseInputBarHeight]
-  )
-
-  const scrollToBottomOverlayStyle = useMemo(
-    () => [styles.scrollToBottomOverlay, { bottom: baseInputBarHeight + 16 }],
-    [baseInputBarHeight]
+    []
   )
 
   const listExtraData = useMemo(
@@ -121,6 +128,10 @@ export default function ChatScreen() {
     }),
     [isStreaming, speakingTimestamp, streamingMessage?.timestamp]
   )
+
+  const getMessageKey = useCallback((item: Message) => {
+    return `${item.timestamp}-${item.role}`
+  }, [])
 
   const updateSpeakingTimestamp = useCallback((timestamp: number | null) => {
     speakingTimestampRef.current = timestamp
@@ -191,6 +202,99 @@ export default function ChatScreen() {
     if (!currentConversationId) return
     saveSessionMessagesToStorage(currentConversationId, messages)
   }, [currentConversationId, messages])
+
+  useEffect(() => {
+    pendingInitialScrollRef.current = true
+  }, [currentConversationId])
+
+  const unlockListScroll = useCallback(() => {
+    setIsListScrollEnabled(true)
+  }, [])
+
+  const alignInitialScrollPosition = useCallback(() => {
+    if (!pendingInitialScrollRef.current || listMessages.length === 0) return
+
+    pendingInitialScrollRef.current = false
+    const latestIndex = 0
+
+    const scrollToLatest = () => {
+      const currentList = listRef.current
+      if (!currentList) return
+
+      currentList
+        .scrollToIndex({
+          index: latestIndex,
+          animated: false
+        })
+        .catch(() => {
+          currentList.scrollToOffset({
+            offset: 0,
+            animated: false
+          })
+        })
+    }
+
+    scrollToLatest()
+    requestAnimationFrame(scrollToLatest)
+  }, [listMessages.length, listRef])
+
+  useEffect(() => {
+    if (!hasDisplayMessages) {
+      pendingInitialScrollRef.current = true
+      return
+    }
+
+    alignInitialScrollPosition()
+  }, [alignInitialScrollPosition, hasDisplayMessages])
+
+  useAnimatedReaction(
+    () =>
+      keyboardTransitionState.value === 1 ||
+      keyboardHeight.value > 0.5 ||
+      keyboardProgress.value > 0.01,
+    (visible, previous) => {
+      if (visible === previous) return
+      runOnJS(setIsKeyboardVisible)(visible)
+    },
+    []
+  )
+
+  useAnimatedReaction(
+    () => ({
+      locked: keyboardDismissLock.value,
+      height: keyboardHeight.value,
+      progress: keyboardProgress.value,
+      moving: keyboardTransitionState.value
+    }),
+    current => {
+      if (current.locked !== 1) return
+
+      const keyboardClosed =
+        current.height <= 0.5 &&
+        current.progress <= 0.01 &&
+        current.moving === 0
+
+      if (!keyboardClosed) return
+
+      keyboardDismissLock.value = 0
+      runOnJS(unlockListScroll)()
+    },
+    [unlockListScroll]
+  )
+
+  const handleListTouchStart = useCallback(() => {
+    if (!isKeyboardVisible || !isListScrollEnabled) return
+
+    keyboardDismissLock.value = 1
+    setIsListScrollEnabled(false)
+    stopCurrentScroll()
+    Keyboard.dismiss()
+  }, [
+    isKeyboardVisible,
+    isListScrollEnabled,
+    keyboardDismissLock,
+    stopCurrentScroll
+  ])
 
   const handleSpeak = useCallback(
     (timestamp: number, text: string) => {
@@ -328,21 +432,20 @@ export default function ChatScreen() {
         const finalContent = fullContentRef.current.trim()
         if (finalContent.length > 0) {
           flushStreamingMessage()
+          const finalAssistantMessage: Message = {
+            content: fullContentRef.current,
+            role: 'assistant',
+            timestamp: Date.now()
+          }
           // @ts-ignore
-          dispatch(
-            addMessage({
-              content: fullContentRef.current,
-              role: 'assistant',
-              timestamp: Date.now()
-            })
-          )
+          dispatch(addMessage(finalAssistantMessage))
         }
       } catch (error: any) {
         const isAbortError =
           error?.name === 'AbortError' || error?.message === 'Aborted'
         if (!isAbortError) {
-          console.error('消息发送失败:', error)
-          showMessage('消息发送失败，请稍后重试')
+          console.error('Failed to send chat message:', error)
+          showMessage('Message send failed. Please try again.')
         }
       } finally {
         if (abortControllerRef.current === abortController) {
@@ -387,13 +490,21 @@ export default function ChatScreen() {
     return <View style={styles.messageSeparator} />
   }, [])
 
-  const keyExtractor = useCallback((item: Message) => {
-    return `${item.timestamp}-${item.role}`
-  }, [])
+  const keyExtractor = useCallback(
+    (item: Message) => {
+      return getMessageKey(item)
+    },
+    [getMessageKey]
+  )
+
+  const handleListReady = useCallback(() => {
+    handleListLoad()
+    alignInitialScrollPosition()
+  }, [alignInitialScrollPosition, handleListLoad])
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <View style={styles.layout}>
+      <Animated.View style={[styles.layout, keyboardAnimatedStyle]}>
         <View style={styles.messagesContainer}>
           {isLoading && !hasDisplayMessages ? (
             <View style={styles.loadingContainer}>
@@ -404,15 +515,19 @@ export default function ChatScreen() {
           ) : (
             <FlashList
               ref={listRef}
-              data={displayMessages}
+              data={listMessages}
+              inverted
+              initialScrollIndex={initialScrollIndex}
               keyExtractor={keyExtractor}
               renderItem={renderMessageItem}
               ItemSeparatorComponent={renderMessageSeparator}
-              renderScrollComponent={renderChatScrollComponent}
               contentContainerStyle={listContentStyle}
+              keyboardDismissMode="none"
+              scrollEnabled={isListScrollEnabled}
+              onTouchStart={handleListTouchStart}
               onScroll={handleScroll}
               onContentSizeChange={handleContentSizeChange}
-              onLoad={handleListLoad}
+              onLoad={handleListReady}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
               removeClippedSubviews
@@ -423,7 +538,7 @@ export default function ChatScreen() {
           )}
 
           {hasDisplayMessages && showScrollBottom && (
-            <View pointerEvents="box-none" style={scrollToBottomOverlayStyle}>
+            <View pointerEvents="box-none" style={styles.scrollToBottomOverlay}>
               <TouchableOpacity
                 style={styles.scrollToBottomButton}
                 onPress={() => scrollToBottom(true)}
@@ -435,8 +550,8 @@ export default function ChatScreen() {
           )}
         </View>
 
-        <KeyboardStickyFooter style={styles.inputBarSticky}>
-          <View style={styles.inputBar} onLayout={handleComposerLayout}>
+        <View style={styles.inputBarWrap}>
+          <View style={styles.inputBar}>
             <ChatInput
               inputNativeID={AI_CHAT_INPUT_NATIVE_ID}
               onSend={sendMessage}
@@ -445,8 +560,8 @@ export default function ChatScreen() {
               onTogglePrivateKb={handleTogglePrivateKb}
             />
           </View>
-        </KeyboardStickyFooter>
-      </View>
+        </View>
+      </Animated.View>
     </SafeAreaView>
   )
 }
@@ -474,8 +589,8 @@ const styles = StyleSheet.create({
   chatScroll: {
     flex: 1
   },
-  inputBarSticky: {
-    zIndex: 30
+  inputBarWrap: {
+    backgroundColor: '#FAFAFA'
   },
   inputBar: {
     width: '100%',

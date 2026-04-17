@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from './redux'
 import {
   fetchPostList,
@@ -9,8 +9,27 @@ import {
 } from '@/store/modules/PostStore'
 import { getUserMeReq, ApiResponse, UserMeResponse } from '../api/profile'
 import { setUserInfo } from '../store/modules/userStore'
-import { PostItem } from '../types/home'
+import { HomeFeedTabKey, PostItem } from '../types/home'
 import { useMessage } from '@/components/Message'
+
+const DEFAULT_TAB: HomeFeedTabKey = 'hot'
+const RECOMMEND_STRATEGY = 'random'
+
+export const normalizeHomeTabKey = (tab?: string | null): HomeFeedTabKey => {
+  switch (tab) {
+    case 'hot':
+    case '热门':
+      return 'hot'
+    case 'following':
+    case '关注':
+      return 'following'
+    case 'recommend':
+    case '推荐':
+      return 'recommend'
+    default:
+      return 'hot'
+  }
+}
 
 export function useHomeData() {
   const dispatch = useAppDispatch()
@@ -33,33 +52,74 @@ export function useHomeData() {
     state => state.user.userInfo
   ) as UserMeResponse | null
   const [refreshing, setRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState('推荐')
-  const isTabLoading = false
+  const [activeTab, setActiveTabState] = useState<HomeFeedTabKey>(DEFAULT_TAB)
 
   const isMountedRef = useRef(true)
   const isLockRef = useRef(false)
   const { showMessage } = useMessage()
 
-  // 合并展示的数据
-  const serverIds = new Set(
-    activeTab === '关注'
-      ? followingPosts.map(p => p.post_id)
-      : activeTab === '热门'
-        ? hotPostList.map(p => p.post_id)
-        : postList.map(p => p.post_id)
+  const recommendServerIds = useMemo(
+    () => new Set(postList.map(p => p.post_id)),
+    [postList]
   )
-  const uniqueLocalPosts =
-    activeTab === '推荐'
-      ? localPublishedPosts.filter(p => !serverIds.has(p.post_id))
-      : []
-  const posts =
-    activeTab === '关注'
-      ? followingPosts // 关注列表只显示API获取的关注帖子
-      : activeTab === '热门'
-        ? hotPostList
-        : [...uniqueLocalPosts, ...postList] // 本地添加的帖子优先显示在前面
 
-  // 首次进入首页时获取一次用户信息（如果 Redux 中还没有）
+  const recommendPosts = useMemo(
+    () => [
+      ...localPublishedPosts.filter(p => !recommendServerIds.has(p.post_id)),
+      ...postList
+    ],
+    [localPublishedPosts, postList, recommendServerIds]
+  )
+
+  const setActiveTab = useCallback((tab: HomeFeedTabKey | string) => {
+    setActiveTabState(normalizeHomeTabKey(tab))
+  }, [])
+
+  const getTabPosts = useCallback(
+    (tab: HomeFeedTabKey) => {
+      switch (tab) {
+        case 'hot':
+          return hotPostList
+        case 'following':
+          return followingPosts
+        case 'recommend':
+        default:
+          return recommendPosts
+      }
+    },
+    [followingPosts, hotPostList, recommendPosts]
+  )
+
+  const getTabHasMore = useCallback(
+    (tab: HomeFeedTabKey) => {
+      switch (tab) {
+        case 'hot':
+          return hotHasMore
+        case 'following':
+          return followHasMore
+        case 'recommend':
+        default:
+          return hasMore
+      }
+    },
+    [followHasMore, hasMore, hotHasMore]
+  )
+
+  const getTabLoadingMore = useCallback(
+    (tab: HomeFeedTabKey) => {
+      switch (tab) {
+        case 'hot':
+          return isHotLoadingMore
+        case 'following':
+          return isFollowLoading
+        case 'recommend':
+        default:
+          return isLoadingMore
+      }
+    },
+    [isFollowLoading, isHotLoadingMore, isLoadingMore]
+  )
+
   useEffect(() => {
     if (userInfo) return
 
@@ -73,118 +133,87 @@ export function useHomeData() {
         }
       } catch (error) {
         if (!isMountedRef.current) return
-        console.error('获取用户信息失败：', error)
+        console.error('获取用户信息失败:', error)
       }
     }
 
     fetchUserInfo()
   }, [dispatch, userInfo])
 
-  // 下拉刷新处理函数
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      if (activeTab === '关注') {
-        await dispatch(fetchFollowingPosts({ page: 1, force: true })).unwrap()
-      } else {
-        let strategy: string | undefined
-        if (activeTab === '热门') {
-          strategy = 'hot'
-        } else if (activeTab === '推荐') {
-          strategy = 'random'
+  const handleRefresh = useCallback(
+    async (tab: HomeFeedTabKey = activeTab) => {
+      setRefreshing(true)
+      try {
+        if (tab === 'following') {
+          await dispatch(fetchFollowingPosts({ page: 1, force: true })).unwrap()
+          return
         }
+
+        const strategy = tab === 'hot' ? 'hot' : RECOMMEND_STRATEGY
         await dispatch(
           fetchPostList({ page: 1, strategy, force: true })
         ).unwrap()
+      } catch (error) {
+        console.error('Refresh failed:', error)
+        if (tab === 'following') {
+          showMessage('刷新关注帖子失败，请稍后重试')
+        }
+      } finally {
+        setRefreshing(false)
       }
-    } catch (error) {
-      console.error('Refresh failed:', error)
-      if (activeTab === '关注') {
-        showMessage('刷新关注帖子失败，请稍后重试')
-      }
-    } finally {
-      setRefreshing(false)
-    }
-  }, [dispatch, activeTab, showMessage])
+    },
+    [activeTab, dispatch, showMessage]
+  )
 
-  // 加载更多
-  const loadMore = useCallback(async () => {
-    // 物理锁判断：只要有一个请求在跑，后续触发直接弹回
-    if (isLockRef.current) return
-    if (refreshing) return
+  const loadMore = useCallback(
+    async (tab: HomeFeedTabKey = activeTab) => {
+      if (isLockRef.current || refreshing) return
 
-    const currentListLength =
-      activeTab === '关注'
-        ? followingPosts.length
-        : activeTab === '热门'
-          ? hotPostList.length
-          : postList.length + localPublishedPosts.length
-    if (currentListLength === 0) return
+      const currentPosts = getTabPosts(tab)
+      if (currentPosts.length === 0) return
 
-    const currentLoading =
-      activeTab === '关注'
-        ? isFollowLoading
-        : activeTab === '热门'
-          ? isHotLoadingMore
-          : isLoadingMore
-    if (currentLoading) return
+      const currentLoading = getTabLoadingMore(tab)
+      if (currentLoading) return
 
-    const currentHasMore =
-      activeTab === '关注'
-        ? followHasMore
-        : activeTab === '热门'
-          ? hotHasMore
-          : hasMore
-    if (!currentHasMore) return
+      const currentHasMore = getTabHasMore(tab)
+      if (!currentHasMore) return
 
-    // 针对 Mock 的刹车逻辑
-    const currentPage =
-      activeTab === '关注' ? followPage : activeTab === '热门' ? hotPage : page
-    if (activeTab !== '关注' && currentPage >= 5) return
+      isLockRef.current = true
 
-    // 🔒 上锁
-    isLockRef.current = true
+      try {
+        if (tab === 'following') {
+          await dispatch(
+            loadMoreFollowingPosts({ page: followPage + 1 })
+          ).unwrap()
+          return
+        }
 
-    try {
-      if (activeTab === '关注') {
-        await dispatch(
-          loadMoreFollowingPosts({ page: followPage + 1 })
-        ).unwrap()
-      } else {
-        let strategy = activeTab === '热门' ? 'hot' : 'random'
-        const nextPage = activeTab === '热门' ? hotPage + 1 : page + 1
+        const strategy = tab === 'hot' ? 'hot' : RECOMMEND_STRATEGY
+        const nextPage = tab === 'hot' ? hotPage + 1 : page + 1
         await dispatch(loadMorePosts({ page: nextPage, strategy })).unwrap()
+      } catch (error) {
+        console.error('Load more failed:', error)
+        if (tab === 'following') {
+          showMessage('加载更多关注帖子失败，请稍后重试')
+        }
+      } finally {
+        isLockRef.current = false
       }
-    } catch (error) {
-      console.error('Load more failed:', error)
-      if (activeTab === '关注') {
-        showMessage('加载更多关注帖子失败，请稍后重试')
-      }
-    } finally {
-      // 解锁
-      isLockRef.current = false
-    }
-  }, [
-    dispatch,
-    page,
-    hasMore,
-    isLoadingMore,
-    activeTab,
-    showMessage,
-    isFollowLoading,
-    followHasMore,
-    followPage,
-    followingPosts.length,
-    hotHasMore,
-    hotPage,
-    hotPostList.length,
-    isHotLoadingMore,
-    localPublishedPosts.length,
-    postList.length,
-    refreshing
-  ])
+    },
+    [
+      activeTab,
+      dispatch,
+      followPage,
+      getTabHasMore,
+      getTabLoadingMore,
+      getTabPosts,
+      hotPage,
+      page,
+      refreshing,
+      showMessage
+    ]
+  )
 
-  // 添加新帖子
   const addNewPost = useCallback(
     (newPost: PostItem) => {
       dispatch(addLocalPost(newPost))
@@ -199,26 +228,20 @@ export function useHomeData() {
   }, [])
 
   return {
-    posts,
-    // 关键：根据 activeTab 返回对应的 hasMore 状态
-    hasMore:
-      activeTab === '关注'
-        ? followHasMore
-        : activeTab === '热门'
-          ? hotHasMore
-          : hasMore,
-    isLoadingMore:
-      activeTab === '关注'
-        ? isFollowLoading
-        : activeTab === '热门'
-          ? isHotLoadingMore
-          : isLoadingMore,
-    isTabLoading,
-    refreshing,
     activeTab,
     setActiveTab,
+    refreshing,
+    addNewPost,
     handleRefresh,
     loadMore,
-    addNewPost
+    posts: getTabPosts(activeTab),
+    hasMore: getTabHasMore(activeTab),
+    isLoadingMore: getTabLoadingMore(activeTab),
+    recommendPosts,
+    hotPosts: hotPostList,
+    followingFeedPosts: followingPosts,
+    getTabPosts,
+    getTabHasMore,
+    getTabLoadingMore
   }
 }

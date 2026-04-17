@@ -1,12 +1,13 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { APP_GRADIENTS } from '@/theme/paperTheme'
 
 export default function AuthBackground() {
   return (
     <View style={styles.container} pointerEvents="none">
       <LinearGradient
-        colors={['#fff1f2', '#ffe4e6', '#ffffff']}
+        colors={APP_GRADIENTS.auth}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}

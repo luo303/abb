@@ -8,13 +8,17 @@ import { LogBox } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { initFollowingIds } from '../store/modules/FollowStore'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
+import { getUserMeReq } from '../api/profile'
 import { fetchPostList, fetchFollowingPosts } from '../store/modules/PostStore'
+import { loadMessengerCache } from '../store/modules/MessengerStore'
+import { setUserInfo } from '../store/modules/userStore'
 import {
   fetchBabies,
   fetchBabyProfile,
   loadCurrentBabyId
 } from '../store/modules/BabyStore'
 import * as SplashScreen from 'expo-splash-screen'
+import { Provider as PaperProvider } from 'react-native-paper'
 
 // 导入页面组件
 import LoginScreen from './login'
@@ -43,11 +47,21 @@ import DiaperFormScreen from './DiaperFormScreen'
 import KnowledgeUploadScreen from './KnowledgeUpload'
 import SearchScreen from './search/SearchScreen'
 import AppKeyboardProvider from '../components/common/AppKeyboardProvider'
+import ChatHome from './(tabs)/ChatHome'
+import ChatDetail from './chat/ChatDetail'
+import BindPartner from './chat/BindPartner'
+import CreateGroup from './chat/CreateGroup'
+import JoinGroup from './chat/JoinGroup'
+import GroupInfo from './chat/GroupInfo'
 
 // 导入弹框组件
 import { MessageProvider } from '../components/Message'
 import AIAssistant from './(tabs)/AIAssistant'
-import PartnerChat from './(tabs)/PartnerChat'
+import {
+  appNavigationTheme,
+  appPaperTheme,
+  APP_COLORS
+} from '../theme/paperTheme'
 // 忽略特定的日志警告
 LogBox.ignoreLogs([
   'Unsupported top level event type "topSvgLayout" dispatched'
@@ -67,6 +81,16 @@ function AppInitializer({ onReady }: { onReady?: () => void }) {
         return
       }
       try {
+        try {
+          const res: any = await getUserMeReq()
+          if (res?.code === 0 && res?.data) {
+            dispatch(setUserInfo(res.data))
+          }
+        } catch (error) {
+          console.error('Failed to preload user info:', error)
+        }
+
+        await dispatch(loadMessengerCache())
         await dispatch(initFollowingIds())
         await dispatch(loadCurrentBabyId() as any)
         await dispatch(fetchBabies())
@@ -96,18 +120,22 @@ function RootNavigator({ appReady }: { appReady: boolean }) {
   if (token && !appReady) return null
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={appNavigationTheme}>
       <Stack.Navigator
         initialRouteName={token ? 'Tabs' : 'Login'}
         screenOptions={{
           title: '', //默认标题为空
           headerTitleAlign: 'center', //安卓系统标题居中
           headerShadowVisible: false, //隐藏标题栏阴影
-          contentStyle: { backgroundColor: '#fff' }, // Native Stack 使用 contentStyle 设置背景
+          contentStyle: { backgroundColor: APP_COLORS.background }, // Native Stack 使用 contentStyle 设置背景
+          headerStyle: {
+            backgroundColor: APP_COLORS.surface
+          },
+          headerTintColor: APP_COLORS.text,
           headerTitleStyle: {
             fontSize: 16,
             fontWeight: '400',
-            color: '#2A2929'
+            color: APP_COLORS.text
           }
           // Windows 开发环境下无法修改 iOS 原生配置，暂时注释掉以避免 Expo Go 红屏报错
           // statusBarAnimation: 'slide',
@@ -140,10 +168,55 @@ function RootNavigator({ appReady }: { appReady: boolean }) {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="PartnerChat"
-          component={PartnerChat}
+          name="ChatHome"
+          component={ChatHome}
           options={{
-            title: '另一半',
+            title: '聊天',
+            headerTitleAlign: 'center',
+            headerShadowVisible: false
+          }}
+        />
+        <Stack.Screen
+          name="ChatDetail"
+          component={ChatDetail}
+          options={{
+            title: '聊天',
+            headerTitleAlign: 'center',
+            headerShadowVisible: false
+          }}
+        />
+        <Stack.Screen
+          name="BindPartner"
+          component={BindPartner}
+          options={{
+            title: '绑定另一半',
+            headerTitleAlign: 'center',
+            headerShadowVisible: false
+          }}
+        />
+        <Stack.Screen
+          name="CreateGroup"
+          component={CreateGroup}
+          options={{
+            title: '创建群聊',
+            headerTitleAlign: 'center',
+            headerShadowVisible: false
+          }}
+        />
+        <Stack.Screen
+          name="JoinGroup"
+          component={JoinGroup}
+          options={{
+            title: '加入群聊',
+            headerTitleAlign: 'center',
+            headerShadowVisible: false
+          }}
+        />
+        <Stack.Screen
+          name="GroupInfo"
+          component={GroupInfo}
+          options={{
+            title: '群聊详情',
             headerTitleAlign: 'center',
             headerShadowVisible: false
           }}
@@ -284,15 +357,20 @@ export default function Layout() {
   }, [appReady, rootViewReady, minDelayDone, hasHiddenSplash])
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: APP_COLORS.background }}
+      onLayout={onLayoutRootView}
+    >
       <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Provider store={store}>
-        <AppKeyboardProvider>
-          <MessageProvider>
-            <AppInitializer onReady={() => setAppReady(true)} />
-            <RootNavigator appReady={appReady} />
-          </MessageProvider>
-        </AppKeyboardProvider>
+        <PaperProvider theme={appPaperTheme}>
+          <AppKeyboardProvider>
+            <MessageProvider>
+              <AppInitializer onReady={() => setAppReady(true)} />
+              <RootNavigator appReady={appReady} />
+            </MessageProvider>
+          </AppKeyboardProvider>
+        </PaperProvider>
       </Provider>
     </GestureHandlerRootView>
   )

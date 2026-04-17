@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSelector, useDispatch } from 'react-redux'
+import { Button } from 'react-native-paper'
 import { RootState } from '../store'
 import {
   saveFeedingRecord,
@@ -107,7 +108,7 @@ const FeedingRecordScreen = () => {
       case '奶粉':
         return ['#fff0f0', '#ffb3b3'] // 浅红色（奶粉）
       case '母乳':
-        return ['#fff5f5', '#fecdd3'] // 浅珊瑚粉
+        return ['#fdf3f5', '#fecdd3'] // 浅珊瑚粉
       case '辅食':
         return ['#ffe6e6', '#ff9999'] // 浅红色（辅食）
       default:
@@ -149,7 +150,7 @@ const FeedingRecordScreen = () => {
         return {
           title: '母乳喂养提示',
           color: '#e11d48',
-          backgroundColor: '#fff5f5',
+          backgroundColor: '#fdf3f5',
           borderColor: '#fecdd3',
           tips: [
             '• 母乳喂养时间一般建议在15-20分钟左右',
@@ -372,15 +373,20 @@ const FeedingRecordScreen = () => {
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity
+          <Button
+            mode="contained"
             style={[
               styles.saveButton,
               { backgroundColor: getButtonColor(selectedType) }
             ]}
             onPress={handleSave}
+            contentStyle={styles.saveButtonContent}
+            labelStyle={styles.saveButtonText}
+            buttonColor={getButtonColor(selectedType)}
+            uppercase={false}
           >
-            <Text style={styles.saveButtonText}>保存</Text>
-          </TouchableOpacity>
+            保存
+          </Button>
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -474,15 +480,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 0
   },
   saveButton: {
-    backgroundColor: '#f43f5e',
     borderRadius: 24,
-    paddingVertical: 14,
-    alignItems: 'center',
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5
+  },
+  saveButtonContent: {
+    minHeight: 52
   },
   saveButtonText: {
     fontSize: 16,

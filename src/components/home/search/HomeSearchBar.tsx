@@ -8,20 +8,27 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../../types/navigation'
+import { HOME_PINK_THEME, HomeTone } from '../homePalette'
 
 interface HomeSearchBarProps {
+  onMenuPress?: () => void
   onSearch?: (text: string) => void
+  tone?: HomeTone
 }
 
-export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
+export default function HomeSearchBar({
+  onMenuPress,
+  onSearch,
+  tone = 'default'
+}: HomeSearchBarProps) {
   const navigation = useNavigation<NavigationProps>()
   const [searchText, setSearchText] = useState('')
+  const isPinkTone = tone === 'pink'
 
-  const handleSearchPress = () => {
+  const handleOpenSearch = useCallback(() => {
     navigation.navigate('Search')
-  }
+  }, [navigation])
 
   const handleChangeText = useCallback(
     (text: string) => {
@@ -32,82 +39,57 @@ export default function HomeSearchBar({ onSearch }: HomeSearchBarProps) {
   )
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isPinkTone && styles.containerPink]}>
+      <TouchableOpacity
+        style={[styles.menuButton, isPinkTone && styles.menuButtonPink]}
+        activeOpacity={0.85}
+        onPress={onMenuPress}
+      >
+        <Ionicons
+          name="menu-outline"
+          size={24}
+          color={isPinkTone ? HOME_PINK_THEME.text : '#111827'}
+        />
+      </TouchableOpacity>
+
       {onSearch ? (
-        <View style={styles.searchBox}>
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.searchIconContainer}
-          >
-            <Ionicons name="search" size={24} color="#fff" />
-          </LinearGradient>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="搜索您感兴趣的内容..."
-              placeholderTextColor="#94a3b8"
-              value={searchText}
-              onChangeText={handleChangeText}
-              returnKeyType="search"
-            />
-          </View>
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.searchButton}
-          >
-            <TouchableOpacity
-              style={styles.searchButtonInner}
-              activeOpacity={0.85}
-              onPress={() => onSearch(searchText)}
-            >
-              <Text style={styles.searchButtonText}>搜索</Text>
-            </TouchableOpacity>
-          </LinearGradient>
+        <View style={[styles.searchBox, isPinkTone && styles.searchBoxPink]}>
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={[styles.input, isPinkTone && styles.inputPink]}
+            placeholder="搜索您感兴趣的内容..."
+            placeholderTextColor={
+              isPinkTone ? HOME_PINK_THEME.textMuted : '#9ca3af'
+            }
+            value={searchText}
+            onChangeText={handleChangeText}
+            returnKeyType="search"
+          />
         </View>
       ) : (
         <TouchableOpacity
-          style={styles.searchBox}
-          activeOpacity={0.8}
-          onPress={handleSearchPress}
+          style={[styles.searchBox, isPinkTone && styles.searchBoxPink]}
+          activeOpacity={0.85}
+          onPress={handleOpenSearch}
         >
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.searchIconContainer}
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
+            style={styles.searchIcon}
+          />
+          <Text
+            style={[styles.placeholder, isPinkTone && styles.placeholderPink]}
           >
-            <Ionicons name="search" size={24} color="#fff" />
-          </LinearGradient>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.placeholder}>搜索您感兴趣的内容...</Text>
-          </View>
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.searchButton}
-          >
-            <Text style={styles.searchButtonText}>搜索</Text>
-          </LinearGradient>
+            搜索您感兴趣的内容...
+          </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('AddPost')}
-      >
-        <LinearGradient
-          colors={['#ff9a9e', '#f43f5e']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.addButton}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </LinearGradient>
-      </TouchableOpacity>
     </View>
   )
 }
@@ -116,84 +98,60 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: 'transparent',
-    marginHorizontal: 0,
-    elevation: 0,
-    gap: 12
+    paddingVertical: 12,
+    backgroundColor: '#fff'
+  },
+  containerPink: {
+    backgroundColor: HOME_PINK_THEME.background
+  },
+  menuButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb'
+  },
+  menuButtonPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderColor: HOME_PINK_THEME.border
   },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    paddingHorizontal: 0,
-    height: 44,
-    // 阴影效果
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    height: 42,
+    borderRadius: 18,
+    backgroundColor: '#f9fafb',
     borderWidth: 1,
-    borderColor: '#fff1f2',
-    paddingRight: 0,
-    overflow: 'hidden'
+    borderColor: '#e5e7eb',
+    paddingHorizontal: 14
   },
-  searchIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 0
+  searchBoxPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderColor: HOME_PINK_THEME.border
   },
-  inputWrapper: {
-    flex: 1,
-    height: '100%',
-    justifyContent: 'center',
-    paddingLeft: 12
+  searchIcon: {
+    marginRight: 8
   },
   input: {
+    flex: 1,
     fontSize: 14,
-    color: '#111',
+    color: '#111827',
     paddingVertical: 0
+  },
+  inputPink: {
+    color: HOME_PINK_THEME.text
   },
   placeholder: {
     fontSize: 14,
-    color: '#94a3b8'
+    color: '#9ca3af'
   },
-  searchButton: {
-    paddingHorizontal: 20,
-    height: '100%',
-    borderTopLeftRadius: 22,
-    borderBottomLeftRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  searchButtonInner: {
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600'
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4
+  placeholderPink: {
+    color: HOME_PINK_THEME.textMuted
   }
 })

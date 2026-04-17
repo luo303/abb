@@ -1,14 +1,8 @@
 import React, { useState, useRef } from 'react'
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert
-} from 'react-native'
+import { View, StyleSheet, Alert } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
+import { Button } from 'react-native-paper'
 import { createPost } from '@/api/home'
 import { useMessage } from '@/components/Message'
 import { NavigationProps } from '@/types/navigation'
@@ -98,18 +92,19 @@ export default function MilestoneFooter({
     <View
       style={[styles.container, { paddingBottom: Math.max(insets.bottom, 20) }]}
     >
-      <TouchableOpacity
+      <Button
+        mode="contained"
         style={[styles.publishButton, disabled && styles.publishButtonDisabled]}
+        contentStyle={styles.publishButtonContent}
+        labelStyle={styles.publishText}
         onPress={handlePublish}
         disabled={disabled}
-        activeOpacity={0.8}
+        loading={isPublishing}
+        buttonColor="#f43f5e"
+        uppercase={false}
       >
-        {isPublishing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.publishText}>保存大事记</Text>
-        )}
-      </TouchableOpacity>
+        保存大事记
+      </Button>
     </View>
   )
 }
@@ -123,11 +118,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#ffe4e6'
   },
   publishButton: {
-    backgroundColor: '#f43f5e',
     borderRadius: 25,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
     width: '100%',
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
@@ -139,6 +130,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     shadowOpacity: 0,
     elevation: 0
+  },
+  publishButtonContent: {
+    height: 50
   },
   publishText: {
     color: '#fff',

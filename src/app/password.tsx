@@ -4,13 +4,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  ActivityIndicator
+  ScrollView
 } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
+import { Button } from 'react-native-paper'
 import AuthBackground from '../components/common/AuthBackground'
 import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
 import { apiResetPassword, apiResetPasswordCode } from '../api/auth'
@@ -213,24 +213,22 @@ export default function PasswordScreen() {
                     onFocus={() => setFocusedField('code')}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <TouchableOpacity
+                  <Button
+                    compact
+                    mode="text"
                     style={styles.getCodeBtn}
+                    contentStyle={styles.getCodeButtonContent}
+                    labelStyle={[
+                      styles.getCodeButtonLabel,
+                      countdown > 0 && styles.getCodeButtonLabelDisabled
+                    ]}
                     onPress={handleGetCode}
                     disabled={countdown > 0 || isCodeLoading || isLoading}
+                    loading={isCodeLoading}
+                    uppercase={false}
                   >
-                    {isCodeLoading ? (
-                      <ActivityIndicator color={THEME_PRIMARY} />
-                    ) : (
-                      <Text
-                        style={[
-                          styles.getCodeText,
-                          countdown > 0 && styles.getCodeTextDisabled
-                        ]}
-                      >
-                        {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                    {countdown > 0 ? `${countdown}s后重试` : '获取验证码'}
+                  </Button>
                 </View>
               </View>
 
@@ -257,17 +255,19 @@ export default function PasswordScreen() {
 
               <View style={{ height: 10 }} />
 
-              <TouchableOpacity
+              <Button
+                mode="contained"
                 style={[styles.submitBtn, isLoading && styles.btnDisabled]}
+                contentStyle={styles.submitButtonContent}
+                labelStyle={styles.submitButtonLabel}
                 onPress={handleResetPassword}
                 disabled={isLoading}
+                loading={isLoading}
+                buttonColor={THEME_PRIMARY}
+                uppercase={false}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.submitBtnText}>确认重置</Text>
-                )}
-              </TouchableOpacity>
+                确认重置
+              </Button>
             </View>
           </ScrollView>
         </AppKeyboardAvoidingView>
@@ -348,23 +348,21 @@ const styles = StyleSheet.create({
     gap: 10
   },
   getCodeBtn: {
-    height: 50,
-    justifyContent: 'center',
-    paddingHorizontal: 10
+    alignSelf: 'center'
   },
-  getCodeText: {
+  getCodeButtonContent: {
+    minHeight: 40,
+    paddingHorizontal: 0
+  },
+  getCodeButtonLabel: {
     color: THEME_PRIMARY,
     fontSize: 14
   },
-  getCodeTextDisabled: {
+  getCodeButtonLabelDisabled: {
     color: '#999'
   },
   submitBtn: {
-    height: 50,
-    backgroundColor: THEME_PRIMARY,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 20,
     shadowColor: THEME_PRIMARY,
     shadowOffset: { width: 0, height: 4 },
@@ -375,7 +373,10 @@ const styles = StyleSheet.create({
   btnDisabled: {
     backgroundColor: THEME_PRIMARY_DISABLED
   },
-  submitBtnText: {
+  submitButtonContent: {
+    height: 50
+  },
+  submitButtonLabel: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold'

@@ -1,4 +1,4 @@
-import { NavigationProp } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { GrowthAnalysisPayload } from '@/api/ai'
 
 export type RootStackParamList = {
@@ -7,7 +7,17 @@ export type RootStackParamList = {
   Password: undefined
   Tabs: undefined
   AIAssistant: undefined
-  PartnerChat: undefined
+  ChatHome: undefined
+  ChatDetail: {
+    conversationType: 'partner' | 'group'
+    groupId?: string
+  }
+  BindPartner: undefined
+  CreateGroup: undefined
+  JoinGroup: undefined
+  GroupInfo: {
+    groupId: string
+  }
   DailyRecord: undefined
   VaccineRecord: undefined
   Album: undefined
@@ -29,4 +39,4 @@ export type RootStackParamList = {
   Search: undefined
 }
 
-export type NavigationProps = NavigationProp<RootStackParamList>
+export type NavigationProps = NativeStackNavigationProp<RootStackParamList>

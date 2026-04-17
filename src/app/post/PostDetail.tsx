@@ -276,12 +276,7 @@ export default function PostDetail() {
 
   // 处理显示数据：头像和图片
   const displayAvatar = useMemo(() => {
-    if (!currentPost?.author_avatar) {
-      return require('@/assets/testAvatar.png')
-    }
-    return typeof currentPost.author_avatar === 'string'
-      ? { uri: currentPost.author_avatar }
-      : currentPost.author_avatar
+    return currentPost?.author_avatar || null
   }, [currentPost?.author_avatar])
 
   const displayImages = useMemo(() => {

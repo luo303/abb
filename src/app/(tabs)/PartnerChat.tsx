@@ -153,7 +153,7 @@ export default function PartnerChat() {
     initialHeight: PARTNER_BASE_INPUT_HEIGHT
   })
 
-  const { scrollRef, handleScroll, handleContentSizeChange } =
+  const { scrollRef, handleScroll, handleContentSizeChange, handleListLoad } =
     useChatAutoScroll({
       conversationKey: partnerId
     })
@@ -473,15 +473,16 @@ export default function PartnerChat() {
         keyExtractor={item => item.id}
         renderItem={renderMessageItem}
         renderScrollComponent={renderChatScrollComponent}
-        style={styles.chatScroll}
         contentContainerStyle={listContentStyle}
         onScroll={handleScroll}
         onContentSizeChange={handleContentSizeChange}
+        onLoad={handleListLoad}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews
         drawDistance={320}
         extraData={listExtraData}
+        style={styles.chatScroll}
       />
 
       <KeyboardStickyFooter style={styles.chatInputSticky}>

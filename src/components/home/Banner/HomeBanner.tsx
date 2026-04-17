@@ -1,29 +1,15 @@
-import React, { useMemo, useCallback } from 'react'
-import { View, StyleSheet, Dimensions } from 'react-native'
+import React, { useCallback, useMemo } from 'react'
+import { StyleSheet, useWindowDimensions, View } from 'react-native'
 import Carousel from 'react-native-reanimated-carousel'
 import { useIsFocused } from '@react-navigation/native'
-import Animated, {
-  useAnimatedStyle,
-  interpolate,
-  Extrapolation,
-  useSharedValue,
-  SharedValue
-} from 'react-native-reanimated'
 import BannerItem from './BannerItem'
+import { HOME_PINK_THEME, HomeTone } from '../homePalette'
 
-const { width } = Dimensions.get('window')
-
-// 模拟数据 - 原始数据
 const RAW_DATA = [
   {
     id: '1',
     imageSource: require('../../../assets/poster_ai.jpg'),
     targetPage: 'AIAssistant'
-  },
-  {
-    id: '2',
-    imageSource: require('../../../assets/poster_community.png'),
-    targetPage: 'scrollToCommunity'
   },
   {
     id: '3',
@@ -42,29 +28,37 @@ const RAW_DATA = [
   }
 ]
 
-const HomeBanner = React.memo(function HomeBanner() {
-  const isFocused = useIsFocused()
-  const progress = useSharedValue(0)
+interface HomeBannerProps {
+  tone?: HomeTone
+}
 
-  const onProgressChange = useCallback(
-    (_: any, absoluteProgress: number) => {
-      progress.value = absoluteProgress
-    },
-    [progress]
-  )
+const HomeBanner = React.memo(function HomeBanner({
+  tone = 'default'
+}: HomeBannerProps) {
+  const isFocused = useIsFocused()
+  const { width } = useWindowDimensions()
+  const cardWidth = Math.max(width - 24, 0)
+  const isPinkTone = tone === 'pink'
 
   const modeConfig = useMemo(
     () => ({
-      parallaxScrollingScale: 0.9,
-      parallaxScrollingOffset: 50
+      parallaxScrollingScale: 0.92,
+      parallaxScrollingOffset: 46,
+      parallaxAdjacentItemScale: 0.86
     }),
     []
   )
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item }: { item: (typeof RAW_DATA)[number] }) => (
       <View style={styles.itemContainer}>
-        <View style={styles.cardWrapper}>
+        <View
+          style={[
+            styles.cardWrapper,
+            { width: cardWidth },
+            isPinkTone && styles.cardWrapperPink
+          ]}
+        >
           <BannerItem
             imageSource={item.imageSource}
             targetPage={item.targetPage}
@@ -72,7 +66,7 @@ const HomeBanner = React.memo(function HomeBanner() {
         </View>
       </View>
     ),
-    []
+    [cardWidth, isPinkTone]
   )
 
   return (
@@ -80,77 +74,26 @@ const HomeBanner = React.memo(function HomeBanner() {
       <Carousel
         loop
         width={width}
-        height={240}
+        height={156}
         autoPlay={isFocused}
-        autoPlayInterval={3000}
+        autoPlayInterval={3200}
         data={RAW_DATA}
-        scrollAnimationDuration={1000}
-        onProgressChange={onProgressChange}
+        scrollAnimationDuration={850}
         mode="parallax"
         modeConfig={modeConfig}
         renderItem={renderItem}
       />
-
-      {/* 轮播图指示器 */}
-      {RAW_DATA.length > 1 && (
-        <View style={styles.pagination}>
-          {RAW_DATA.map((item, index) => (
-            <PaginationDot
-              key={item.id}
-              index={index}
-              progress={progress}
-              dataLength={RAW_DATA.length}
-            />
-          ))}
-        </View>
-      )}
     </View>
   )
 })
 
 export default HomeBanner
 
-// 轮播图指示点组件
-const PaginationDot = ({
-  index,
-  progress,
-  dataLength
-}: {
-  index: number
-  progress: SharedValue<number>
-  dataLength: number
-}) => {
-  const animatedStyle = useAnimatedStyle(() => {
-    // 处理循环进度：将 absoluteProgress 映射到 0 到 dataLength 的范围内
-    let val = progress.value % dataLength
-    if (val < 0) val += dataLength
-
-    // 计算当前点与进度的距离（考虑循环首尾相接）
-    let dist = Math.abs(val - index)
-    if (dist > dataLength / 2) {
-      dist = dataLength - dist
-    }
-
-    const opacity = interpolate(dist, [0, 1], [1, 0.3], Extrapolation.CLAMP)
-
-    const width = interpolate(dist, [0, 1], [20, 8], Extrapolation.CLAMP)
-
-    return {
-      opacity,
-      width,
-      backgroundColor: '#f43f5e' // 首页主题色 (Warm Red)
-    }
-  })
-
-  return <Animated.View style={[styles.dot, animatedStyle]} />
-}
-
 const styles = StyleSheet.create({
   container: {
-    height: 240,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -20
+    width: '100%',
+    marginTop: 10,
+    marginBottom: 6
   },
   itemContainer: {
     flex: 1,
@@ -158,28 +101,20 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cardWrapper: {
-    width: '100%',
-    height: 200, // 固定高度
-    borderRadius: 24,
+    height: 156,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    shadowColor: '#000',
+    shadowColor: '#111827',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 4
   },
-  pagination: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 5,
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4
+  cardWrapperPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderWidth: 1,
+    borderColor: HOME_PINK_THEME.border,
+    shadowColor: HOME_PINK_THEME.shadow
   }
 })

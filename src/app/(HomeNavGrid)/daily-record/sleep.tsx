@@ -29,10 +29,10 @@ import {
 import type { AppDispatch } from '../../../store'
 import SleepClockDisplay from '../../../components/DailyRecord/sleep/SleepClockDisplay'
 import SleepActionButton from '../../../components/DailyRecord/sleep/SleepActionButton'
-import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker, {
   DateTimePickerAndroid
 } from '@react-native-community/datetimepicker'
+import { Button } from 'react-native-paper'
 
 // 格式化秒数为 HH:MM:SS 格式
 const formatTime = (seconds: number, isManual: boolean = false) => {
@@ -453,7 +453,7 @@ const SleepRecordScreen = () => {
     <LinearGradient
       colors={[
         '#ffffff',
-        '#fff5f5',
+        '#fdf3f5',
         '#ffe0e0',
         '#ffd0d0',
         '#ffc0c0',
@@ -484,26 +484,18 @@ const SleepRecordScreen = () => {
       />
 
       {/* 手动记录按钮 */}
-      <TouchableOpacity
+      <Button
+        mode="outlined"
         style={styles.manualButton}
         onPress={handleManualRecord}
+        contentStyle={styles.manualButtonContent}
+        labelStyle={styles.manualButtonText}
+        icon="gesture-tap"
+        textColor="#f43f5e"
+        uppercase={false}
       >
-        <Ionicons
-          name="hand-left"
-          size={20}
-          color="#f43f5e"
-          style={styles.manualButtonIcon}
-        />
-        <Text style={styles.manualButtonText}>手动记录</Text>
-        <View
-          style={[
-            styles.arrowContainer,
-            showManualInput && styles.arrowRotated
-          ]}
-        >
-          <Ionicons name="chevron-forward" size={20} color="#f43f5e" />
-        </View>
-      </TouchableOpacity>
+        {showManualInput ? '收起手动记录' : '手动记录'}
+      </Button>
 
       {/* 底部占位视图，使按钮离底部更远 */}
       <View style={styles.bottomSpacer} />
@@ -517,14 +509,16 @@ const SleepRecordScreen = () => {
                 <View style={styles.inputRow}>
                   <Text style={styles.inputLabel}>开始时间</Text>
                   {Platform.OS === 'android' ? (
-                    <TouchableOpacity
+                    <Button
+                      mode="outlined"
                       style={styles.timeButton}
+                      contentStyle={styles.timeButtonContent}
+                      labelStyle={styles.timeButtonText}
                       onPress={() => openAndroidTimePicker('start')}
+                      uppercase={false}
                     >
-                      <Text style={styles.timeButtonText}>
-                        {formatPickerTime(startTime)}
-                      </Text>
-                    </TouchableOpacity>
+                      {formatPickerTime(startTime)}
+                    </Button>
                   ) : (
                     <DateTimePicker
                       value={startTime}
@@ -539,14 +533,16 @@ const SleepRecordScreen = () => {
                 <View style={styles.inputRow}>
                   <Text style={styles.inputLabel}>结束时间</Text>
                   {Platform.OS === 'android' ? (
-                    <TouchableOpacity
+                    <Button
+                      mode="outlined"
                       style={styles.timeButton}
+                      contentStyle={styles.timeButtonContent}
+                      labelStyle={styles.timeButtonText}
                       onPress={() => openAndroidTimePicker('end')}
+                      uppercase={false}
                     >
-                      <Text style={styles.timeButtonText}>
-                        {formatPickerTime(endTime)}
-                      </Text>
-                    </TouchableOpacity>
+                      {formatPickerTime(endTime)}
+                    </Button>
                   ) : (
                     <DateTimePicker
                       value={endTime}
@@ -558,12 +554,17 @@ const SleepRecordScreen = () => {
                     />
                   )}
                 </View>
-                <TouchableOpacity
+                <Button
+                  mode="contained"
                   style={styles.submitButton}
+                  contentStyle={styles.submitButtonContent}
+                  labelStyle={styles.submitButtonText}
                   onPress={handleSubmitManualRecord}
+                  buttonColor="#f43f5e"
+                  uppercase={false}
                 >
-                  <Text style={styles.submitButtonText}>提交记录</Text>
-                </TouchableOpacity>
+                  提交记录
+                </Button>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -603,12 +604,6 @@ const styles = StyleSheet.create({
     width: 40
   },
   manualButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    paddingHorizontal: 64,
-    paddingVertical: 16,
     borderRadius: 32,
     marginHorizontal: 48,
     marginBottom: 16,
@@ -618,19 +613,14 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3
   },
-  manualButtonIcon: {
-    marginRight: 8
+  manualButtonContent: {
+    minHeight: 56,
+    paddingHorizontal: 24
   },
   manualButtonText: {
     color: '#f43f5e',
     fontSize: 16,
     fontWeight: '600'
-  },
-  arrowContainer: {
-    marginLeft: 8
-  },
-  arrowRotated: {
-    transform: [{ rotate: '90deg' }]
   },
   modalOverlay: {
     position: 'absolute',
@@ -672,10 +662,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fecdd3',
     borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff5f5',
-    alignItems: 'center'
+    backgroundColor: '#fdf3f5'
+  },
+  timeButtonContent: {
+    minHeight: 44,
+    paddingHorizontal: 4
   },
   timeButtonText: {
     color: '#be123c',
@@ -684,11 +675,11 @@ const styles = StyleSheet.create({
   },
 
   submitButton: {
-    backgroundColor: '#f43f5e',
-    paddingVertical: 12,
     borderRadius: 20,
-    alignItems: 'center',
     marginTop: 8
+  },
+  submitButtonContent: {
+    minHeight: 46
   },
   submitButtonText: {
     color: 'white',

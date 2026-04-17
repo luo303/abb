@@ -1,33 +1,21 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { useSelector } from 'react-redux'
+
+import PaperAvatar from '@/components/common/PaperAvatar'
 import { RootState } from '../../../store'
 
 export default function PostUserInfo() {
-  // 从 Redux 获取用户信息
   const userInfo = useSelector((state: RootState) => state.user.userInfo)
-
-  // 获取用户名，优先使用 username，其次 account，最后使用默认值
-  const userName = userInfo?.username || userInfo?.account || '稚慧宝用户'
-
-  // 获取头像，使用默认头像作为兜底
-  const avatarUrl = userInfo?.avatar
-  const [avatarLoadError, setAvatarLoadError] = useState(false)
-
-  useEffect(() => {
-    setAvatarLoadError(false)
-  }, [avatarUrl])
+  const userName = userInfo?.username || userInfo?.account || '呵护宝贝用户'
 
   return (
     <View style={styles.container}>
-      <Image
-        source={
-          avatarUrl && !avatarLoadError
-            ? { uri: avatarUrl }
-            : require('../../../assets/testAvatar.png')
-        }
+      <PaperAvatar
+        accessibilityLabel={userName}
+        size={40}
+        source={userInfo?.avatar}
         style={styles.avatar}
-        onError={() => setAvatarLoadError(true)}
       />
       <View style={styles.info}>
         <Text style={styles.nickname}>{userName}</Text>

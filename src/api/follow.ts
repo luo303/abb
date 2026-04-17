@@ -1,5 +1,9 @@
 import request from '@/utils/request'
-import { FollowStatus, FollowingPost } from '@/types/follow'
+import {
+  FollowStatus,
+  FollowingPost,
+  FollowUserListResponse
+} from '@/types/follow'
 
 export const followUser = async (
   target_user_id: string
@@ -96,4 +100,48 @@ export const getFollowingPosts = async (
     console.error('获取关注帖子失败:', error)
     throw error
   }
+}
+
+const getFollowUserList = async (
+  endpoint: '/user/following' | '/user/followers',
+  page: number = 1,
+  page_size: number = 100,
+  user_id?: string
+): Promise<FollowUserListResponse> => {
+  try {
+    const res = (await request.get(endpoint, {
+      params: {
+        page,
+        page_size,
+        user_id
+      }
+    })) as FollowUserListResponse
+
+    if (res.code !== 0 && res.code !== 200) {
+      throw new Error(res.message || '获取用户列表失败')
+    }
+
+    return res
+  } catch (error: any) {
+    console.error('获取用户列表失败:', error)
+    throw new Error(
+      error.response?.data?.message || error.message || '获取用户列表失败'
+    )
+  }
+}
+
+export const getFollowingUsers = async (
+  page: number = 1,
+  page_size: number = 100,
+  user_id?: string
+) => {
+  return getFollowUserList('/user/following', page, page_size, user_id)
+}
+
+export const getFollowerUsers = async (
+  page: number = 1,
+  page_size: number = 100,
+  user_id?: string
+) => {
+  return getFollowUserList('/user/followers', page, page_size, user_id)
 }

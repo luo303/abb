@@ -13,10 +13,10 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
-import { Ionicons } from '@expo/vector-icons'
 import ImageViewing from 'react-native-image-viewing'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Button } from 'react-native-paper'
 import TimelineNode from '@/components/common/TimelineNode'
 import { uploadFile } from '@/api/upload'
 import {
@@ -364,42 +364,44 @@ export default function AlbumScreen() {
           {/* 左侧：维度切换 */}
           <View style={styles.filterWrapper}>
             {(['year', 'month', 'day'] as const).map(mode => (
-              <TouchableOpacity
+              <Button
                 key={mode}
+                compact
+                mode={viewMode === mode ? 'contained-tonal' : 'text'}
                 style={[
                   styles.filterItem,
                   viewMode === mode && styles.filterItemActive
                 ]}
-                activeOpacity={0.8}
+                contentStyle={styles.filterItemContent}
+                labelStyle={[
+                  styles.filterText,
+                  viewMode === mode && styles.filterTextActive
+                ]}
                 onPress={() => setViewMode(mode)}
+                buttonColor={viewMode === mode ? '#fff1f2' : undefined}
+                uppercase={false}
               >
-                <Text
-                  style={[
-                    styles.filterText,
-                    viewMode === mode && styles.filterTextActive
-                  ]}
-                >
-                  {mode === 'year' ? '年' : mode === 'month' ? '月' : '日'}
-                </Text>
-              </TouchableOpacity>
+                {mode === 'year' ? '年' : mode === 'month' ? '月' : '日'}
+              </Button>
             ))}
           </View>
 
           <View style={styles.divider} />
 
           {/* 右侧：添加按钮 */}
-          <TouchableOpacity
+          <Button
+            mode="contained"
             style={[styles.addButton, uploading && styles.addButtonDisabled]}
-            activeOpacity={0.9}
             onPress={handleAddPhoto}
             disabled={uploading}
+            contentStyle={styles.addButtonContent}
+            icon="plus"
+            loading={uploading}
+            buttonColor="#f43f5e"
+            uppercase={false}
           >
-            {uploading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="add" size={24} color="#fff" />
-            )}
-          </TouchableOpacity>
+            添加
+          </Button>
         </View>
       </View>
     </View>
@@ -529,12 +531,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8
   },
   addButton: {
-    width: 44,
-    height: 44,
     borderRadius: 22,
-    backgroundColor: '#f43f5e',
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#f43f5e',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -544,13 +541,19 @@ const styles = StyleSheet.create({
   addButtonDisabled: {
     opacity: 0.7
   },
+  addButtonContent: {
+    height: 44,
+    paddingHorizontal: 8
+  },
   filterItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     borderRadius: 20
   },
   filterItemActive: {
     backgroundColor: '#fff1f2'
+  },
+  filterItemContent: {
+    minHeight: 40,
+    paddingHorizontal: 6
   },
   filterWrapper: {
     flexDirection: 'row',

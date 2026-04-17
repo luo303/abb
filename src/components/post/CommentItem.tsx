@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import React, { useMemo } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
+import { TouchableRipple } from 'react-native-paper'
 
+import PaperAvatar from '@/components/common/PaperAvatar'
 import { CommentItemProps, Comment } from '@/types/post'
 
 const formatTimeLabel = (timestamp?: number) => {
@@ -27,29 +29,27 @@ const ReplyItem = ({
   onReply?: (comment: Comment) => void
 }) => {
   return (
-    <>
-      <TouchableOpacity
-        style={styles.replyItem}
-        onPress={() => onReply && onReply(comment)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.replyText}>
-          {parentNickname ? (
-            <>
-              <Text style={styles.replyNickname}>{comment.username}</Text>
-              <Text style={styles.reply}>&nbsp;&nbsp;回复&nbsp;&nbsp;</Text>
-              <Text style={styles.replyNickname}>{parentNickname}</Text>
-              <Text>：{comment.content}</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.replyNickname}>{comment.username}:</Text>
-              {comment.content}
-            </>
-          )}
-        </Text>
-      </TouchableOpacity>
-    </>
+    <TouchableRipple
+      onPress={() => onReply?.(comment)}
+      rippleColor="rgba(244, 63, 94, 0.08)"
+      style={styles.replyItem}
+    >
+      <Text style={styles.replyText}>
+        {parentNickname ? (
+          <>
+            <Text style={styles.replyNickname}>{comment.username}</Text>
+            <Text style={styles.reply}> 回复 </Text>
+            <Text style={styles.replyNickname}>{parentNickname}</Text>
+            <Text>：{comment.content}</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.replyNickname}>{comment.username}:</Text>
+            {comment.content}
+          </>
+        )}
+      </Text>
+    </TouchableRipple>
   )
 }
 
@@ -58,12 +58,6 @@ export default function CommentItem({
   onLike,
   onReply
 }: CommentItemProps) {
-  const [avatarLoadError, setAvatarLoadError] = useState(false)
-
-  useEffect(() => {
-    setAvatarLoadError(false)
-  }, [comment.avatar])
-
   const flatReplies = useMemo(() => {
     const result: { node: Comment; parentNickname?: string }[] = []
 
@@ -95,55 +89,59 @@ export default function CommentItem({
 
   return (
     <View style={styles.container}>
-      <Image
-        source={
-          !avatarLoadError && comment.avatar
-            ? { uri: comment.avatar }
-            : require('@/assets/testAvatar.png')
-        }
+      <PaperAvatar
+        accessibilityLabel={comment.username}
+        size={36}
+        source={comment.avatar}
         style={styles.avatar}
-        onError={() => setAvatarLoadError(true)}
       />
 
       <View style={styles.contentContainer}>
         <Text style={styles.nickname}>{comment.username}</Text>
 
-        <TouchableOpacity
+        <TouchableRipple
+          onPress={() => onReply?.(comment)}
+          rippleColor="rgba(244, 63, 94, 0.08)"
           style={styles.content}
-          onPress={() => onReply && onReply(comment)}
-          activeOpacity={0.7}
         >
-          <Text>{comment.content}</Text>
-          <Text style={styles.metaText}>{formatTimeLabel(comment.ctime)}</Text>
-        </TouchableOpacity>
+          <>
+            <Text>{comment.content}</Text>
+            <Text style={styles.metaText}>
+              {formatTimeLabel(comment.ctime)}
+            </Text>
+          </>
+        </TouchableRipple>
 
-        {flatReplies.length > 0 && (
+        {flatReplies.length > 0 ? (
           <View style={styles.repliesContainer}>
             {flatReplies.map(({ node, parentNickname }) => (
               <ReplyItem
                 key={node.comment_id}
                 comment={node}
-                parentNickname={parentNickname}
                 onReply={onReply}
+                parentNickname={parentNickname}
               />
             ))}
           </View>
-        )}
+        ) : null}
       </View>
 
-      <TouchableOpacity
+      <TouchableRipple
+        onPress={() => onLike?.(comment.comment_id)}
+        rippleColor="rgba(244, 63, 94, 0.08)"
         style={styles.likeContainer}
-        onPress={() => onLike && onLike(comment.comment_id)}
       >
-        <AntDesign
-          name="heart"
-          size={14}
-          color={comment.has_liked ? '#ff4d4f' : '#999'}
-        />
-        <Text style={styles.likeCount}>
-          {comment.like_count! > 0 ? comment.like_count : ''}
-        </Text>
-      </TouchableOpacity>
+        <>
+          <AntDesign
+            name="heart"
+            size={14}
+            color={comment.has_liked ? '#ff4d4f' : '#999'}
+          />
+          <Text style={styles.likeCount}>
+            {comment.like_count! > 0 ? comment.like_count : ''}
+          </Text>
+        </>
+      </TouchableRipple>
     </View>
   )
 }
@@ -175,21 +173,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     lineHeight: 20,
-    marginBottom: 6
+    marginBottom: 6,
+    borderRadius: 12
   },
   metaText: {
     fontSize: 11,
     color: '#999'
   },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
   likeContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     paddingTop: 2,
     width: 30,
-    height: 30
+    height: 30,
+    borderRadius: 15
   },
   likeCount: {
     fontSize: 10,
@@ -203,7 +200,8 @@ const styles = StyleSheet.create({
     borderRadius: 4
   },
   replyItem: {
-    marginBottom: 4
+    marginBottom: 4,
+    borderRadius: 10
   },
   replyText: {
     fontSize: 13,

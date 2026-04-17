@@ -1,416 +1,378 @@
-import React, {
-  useCallback,
-  useRef,
-  useEffect,
-  useMemo,
-  useState,
-  memo
-} from 'react'
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
-  View,
-  Text,
-  RefreshControl,
   ActivityIndicator,
+  RefreshControl,
   StyleSheet,
-  TouchableOpacity
+  Text,
+  useWindowDimensions,
+  View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import type { FlashListRef } from '@shopify/flash-list'
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons } from '@expo/vector-icons'
+import { DrawerActions, useNavigation } from '@react-navigation/native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { TabBar, TabView } from 'react-native-tab-view'
 
-import { HomeScrollToContext } from '@/context/HomeScrollContext'
-import { useNavigation, useRoute } from '@react-navigation/native'
-import HomeSearchBar from '@/components/home/search/HomeSearchBar'
+import HomeBanner from '@/components/home/Banner/HomeBanner'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
-import MemoHeaderSections from '@/components/home/MemoHeaderSections'
-import StickyTabHeader from '@/components/home/StickyTabHeader'
 import {
   FollowEmptyState,
   HomeTabEmptyState
 } from '@/components/home/HomeEmptyStates'
-import { useHomeData } from '@/hooks/useHomeData'
-import { useHomeAnimations } from '@/hooks/useHomeAnimations'
-import { styles } from '@/styles/Home.styles'
+import { HOME_PINK_THEME } from '@/components/home/homePalette'
+import HomeSearchBar from '@/components/home/search/HomeSearchBar'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { normalizeHomeTabKey, useHomeData } from '@/hooks/useHomeData'
+import { HomeFeedTabKey, PostItem } from '@/types/home'
+import { syncMessengerHomeEntry } from '@/store/modules/MessengerStore'
 
-type HomeListItem =
-  | { type: 'spacer'; id: '__spacer__' }
-  | { type: 'tabs'; id: '__tabs__' }
-  | { type: 'post'; id: string; data: any }
+type HomeRoute = {
+  key: HomeFeedTabKey
+  title: string
+}
 
-const ScrollTopButton = memo(function ScrollTopButton({
-  visible,
-  onPress,
-  bottom
+const ROUTES: HomeRoute[] = [
+  { key: 'hot', title: '热门' },
+  { key: 'recommend', title: '推荐' },
+  { key: 'following', title: '关注' }
+]
+
+const HomeFeedScene = memo(function HomeFeedScene({
+  routeKey,
+  posts,
+  refreshing,
+  isLoadingMore,
+  hasMore,
+  onRefresh,
+  onLoadMore,
+  onGoToHot
 }: {
-  visible: boolean
-  onPress: () => void
-  bottom: number
+  routeKey: HomeFeedTabKey
+  posts: PostItem[]
+  refreshing: boolean
+  isLoadingMore: boolean
+  hasMore: boolean
+  onRefresh: (tab: HomeFeedTabKey) => void
+  onLoadMore: (tab: HomeFeedTabKey) => void
+  onGoToHot: () => void
 }) {
-  if (!visible) return null
+  const endReachedLockRef = useRef(false)
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPress}
-      style={[localStyles.scrollTopButton, { bottom }]}
-    >
-      <Ionicons name="arrow-up" size={20} color="#fff" />
-    </TouchableOpacity>
-  )
-})
-
-ScrollTopButton.displayName = 'ScrollTopButton'
-
-export default function Home() {
-  const navigation = useNavigation()
-  const route = useRoute<any>()
-  const insets = useSafeAreaInsets()
-  const listRef = useRef<FlashListRef<HomeListItem>>(null)
-  const communityHeaderRef = useRef<View>(null)
-  const isEndReachedRef = useRef(false)
-  const [showScrollTop, setShowScrollTop] = useState(false)
-
-  // 使用自定义 Hooks
-  const {
-    posts,
-    hasMore,
-    isLoadingMore,
-    isTabLoading,
-    refreshing,
-    activeTab,
-    setActiveTab,
-    handleRefresh,
-    loadMore,
-    addNewPost
-  } = useHomeData()
-
-  const { handleScroll, measureSearchBar, measureCommunityHeader } =
-    useHomeAnimations()
-
-  // 使用 useMemo 计算帖子列表，移除前端排序，依赖后端返回排好序的数据
-  const sortedPosts = useMemo(() => {
-    return isTabLoading ? [] : posts
-  }, [posts, isTabLoading])
-
-  // 将数据结构改为包含虚拟头部项的数组，利用 stickyHeaderIndices 实现原生吸顶
-  const flatListData = useMemo<HomeListItem[]>(() => {
-    return [
-      { type: 'spacer', id: '__spacer__' }, // index 0: 增加一个空占位符，解决 FlashList 在有 ListHeaderComponent 时 index 0 的吸顶 Bug
-      { type: 'tabs', id: '__tabs__' }, // index 1 (Sticky)
-      ...sortedPosts.map((post: any) => ({
-        type: 'post' as const,
-        id: String(post.post_id),
-        data: post
-      }))
-    ]
-  }, [sortedPosts])
-
-  // 渲染 FlatList 项
-  const renderItem = useCallback(
-    ({ item, target }: { item: any; target?: string }) => {
-      // 0. 占位符
-      if (item.type === 'spacer') {
-        return <View style={{ height: 0 }} />
-      }
-
-      // 1. ✅ Tab 标签栏（吸顶项，index 1）
-      if (item.type === 'tabs') {
-        const isSticky = target === 'StickyHeader'
-        return (
-          <View
-            style={[
-              localStyles.tabsWrapper,
-              {
-                backgroundColor: '#ffe4e6' // 始终使用实色背景，防止透底
-              },
-              isSticky && {
-                borderTopLeftRadius: 0,
-                borderTopRightRadius: 0,
-                // 吸顶时增加阴影
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 5
-              }
-            ]}
-          >
-            <View ref={communityHeaderRef} onLayout={measureCommunityHeader}>
-              <StickyTabHeader
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-              />
-            </View>
-          </View>
-        )
-      }
-
-      // 普通帖子
-      if (item.type === 'post') {
-        return (
-          <View style={{ marginBottom: 12 }}>
-            <HomeCommunityCard data={item.data} />
-          </View>
-        )
-      }
-
-      return null
-    },
-    [activeTab, setActiveTab, measureCommunityHeader]
-  )
-
-  // 1. 抽离独立的顶部 Header 内容组件（包含搜索栏 + 模块入口）
-  // 这个组件会被 SafeAreaView 包裹，且位于 FlashList 顶部
-  const ListHeaderComponent = useCallback(() => {
-    return (
-      <View>
-        <View onLayout={measureSearchBar} style={{ zIndex: 100 }}>
-          <HomeSearchBar />
-        </View>
-        <MemoHeaderSections style={styles.topSection} />
-      </View>
-    )
-  }, [measureSearchBar])
-
-  // 滚动到社区模块
-  const handleScrollToCommunity = useCallback(() => {
-    communityHeaderRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      listRef.current?.scrollToOffset({
-        offset: pageY - insets.top,
-        animated: true
-      })
-    })
-  }, [insets.top])
-
-  const handleScrollToTop = useCallback(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: true })
-  }, [])
-
-  const handleGoToRecommend = useCallback(() => {
-    setActiveTab('推荐')
-  }, [setActiveTab])
-
-  const handleListScroll = useCallback(
-    (event: any) => {
-      handleScroll(event)
-      const offsetY = event?.nativeEvent?.contentOffset?.y ?? 0
-      setShowScrollTop(offsetY > 400)
-    },
-    [handleScroll]
-  )
-
-  // 监听路由参数，添加新帖子或切换标签
   useEffect(() => {
-    if (route.params) {
-      // 处理新帖子参数
-      if (route.params.newPost) {
-        addNewPost(route.params.newPost)
-        // @ts-ignore
-        navigation.setParams({ newPost: null })
-        setTimeout(() => {
-          handleScrollToCommunity()
-        }, 300)
-      }
-      // 处理切换标签参数
-      if (route.params.activeTab) {
-        setActiveTab(route.params.activeTab)
-        // @ts-ignore
-        navigation.setParams({ activeTab: null })
-      }
+    if (!isLoadingMore) {
+      endReachedLockRef.current = false
     }
-  }, [
-    route.params,
-    addNewPost,
-    navigation,
-    handleScrollToCommunity,
-    setActiveTab
-  ])
+  }, [isLoadingMore])
 
-  // 处理列表到底部的逻辑，增加节流
   const handleEndReached = useCallback(() => {
-    // 防止短时间内重复触发
-    if (isEndReachedRef.current) return
-    isEndReachedRef.current = true
-
-    setTimeout(() => {
-      isEndReachedRef.current = false
-    }, 1000) // 1秒内不重复触发
-
-    loadMore()
-  }, [loadMore])
-
-  // 渲染列表尾部
-  const ListFooterComponent = useCallback(() => {
-    if (isTabLoading) {
-      return (
-        <View style={{ padding: 20, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color="#f43f5e" />
-          <Text style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
-            加载中...
-          </Text>
-        </View>
-      )
+    if (
+      endReachedLockRef.current ||
+      isLoadingMore ||
+      refreshing ||
+      posts.length === 0 ||
+      !hasMore
+    ) {
+      return
     }
 
-    if (activeTab === '关注' && sortedPosts.length === 0) {
-      return <FollowEmptyState onGoToRecommend={handleGoToRecommend} />
+    endReachedLockRef.current = true
+    onLoadMore(routeKey)
+  }, [hasMore, isLoadingMore, onLoadMore, posts.length, refreshing, routeKey])
+
+  const renderItem = useCallback(
+    ({ item }: { item: PostItem }) => (
+      <HomeCommunityCard data={item} tone="pink" />
+    ),
+    []
+  )
+
+  const renderSeparator = useCallback(
+    () => <View style={styles.postSeparator} />,
+    []
+  )
+
+  const renderEmptyState = useCallback(() => {
+    if (routeKey === 'following') {
+      return <FollowEmptyState onGoToRecommend={onGoToHot} tone="pink" />
     }
-    if (activeTab === '推荐' && sortedPosts.length === 0) {
-      return (
-        <HomeTabEmptyState
-          iconName="sparkles-outline"
-          title="暂无推荐内容"
-          subtitle="下拉刷新试试"
-        />
-      )
-    }
-    if (activeTab === '热门' && sortedPosts.length === 0) {
+
+    if (routeKey === 'hot') {
       return (
         <HomeTabEmptyState
           iconName="flame-outline"
           title="暂无热门内容"
           subtitle="稍后再来看看"
+          tone="pink"
         />
       )
     }
 
     return (
-      <View>
-        {isLoadingMore && (
-          <View style={{ padding: 10, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color="#f43f5e" />
-            <Text style={{ color: '#999', fontSize: 12 }}>加载更多...</Text>
-          </View>
-        )}
-        {!isLoadingMore && !hasMore && posts.length > 0 && (
-          <View
-            style={{
-              paddingVertical: 6,
-              paddingHorizontal: 16,
-              alignItems: 'center'
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-                borderRadius: 14,
-                backgroundColor: '#FCE7F3'
-              }}
-            >
-              <View
-                style={{
-                  width: 4,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: '#F43F5E',
-                  marginHorizontal: 6
-                }}
-              />
-              <Text
-                style={{ color: '#E11D48', fontSize: 12, fontWeight: '600' }}
-              >
-                我也是有底线的
-              </Text>
-              <View
-                style={{
-                  width: 4,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: '#F43F5E',
-                  marginHorizontal: 6
-                }}
-              />
-            </View>
-          </View>
-        )}
+      <HomeTabEmptyState
+        iconName="sparkles-outline"
+        title="暂无推荐内容"
+        subtitle="下拉刷新试试"
+        tone="pink"
+      />
+    )
+  }, [onGoToHot, routeKey])
+
+  const ListHeaderComponent = useCallback(() => {
+    if (routeKey !== 'hot') {
+      return null
+    }
+
+    return (
+      <View style={styles.bannerSection}>
+        <HomeBanner tone="pink" />
       </View>
     )
-  }, [
-    activeTab,
-    sortedPosts,
-    isTabLoading,
-    isLoadingMore,
-    hasMore,
-    posts,
-    handleGoToRecommend
-  ])
+  }, [routeKey])
 
-  const keyExtractor = useCallback((item: HomeListItem) => item.id, [])
+  const ListFooterComponent = useCallback(() => {
+    if (posts.length === 0) {
+      return null
+    }
+
+    if (isLoadingMore) {
+      return (
+        <View style={styles.footerState}>
+          <ActivityIndicator size="small" color={HOME_PINK_THEME.primary} />
+          <Text style={styles.footerText}>加载更多中...</Text>
+        </View>
+      )
+    }
+
+    if (!hasMore) {
+      return (
+        <View style={styles.footerState}>
+          <Text style={styles.footerText}>已经到底啦</Text>
+        </View>
+      )
+    }
+
+    return <View style={styles.footerSpacer} />
+  }, [hasMore, isLoadingMore, posts.length])
 
   return (
-    <HomeScrollToContext.Provider
-      value={{ scrollToCommunity: handleScrollToCommunity }}
-    >
-      <View style={styles.mainContainer}>
-        {/* 1. 背景渐变 (全屏背景，包含状态栏) */}
-        <LinearGradient
-          colors={['#fff1f2', '#ffe4e6']}
-          style={StyleSheet.absoluteFill}
+    <FlashList
+      style={styles.feedList}
+      data={posts}
+      renderItem={renderItem}
+      keyExtractor={item => String(item.post_id || item.id)}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => onRefresh(routeKey)}
+          tintColor={HOME_PINK_THEME.primary}
+          colors={[HOME_PINK_THEME.primary]}
+          progressBackgroundColor={HOME_PINK_THEME.surface}
+          progressViewOffset={routeKey === 'hot' ? 10 : 0}
         />
+      }
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.3}
+      ListHeaderComponent={ListHeaderComponent}
+      ListEmptyComponent={renderEmptyState}
+      ListFooterComponent={ListFooterComponent}
+      ItemSeparatorComponent={renderSeparator}
+      contentContainerStyle={
+        posts.length === 0 ? styles.emptyListContent : styles.listContent
+      }
+    />
+  )
+})
 
-        {/* 使用 SafeAreaView 处理顶部安全区域，FlashList 会在安全区域内滚动 */}
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <FlashList
-            ref={listRef}
-            style={styles.container}
-            contentContainerStyle={{ paddingBottom: 120 }}
-            showsVerticalScrollIndicator={false}
-            data={flatListData}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            getItemType={item => item.type}
-            // ✅ index=1 的 tabs 项吸顶 (因为 index 0 是 spacer，ListHeaderComponent 位于上方)
-            stickyHeaderIndices={[1]}
-            ListHeaderComponent={ListHeaderComponent}
-            ListFooterComponent={ListFooterComponent}
-            onScroll={handleListScroll}
-            scrollEventThrottle={16}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={0.5}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                colors={['#f43f5e']}
-                tintColor="#f43f5e"
-              />
-            }
-          />
-        </SafeAreaView>
-      </View>
-      <ScrollTopButton
-        visible={showScrollTop}
-        onPress={handleScrollToTop}
-        bottom={90 + insets.bottom}
+export default function Home() {
+  const navigation = useNavigation<any>()
+  const dispatch = useAppDispatch()
+  const layout = useWindowDimensions()
+  const token = useAppSelector(state => state.user.token)
+  const {
+    activeTab,
+    setActiveTab,
+    refreshing,
+    handleRefresh,
+    loadMore,
+    recommendPosts,
+    hotPosts,
+    followingFeedPosts,
+    getTabHasMore,
+    getTabLoadingMore
+  } = useHomeData()
+
+  const [index, setIndex] = useState(() => {
+    const initialIndex = ROUTES.findIndex(
+      route => route.key === normalizeHomeTabKey(activeTab)
+    )
+
+    return initialIndex === -1 ? 0 : initialIndex
+  })
+
+  useEffect(() => {
+    const nextIndex = ROUTES.findIndex(route => route.key === activeTab)
+    if (nextIndex !== -1 && nextIndex !== index) {
+      setIndex(nextIndex)
+    }
+  }, [activeTab, index])
+
+  useEffect(() => {
+    if (!token) return
+
+    console.log('[首页] 首次进入首页，准备初始化聊天连接')
+    void dispatch(syncMessengerHomeEntry())
+  }, [dispatch, token])
+
+  const handleIndexChange = useCallback(
+    (nextIndex: number) => {
+      setIndex(nextIndex)
+      setActiveTab(ROUTES[nextIndex].key)
+    },
+    [setActiveTab]
+  )
+
+  const handleOpenDrawer = useCallback(() => {
+    navigation.dispatch(DrawerActions.openDrawer())
+  }, [navigation])
+
+  const handleGoToHot = useCallback(() => {
+    setActiveTab('hot')
+    setIndex(0)
+  }, [setActiveTab])
+
+  const renderScene = useCallback(
+    ({ route }: { route: HomeRoute }) => {
+      const posts =
+        route.key === 'hot'
+          ? hotPosts
+          : route.key === 'recommend'
+            ? recommendPosts
+            : followingFeedPosts
+
+      return (
+        <HomeFeedScene
+          routeKey={route.key}
+          posts={posts}
+          refreshing={refreshing && activeTab === route.key}
+          isLoadingMore={getTabLoadingMore(route.key)}
+          hasMore={getTabHasMore(route.key)}
+          onRefresh={handleRefresh}
+          onLoadMore={loadMore}
+          onGoToHot={handleGoToHot}
+        />
+      )
+    },
+    [
+      activeTab,
+      followingFeedPosts,
+      getTabHasMore,
+      getTabLoadingMore,
+      handleGoToHot,
+      handleRefresh,
+      hotPosts,
+      loadMore,
+      recommendPosts,
+      refreshing
+    ]
+  )
+
+  const renderTabBar = useCallback(
+    (props: any) => (
+      <TabBar
+        {...props}
+        scrollEnabled={false}
+        style={styles.tabBar}
+        tabStyle={[
+          styles.tabItem,
+          { width: layout.width / props.navigationState.routes.length }
+        ]}
+        indicatorStyle={styles.tabIndicator}
+        labelStyle={styles.tabLabel}
+        activeColor={HOME_PINK_THEME.text}
+        inactiveColor={HOME_PINK_THEME.textMuted}
+        pressColor="transparent"
       />
-    </HomeScrollToContext.Provider>
+    ),
+    [layout.width]
+  )
+
+  return (
+    <SafeAreaView style={styles.page} edges={['top']}>
+      <HomeSearchBar onMenuPress={handleOpenDrawer} tone="pink" />
+
+      <TabView
+        navigationState={{ index, routes: ROUTES }}
+        renderScene={renderScene}
+        renderTabBar={renderTabBar}
+        onIndexChange={handleIndexChange}
+        initialLayout={{ width: layout.width }}
+        swipeEnabled
+        lazy
+        style={styles.tabView}
+      />
+    </SafeAreaView>
   )
 }
 
-const localStyles = StyleSheet.create({
-  tabsWrapper: {
-    overflow: 'hidden',
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: HOME_PINK_THEME.background
   },
-  scrollTopButton: {
-    position: 'absolute',
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F43F5E',
-    alignItems: 'center',
+  tabView: {
+    flex: 1
+  },
+  feedList: {
+    backgroundColor: HOME_PINK_THEME.background
+  },
+  tabBar: {
+    backgroundColor: HOME_PINK_THEME.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: HOME_PINK_THEME.border
+  },
+  tabItem: {
+    justifyContent: 'center'
+  },
+  tabLabel: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '600',
+    textTransform: 'none'
+  },
+  tabIndicator: {
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: HOME_PINK_THEME.primary
+  },
+  bannerSection: {
+    paddingBottom: 8
+  },
+  listContent: {
+    paddingBottom: 120
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    paddingBottom: 48
+  },
+  footerState: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    shadowColor: '#F43F5E',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6
+    alignItems: 'center',
+    paddingVertical: 18,
+    gap: 8
+  },
+  footerText: {
+    fontSize: 12,
+    color: HOME_PINK_THEME.textMuted
+  },
+  footerSpacer: {
+    height: 24
+  },
+  postSeparator: {
+    height: 1,
+    marginHorizontal: 16,
+    backgroundColor: HOME_PINK_THEME.border
   }
 })

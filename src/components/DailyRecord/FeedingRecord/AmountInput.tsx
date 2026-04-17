@@ -60,11 +60,11 @@ export const AmountInput: React.FC<AmountInputProps> = ({
       case '奶粉':
         return '#fff0f0'
       case '母乳':
-        return '#fff5f5'
+        return '#fdf3f5'
       case '辅食':
         return '#ffe6e6'
       default:
-        return '#fff5f5'
+        return '#fdf3f5'
     }
   }
 
