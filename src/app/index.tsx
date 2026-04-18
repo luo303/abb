@@ -40,6 +40,7 @@ import VaccineDetailScreen from './(HomeNavGrid)/vaccine-detail'
 import AlbumScreen from './(GrowthSubPages)/Album'
 import GrowthCurveScreen from './(GrowthSubPages)/GrowthCurve'
 import GrowthAnalysisScreen from './(GrowthSubPages)/GrowthAnalysis'
+import GrowthReportScreen from './(GrowthSubPages)/GrowthReport'
 import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
 import SleepRecordScreen from './(HomeNavGrid)/daily-record/sleep'
@@ -259,6 +260,11 @@ function RootNavigator({ appReady }: { appReady: boolean }) {
           name="GrowthAnalysis"
           component={GrowthAnalysisScreen}
           options={{ title: 'AI 智能分析' }}
+        />
+        <Stack.Screen
+          name="GrowthReport"
+          component={GrowthReportScreen}
+          options={{ title: 'AI 成长报告' }}
         />
         <Stack.Screen
           name="Diary"

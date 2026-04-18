@@ -3,7 +3,8 @@
 import {
   GrowthExportData,
   VaccineExportData,
-  FeedingExportData
+  FeedingExportData,
+  AIGrowthReportExportData
 } from '../types/export'
 import { formatDate } from './dateUtils'
 import { calculatePercentile, getGrowthDataStats } from './growthUtils'
@@ -442,6 +443,216 @@ export function transformDailyDataToHtml(data: any): string {
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             ${tableData[0].map(cell => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">${cell}</th>`).join('')}
+          </thead>
+          <tbody>
+            ${tableHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `
+}
+
+function escapeHtml(raw: string) {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export function markdownToHtml(markdown: string) {
+  const source = typeof markdown === 'string' ? markdown : ''
+  const normalized = source.replace(/\r\n/g, '\n')
+  const lines = normalized.split('\n')
+
+  const parts: string[] = []
+  let inCodeBlock = false
+  let codeLang = ''
+  let codeLines: string[] = []
+  let pendingList: { type: 'ul' | 'ol'; items: string[] } | null = null
+
+  const flushList = () => {
+    if (!pendingList) return
+    const tag = pendingList.type
+    const items = pendingList.items
+      .map(item => `<li style="margin: 6px 0;">${item}</li>`)
+      .join('')
+    parts.push(
+      `<${tag} style="margin: 10px 0 12px 22px; padding: 0;">${items}</${tag}>`
+    )
+    pendingList = null
+  }
+
+  const applyInline = (text: string) => {
+    const escaped = escapeHtml(text)
+    const withCode = escaped.replace(/`([^`]+?)`/g, '<code>$1</code>')
+    const withBold = withCode.replace(
+      /\*\*([^*]+?)\*\*/g,
+      '<strong>$1</strong>'
+    )
+    return withBold
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine ?? ''
+
+    const codeFenceMatch = line.match(/^```(\w+)?\s*$/)
+    if (codeFenceMatch) {
+      if (!inCodeBlock) {
+        flushList()
+        inCodeBlock = true
+        codeLang = codeFenceMatch[1] || ''
+        codeLines = []
+      } else {
+        const code = escapeHtml(codeLines.join('\n'))
+        parts.push(
+          `<pre style="background: #f5f7fa; border: 1px solid #e5e7eb; padding: 12px; border-radius: 10px; overflow: auto;"><code class="language-${escapeHtml(codeLang)}">${code}</code></pre>`
+        )
+        inCodeBlock = false
+        codeLang = ''
+        codeLines = []
+      }
+      continue
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line)
+      continue
+    }
+
+    const trimmed = line.trim()
+    if (!trimmed) {
+      flushList()
+      continue
+    }
+
+    const h3 = trimmed.match(/^###\s+(.*)$/)
+    if (h3) {
+      flushList()
+      parts.push(
+        `<h3 style="margin: 18px 0 10px; color: #111827;">${applyInline(h3[1])}</h3>`
+      )
+      continue
+    }
+    const h2 = trimmed.match(/^##\s+(.*)$/)
+    if (h2) {
+      flushList()
+      parts.push(
+        `<h2 style="margin: 20px 0 12px; color: #111827;">${applyInline(h2[1])}</h2>`
+      )
+      continue
+    }
+    const h1 = trimmed.match(/^#\s+(.*)$/)
+    if (h1) {
+      flushList()
+      parts.push(
+        `<h1 style="margin: 22px 0 14px; color: #111827; text-align: center;">${applyInline(h1[1])}</h1>`
+      )
+      continue
+    }
+
+    const ul = trimmed.match(/^[-*]\s+(.*)$/)
+    if (ul) {
+      const item = applyInline(ul[1])
+      if (!pendingList || pendingList.type !== 'ul') {
+        flushList()
+        pendingList = { type: 'ul', items: [] }
+      }
+      pendingList.items.push(item)
+      continue
+    }
+
+    const ol = trimmed.match(/^\d+\.\s+(.*)$/)
+    if (ol) {
+      const item = applyInline(ol[1])
+      if (!pendingList || pendingList.type !== 'ol') {
+        flushList()
+        pendingList = { type: 'ol', items: [] }
+      }
+      pendingList.items.push(item)
+      continue
+    }
+
+    flushList()
+    parts.push(
+      `<p style="margin: 0 0 10px; line-height: 1.7;">${applyInline(trimmed)}</p>`
+    )
+  }
+
+  flushList()
+
+  if (inCodeBlock && codeLines.length > 0) {
+    const code = escapeHtml(codeLines.join('\n'))
+    parts.push(
+      `<pre style="background: #f5f7fa; border: 1px solid #e5e7eb; padding: 12px; border-radius: 10px; overflow: auto;"><code class="language-${escapeHtml(codeLang)}">${code}</code></pre>`
+    )
+  }
+
+  return parts.join('\n')
+}
+
+export function transformAIGrowthReportToTable(
+  data: AIGrowthReportExportData
+): string[][] {
+  const sortedItems = [...(data.items || [])].sort((a, b) => a.time - b.time)
+  const rows = sortedItems.map(item => [
+    formatDate(item.time, 'YYYY-MM-DD'),
+    typeof item.height === 'number' ? item.height.toFixed(1) : '',
+    typeof item.weight === 'number' ? item.weight.toFixed(2) : '',
+    typeof item.head_circumference === 'number'
+      ? item.head_circumference.toFixed(1)
+      : '',
+    item.remark || ''
+  ])
+
+  return [['日期', '身高(cm)', '体重(kg)', '头围(cm)', '备注'], ...rows]
+}
+
+export function transformAIGrowthReportToHtml(
+  data: AIGrowthReportExportData
+): string {
+  const tableData = transformAIGrowthReportToTable(data)
+  const tableHtml = tableData
+    .slice(1)
+    .map(row => {
+      return `<tr>${row.map(cell => `<td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`
+    })
+    .join('')
+
+  const fromText =
+    typeof data.range?.from === 'number' ? formatDate(data.range.from) : ''
+  const toText =
+    typeof data.range?.to === 'number' ? formatDate(data.range.to) : ''
+  const rangeText =
+    fromText && toText ? `${fromText} ~ ${toText}` : `近${data.range.days}天`
+
+  const markdownHtml = markdownToHtml(data.markdown || '')
+
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #111827;">
+      <h1 style="text-align: center; color: #111827;">AI 成长报告</h1>
+      <div style="margin: 18px 0; padding: 14px; border: 1px solid #ffe4e6; background: #fff7f9; border-radius: 12px;">
+        <div style="font-size: 14px; line-height: 1.8;">
+          <div><strong>宝宝：</strong>${escapeHtml(data.babyInfo.name || '')}</div>
+          <div><strong>性别：</strong>${data.babyInfo.gender === 'male' ? '男孩' : '女孩'}</div>
+          <div><strong>出生日期：</strong>${formatDate(data.babyInfo.birthday)}</div>
+          <div><strong>周期：</strong>${escapeHtml(rangeText)}</div>
+          <div><strong>语言：</strong>${escapeHtml(data.language)}</div>
+        </div>
+      </div>
+
+      <div style="margin: 18px 0;">
+        <h2 style="margin: 0 0 12px;">报告正文</h2>
+        <div>${markdownHtml}</div>
+      </div>
+
+      <div style="margin: 22px 0 0;">
+        <h2 style="margin: 0 0 12px;">成长数据明细</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            ${tableData[0].map(cell => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">${escapeHtml(cell)}</th>`).join('')}
           </thead>
           <tbody>
             ${tableHtml}

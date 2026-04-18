@@ -25,6 +25,7 @@ export type RootStackParamList = {
   MyFavorites: undefined
   GrowthCurve: undefined
   GrowthAnalysis: { growthAnalysis: GrowthAnalysisPayload }
+  GrowthReport: undefined
   Diary: undefined
   PostDetail: { post_id: string }
   AddPost: undefined

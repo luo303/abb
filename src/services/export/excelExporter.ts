@@ -7,13 +7,15 @@ import {
   ExportData,
   GrowthExportData,
   VaccineExportData,
-  FeedingExportData
+  FeedingExportData,
+  AIGrowthReportExportData
 } from '../../types/export'
 import {
   transformGrowthDataToTable,
   transformVaccineDataToTable,
   transformFeedingDataToTable,
-  transformDailyDataToTable
+  transformDailyDataToTable,
+  transformAIGrowthReportToTable
 } from '../../utils/dataTransformUtils'
 import { getExportFileName } from './exportUtils'
 
@@ -49,6 +51,9 @@ export async function exportToExcel(
         break
       case 'daily':
         generateDailyExcelSheets(wb, data as any, options)
+        break
+      case 'ai_growth_report':
+        generateAIGrowthReportExcelSheets(wb, data as AIGrowthReportExportData)
         break
       default:
         throw new Error('不支持的记录类型')
@@ -260,6 +265,24 @@ function generateFeedingExcelSheets(
     autoFitColumns(statsSheet, statsData)
     XLSX.utils.book_append_sheet(wb, statsSheet, '喂养统计')
   }
+}
+
+function generateAIGrowthReportExcelSheets(
+  wb: any,
+  data: AIGrowthReportExportData
+) {
+  const detailTable = transformAIGrowthReportToTable(data)
+  const detailSheet = XLSX.utils.aoa_to_sheet(detailTable)
+  autoFitColumns(detailSheet, detailTable)
+  XLSX.utils.book_append_sheet(wb, detailSheet, '成长数据明细')
+
+  const markdownLines = (data.markdown || '').split(/\r?\n/).map(line => [line])
+  const markdownSheet = XLSX.utils.aoa_to_sheet([
+    ['AI 成长报告（Markdown）'],
+    ...markdownLines
+  ])
+  autoFitColumns(markdownSheet, [['AI 成长报告（Markdown）'], ...markdownLines])
+  XLSX.utils.book_append_sheet(wb, markdownSheet, '报告正文')
 }
 
 /**

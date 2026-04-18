@@ -55,7 +55,9 @@ export default function ExportModal({
             {exportFormats.map(format => {
               // 对于日常记录和疫苗记录，不显示图片导出选项
               if (
-                (recordType === 'daily' || recordType === 'vaccine') &&
+                (recordType === 'daily' ||
+                  recordType === 'vaccine' ||
+                  recordType === 'ai_growth_report') &&
                 format.value === 'image'
               ) {
                 return null
@@ -113,7 +115,8 @@ function getRecordTypeName(recordType: string): string {
     growth: '成长',
     vaccine: '疫苗',
     feeding: '喂养',
-    daily: '日常'
+    daily: '日常',
+    ai_growth_report: 'AI 成长报告'
   }
   return typeMap[recordType] || recordType
 }

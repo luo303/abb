@@ -15,18 +15,22 @@ import PaperAvatar from '@/components/common/PaperAvatar'
 import { useAppSelector } from '@/hooks/redux'
 import { getFollowerUsers, getFollowingUsers } from '@/api/follow'
 
+type ShortcutScope = 'root' | 'tab'
+
 const QUICK_LINKS = [
   {
-    key: 'growth',
-    label: '成长曲线',
-    target: 'GrowthCurve',
+    key: 'growthReport',
+    label: 'AI 成长报告',
+    scope: 'root' as ShortcutScope,
+    target: 'GrowthReport',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
+      <Ionicons name="sparkles-outline" size={size} color={color} />
     )
   },
   {
     key: 'daily',
     label: '日常记录',
+    scope: 'root' as ShortcutScope,
     target: 'DailyRecord',
     icon: ({ size, color }: { size: number; color: string }) => (
       <MaterialCommunityIcons name="pencil-outline" size={size} color={color} />
@@ -34,7 +38,8 @@ const QUICK_LINKS = [
   },
   {
     key: 'vaccine',
-    label: '疫苗接种',
+    label: '疫苗记录',
+    scope: 'root' as ShortcutScope,
     target: 'VaccineRecord',
     icon: ({ size, color }: { size: number; color: string }) => (
       <MaterialCommunityIcons name="needle" size={size} color={color} />
@@ -43,9 +48,19 @@ const QUICK_LINKS = [
   {
     key: 'milestone',
     label: '大事记',
-    target: 'AddMilestone',
+    scope: 'root' as ShortcutScope,
+    target: 'MilestoneList',
     icon: ({ size, color }: { size: number; color: string }) => (
       <Ionicons name="book-outline" size={size} color={color} />
+    )
+  },
+  {
+    key: 'growthCurve',
+    label: '成长曲线',
+    scope: 'root' as ShortcutScope,
+    target: 'GrowthCurve',
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
     )
   }
 ]
@@ -137,8 +152,16 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
     [userInfo?.account, userInfo?.email]
   )
 
-  const handleShortcutPress = (target: string) => {
+  const handleShortcutPress = (target: string, scope: ShortcutScope) => {
     props.navigation.closeDrawer()
+
+    if (scope === 'tab') {
+      const tabNavigation = props.navigation.getParent()
+      if (tabNavigation) {
+        tabNavigation.navigate(target as never)
+        return
+      }
+    }
 
     const rootNavigation = props.navigation.getParent()?.getParent()
     if (rootNavigation) {
@@ -200,7 +223,7 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
               key={item.key}
               mode="text"
               icon={item.icon}
-              onPress={() => handleShortcutPress(item.target)}
+              onPress={() => handleShortcutPress(item.target, item.scope)}
               rippleColor="rgba(244, 63, 94, 0.18)"
               textColor="#111827"
               style={styles.shortcutItem}

@@ -139,3 +139,66 @@ export const SendGrowthAnalysisStream = async (
     throw error
   }
 }
+
+export type GrowthReportLanguage = 'zh' | 'en'
+
+export interface GrowthReportRequest {
+  baby_id: string
+  range_days: number
+  language: GrowthReportLanguage
+}
+
+export interface GrowthReportBaby {
+  baby_id: string
+  name: string
+  gender: string
+  birthday: number
+  avatar: string
+}
+
+export interface GrowthReportRange {
+  from: number
+  to: number
+  days: number
+}
+
+export interface GrowthReportGrowthItem {
+  time: number
+  height?: number
+  weight?: number
+  head_circumference?: number
+  remark?: string
+}
+
+export interface GrowthReportGrowth {
+  items: GrowthReportGrowthItem[]
+}
+
+export interface GrowthReportStructuredData {
+  baby: GrowthReportBaby
+  range: GrowthReportRange
+  growth: GrowthReportGrowth
+  analysis?: Record<string, unknown>
+}
+
+export interface GrowthReportApiData {
+  markdown: string
+  data: GrowthReportStructuredData
+}
+
+export const makeGrowthReportCacheKey = (params: GrowthReportRequest) => {
+  return `${params.baby_id}:${params.range_days}:${params.language}`
+}
+
+export const getGrowthReport = async (
+  data: GrowthReportRequest
+): Promise<GrowthReportApiData> => {
+  const res = (await request.post(
+    '/common/ai/report/growth',
+    data
+  )) as ApiResponse<GrowthReportApiData>
+  if (res?.code === 0 && res.data) return res.data
+  const err = new Error(res?.message || '生成报告失败')
+  ;(err as any).code = res?.code
+  throw err
+}
