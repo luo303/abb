@@ -248,7 +248,7 @@ export const updateDraft = async (
   options?: { signal?: AbortSignal }
 ): Promise<UpdateDraftResponse> => {
   try {
-    const res = await request.post(`/post/${postId}`, payload, {
+    const res = await request.put(`/post/${postId}`, payload, {
       signal: options?.signal
     })
     return ensureBusinessSuccess(res as unknown as UpdateDraftResponse)

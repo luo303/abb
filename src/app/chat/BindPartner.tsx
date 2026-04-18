@@ -89,7 +89,6 @@ export default function BindPartner() {
         <FlashList
           bounces={false}
           data={FORM_LIST_DATA}
-          estimatedItemSize={540}
           contentContainerStyle={styles.content}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
