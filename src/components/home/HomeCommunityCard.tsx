@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react'
+import React, { ReactNode, memo, useMemo } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
@@ -14,12 +14,16 @@ interface HomeCommunityCardProps {
   data: PostItem
   tone?: HomeTone
   onPress?: (postId: string, post: PostItem) => void
+  onLongPress?: (postId: string, post: PostItem) => void
+  rightAccessory?: ReactNode
 }
 
 function HomeCommunityCard({
   data,
   tone = 'default',
-  onPress
+  onPress,
+  onLongPress,
+  rightAccessory
 }: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
   const isPinkTone = tone === 'pink'
@@ -82,11 +86,19 @@ function HomeCommunityCard({
     }
   }
 
+  const handleLongPress = () => {
+    const postId = data.post_id || data.id
+    if (!postId) return
+    onLongPress?.(postId, data)
+  }
+
   return (
     <TouchableOpacity
       style={[styles.container, isPinkTone && styles.containerPink]}
       activeOpacity={0.88}
       onPress={handlePress}
+      onLongPress={onLongPress ? handleLongPress : undefined}
+      delayLongPress={240}
     >
       <View style={styles.userRow}>
         <PaperAvatar
@@ -109,9 +121,13 @@ function HomeCommunityCard({
             {data.baby_age_text || formatDate(data.ctime)}
           </Text>
         </View>
-        <Text style={[styles.dateText, isPinkTone && styles.metaTextPink]}>
-          {formatDate(data.ctime)}
-        </Text>
+        {rightAccessory ? (
+          rightAccessory
+        ) : (
+          <Text style={[styles.dateText, isPinkTone && styles.metaTextPink]}>
+            {formatDate(data.ctime)}
+          </Text>
+        )}
       </View>
 
       {data.title ? (
