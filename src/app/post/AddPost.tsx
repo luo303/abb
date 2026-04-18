@@ -12,6 +12,8 @@ import ImageUploader from '@/components/post/add/ImageUploader'
 import PostToolbar from '@/components/post/add/PostToolbar'
 import PostUserInfo from '@/components/post/add/PostUserInfo'
 import PostFooter from '@/components/post/add/PostFooter'
+import { useNavigation } from '@react-navigation/native'
+import { NavigationProps } from '@/types/navigation'
 
 // 图片信息接口
 interface ImageItem {
@@ -21,6 +23,7 @@ interface ImageItem {
 }
 
 export default function AddPostScreen() {
+  const navigation = useNavigation<NavigationProps>()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
@@ -29,10 +32,43 @@ export default function AddPostScreen() {
   const [isPublic, setIsPublic] = useState(true)
   const [pendingImages, setPendingImages] = useState<ImageItem[]>([])
 
+  const uploadSingleImage = async (uri: string) => {
+    try {
+      const response = await uploadFile(uri)
+
+      let url = ''
+      if (typeof response.data === 'string') {
+        url = response.data
+      } else if (response.data && typeof response.data.url === 'string') {
+        url = response.data.url
+      } else {
+        url = typeof response.data === 'string' ? response.data : ''
+      }
+
+      if (!url) {
+        throw new Error('Invalid upload response')
+      }
+
+      setPendingImages(prev =>
+        prev.map(p => (p.uri === uri ? { ...p, status: 'done', url } : p))
+      )
+      setImages(prev => [...prev, url])
+    } catch (error) {
+      console.warn('Image upload failed:', error)
+      setPendingImages(prev =>
+        prev.map(p => (p.uri === uri ? { ...p, status: 'error' } : p))
+      )
+      Alert.alert('提示', '图片上传失败，点击图片可重试')
+    }
+  }
+
   // 从本地相册添加图片
   const handleAddImage = async () => {
     // 计算发布帖子剩余的存储量
-    const remainingCount = 9 - images.length
+    const activePendingCount = pendingImages.filter(
+      img => img.status !== 'done'
+    ).length
+    const remainingCount = 9 - images.length - activePendingCount
 
     // 处理发布帖子照片数量已满的情况（即剩余能上传的图片数量小于等于 0 ）
     if (remainingCount <= 0) {
@@ -69,39 +105,7 @@ export default function AddPostScreen() {
 
       // 对每个新图片进行上传
       newImageItems.forEach(async img => {
-        try {
-          const response = await uploadFile(img.uri)
-
-          let url = ''
-          if (typeof response.data === 'string') {
-            url = response.data
-          } else if (response.data && typeof response.data.url === 'string') {
-            url = response.data.url
-          } else {
-            console.warn('Unknown upload response format:', response)
-            url = typeof response.data === 'string' ? response.data : ''
-          }
-
-          if (url) {
-            // 更新待上传列表
-            setPendingImages(prev =>
-              prev.map(p =>
-                p.uri === img.uri ? { ...p, status: 'done', url } : p
-              )
-            )
-            // 添加到已上传列表
-            setImages(prev => [...prev, url])
-          } else {
-            throw new Error('Invalid upload response')
-          }
-        } catch (error) {
-          console.warn('Image upload failed:', error)
-          // 更新为错误状态
-          setPendingImages(prev =>
-            prev.map(p => (p.uri === img.uri ? { ...p, status: 'error' } : p))
-          )
-          Alert.alert('提示', '图片上传失败，请重试')
-        }
+        await uploadSingleImage(img.uri)
       })
     }
   }
@@ -112,9 +116,27 @@ export default function AddPostScreen() {
     setImages(newImages)
   }
 
+  const handleRetryPendingImage = (uri: string) => {
+    setPendingImages(prev =>
+      prev.map(p => (p.uri === uri ? { ...p, status: 'uploading' } : p))
+    )
+    void uploadSingleImage(uri)
+  }
+
+  const handleRemovePendingImage = (uri: string) => {
+    setPendingImages(prev => prev.filter(p => p.uri !== uri))
+  }
+
+  const isUploadingImages = pendingImages.some(
+    img => img.status === 'uploading'
+  )
+
   return (
     <View style={styles.container}>
-      <AddPostHeader />
+      <AddPostHeader
+        rightText="草稿箱"
+        onRightPress={() => navigation.navigate('MyDrafts')}
+      />
 
       <AppKeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -145,6 +167,8 @@ export default function AddPostScreen() {
                 pendingImages={pendingImages}
                 onAddImage={handleAddImage}
                 onRemoveImage={handleRemoveImage}
+                onRetryPendingImage={handleRetryPendingImage}
+                onRemovePendingImage={handleRemovePendingImage}
               />
             </LinearGradient>
           </View>
@@ -177,6 +201,7 @@ export default function AddPostScreen() {
             tagNames: selectedTagNames,
             isPublic
           }}
+          hasUploadingImages={isUploadingImages}
         />
       </AppKeyboardAvoidingView>
     </View>

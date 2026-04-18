@@ -5,9 +5,11 @@ import {
   PostDetailResponse,
   ParsedContent
 } from '../../types/home'
+import type { PostStatus } from '../../types/post'
 import { getPostDetail, getHomePosts } from '../../api/home'
 import { getFollowingPosts } from '../../api/follow'
 import { createPost, publishPost } from '../../api/post'
+import { parseContent } from '@/utils/postContent'
 
 // 兼容新旧字段命名：统一维护一份交互状态，避免页面展示不一致
 const normalizePostInteractionFlags = (post: PostItem): PostItem => {
@@ -31,57 +33,12 @@ const normalizePostInteractionFlags = (post: PostItem): PostItem => {
 
 // 私有 Helper 函数：统一处理 content 字段的解析逻辑
 const parsePostContent = (post: PostItem): PostItem => {
-  if (post.content) {
-    if (typeof post.content === 'string') {
-      try {
-        const parsedContent = JSON.parse(post.content) as ParsedContent
-        if (parsedContent && typeof parsedContent === 'object') {
-          return normalizePostInteractionFlags({
-            ...post,
-            content: parsedContent,
-            images: parsedContent.images || []
-          })
-        } else {
-          // 如果解析结果不是对象，使用默认显示方案
-          return normalizePostInteractionFlags({
-            ...post,
-            content: { text: post.content, images: [] } as ParsedContent,
-            images: []
-          })
-        }
-      } catch {
-        // 如果解析失败，使用默认显示方案
-        return normalizePostInteractionFlags({
-          ...post,
-          content: { text: post.content, images: [] } as ParsedContent,
-          images: []
-        })
-      }
-    } else if (
-      typeof post.content === 'object' &&
-      (post.content as ParsedContent).text
-    ) {
-      // content已经是对象，直接使用
-      return normalizePostInteractionFlags({
-        ...post,
-        images: (post.content as ParsedContent).images || []
-      })
-    } else {
-      // 其他情况，使用默认显示方案
-      return normalizePostInteractionFlags({
-        ...post,
-        content: { text: String(post.content), images: [] } as ParsedContent,
-        images: []
-      })
-    }
-  } else {
-    // 如果 content 为空，使用默认显示方案
-    return normalizePostInteractionFlags({
-      ...post,
-      content: { text: '', images: [] } as ParsedContent,
-      images: []
-    })
-  }
+  const parsed = parseContent(post.content, post.content_preview || '')
+  return normalizePostInteractionFlags({
+    ...post,
+    content: parsed,
+    images: parsed.images || []
+  })
 }
 
 interface PostState {
@@ -244,7 +201,7 @@ export const createNewPost = createAsyncThunk<
   {
     title: string
     content: string
-    status: string
+    status: PostStatus
     tag_ids?: string[]
   }
 >('post/createNewPost', async (data, { rejectWithValue }) => {

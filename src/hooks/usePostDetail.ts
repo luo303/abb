@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getPostDetail } from '@/api/home'
 import { PostItem } from '@/types/home'
 import { useMessage } from '@/components/Message'
+import { parseContent } from '@/utils/postContent'
 
 export interface UsePostDetailReturn {
   post: PostItem | null
@@ -32,21 +33,14 @@ export function usePostDetail(post_id: string): UsePostDetailReturn {
 
       if (hasData || isSuccessCode) {
         if (postData) {
-          // 解析 content JSON 字符串
-          if (postData.content && typeof postData.content === 'string') {
-            try {
-              const parsedContent = JSON.parse(postData.content)
-              if (parsedContent) {
-                // 提取 text 和 images
-                postData = {
-                  ...postData,
-                  content: parsedContent.text || '',
-                  images: parsedContent.images || []
-                }
-              }
-            } catch {
-              // 如果解析失败，保持原 content 不变
-            }
+          const parsedContent = parseContent(
+            postData.content,
+            postData.content_preview || ''
+          )
+          postData = {
+            ...postData,
+            content: parsedContent,
+            images: parsedContent.images || []
           }
           setPost(postData)
         } else {

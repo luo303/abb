@@ -51,7 +51,32 @@ export const createPost = async (
   data: CreatePostParams,
   options?: { signal?: AbortSignal }
 ): Promise<CreatePostResponse> => {
-  const res = await request.post('/post/newPost', data, {
+  const title = data.title?.trim()
+  if (!title) {
+    throw new Error('title is required')
+  }
+
+  const content =
+    typeof data.content === 'string'
+      ? data.content
+      : JSON.stringify(data.content)
+
+  const payload: {
+    title: string
+    content: string
+    status: CreatePostParams['status']
+    tag_ids?: string[]
+  } = {
+    title,
+    content,
+    status: data.status
+  }
+
+  if (data.tag_ids && Array.isArray(data.tag_ids)) {
+    payload.tag_ids = data.tag_ids
+  }
+
+  const res = await request.post('/post/newPost', payload, {
     signal: options?.signal
   })
   console.log('create post data:', data)

@@ -30,6 +30,10 @@ export default function HomeSearchBar({
     navigation.navigate('Search')
   }, [navigation])
 
+  const handleAddPost = useCallback(() => {
+    navigation.navigate('AddPost')
+  }, [navigation])
+
   const handleChangeText = useCallback(
     (text: string) => {
       setSearchText(text)
@@ -90,6 +94,18 @@ export default function HomeSearchBar({
           </Text>
         </TouchableOpacity>
       )}
+
+      <TouchableOpacity
+        style={[styles.addButton, isPinkTone && styles.addButtonPink]}
+        activeOpacity={0.85}
+        onPress={handleAddPost}
+      >
+        <Ionicons
+          name="add"
+          size={22}
+          color={isPinkTone ? HOME_PINK_THEME.text : '#111827'}
+        />
+      </TouchableOpacity>
     </View>
   )
 }
@@ -153,5 +169,19 @@ const styles = StyleSheet.create({
   },
   placeholderPink: {
     color: HOME_PINK_THEME.textMuted
+  },
+  addButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb'
+  },
+  addButtonPink: {
+    backgroundColor: HOME_PINK_THEME.surface,
+    borderColor: HOME_PINK_THEME.border
   }
 })

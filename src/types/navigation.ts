@@ -1,5 +1,6 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { GrowthAnalysisPayload } from '@/api/ai'
+import type { PostMineListItem } from '@/types/post'
 
 export type RootStackParamList = {
   Login: undefined
@@ -32,6 +33,8 @@ export type RootStackParamList = {
   VaccineDetail: { url: string; title: string }
   AddMilestone: undefined
   MyPosts: undefined
+  MyDrafts: undefined
+  EditDraft: { draft: PostMineListItem }
   MilestoneList: undefined
   SleepRecord: { session_id?: string }
   FeedingRecord: { feeding_id?: string }
