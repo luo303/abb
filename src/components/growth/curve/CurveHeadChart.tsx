@@ -1,85 +1,24 @@
 import React, { useMemo, useState, useRef } from 'react'
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator
-} from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { View, StyleSheet } from 'react-native'
 import BaseGrowthChart from './BaseGrowthChart'
 import ViewShot from 'react-native-view-shot'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
 import DataDescription from './DataDescription'
-import ExportModal from '../../export/ExportModal'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
-import {
-  exportData,
-  shareExportFile
-} from '../../../services/export/exportService'
 
-export default function CurveHeadChart() {
+interface CurveHeadChartProps {
+  chartRef?: React.RefObject<ViewShot | null>
+}
+
+export default function CurveHeadChart({ chartRef }: CurveHeadChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('day')
-  const [showExportModal, setShowExportModal] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const chartRef = useRef<ViewShot>(null)
+  const internalChartRef = useRef<ViewShot | null>(null)
+  const activeChartRef = chartRef ?? internalChartRef
   const { growthCurve, currentBabyDetail } = useSelector(
     (state: RootState) => state.baby
   )
-
-  const handleExport = async (type: string) => {
-    if (!currentBabyDetail) return
-
-    setIsExporting(true)
-    try {
-      const exportDataObj = {
-        babyInfo: {
-          name: currentBabyDetail.name,
-          gender: currentBabyDetail.gender,
-          birthday: currentBabyDetail.birthday
-        },
-        heightData: growthCurve.height,
-        weightData: growthCurve.weight,
-        headData: growthCurve.head,
-        viewRef: chartRef.current
-      }
-
-      const result = await exportData(
-        {
-          type: type as any,
-          recordType: 'growth',
-          includeCharts: true,
-          includeStatistics: true
-        },
-        exportDataObj
-      )
-
-      if (result.success && result.filePath && result.fileName) {
-        // 分享文件
-        await shareExportFile(result.filePath, result.fileName)
-      } else if (!result.success) {
-        // 根据错误类型提供不同的错误信息
-        let errorMessage = '导出失败'
-        if (result.error) {
-          if (result.error.includes('permission')) {
-            errorMessage = '导出失败：缺少文件系统权限'
-          } else if (result.error.includes('network')) {
-            errorMessage = '导出失败：网络连接问题'
-          } else {
-            errorMessage = `导出失败：${result.error}`
-          }
-        }
-        alert(errorMessage)
-      }
-    } catch (error) {
-      alert(`导出失败：${error instanceof Error ? error.message : '未知错误'}`)
-    } finally {
-      setIsExporting(false)
-      setShowExportModal(false)
-    }
-  }
 
   const babyGrowthData = useMemo(() => {
     if (!currentBabyDetail || !growthCurve.head.length) return []
@@ -194,27 +133,8 @@ export default function CurveHeadChart() {
     <>
       <View style={styles.headerContainer}>
         <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => setShowExportModal(true)}
-          disabled={isExporting}
-        >
-          <LinearGradient
-            colors={['#ff9a9e', '#f43f5e']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[
-              styles.exportButton,
-              isExporting && styles.exportButtonDisabled
-            ]}
-          >
-            <Text style={styles.exportButtonText}>
-              {isExporting ? '导出中...' : '导出'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
       </View>
-      <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.9 }}>
+      <ViewShot ref={activeChartRef} options={{ format: 'png', quality: 0.9 }}>
         <BaseGrowthChart
           title="头围发育曲线"
           unit="cm"
@@ -227,20 +147,6 @@ export default function CurveHeadChart() {
         />
       </ViewShot>
       <DataDescription type="head" />
-      <ExportModal
-        visible={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onExport={handleExport}
-        recordType="growth"
-      />
-      {isExporting && (
-        <View style={styles.loadingOverlay}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f43f5e" />
-            <Text style={styles.loadingText}>导出中...</Text>
-          </View>
-        </View>
-      )}
     </>
   )
 }
@@ -257,51 +163,10 @@ const getDayDiff = (startTime: number, endTime: number) => {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginVertical: 10
-  },
-  exportButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  exportButtonDisabled: {
-    opacity: 0.6
-  },
-  exportButtonText: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000
-  },
-  loadingContainer: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5
-  },
-  loadingText: {
+    paddingHorizontal: 20,
     marginTop: 10,
-    fontSize: 16,
-    color: '#333'
+    marginBottom: 6
   }
 })

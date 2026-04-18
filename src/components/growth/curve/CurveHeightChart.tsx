@@ -5,7 +5,6 @@ import ViewShot from 'react-native-view-shot'
 import { STANDARD_GROWTH_DATA } from '../../../data/mock/standard'
 import TimeRangeSelector, { TimeRange } from './TimeRangeSelector'
 import DataDescription from './DataDescription'
-import ExportButton from '../../export/ExportButton'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../../store'
 
@@ -14,16 +13,19 @@ interface CurveHeightChartProps {
   initialRange?: TimeRange
   headlineValue?: number
   showStandardWhenNoHistory?: boolean
+  chartRef?: React.RefObject<ViewShot | null>
 }
 
 export default function CurveHeightChart({
   compact = false,
   initialRange = 'day',
   headlineValue,
-  showStandardWhenNoHistory = true
+  showStandardWhenNoHistory = true,
+  chartRef
 }: CurveHeightChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(initialRange)
-  const chartRef = useRef<ViewShot>(null)
+  const internalChartRef = useRef<ViewShot | null>(null)
+  const activeChartRef = chartRef ?? internalChartRef
   const { growthCurve, currentBabyDetail } = useSelector(
     (state: RootState) => state.baby
   )
@@ -150,24 +152,9 @@ export default function CurveHeightChart({
       {!compact && (
         <View style={styles.headerContainer}>
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
-          <ExportButton
-            recordType="growth"
-            data={{
-              babyInfo: {
-                name: currentBabyDetail?.name || '',
-                gender: currentBabyDetail?.gender || 'male',
-                birthday: currentBabyDetail?.birthday || Date.now()
-              },
-              heightData: growthCurve.height,
-              weightData: growthCurve.weight,
-              headData: growthCurve.head
-            }}
-            viewRef={chartRef}
-            style={styles.exportButtonContainer}
-          />
         </View>
       )}
-      <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.9 }}>
+      <ViewShot ref={activeChartRef} options={{ format: 'png', quality: 0.9 }}>
         <BaseGrowthChart
           title="身高发育曲线"
           unit="cm"
@@ -198,16 +185,10 @@ const getDayDiff = (startTime: number, endTime: number) => {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginVertical: 10
-  },
-  exportButtonContainer: {
-    position: 'relative',
-    bottom: 0,
-    right: 0,
-    zIndex: 100
+    marginTop: 10,
+    marginBottom: 6
   }
 })

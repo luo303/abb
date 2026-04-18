@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import ViewShot from 'react-native-view-shot'
 import AppKeyboardAvoidingView from '../../components/common/AppKeyboardAvoidingView'
 import { Button } from 'react-native-paper'
 
@@ -19,6 +20,7 @@ import CurveRecordForm from '../../components/growth/curve/CurveRecordForm'
 import CurveHeightChart from '../../components/growth/curve/CurveHeightChart'
 import CurveWeightChart from '../../components/growth/curve/CurveWeightChart'
 import CurveHeadChart from '../../components/growth/curve/CurveHeadChart'
+import ExportButton from '../../components/export/ExportButton'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../../store'
 import {
@@ -86,6 +88,9 @@ export default function GrowthCurveScreen() {
   const [headCircumference, setHeadCircumference] = useState('')
   const [date, setDate] = useState<number>(Date.now())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const heightChartRef = useRef<ViewShot | null>(null)
+  const weightChartRef = useRef<ViewShot | null>(null)
+  const headChartRef = useRef<ViewShot | null>(null)
 
   // 检查表单是否已填写（所有项都必须填写）
   const isFormValid = height && weight && headCircumference
@@ -96,6 +101,13 @@ export default function GrowthCurveScreen() {
     { key: 'weight', label: '体重曲线' },
     { key: 'head', label: '头围曲线' }
   ]
+
+  const activeChartRef =
+    activeTab === 'height'
+      ? heightChartRef
+      : activeTab === 'weight'
+        ? weightChartRef
+        : headChartRef
 
   const handleSaveRecord = async () => {
     if (!currentBabyId || isSubmitting) return
@@ -179,7 +191,12 @@ export default function GrowthCurveScreen() {
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={
-            hasBaby ? styles.scrollContent : styles.scrollContentEmpty
+            hasBaby
+              ? [
+                  styles.scrollContent,
+                  activeTab !== 'record' && styles.scrollContentWithFab
+                ]
+              : styles.scrollContentEmpty
           }
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -206,10 +223,38 @@ export default function GrowthCurveScreen() {
             />
           )}
 
-          {hasBaby && activeTab === 'height' && <CurveHeightChart />}
-          {hasBaby && activeTab === 'weight' && <CurveWeightChart />}
-          {hasBaby && activeTab === 'head' && <CurveHeadChart />}
+          {hasBaby && activeTab === 'height' && (
+            <CurveHeightChart chartRef={heightChartRef} />
+          )}
+          {hasBaby && activeTab === 'weight' && (
+            <CurveWeightChart chartRef={weightChartRef} />
+          )}
+          {hasBaby && activeTab === 'head' && (
+            <CurveHeadChart chartRef={headChartRef} />
+          )}
         </ScrollView>
+
+        {hasBaby && activeTab !== 'record' && (
+          <ExportButton
+            recordType="growth"
+            data={{
+              babyInfo: {
+                name: currentBabyDetail?.name || '',
+                gender: currentBabyDetail?.gender || 'male',
+                birthday: currentBabyDetail?.birthday || Date.now()
+              },
+              heightData: growthCurve.height,
+              weightData: growthCurve.weight,
+              headData: growthCurve.head
+            }}
+            viewRef={activeChartRef}
+            style={[
+              styles.floatingExportButton,
+              { bottom: insets.bottom + 90 }
+            ]}
+            disabled={!currentBabyDetail}
+          />
+        )}
 
         {/* 底部按钮 */}
         {activeTab === 'record' ? (
@@ -306,6 +351,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20
   },
+  scrollContentWithFab: {
+    paddingBottom: 112
+  },
   scrollContentEmpty: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -356,6 +404,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff'
+  },
+  floatingExportButton: {
+    right: 20,
+    zIndex: 30
   },
   emptyState: {
     padding: 40,
