@@ -7,6 +7,7 @@ import {
   ChatGroupSummaryDto,
   createChatGroup,
   CreateGroupPayload,
+  dissolveChatGroup,
   fetchGroupMembers,
   fetchGroupMessages,
   fetchMyGroups,
@@ -14,6 +15,7 @@ import {
   GroupMemberDto,
   GroupMessageDto,
   joinChatGroup,
+  leaveChatGroup,
   markGroupSeen
 } from '@/api/messenger'
 import {
@@ -429,6 +431,23 @@ const messengerSlice = createSlice({
       state.groups.membersByGroupId[action.payload.groupId] =
         action.payload.members
     },
+    removeGroupConversation: (state, action: PayloadAction<string>) => {
+      state.groups.items = state.groups.items.filter(
+        item => item.groupId !== action.payload
+      )
+      delete state.groups.messagesByGroupId[action.payload]
+      delete state.groups.membersByGroupId[action.payload]
+
+      if (
+        state.activeConversation.type === 'group' &&
+        state.activeConversation.id === action.payload
+      ) {
+        state.activeConversation = {
+          type: null,
+          id: null
+        }
+      }
+    },
     setGroupConnectionStatus: (state, action: PayloadAction<boolean>) => {
       state.groups.isConnected = action.payload
     }
@@ -441,6 +460,7 @@ export const {
   hydrateCache,
   incrementPartnerUnread,
   resetMessengerState,
+  removeGroupConversation,
   setActiveConversation,
   setBootstrapping,
   setGroupConnectionStatus,
@@ -978,6 +998,42 @@ export const joinGroupConversation =
   (groupId: string) => async (dispatch: any) => {
     const res = await joinChatGroup(groupId)
     await dispatch(refreshGroupList())
+    return res
+  }
+
+export const leaveGroupConversation =
+  (groupId: string) => async (dispatch: any, getState: any) => {
+    const res = await leaveChatGroup(groupId)
+
+    dispatch(removeGroupConversation(groupId))
+
+    const remainingGroupIds = (
+      getState().messenger.groups.items as ChatGroupSummary[]
+    )
+      .map(item => item.groupId)
+      .filter(item => !isMockGroupId(item))
+
+    updateGroupSubscriptions(remainingGroupIds)
+    await persistState(getState)
+
+    return res
+  }
+
+export const dissolveGroupConversation =
+  (groupId: string) => async (dispatch: any, getState: any) => {
+    const res = await dissolveChatGroup(groupId)
+
+    dispatch(removeGroupConversation(groupId))
+
+    const remainingGroupIds = (
+      getState().messenger.groups.items as ChatGroupSummary[]
+    )
+      .map(item => item.groupId)
+      .filter(item => !isMockGroupId(item))
+
+    updateGroupSubscriptions(remainingGroupIds)
+    await persistState(getState)
+
     return res
   }
 

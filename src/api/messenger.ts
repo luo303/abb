@@ -122,6 +122,29 @@ export interface GroupMembersResponse {
   }
 }
 
+export interface GroupProfileResponse {
+  code: number
+  message: string
+  data?: {
+    group: {
+      group_id: string
+      name: string
+      avatar: string
+      description: string
+      member_count: number
+      member_limit: number
+      ctime: number
+      utime: number
+    }
+    owner: {
+      user_id: string
+      username: string
+      avatar: string
+    }
+    members_preview: GroupMemberDto[]
+  }
+}
+
 const resolveWsBaseUrl = (pathname: string) => {
   try {
     const parsed = new URL(baseURL)
@@ -199,8 +222,30 @@ export const fetchGroupMembers = (
   }) as Promise<GroupMembersResponse>
 }
 
+export const fetchGroupProfile = (groupId: string) => {
+  return request.get(
+    `/chat/groups/${groupId}/profile`
+  ) as Promise<GroupProfileResponse>
+}
+
 export const markGroupSeen = (groupId: string) => {
   return request.post(`/chat/groups/${groupId}/seen`) as Promise<{
+    code: number
+    message: string
+    data: null
+  }>
+}
+
+export const leaveChatGroup = (groupId: string) => {
+  return request.post(`/chat/groups/${groupId}/leave`) as Promise<{
+    code: number
+    message: string
+    data: null
+  }>
+}
+
+export const dissolveChatGroup = (groupId: string) => {
+  return request.post(`/chat/groups/${groupId}/dissolve`) as Promise<{
     code: number
     message: string
     data: null
