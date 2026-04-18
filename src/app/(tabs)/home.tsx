@@ -1,15 +1,19 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { FlashList } from '@shopify/flash-list'
 import { DrawerActions, useNavigation } from '@react-navigation/native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TabBar, TabView } from 'react-native-tab-view'
 
 import HomeBanner from '@/components/home/Banner/HomeBanner'
@@ -187,6 +191,7 @@ export default function Home() {
   const navigation = useNavigation<any>()
   const dispatch = useAppDispatch()
   const layout = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const token = useAppSelector(state => state.user.token)
   const {
     activeTab,
@@ -239,6 +244,10 @@ export default function Home() {
     setActiveTab('hot')
     setIndex(0)
   }, [setActiveTab])
+
+  const handleAddPost = useCallback(() => {
+    navigation.navigate('AddPost')
+  }, [navigation])
 
   const renderScene = useCallback(
     ({ route }: { route: HomeRoute }) => {
@@ -310,6 +319,28 @@ export default function Home() {
         lazy
         style={styles.tabView}
       />
+
+      <TouchableOpacity
+        accessibilityLabel="添加帖子"
+        accessibilityRole="button"
+        activeOpacity={0.9}
+        onPress={handleAddPost}
+        style={[
+          styles.fab,
+          {
+            bottom: insets.bottom + (Platform.OS === 'ios' ? 62 : 72)
+          }
+        ]}
+      >
+        <LinearGradient
+          colors={['#ff8fa3', HOME_PINK_THEME.primaryStrong]}
+          end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }}
+          style={styles.fabGradient}
+        >
+          <Ionicons name="add" size={28} color={HOME_PINK_THEME.white} />
+        </LinearGradient>
+      </TouchableOpacity>
     </SafeAreaView>
   )
 }
@@ -374,5 +405,22 @@ const styles = StyleSheet.create({
     height: 1,
     marginHorizontal: 16,
     backgroundColor: HOME_PINK_THEME.border
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    borderRadius: 28,
+    shadowColor: HOME_PINK_THEME.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.26,
+    shadowRadius: 18,
+    elevation: 10
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 })

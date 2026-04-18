@@ -1,15 +1,15 @@
 import React, { useLayoutEffect, useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
 import { Button } from 'react-native-paper'
+import { useSharedValue } from 'react-native-reanimated'
 
-import {
-  AppKeyboardChatScrollView,
-  default as AppKeyboardAvoidingView
-} from '@/components/common/AppKeyboardAvoidingView'
+import AppKeyboardAvoidingView from '@/components/common/AppKeyboardAvoidingView'
+import { useKeyboardChatScrollRenderer } from '@/components/common/useKeyboardChatList'
 import {
   chatCardShadow,
   chatGradients,
@@ -20,6 +20,8 @@ import { useMessage } from '@/components/Message'
 import { bindPartnerAccount } from '@/store/modules/MessengerStore'
 import { NavigationProps } from '@/types/navigation'
 
+const FORM_LIST_DATA = [{ key: 'bind-partner-form' }] as const
+
 export default function BindPartner() {
   const navigation = useNavigation<NavigationProps>()
   const dispatch = useAppDispatch()
@@ -27,6 +29,11 @@ export default function BindPartner() {
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const extraContentPadding = useSharedValue(0)
+  const renderKeyboardScrollComponent = useKeyboardChatScrollRenderer({
+    extraContentPadding,
+    keyboardLiftBehavior: 'whenAtEnd'
+  })
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -79,91 +86,101 @@ export default function BindPartner() {
         style={StyleSheet.absoluteFillObject}
       />
       <AppKeyboardAvoidingView style={styles.container}>
-        <AppKeyboardChatScrollView
+        <FlashList
+          bounces={false}
+          data={FORM_LIST_DATA}
+          estimatedItemSize={540}
           contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-        >
-          <LinearGradient
-            colors={chatGradients.hero}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
-            <LinearGradient
-              colors={chatGradients.accent}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroIcon}
-            >
-              <Feather name="heart" size={26} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.heroTitle}>把另一半拉进聊天</Text>
-            <Text style={styles.heroText}>
-              绑定完成后，你们会像普通聊天工具一样拥有一个长期保留的私聊入口。
-            </Text>
-            <View style={styles.heroTags}>
-              <View style={styles.heroTag}>
-                <Text style={styles.heroTagText}>支持文字</Text>
+          overScrollMode="never"
+          renderScrollComponent={renderKeyboardScrollComponent}
+          renderItem={() => (
+            <>
+              <LinearGradient
+                colors={chatGradients.hero}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.hero}
+              >
+                <LinearGradient
+                  colors={chatGradients.accent}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroIcon}
+                >
+                  <Feather name="heart" size={26} color="#fff" />
+                </LinearGradient>
+                <Text style={styles.heroTitle}>把另一半拉进聊天</Text>
+                <Text style={styles.heroText}>
+                  绑定完成后，你们会像普通聊天工具一样拥有一个长期保留的私聊入口。
+                </Text>
+                <View style={styles.heroTags}>
+                  <View style={styles.heroTag}>
+                    <Text style={styles.heroTagText}>支持文字</Text>
+                  </View>
+                  <View style={styles.heroTag}>
+                    <Text style={styles.heroTagText}>支持图片</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>账号验证</Text>
+                <Text style={styles.cardHint}>输入另一半的登录账号和密码</Text>
+
+                <Text style={styles.label}>另一半账号</Text>
+                <View style={styles.inputWrap}>
+                  <Ionicons
+                    name="person-outline"
+                    size={18}
+                    color={chatPalette.textMuted}
+                  />
+                  <TextInput
+                    autoCapitalize="none"
+                    placeholder="请输入账号"
+                    placeholderTextColor="#B796A3"
+                    style={styles.input}
+                    value={account}
+                    onChangeText={setAccount}
+                  />
+                </View>
+
+                <Text style={styles.label}>登录密码</Text>
+                <View style={styles.inputWrap}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color={chatPalette.textMuted}
+                  />
+                  <TextInput
+                    secureTextEntry
+                    placeholder="请输入密码"
+                    placeholderTextColor="#B796A3"
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                </View>
+
+                <Button
+                  mode="contained"
+                  disabled={submitting}
+                  onPress={handleSubmit}
+                  style={styles.submitWrap}
+                  contentStyle={styles.submitButton}
+                  labelStyle={styles.submitButtonText}
+                  loading={submitting}
+                  buttonColor={chatPalette.accentStrong}
+                  uppercase={false}
+                >
+                  立即绑定
+                </Button>
               </View>
-              <View style={styles.heroTag}>
-                <Text style={styles.heroTagText}>支持图片</Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>账号验证</Text>
-            <Text style={styles.cardHint}>输入另一半的登录账号和密码</Text>
-
-            <Text style={styles.label}>另一半账号</Text>
-            <View style={styles.inputWrap}>
-              <Ionicons
-                name="person-outline"
-                size={18}
-                color={chatPalette.textMuted}
-              />
-              <TextInput
-                autoCapitalize="none"
-                placeholder="请输入账号"
-                placeholderTextColor="#B796A3"
-                style={styles.input}
-                value={account}
-                onChangeText={setAccount}
-              />
-            </View>
-
-            <Text style={styles.label}>登录密码</Text>
-            <View style={styles.inputWrap}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={18}
-                color={chatPalette.textMuted}
-              />
-              <TextInput
-                secureTextEntry
-                placeholder="请输入密码"
-                placeholderTextColor="#B796A3"
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-
-            <Button
-              mode="contained"
-              disabled={submitting}
-              onPress={handleSubmit}
-              style={styles.submitWrap}
-              contentStyle={styles.submitButton}
-              labelStyle={styles.submitButtonText}
-              loading={submitting}
-              buttonColor={chatPalette.accentStrong}
-              uppercase={false}
-            >
-              立即绑定
-            </Button>
-          </View>
-        </AppKeyboardChatScrollView>
+            </>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
       </AppKeyboardAvoidingView>
     </SafeAreaView>
   )

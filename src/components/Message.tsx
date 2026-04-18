@@ -8,7 +8,11 @@ import React, {
 } from 'react'
 import { Alert, AlertButton, AlertOptions, StyleSheet } from 'react-native'
 import { Button, Dialog, Portal, Snackbar, Text } from 'react-native-paper'
-import { APP_COLORS } from '@/theme/paperTheme'
+
+const MESSAGE_SURFACE = '#111111'
+const MESSAGE_SURFACE_SOFT = 'rgba(255,255,255,0.12)'
+const MESSAGE_TEXT = '#ffffff'
+const MESSAGE_TEXT_MUTED = 'rgba(255,255,255,0.72)'
 
 interface MessageContextType {
   showMessage: (message: string, duration?: number) => void
@@ -157,15 +161,20 @@ export function MessageProvider({ children }: { children: React.ReactNode }) {
           dismissable={dialogState?.options?.cancelable ?? true}
           dismissableBackButton={dialogState?.options?.cancelable ?? true}
           onDismiss={handleDialogDismiss}
+          style={styles.dialog}
           visible={!!dialogState}
         >
-          <Dialog.Title>{dialogState?.title || '提示'}</Dialog.Title>
+          <Dialog.Title style={styles.dialogTitle}>
+            {dialogState?.title || '提示'}
+          </Dialog.Title>
           {dialogState?.message ? (
             <Dialog.Content>
-              <Text variant="bodyMedium">{dialogState.message}</Text>
+              <Text style={styles.dialogMessage} variant="bodyMedium">
+                {dialogState.message}
+              </Text>
             </Dialog.Content>
           ) : null}
-          <Dialog.Actions>
+          <Dialog.Actions style={styles.dialogActions}>
             {dialogState?.buttons.map((button, index) => {
               const isPrimaryAction =
                 dialogState.buttons.length === 1 ||
@@ -174,18 +183,16 @@ export function MessageProvider({ children }: { children: React.ReactNode }) {
               return (
                 <Button
                   buttonColor={
-                    button.style === 'destructive' && isPrimaryAction
-                      ? APP_COLORS.surfaceVariant
-                      : undefined
+                    isPrimaryAction ? MESSAGE_SURFACE_SOFT : undefined
                   }
                   key={`${button.text || 'button'}-${index}`}
                   mode={isPrimaryAction ? 'contained-tonal' : 'text'}
                   onPress={() => runDialogAction(button)}
+                  style={styles.dialogButton}
                   textColor={
-                    button.style === 'destructive'
-                      ? APP_COLORS.error
-                      : undefined
+                    isPrimaryAction ? MESSAGE_TEXT : MESSAGE_TEXT_MUTED
                   }
+                  uppercase={false}
                 >
                   {button.text || (index === 0 ? '取消' : '确定')}
                 </Button>
@@ -201,8 +208,8 @@ export function MessageProvider({ children }: { children: React.ReactNode }) {
           style={styles.snackbar}
           theme={{
             colors: {
-              inverseSurface: APP_COLORS.primaryStrong,
-              inverseOnSurface: APP_COLORS.white
+              inverseSurface: MESSAGE_SURFACE,
+              inverseOnSurface: MESSAGE_TEXT
             }
           }}
           visible={snackbarState.visible}
@@ -220,8 +227,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16
   },
+  dialog: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: MESSAGE_SURFACE
+  },
+  dialogTitle: {
+    color: MESSAGE_TEXT
+  },
+  dialogMessage: {
+    color: MESSAGE_TEXT_MUTED,
+    lineHeight: 22
+  },
+  dialogActions: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 6
+  },
+  dialogButton: {
+    borderRadius: 14
+  },
   snackbar: {
     borderRadius: 16,
-    backgroundColor: APP_COLORS.primaryStrong
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: MESSAGE_SURFACE
   }
 })

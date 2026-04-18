@@ -201,6 +201,7 @@ export default function UserInfo({ userInfo }: UserInfoProps) {
           <View style={styles.headerActions}>
             <Dropdown
               ref={dropdownRef}
+              autoScroll={false}
               style={dropdownStyle}
               containerStyle={styles.dropdownListContainer}
               placeholderStyle={styles.placeholderStyle}
