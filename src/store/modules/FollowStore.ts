@@ -1,17 +1,65 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { toggleFollow } from '@/api/follow'
+import { getFollowerUsers, getFollowingUsers, toggleFollow } from '@/api/follow'
 import { saveFollowingIds } from '@/utils/followStorage'
 
 interface FollowState {
   followingIds: string[]
   loading: boolean
   error: string | null
+  followingCount: number | null
+  followerCount: number | null
+  countsLoading: boolean
+  countsError: string | null
+  countsLastUpdated: number | null
+  relationshipCountsUserId: string | null
 }
 
 const initialState: FollowState = {
   followingIds: [],
   loading: false,
-  error: null
+  error: null,
+  followingCount: null,
+  followerCount: null,
+  countsLoading: false,
+  countsError: null,
+  countsLastUpdated: null,
+  relationshipCountsUserId: null
+}
+
+const PAGE_SIZE = 100
+const MAX_PAGE = 100
+
+async function getRelationshipCount(
+  fetcher: (
+    page?: number,
+    pageSize?: number,
+    userId?: string
+  ) => Promise<{
+    data: {
+      list: unknown[]
+      has_more: boolean
+    }
+  }>,
+  userId?: string
+) {
+  let page = 1
+  let total = 0
+  let hasMore = true
+
+  while (hasMore) {
+    const response = await fetcher(page, PAGE_SIZE, userId)
+    const list = response.data?.list ?? []
+
+    total += list.length
+    hasMore = Boolean(response.data?.has_more)
+    page += 1
+
+    if (page > MAX_PAGE) {
+      break
+    }
+  }
+
+  return total
 }
 
 // 初始化关注列表
@@ -42,6 +90,35 @@ export const followUserAsync = createAsyncThunk<
   }
 })
 
+export const fetchRelationshipCounts = createAsyncThunk<
+  {
+    userId: string
+    followingCount: number
+    followerCount: number
+    fetchedAt: number
+  },
+  { userId: string },
+  { rejectValue: string }
+>('follow/fetchRelationshipCounts', async ({ userId }, { rejectWithValue }) => {
+  try {
+    const [followingCount, followerCount] = await Promise.all([
+      getRelationshipCount(getFollowingUsers, userId),
+      getRelationshipCount(getFollowerUsers, userId)
+    ])
+
+    return {
+      userId,
+      followingCount,
+      followerCount,
+      fetchedAt: Date.now()
+    }
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || error.message || '获取关注/粉丝统计失败'
+    )
+  }
+})
+
 const followSlice = createSlice({
   name: 'follow',
   initialState,
@@ -53,6 +130,10 @@ const followSlice = createSlice({
         state.followingIds.push(userId)
         // 保存到本地存储
         saveFollowingIds(state.followingIds)
+
+        if (state.followingCount !== null) {
+          state.followingCount += 1
+        }
       }
     },
     // 取消关注用户
@@ -61,6 +142,10 @@ const followSlice = createSlice({
       state.followingIds = state.followingIds.filter(id => id !== userId)
       // 保存到本地存储
       saveFollowingIds(state.followingIds)
+
+      if (state.followingCount !== null) {
+        state.followingCount = Math.max(0, state.followingCount - 1)
+      }
     },
     // 初始化关注列表
     setFollowingIds: (state, action: PayloadAction<string[]>) => {
@@ -73,6 +158,26 @@ const followSlice = createSlice({
       state.followingIds = []
       // 保存到本地存储
       saveFollowingIds(state.followingIds)
+    },
+    clearRelationshipCounts: state => {
+      state.followingCount = null
+      state.followerCount = null
+      state.countsLoading = false
+      state.countsError = null
+      state.countsLastUpdated = null
+      state.relationshipCountsUserId = null
+    },
+    resetFollowState: state => {
+      state.followingIds = []
+      state.loading = false
+      state.error = null
+      state.followingCount = null
+      state.followerCount = null
+      state.countsLoading = false
+      state.countsError = null
+      state.countsLastUpdated = null
+      state.relationshipCountsUserId = null
+      saveFollowingIds([])
     }
   },
   extraReducers: builder => {
@@ -102,11 +207,32 @@ const followSlice = createSlice({
         state.loading = false
         state.error = action.payload || '操作失败'
       })
+      .addCase(fetchRelationshipCounts.pending, state => {
+        state.countsLoading = true
+        state.countsError = null
+      })
+      .addCase(fetchRelationshipCounts.fulfilled, (state, action) => {
+        state.countsLoading = false
+        state.relationshipCountsUserId = action.payload.userId
+        state.followingCount = action.payload.followingCount
+        state.followerCount = action.payload.followerCount
+        state.countsLastUpdated = action.payload.fetchedAt
+      })
+      .addCase(fetchRelationshipCounts.rejected, (state, action) => {
+        state.countsLoading = false
+        state.countsError = action.payload || '获取关注/粉丝统计失败'
+      })
   }
 })
 
-export const { followUser, unfollowUser, setFollowingIds, clearFollowingIds } =
-  followSlice.actions
+export const {
+  followUser,
+  unfollowUser,
+  setFollowingIds,
+  clearFollowingIds,
+  clearRelationshipCounts,
+  resetFollowState
+} = followSlice.actions
 
 // 选择器：判断某个用户是否在关注名单里
 export const isFollowing =

@@ -1,15 +1,17 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
-  View,
-  StyleSheet,
-  RefreshControl,
   ActivityIndicator,
-  Text
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native'
+
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
+import { HOME_PINK_THEME } from '@/components/home/homePalette'
 import { PostItem } from '@/types/home'
 import { getMyCollections } from '@/api/post'
 
@@ -52,10 +54,10 @@ export default function MyFavorites() {
           PAGE_SIZE,
           'ctime'
         )) as PostListResponse
-        console.log('MyFavorites res:', res)
 
         const ok = res?.code === 0 || res?.code === 200
         const items = ok ? res.data?.items || [] : []
+
         setPosts(prev => (targetPage === 1 ? items : [...prev, ...items]))
         setPage(targetPage)
         setHasMore(res.data?.has_more ?? false)
@@ -92,14 +94,15 @@ export default function MyFavorites() {
   }, [fetchPage, hasMore, initialLoaded, loading, page, refreshing])
 
   const renderItem = useCallback(({ item }: { item: PostItem }) => {
-    return (
-      <View style={styles.cardWrapper}>
-        <HomeCommunityCard data={item} />
-      </View>
-    )
+    return <HomeCommunityCard data={item} tone="pink" />
   }, [])
 
-  const ListEmptyComponent = useCallback(() => {
+  const renderSeparator = useCallback(
+    () => <View style={styles.separator} />,
+    []
+  )
+
+  const ListEmptyComponent = useMemo(() => {
     return (
       <View style={styles.emptyState}>
         <Text style={styles.emptyTitle}>暂无收藏</Text>
@@ -112,7 +115,7 @@ export default function MyFavorites() {
     if (!loading) return null
     return (
       <View style={styles.footerLoading}>
-        <ActivityIndicator size="small" color="#f43f5e" />
+        <ActivityIndicator size="small" color={HOME_PINK_THEME.primary} />
         <Text style={styles.footerText}>加载中...</Text>
       </View>
     )
@@ -128,8 +131,8 @@ export default function MyFavorites() {
           { paddingBottom: 24 + insets.bottom }
         ]}
         data={posts}
+        ItemSeparatorComponent={renderSeparator}
         keyExtractor={keyExtractor}
-        renderItem={renderItem}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         onEndReached={handleLoadMore}
@@ -138,10 +141,13 @@ export default function MyFavorites() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#f43f5e']}
-            tintColor="#f43f5e"
+            colors={[HOME_PINK_THEME.primary]}
+            tintColor={HOME_PINK_THEME.primary}
+            progressBackgroundColor={HOME_PINK_THEME.surface}
           />
         }
+        renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   )
@@ -150,14 +156,15 @@ export default function MyFavorites() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: HOME_PINK_THEME.background
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12
+    paddingTop: 0
   },
-  cardWrapper: {
-    marginBottom: 12
+  separator: {
+    height: 1,
+    marginHorizontal: 16,
+    backgroundColor: HOME_PINK_THEME.border
   },
   emptyState: {
     flex: 1,
@@ -167,12 +174,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: HOME_PINK_THEME.text,
     marginBottom: 6
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#999'
+    color: HOME_PINK_THEME.textMuted
   },
   footerLoading: {
     paddingVertical: 12,
@@ -181,6 +188,6 @@ const styles = StyleSheet.create({
   footerText: {
     marginTop: 6,
     fontSize: 12,
-    color: '#999'
+    color: HOME_PINK_THEME.textMuted
   }
 })

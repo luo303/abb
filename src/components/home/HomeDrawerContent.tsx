@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
@@ -12,8 +13,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Button } from 'react-native-paper'
 
 import PaperAvatar from '@/components/common/PaperAvatar'
-import { useAppSelector } from '@/hooks/redux'
-import { getFollowerUsers, getFollowingUsers } from '@/api/follow'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useRelationshipCounts } from '@/hooks/useRelationshipCounts'
+import { logoutAndClearAll } from '@/store/modules/userStore'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 const QUICK_LINKS = [
   {
@@ -50,82 +53,11 @@ const QUICK_LINKS = [
   }
 ]
 
-const PAGE_SIZE = 100
-
-async function getRelationshipCount(
-  fetcher: (
-    page?: number,
-    pageSize?: number,
-    userId?: string
-  ) => Promise<{
-    data: {
-      list: unknown[]
-      has_more: boolean
-    }
-  }>,
-  userId?: string
-) {
-  let page = 1
-  let total = 0
-  let hasMore = true
-
-  while (hasMore) {
-    const response = await fetcher(page, PAGE_SIZE, userId)
-    const list = response.data?.list ?? []
-
-    total += list.length
-    hasMore = Boolean(response.data?.has_more)
-    page += 1
-
-    if (page > 100) {
-      break
-    }
-  }
-
-  return total
-}
-
 export default function HomeDrawerContent(props: DrawerContentComponentProps) {
+  const dispatch = useAppDispatch()
   const userInfo = useAppSelector(state => state.user.userInfo)
-  const [followingCount, setFollowingCount] = useState<number | null>(null)
-  const [followerCount, setFollowerCount] = useState<number | null>(null)
-  const [loadingCounts, setLoadingCounts] = useState(false)
-
-  useEffect(() => {
-    let active = true
-
-    const loadRelationshipCounts = async () => {
-      setLoadingCounts(true)
-
-      try {
-        const [following, followers] = await Promise.all([
-          getRelationshipCount(getFollowingUsers, userInfo?.user_id),
-          getRelationshipCount(getFollowerUsers, userInfo?.user_id)
-        ])
-
-        if (!active) return
-
-        setFollowingCount(following)
-        setFollowerCount(followers)
-      } catch (error) {
-        if (!active) return
-
-        console.error('获取关注/粉丝统计失败:', error)
-        setFollowingCount(null)
-        setFollowerCount(null)
-      } finally {
-        if (active) {
-          setLoadingCounts(false)
-        }
-      }
-    }
-
-    loadRelationshipCounts()
-
-    return () => {
-      active = false
-    }
-  }, [userInfo?.user_id])
+  const { followingCount, followerCount, loadingCounts } =
+    useRelationshipCounts(userInfo?.user_id)
 
   const displayName = useMemo(
     () => userInfo?.username || userInfo?.account || 'Love Baby 用户',
@@ -149,6 +81,17 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
     props.navigation.navigate(target as never)
   }
 
+  const handleLogout = async () => {
+    props.navigation.closeDrawer()
+    await dispatch(logoutAndClearAll() as any)
+
+    const rootNavigation = props.navigation.getParent()?.getParent() as any
+    rootNavigation?.reset({
+      index: 0,
+      routes: [{ name: 'Login' }]
+    })
+  }
+
   const renderCount = (count: number | null) => {
     if (loadingCounts) {
       return '--'
@@ -159,60 +102,77 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.profileSection}>
-          <View style={styles.avatarShell}>
-            <PaperAvatar
-              accessibilityLabel={displayName}
-              size={72}
-              source={userInfo?.avatar}
-              style={styles.avatar}
-            />
-          </View>
-
-          <Text style={styles.name}>{displayName}</Text>
-          <Text style={styles.email}>{displayEmail}</Text>
-
-          <View style={styles.statsRow}>
-            <Text style={styles.statsText}>
-              {renderCount(followingCount)} 关注
-            </Text>
-            <Text style={styles.statsDivider}>|</Text>
-            <Text style={styles.statsText}>
-              {renderCount(followerCount)} 粉丝
-            </Text>
-            {loadingCounts ? (
-              <ActivityIndicator
-                size="small"
-                color="#9ca3af"
-                style={styles.statsLoading}
+      <View style={styles.layout}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.profileSection}>
+            <View style={styles.avatarShell}>
+              <PaperAvatar
+                accessibilityLabel={displayName}
+                size={72}
+                source={userInfo?.avatar}
+                style={styles.avatar}
               />
-            ) : null}
-          </View>
-        </View>
+            </View>
 
-        <View style={styles.shortcutsSection}>
-          {QUICK_LINKS.map(item => (
-            <Button
-              key={item.key}
-              mode="text"
-              icon={item.icon}
-              onPress={() => handleShortcutPress(item.target)}
-              rippleColor="rgba(244, 63, 94, 0.18)"
-              textColor="#111827"
-              style={styles.shortcutItem}
-              contentStyle={styles.shortcutContent}
-              labelStyle={styles.shortcutLabel}
-              uppercase={false}
-            >
-              {item.label}
-            </Button>
-          ))}
+            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.email}>{displayEmail}</Text>
+
+            <View style={styles.statsRow}>
+              <Text style={styles.statsText}>
+                {renderCount(followingCount)} 关注
+              </Text>
+              <Text style={styles.statsDivider}>|</Text>
+              <Text style={styles.statsText}>
+                {renderCount(followerCount)} 粉丝
+              </Text>
+              {loadingCounts ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#9ca3af"
+                  style={styles.statsLoading}
+                />
+              ) : null}
+            </View>
+          </View>
+
+          <View style={styles.shortcutsSection}>
+            {QUICK_LINKS.map(item => (
+              <Button
+                key={item.key}
+                mode="text"
+                icon={item.icon}
+                onPress={() => handleShortcutPress(item.target)}
+                rippleColor="rgba(244, 63, 94, 0.18)"
+                textColor="#111827"
+                style={styles.shortcutItem}
+                contentStyle={styles.shortcutContent}
+                labelStyle={styles.shortcutLabel}
+                uppercase={false}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            activeOpacity={0.86}
+            onPress={handleLogout}
+            style={styles.logoutButton}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={APP_COLORS.primaryStrong}
+            />
+            <Text style={styles.logoutText}>退出登录</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   )
 }
@@ -221,6 +181,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff'
+  },
+  layout: {
+    flex: 1
   },
   content: {
     paddingHorizontal: 22,
@@ -290,5 +253,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#111827'
+  },
+  footer: {
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 18,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#f1d8df',
+    backgroundColor: '#fff'
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    paddingVertical: 14,
+    backgroundColor: '#fff1f2',
+    borderWidth: 1,
+    borderColor: '#fecdd3'
+  },
+  logoutText: {
+    marginLeft: 8,
+    fontSize: 15,
+    fontWeight: '700',
+    color: APP_COLORS.primaryStrong
   }
 })

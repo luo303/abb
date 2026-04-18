@@ -7,6 +7,7 @@ import { clearAllChatData } from './ChatStore'
 import { clearAllBabyData } from './BabyStore'
 import { clearMessengerState, shutdownMessenger } from './MessengerStore'
 import { removePartner } from './PartnerStore'
+import { resetFollowState } from './FollowStore'
 
 interface UserState {
   token: string
@@ -58,6 +59,7 @@ export const logoutAndClearAll = () => async (dispatch: any) => {
   dispatch(clearToken())
   dispatch(clearUserInfo())
   dispatch(resetPostState())
+  dispatch(resetFollowState())
   dispatch(clearAllChatData())
   dispatch(clearAllBabyData())
   await dispatch(clearMessengerState())
