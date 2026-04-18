@@ -41,7 +41,6 @@ export {
   fetchSleepList,
   addSleepRecord,
   updateSleepRecord,
-  endSleep,
-  deleteSleepRecord,
+  deleteSleepItem,
   clearSleepData
 } from './sleepStore'

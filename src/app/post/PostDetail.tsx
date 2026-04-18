@@ -6,14 +6,16 @@ import {
   ActivityIndicator,
   Platform,
   TextInput,
+  Alert,
   Keyboard,
-  LayoutChangeEvent
+  LayoutChangeEvent,
+  TouchableOpacity
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import type { FlashListRef } from '@shopify/flash-list'
 import { AntDesign } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRoute, RouteProp } from '@react-navigation/native'
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native'
 
 import KeyboardStickyFooter from '../../components/common/KeyboardStickyFooter'
 import PostHeader from '../../components/post/PostHeader'
@@ -28,6 +30,7 @@ import { useAppSelector, useAppDispatch } from '@/hooks/redux'
 import { UserMeResponse } from '@/api/profile'
 import {
   fetchPostDetail,
+  fetchPostList,
   updatePostStats,
   clearCurrentPost,
   addAuthorPostToFollowing,
@@ -47,7 +50,14 @@ import {
   unlikeComment,
   createPostComment
 } from '@/api/home'
-import { likePost, unlikePost, collectPost, uncollectPost } from '@/api/post'
+import {
+  likePost,
+  unlikePost,
+  collectPost,
+  uncollectPost,
+  deletePost
+} from '@/api/post'
+import type { NavigationProps } from '@/types/navigation'
 
 type PostDetailRouteProp = RouteProp<
   { params: { id: string; post_id: string } },
@@ -164,6 +174,7 @@ export default function PostDetail() {
   const postId = post_id || id
 
   const dispatch = useAppDispatch()
+  const navigation = useNavigation<NavigationProps>()
   const { currentPost, loading: isLoading } = useAppSelector(
     state => state.post
   )
@@ -191,6 +202,25 @@ export default function PostDetail() {
   const [inputText, setInputText] = useState('')
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [footerHeight, setFooterHeight] = useState(76)
+  const [isDeletingPost, setIsDeletingPost] = useState(false)
+  const deleteControllerRef = useRef<AbortController | null>(null)
+
+  const cancelOngoingDelete = useCallback(() => {
+    if (deleteControllerRef.current) {
+      deleteControllerRef.current.abort()
+    }
+    const controller = new AbortController()
+    deleteControllerRef.current = controller
+    return controller.signal
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (deleteControllerRef.current) {
+        deleteControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   // 从 FollowStore 获取关注状态：根据作者ID判断是否关注
   const isFollowingFromStore = useAppSelector(state => {
@@ -705,6 +735,52 @@ export default function PostDetail() {
     })()
   }
 
+  const refreshHomeLists = useCallback(() => {
+    void dispatch(fetchPostList({ page: 1, strategy: 'random', force: true }))
+    void dispatch(fetchPostList({ page: 1, strategy: 'hot', force: true }))
+    void dispatch(fetchFollowingPosts({ page: 1, force: true }))
+  }, [dispatch])
+
+  const doDeletePost = useCallback(async () => {
+    if (!postId) return
+    if (isDeletingPost) return
+    setIsDeletingPost(true)
+    try {
+      const signal = cancelOngoingDelete()
+      await deletePost(postId, { signal })
+      showMessage('已删除')
+      refreshHomeLists()
+      navigation.goBack()
+    } catch (error) {
+      console.error(error)
+      const message = error instanceof Error ? error.message : '删除失败'
+      if (message.includes('不存在') || message.includes('已删除')) {
+        showMessage('帖子不存在或已删除')
+        refreshHomeLists()
+        navigation.goBack()
+        return
+      }
+      Alert.alert('提示', message)
+    } finally {
+      setIsDeletingPost(false)
+    }
+  }, [
+    cancelOngoingDelete,
+    isDeletingPost,
+    navigation,
+    postId,
+    refreshHomeLists,
+    showMessage
+  ])
+
+  const handleDeletePost = useCallback(() => {
+    if (isDeletingPost) return
+    Alert.alert('确认删除', '确定要删除这条帖子吗？', [
+      { text: '取消', style: 'cancel' },
+      { text: '删除', style: 'destructive', onPress: () => void doDeletePost() }
+    ])
+  }, [doDeletePost, isDeletingPost])
+
   const ListHeaderComponent = useCallback(
     () => (
       <>
@@ -715,6 +791,33 @@ export default function PostDetail() {
           isFollowing={isFollowing}
           onFollow={handleFollowAuthor}
           showFollow={!isOwnPost}
+          rightAccessory={
+            isOwnPost ? (
+              <TouchableOpacity
+                onPress={handleDeletePost}
+                activeOpacity={0.8}
+                disabled={isDeletingPost}
+                style={[
+                  styles.deleteButton,
+                  isDeletingPost && styles.deleteButtonDisabled
+                ]}
+              >
+                <AntDesign
+                  name="delete"
+                  size={16}
+                  color={isDeletingPost ? '#fca5a5' : '#ef4444'}
+                />
+                <Text
+                  style={[
+                    styles.deleteButtonText,
+                    isDeletingPost && styles.deleteButtonTextDisabled
+                  ]}
+                >
+                  删除
+                </Text>
+              </TouchableOpacity>
+            ) : null
+          }
         />
         <DoubleTapLike onLike={handleDoubleTapLike}>
           <PostBody
@@ -769,6 +872,8 @@ export default function PostDetail() {
       isFollowing,
       handleFollowAuthor,
       isOwnPost,
+      handleDeletePost,
+      isDeletingPost,
       handleDoubleTapLike,
       displayContent,
       displayImages,
@@ -923,6 +1028,28 @@ const styles = StyleSheet.create({
   commentsEmptyText: {
     color: '#999',
     fontSize: 13
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    backgroundColor: '#fff'
+  },
+  deleteButtonDisabled: {
+    opacity: 0.7
+  },
+  deleteButtonText: {
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ef4444'
+  },
+  deleteButtonTextDisabled: {
+    color: '#fca5a5'
   },
   inputSticky: {
     position: 'absolute',

@@ -15,7 +15,8 @@ export function getExportFileName(
   const typeMap: Record<RecordType, string> = {
     growth: '成长记录',
     vaccine: '疫苗记录',
-    feeding: '喂养记录'
+    feeding: '喂养记录',
+    daily: '日常记录'
   }
 
   const extensionMap: Record<ExportType, string> = {

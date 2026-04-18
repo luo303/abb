@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { View, Text, StyleSheet, ImageSourcePropType } from 'react-native'
 import { TouchableRipple } from 'react-native-paper'
 
@@ -11,6 +11,7 @@ interface PostHeaderProps {
   isFollowing?: boolean
   onFollow?: () => void
   showFollow?: boolean
+  rightAccessory?: ReactNode
 }
 
 export default function PostHeader({
@@ -19,7 +20,8 @@ export default function PostHeader({
   description,
   isFollowing = false,
   onFollow,
-  showFollow = true
+  showFollow = true,
+  rightAccessory
 }: PostHeaderProps) {
   return (
     <View style={styles.container}>
@@ -38,7 +40,9 @@ export default function PostHeader({
         </View>
       </View>
 
-      {showFollow ? (
+      {rightAccessory ? (
+        rightAccessory
+      ) : showFollow ? (
         <TouchableRipple
           onPress={onFollow}
           rippleColor="rgba(244, 63, 94, 0.08)"

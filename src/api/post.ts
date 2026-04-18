@@ -4,6 +4,7 @@ import {
   CreatePostRequest,
   CreatePostResponse,
   DeleteDraftResponse,
+  DeletePostResponse,
   MyDraftListResponse,
   MyPostListResponse,
   PublishPostResponse,
@@ -265,6 +266,20 @@ export const deleteDraft = async (
       signal: options?.signal
     })
     return ensureBusinessSuccess(res as unknown as DeleteDraftResponse)
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error))
+  }
+}
+
+export const deletePost = async (
+  postId: string,
+  options?: { signal?: AbortSignal }
+): Promise<DeletePostResponse> => {
+  try {
+    const res = await request.delete(`/post/${postId}/delete`, {
+      signal: options?.signal
+    })
+    return ensureBusinessSuccess(res as unknown as DeletePostResponse)
   } catch (error: unknown) {
     throw new Error(getErrorMessage(error))
   }

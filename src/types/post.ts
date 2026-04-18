@@ -60,6 +60,8 @@ export type UpdateDraftResponse = ApiResponse<PostMutationData>
 
 export type DeleteDraftResponse = ApiResponse<null>
 
+export type DeletePostResponse = ApiResponse<null>
+
 export interface PagedListData<TItem> {
   items: TItem[]
   page: number
