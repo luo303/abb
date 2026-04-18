@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     lineHeight: 20
   },
   sendButton: {
-    width: 58,
+    width: 68,
     borderRadius: 21,
     ...composerSendShadow
   },
@@ -267,7 +267,8 @@ const styles = StyleSheet.create({
     color: composerTheme.accentText,
     fontSize: 13,
     fontWeight: '700',
-    letterSpacing: 0.2
+    letterSpacing: 0.2,
+    marginHorizontal: 0
   },
   actions: {
     flexDirection: 'row',
