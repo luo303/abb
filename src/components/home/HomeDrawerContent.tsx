@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Button } from 'react-native-paper'
@@ -61,9 +62,12 @@ const QUICK_LINKS = [
 
 export default function HomeDrawerContent(props: DrawerContentComponentProps) {
   const dispatch = useAppDispatch()
+  const insets = useSafeAreaInsets()
   const userInfo = useAppSelector(state => state.user.userInfo)
   const { followingCount, followerCount, loadingCounts } =
     useRelationshipCounts(userInfo?.user_id)
+  const footerBottomPadding =
+    (Platform.OS === 'ios' ? 46 + insets.bottom : 56) + 16
 
   const displayName = useMemo(
     () => userInfo?.username || userInfo?.account || 'Love Baby 用户',
@@ -115,9 +119,10 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.layout}>
         <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
@@ -158,7 +163,7 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
                 key={item.key}
                 mode="text"
                 icon={item.icon}
-                onPress={() => handleShortcutPress(item.target)}
+                onPress={() => handleShortcutPress(item.target, item.scope)}
                 rippleColor="rgba(244, 63, 94, 0.18)"
                 textColor="#111827"
                 style={styles.shortcutItem}
@@ -172,7 +177,7 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: footerBottomPadding }]}>
           <TouchableOpacity
             activeOpacity={0.86}
             onPress={handleLogout}
@@ -199,7 +204,11 @@ const styles = StyleSheet.create({
   layout: {
     flex: 1
   },
+  scrollView: {
+    flex: 1
+  },
   content: {
+    flexGrow: 1,
     paddingHorizontal: 22,
     paddingTop: 18,
     paddingBottom: 28
