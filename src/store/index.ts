@@ -10,6 +10,7 @@ import diaperReducer from './modules/diaperStore'
 import feedingReducer from './modules/feedingStore'
 import sleepReducer from './modules/sleepStore'
 import dailyReducer from './modules/dailyStore'
+import aiReportReducer from './modules/AIReportStore'
 
 const store = configureStore({
   reducer: {
@@ -23,7 +24,8 @@ const store = configureStore({
     diaper: diaperReducer,
     feeding: feedingReducer,
     sleep: sleepReducer,
-    daily: dailyReducer
+    daily: dailyReducer,
+    aiReport: aiReportReducer
   }
 })
 

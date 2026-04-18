@@ -6,12 +6,14 @@ import {
   ExportResult,
   ExportData,
   GrowthExportData,
-  VaccineExportData
+  VaccineExportData,
+  AIGrowthReportExportData
 } from '../../types/export'
 import {
   transformGrowthDataToHtml,
   transformVaccineDataToHtml,
-  transformDailyDataToHtml
+  transformDailyDataToHtml,
+  transformAIGrowthReportToHtml
 } from '../../utils/dataTransformUtils'
 import { getExportFileName } from './exportUtils'
 
@@ -76,6 +78,9 @@ export async function exportToPdf(
       case 'daily':
         html = transformDailyDataToHtml(data as any)
         break
+      case 'ai_growth_report':
+        html = transformAIGrowthReportToHtml(data as AIGrowthReportExportData)
+        break
       default:
         throw new Error('不支持的记录类型')
     }
@@ -129,7 +134,8 @@ function getRecordTypeName(recordType: RecordType): string {
     growth: '成长',
     vaccine: '疫苗',
     feeding: '喂养',
-    daily: '日常'
+    daily: '日常',
+    ai_growth_report: 'AI 成长报告'
   }
   return typeMap[recordType] || recordType
 }

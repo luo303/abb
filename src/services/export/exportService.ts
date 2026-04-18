@@ -14,6 +14,8 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { v4 as uuidv4 } from 'uuid'
+import Constants from 'expo-constants'
+import * as Notifications from 'expo-notifications'
 
 /**
  * 导出历史记录类型
@@ -73,41 +75,34 @@ export async function sendExportNotification(
   success: boolean,
   message: string
 ): Promise<void> {
+  const isExpoGo = getIsExpoGo()
+  if (isExpoGo) return
+
+  const scheduleNotificationAsync =
+    (Notifications as any).scheduleNotificationAsync ||
+    (Notifications as any).default?.scheduleNotificationAsync
+  if (typeof scheduleNotificationAsync !== 'function') return
+
   try {
-    // 检查是否在Expo Go环境中运行
-    const isExpoGo = await getIsExpoGo()
-    if (isExpoGo) {
-      // 在Expo Go中不发送通知，避免警告
-      console.log('在Expo Go环境中，跳过发送通知')
-      return
-    }
-
-    // 动态导入expo-notifications库
-    const Notifications = await import('expo-notifications')
-
-    await Notifications.scheduleNotificationAsync({
+    await scheduleNotificationAsync({
       content: {
         title: success ? '导出成功' : '导出失败',
         body: message,
         data: { type: 'export' }
       },
-      trigger: null // 立即发送
+      trigger: null
     })
-  } catch (error) {
-    console.error('发送通知失败:', error)
-  }
+  } catch {}
 }
 
 /**
  * 检查是否在Expo Go环境中运行
  * @returns 是否在Expo Go环境中运行
  */
-async function getIsExpoGo(): Promise<boolean> {
+function getIsExpoGo(): boolean {
   try {
-    const Constants = await import('expo-constants')
-    return Constants.default.appOwnership === 'expo'
-  } catch (error) {
-    console.error('检查Expo Go环境失败:', error)
+    return Constants.appOwnership === 'expo'
+  } catch {
     return false
   }
 }
@@ -277,6 +272,15 @@ export function validateExportData(
         dailyData.date &&
         dailyData.records &&
         Array.isArray(dailyData.records)
+      )
+    case 'ai_growth_report':
+      const reportData = data as any
+      return (
+        reportData.babyInfo &&
+        typeof reportData.markdown === 'string' &&
+        reportData.range &&
+        typeof reportData.range?.days === 'number' &&
+        Array.isArray(reportData.items)
       )
     default:
       return false

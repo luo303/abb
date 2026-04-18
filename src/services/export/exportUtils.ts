@@ -16,7 +16,8 @@ export function getExportFileName(
     growth: '成长记录',
     vaccine: '疫苗记录',
     feeding: '喂养记录',
-    daily: '日常记录'
+    daily: '日常记录',
+    ai_growth_report: 'AI成长报告'
   }
 
   const extensionMap: Record<ExportType, string> = {
