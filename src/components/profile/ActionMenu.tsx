@@ -14,11 +14,13 @@ interface ActionItemProps {
 export default function ActionMenu({
   onLogout,
   onMyPosts,
-  onMyFavorites
+  onMyFavorites,
+  onMyDrafts
 }: {
   onLogout: () => void
   onMyPosts: () => void
   onMyFavorites: () => void
+  onMyDrafts: () => void
 }) {
   return (
     <View style={styles.wrapper}>
@@ -40,6 +42,12 @@ export default function ActionMenu({
             label="我的帖子"
             color="#f97316"
             onPress={onMyPosts}
+          />
+          <ActionItem
+            icon="file-document-outline"
+            label="草稿箱"
+            color="#3b82f6"
+            onPress={onMyDrafts}
           />
           <ActionItem
             icon="user-switch"

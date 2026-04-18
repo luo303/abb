@@ -32,6 +32,7 @@ import MilestoneListScreen from './milestone/MilestoneList'
 import AddBabyScreen from '../components/profile/AddBady'
 import EditProfileScreen from '../components/profile/EditProfile'
 import MyPostsScreen from './profile/MyPosts'
+import MyDraftsScreen from './profile/MyDrafts'
 import MyFavoritesScreen from './profile/MyFavorites'
 import DailyRecordScreen from './(HomeNavGrid)/DailyRecord'
 import VaccineRecordScreen from './(HomeNavGrid)/VaccineRecord'
@@ -43,6 +44,7 @@ import DiaryScreen from './(GrowthSubPages)/Diary'
 import FeedingRecordScreen from './FeedingRecordScreen'
 import SleepRecordScreen from './(HomeNavGrid)/daily-record/sleep'
 import DiaperFormScreen from './DiaperFormScreen'
+import EditDraftScreen from './post/EditDraft'
 
 import KnowledgeUploadScreen from './KnowledgeUpload'
 import SearchScreen from './search/SearchScreen'
@@ -314,9 +316,19 @@ function RootNavigator({ appReady }: { appReady: boolean }) {
           options={{ title: '我的帖子' }}
         />
         <Stack.Screen
+          name="MyDrafts"
+          component={MyDraftsScreen}
+          options={{ title: '我的草稿' }}
+        />
+        <Stack.Screen
           name="MyFavorites"
           component={MyFavoritesScreen}
           options={{ title: '我的收藏' }}
+        />
+        <Stack.Screen
+          name="EditDraft"
+          component={EditDraftScreen}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Search"

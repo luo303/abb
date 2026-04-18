@@ -29,18 +29,23 @@ interface ImageUploaderProps {
   pendingImages: ImageItem[]
   onAddImage: () => void
   onRemoveImage: (index: number) => void
+  onRetryPendingImage?: (uri: string) => void
+  onRemovePendingImage?: (uri: string) => void
 }
 
 export default function ImageUploader({
   images,
   pendingImages,
   onAddImage,
-  onRemoveImage
+  onRemoveImage,
+  onRetryPendingImage,
+  onRemovePendingImage
 }: ImageUploaderProps) {
   const uploadingCount = pendingImages.filter(
     img => img.status === 'uploading'
   ).length
-  const totalImages = images.length + uploadingCount
+  const errorCount = pendingImages.filter(img => img.status === 'error').length
+  const totalImages = images.length + uploadingCount + errorCount
   const hasImages = totalImages > 0
 
   return (
@@ -60,6 +65,30 @@ export default function ImageUploader({
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="small" color="#f43f5e" />
               </View>
+            </View>
+          ))}
+        {pendingImages
+          .filter(img => img.status === 'error')
+          .map(img => (
+            <View key={img.uri} style={styles.imageWrapper}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => onRetryPendingImage?.(img.uri)}
+                style={styles.fullSize}
+              >
+                <Image source={{ uri: img.uri }} style={styles.image} />
+                <View style={styles.errorOverlay}>
+                  <Ionicons name="refresh" size={18} color="#fff" />
+                  <Text style={styles.errorText}>点此重试</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deleteButton, styles.deleteButtonError]}
+                onPress={() => onRemovePendingImage?.(img.uri)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={14} color="#fff" />
+              </TouchableOpacity>
             </View>
           ))}
         {/* 显示已上传的图片 */}
@@ -118,6 +147,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#f5f5f5'
   },
+  fullSize: {
+    width: '100%',
+    height: '100%'
+  },
   deleteButton: {
     position: 'absolute',
     top: -6,
@@ -130,6 +163,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1
   },
+  deleteButtonError: {
+    backgroundColor: 'rgba(239, 68, 68, 0.85)'
+  },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
@@ -137,6 +173,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     zIndex: 1
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    zIndex: 1,
+    gap: 4
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700'
   },
   addButton: {
     width: ITEM_WIDTH,

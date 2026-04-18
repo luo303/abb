@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -8,16 +8,24 @@ import {
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import HomeCommunityCard from '@/components/home/HomeCommunityCard'
 import { PostItem } from '@/types/home'
-import { getMyPosts } from '@/api/post'
+import { getMyDrafts } from '@/api/post'
+import type { NavigationProps } from '@/types/navigation'
 import type { PostMineListItem } from '@/types/post'
 
 const PAGE_SIZE = 10
 
-export default function MyPosts() {
+const mapItemToPost = (item: PostMineListItem): PostItem => ({
+  ...item,
+  cover: ''
+})
+
+export default function MyDrafts() {
   const insets = useSafeAreaInsets()
+  const navigation = useNavigation<NavigationProps>()
+
   const [posts, setPosts] = useState<PostItem[]>([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
@@ -37,21 +45,14 @@ export default function MyPosts() {
       }
 
       try {
-        const res = await getMyPosts(targetPage, PAGE_SIZE, 'ctime')
-        console.log(res)
-
-        const mapItem = (item: PostMineListItem): PostItem => ({
-          ...item,
-          cover: ''
-        })
-
-        const items = (res.data?.items || []).map(mapItem)
+        const res = await getMyDrafts(targetPage, PAGE_SIZE)
+        const items = (res.data.items || []).map(mapItemToPost)
 
         setPosts(prev => (targetPage === 1 ? items : [...prev, ...items]))
         setPage(targetPage)
-        setHasMore(res.data?.has_more ?? false)
+        setHasMore(res.data.has_more)
       } catch (error) {
-        console.error('Failed to load my posts:', error)
+        console.error('Failed to load my drafts:', error)
       } finally {
         setLoading(false)
         setRefreshing(false)
@@ -82,19 +83,29 @@ export default function MyPosts() {
     }
   }, [fetchPage, hasMore, initialLoaded, loading, page, refreshing])
 
-  const renderItem = useCallback(({ item }: { item: PostItem }) => {
-    return (
-      <View style={styles.cardWrapper}>
-        <HomeCommunityCard data={item} />
-      </View>
-    )
-  }, [])
+  const handlePressDraft = useCallback(
+    (_postId: string, post: PostItem) => {
+      navigation.navigate('EditDraft', {
+        draft: post as unknown as PostMineListItem
+      })
+    },
+    [navigation]
+  )
 
-  const ListEmptyComponent = useCallback(() => {
+  const renderItem = useCallback(
+    ({ item }: { item: PostItem }) => (
+      <View style={styles.cardWrapper}>
+        <HomeCommunityCard data={item} onPress={handlePressDraft} />
+      </View>
+    ),
+    [handlePressDraft]
+  )
+
+  const ListEmptyComponent = useMemo(() => {
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyTitle}>暂无帖子</Text>
-        <Text style={styles.emptySubtitle}>去发布你的第一条记录吧</Text>
+        <Text style={styles.emptyTitle}>暂无草稿</Text>
+        <Text style={styles.emptySubtitle}>从首页点击 + 开始记录吧</Text>
       </View>
     )
   }, [])

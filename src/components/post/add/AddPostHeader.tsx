@@ -5,9 +5,13 @@ import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function AddPostHeader({
-  title = '发布帖子'
+  title = '发布帖子',
+  rightText,
+  onRightPress
 }: {
   title?: string
+  rightText?: string
+  onRightPress?: () => void
 }) {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
@@ -21,7 +25,13 @@ export default function AddPostHeader({
         <Ionicons name="close-outline" size={28} color="#333" />
       </TouchableOpacity>
       <Text style={styles.title}>{title}</Text>
-      <View style={{ width: 38 }} />
+      {rightText && onRightPress ? (
+        <TouchableOpacity onPress={onRightPress} style={styles.rightButton}>
+          <Text style={styles.rightText}>{rightText}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 38 }} />
+      )}
     </View>
   )
 }
@@ -45,5 +55,17 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'bold',
     color: '#333'
+  },
+  rightButton: {
+    minWidth: 38,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    alignItems: 'flex-end',
+    justifyContent: 'center'
+  },
+  rightText: {
+    fontSize: 14,
+    color: '#f43f5e',
+    fontWeight: '600'
   }
 })

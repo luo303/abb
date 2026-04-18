@@ -96,6 +96,7 @@ export default function Profile() {
             onLogout={handleLogout}
             onMyPosts={() => navigation.navigate('MyPosts')}
             onMyFavorites={() => navigation.navigate('MyFavorites')}
+            onMyDrafts={() => navigation.navigate('MyDrafts')}
           />
         </View>
       </ScrollView>

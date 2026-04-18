@@ -22,17 +22,30 @@ interface Tag {
 interface PostToolbarProps {
   onTagsChange?: (tagIds: string[], tagNames: string[]) => void
   onPrivacyChange?: (isPublic: boolean) => void
+  initialTagIds?: string[]
+  initialIsPublic?: boolean
 }
 
 export default function PostToolbar({
   onTagsChange,
-  onPrivacyChange
+  onPrivacyChange,
+  initialTagIds,
+  initialIsPublic
 }: PostToolbarProps) {
   const [showTagsModal, setShowTagsModal] = useState(false)
   const [tags, setTags] = useState<Tag[]>([])
   const [isTagsLoading, setIsTagsLoading] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
+
+  useEffect(() => {
+    if (initialTagIds && initialTagIds.length > 0) {
+      setSelectedTagIds(initialTagIds)
+    }
+    if (typeof initialIsPublic === 'boolean') {
+      setIsPublic(initialIsPublic)
+    }
+  }, [initialIsPublic, initialTagIds])
 
   useEffect(() => {
     let cancelled = false
@@ -84,6 +97,13 @@ export default function PostToolbar({
     const tag = tags.find(item => item.id === tagId)
     return tag ? tag.name : ''
   }
+
+  useEffect(() => {
+    if (!onTagsChange) return
+    if (selectedTagIds.length === 0) return
+    const names = selectedTagIds.map(id => getTagName(id)).filter(Boolean)
+    onTagsChange(selectedTagIds, names)
+  }, [onTagsChange, selectedTagIds, tags])
 
   const toggleTag = (tagId: string) => {
     let newTagIds: string[]

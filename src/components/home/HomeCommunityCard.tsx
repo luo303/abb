@@ -8,13 +8,19 @@ import { POST_ACTION_COLORS } from '@/components/post/postActionColors'
 import { NavigationProps } from '../../types/navigation'
 import { PostItem } from '@/types/home'
 import { HOME_PINK_THEME, HomeTone } from './homePalette'
+import { parseContent } from '@/utils/postContent'
 
 interface HomeCommunityCardProps {
   data: PostItem
   tone?: HomeTone
+  onPress?: (postId: string, post: PostItem) => void
 }
 
-function HomeCommunityCard({ data, tone = 'default' }: HomeCommunityCardProps) {
+function HomeCommunityCard({
+  data,
+  tone = 'default',
+  onPress
+}: HomeCommunityCardProps) {
   const navigation = useNavigation<NavigationProps>()
   const isPinkTone = tone === 'pink'
 
@@ -29,59 +35,16 @@ function HomeCommunityCard({ data, tone = 'default' }: HomeCommunityCardProps) {
   }
 
   const parsedContent = useMemo(() => {
-    try {
-      if (typeof data.content === 'string') {
-        try {
-          const parsed = JSON.parse(data.content) as {
-            text?: string
-            images?: any[]
-          }
-
-          if (parsed && typeof parsed === 'object') {
-            return {
-              text: parsed.text || data.content,
-              images: Array.isArray(parsed.images) ? parsed.images : []
-            }
-          }
-
-          return {
-            text: data.content,
-            images: []
-          }
-        } catch {
-          return {
-            text: data.content,
-            images: []
-          }
-        }
-      }
-
-      if (typeof data.content === 'object' && data.content !== null) {
-        return {
-          text: data.content.text || '',
-          images: Array.isArray(data.content.images) ? data.content.images : []
-        }
-      }
-    } catch {
-      return {
-        text:
-          data.cleanedContent ||
-          (typeof data.content === 'string' ? data.content : ''),
-        images: []
-      }
-    }
-
-    return {
-      text:
-        data.cleanedContent ||
-        (typeof data.content === 'string' ? data.content : ''),
-      images: []
-    }
+    return parseContent(
+      data.content,
+      data.cleanedContent || data.content_preview || ''
+    )
   }, [data.cleanedContent, data.content])
+  const parsedImages = parsedContent.images ?? []
 
   const displayImages = useMemo(() => {
-    if (parsedContent.images.length > 0) {
-      return parsedContent.images
+    if (parsedImages.length > 0) {
+      return parsedImages
     }
 
     if (data.imageUrls && data.imageUrls.length > 0) {
@@ -97,7 +60,7 @@ function HomeCommunityCard({ data, tone = 'default' }: HomeCommunityCardProps) {
     }
 
     return []
-  }, [data.cover, data.imageUrls, data.images, parsedContent.images])
+  }, [data.cover, data.imageUrls, data.images, parsedImages])
 
   const previewImages = displayImages.slice(0, 3)
   const displayContent = (parsedContent.text || data.content_preview || '')
@@ -111,6 +74,10 @@ function HomeCommunityCard({ data, tone = 'default' }: HomeCommunityCardProps) {
   const handlePress = () => {
     const postId = data.post_id || data.id
     if (postId) {
+      if (onPress) {
+        onPress(postId, data)
+        return
+      }
       navigation.navigate('PostDetail', { post_id: postId })
     }
   }
