@@ -4,9 +4,13 @@ import { Ionicons } from '@expo/vector-icons'
 
 interface DataDescriptionProps {
   type: 'height' | 'weight' | 'head'
+  footer?: React.ReactNode
 }
 
-export default function DataDescription({ type }: DataDescriptionProps) {
+export default function DataDescription({
+  type,
+  footer
+}: DataDescriptionProps) {
   const renderContent = () => {
     switch (type) {
       case 'height':
@@ -54,6 +58,7 @@ export default function DataDescription({ type }: DataDescriptionProps) {
         <Text style={styles.headerText}>参考说明</Text>
       </View>
       <View style={styles.content}>{renderContent()}</View>
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </View>
   )
 }
@@ -82,6 +87,10 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingLeft: 4
+  },
+  footer: {
+    marginTop: 12,
+    alignItems: 'flex-end'
   },
   title: {
     fontSize: 12,
