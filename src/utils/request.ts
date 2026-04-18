@@ -47,7 +47,21 @@ request.interceptors.response.use(
           // 可以在这里添加日志记录或其他处理
           break
       }
-      return Promise.reject(error)
+      const serverMessage =
+        typeof error.response?.data?.message === 'string'
+          ? error.response.data.message
+          : ''
+      const method =
+        typeof error.config?.method === 'string' ? error.config.method : ''
+      const url = typeof error.config?.url === 'string' ? error.config.url : ''
+      const fallbackMessage =
+        status === 404
+          ? `接口不存在(404)：${method ? method.toUpperCase() : ''} ${url}`.trim()
+          : `请求失败(${status})`
+      const typedError = new Error(serverMessage || fallbackMessage)
+      ;(typedError as any).status = status
+      ;(typedError as any).url = url
+      return Promise.reject(typedError)
     }
   }
 )
