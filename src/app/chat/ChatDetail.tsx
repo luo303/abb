@@ -135,9 +135,6 @@ export default function ChatDetail() {
       return a.ctime - b.ctime
     })
   }, [messages, pendingMessages])
-  const listMessages = useMemo(() => {
-    return [...displayMessages].reverse()
-  }, [displayMessages])
 
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewUri, setPreviewUri] = useState('')
@@ -145,7 +142,6 @@ export default function ChatDetail() {
   const currentScrollOffsetRef = useRef(0)
   const previewLockedOffsetRef = useRef<number | null>(null)
   const previewRestoreTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
-  const pendingInitialScrollRef = useRef(true)
 
   const {
     scrollRef,
@@ -157,8 +153,7 @@ export default function ChatDetail() {
   } = useChatAutoScroll({
     conversationKey:
       conversationType === 'partner' ? partner.partnerId : groupId || null,
-    showButtonThreshold: 140,
-    inverted: true
+    showButtonThreshold: 140
   })
   const listRef =
     scrollRef as React.MutableRefObject<FlashListRef<MessengerMessage> | null>
@@ -181,7 +176,15 @@ export default function ChatDetail() {
     }),
     []
   )
-  const initialScrollIndex = listMessages.length > 0 ? 0 : undefined
+
+  const maintainVisibleContentPosition = useMemo(
+    () => ({
+      autoscrollToBottomThreshold: 0.2,
+      animateAutoScrollToBottom: false,
+      startRenderingFromBottom: true
+    }),
+    []
+  )
 
   const memberMap = useMemo(() => {
     return Object.fromEntries(
@@ -197,33 +200,6 @@ export default function ChatDetail() {
   const unlockListScroll = useCallback(() => {
     setIsListScrollEnabled(true)
   }, [])
-
-  const alignInitialScrollPosition = useCallback(() => {
-    if (!pendingInitialScrollRef.current || listMessages.length === 0) return
-
-    pendingInitialScrollRef.current = false
-    const latestIndex = 0
-
-    const scrollToLatest = () => {
-      const currentList = listRef.current
-      if (!currentList) return
-
-      currentList
-        .scrollToIndex({
-          index: latestIndex,
-          animated: false
-        })
-        .catch(() => {
-          currentList.scrollToOffset({
-            offset: 0,
-            animated: false
-          })
-        })
-    }
-
-    scrollToLatest()
-    requestAnimationFrame(scrollToLatest)
-  }, [listMessages.length, listRef])
 
   const restorePreviewScrollOffset = useCallback(() => {
     const lockedOffset = previewLockedOffsetRef.current
@@ -273,8 +249,7 @@ export default function ChatDetail() {
   const handleListReady = useCallback(() => {
     if (skipAutoScrollRef.current || previewVisible) return
     handleListLoad()
-    alignInitialScrollPosition()
-  }, [alignInitialScrollPosition, handleListLoad, previewVisible])
+  }, [handleListLoad, previewVisible])
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -303,7 +278,6 @@ export default function ChatDetail() {
 
   useEffect(() => {
     setPendingMessages([])
-    pendingInitialScrollRef.current = true
     dispatch(
       setActiveConversation({
         type: conversationType,
@@ -340,15 +314,6 @@ export default function ChatDetail() {
       return next.length === prev.length ? prev : next
     })
   }, [messages])
-
-  useEffect(() => {
-    if (listMessages.length === 0) {
-      pendingInitialScrollRef.current = true
-      return
-    }
-
-    alignInitialScrollPosition()
-  }, [alignInitialScrollPosition, listMessages.length])
 
   const openImagePreview = useCallback(
     (uri: string) => {
@@ -596,18 +561,35 @@ export default function ChatDetail() {
     ]
   )
 
+  const getItemType = useCallback(
+    (item: MessengerMessage) => {
+      const isMine = !!currentUserId && item.fromUserId === currentUserId
+      const direction = isMine ? 'outgoing' : 'incoming'
+      const mediaType = item.type === 'image' ? 'image' : 'text'
+      const groupVariant =
+        conversationType === 'group' && !isMine ? 'group' : 'direct'
+      const uploadVariant =
+        item.type === 'image' && item.localStatus === 'uploading'
+          ? 'uploading'
+          : 'stable'
+
+      return `${mediaType}-${direction}-${groupVariant}-${uploadVariant}`
+    },
+    [conversationType, currentUserId]
+  )
+
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
       <Animated.View style={[styles.container, keyboardAnimatedStyle]}>
         <View style={styles.messagesContainer}>
           <FlashList
             ref={listRef as any}
-            data={listMessages}
-            inverted
-            initialScrollIndex={initialScrollIndex}
+            data={displayMessages}
             keyExtractor={item => item.messageId}
+            getItemType={getItemType}
             renderItem={renderMessageItem}
             contentContainerStyle={listContentStyle}
+            maintainVisibleContentPosition={maintainVisibleContentPosition}
             keyboardDismissMode="none"
             scrollEnabled={isListScrollEnabled}
             onTouchStart={handleListTouchStart}

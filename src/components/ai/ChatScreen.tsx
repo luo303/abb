@@ -62,7 +62,6 @@ export default function ChatScreen() {
   const streamingFrameRef = useRef<number | null>(null)
   const streamingContentRef = useRef('')
   const speakingTimestampRef = useRef<number | null>(null)
-  const pendingInitialScrollRef = useRef(true)
 
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null)
@@ -85,11 +84,7 @@ export default function ChatScreen() {
     if (!streamingMessage) return messages
     return [...messages, streamingMessage]
   }, [messages, streamingMessage])
-  const listMessages = useMemo(() => {
-    return [...displayMessages].reverse()
-  }, [displayMessages])
-  const hasDisplayMessages = listMessages.length > 0
-  const initialScrollIndex = hasDisplayMessages ? 0 : undefined
+  const hasDisplayMessages = displayMessages.length > 0
 
   const {
     scrollRef,
@@ -102,8 +97,7 @@ export default function ChatScreen() {
     stopCurrentScroll
   } = useChatAutoScroll({
     conversationKey: currentConversationId,
-    showButtonThreshold: 140,
-    inverted: true
+    showButtonThreshold: 140
   })
 
   const listRef =
@@ -116,6 +110,15 @@ export default function ChatScreen() {
       paddingHorizontal: 16,
       paddingTop: 12,
       paddingBottom: LIST_BOTTOM_GAP
+    }),
+    []
+  )
+
+  const maintainVisibleContentPosition = useMemo(
+    () => ({
+      autoscrollToBottomThreshold: 0.2,
+      animateAutoScrollToBottom: false,
+      startRenderingFromBottom: true
     }),
     []
   )
@@ -203,49 +206,9 @@ export default function ChatScreen() {
     saveSessionMessagesToStorage(currentConversationId, messages)
   }, [currentConversationId, messages])
 
-  useEffect(() => {
-    pendingInitialScrollRef.current = true
-  }, [currentConversationId])
-
   const unlockListScroll = useCallback(() => {
     setIsListScrollEnabled(true)
   }, [])
-
-  const alignInitialScrollPosition = useCallback(() => {
-    if (!pendingInitialScrollRef.current || listMessages.length === 0) return
-
-    pendingInitialScrollRef.current = false
-    const latestIndex = 0
-
-    const scrollToLatest = () => {
-      const currentList = listRef.current
-      if (!currentList) return
-
-      currentList
-        .scrollToIndex({
-          index: latestIndex,
-          animated: false
-        })
-        .catch(() => {
-          currentList.scrollToOffset({
-            offset: 0,
-            animated: false
-          })
-        })
-    }
-
-    scrollToLatest()
-    requestAnimationFrame(scrollToLatest)
-  }, [listMessages.length, listRef])
-
-  useEffect(() => {
-    if (!hasDisplayMessages) {
-      pendingInitialScrollRef.current = true
-      return
-    }
-
-    alignInitialScrollPosition()
-  }, [alignInitialScrollPosition, hasDisplayMessages])
 
   useAnimatedReaction(
     () =>
@@ -497,10 +460,30 @@ export default function ChatScreen() {
     [getMessageKey]
   )
 
+  const getItemType = useCallback(
+    (item: Message) => {
+      const isStreamingItem =
+        !!streamingMessage &&
+        item.timestamp === streamingMessage.timestamp &&
+        item.role === 'assistant' &&
+        isStreaming
+
+      if (isStreamingItem) {
+        return 'assistant-streaming'
+      }
+
+      if (item.role === 'user' && item.images && item.images.length > 0) {
+        return 'user-images'
+      }
+
+      return item.role
+    },
+    [isStreaming, streamingMessage]
+  )
+
   const handleListReady = useCallback(() => {
     handleListLoad()
-    alignInitialScrollPosition()
-  }, [alignInitialScrollPosition, handleListLoad])
+  }, [handleListLoad])
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -515,13 +498,13 @@ export default function ChatScreen() {
           ) : (
             <FlashList
               ref={listRef}
-              data={listMessages}
-              inverted
-              initialScrollIndex={initialScrollIndex}
+              data={displayMessages}
               keyExtractor={keyExtractor}
+              getItemType={getItemType}
               renderItem={renderMessageItem}
               ItemSeparatorComponent={renderMessageSeparator}
               contentContainerStyle={listContentStyle}
+              maintainVisibleContentPosition={maintainVisibleContentPosition}
               keyboardDismissMode="none"
               scrollEnabled={isListScrollEnabled}
               onTouchStart={handleListTouchStart}
@@ -530,7 +513,6 @@ export default function ChatScreen() {
               onLoad={handleListReady}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
-              removeClippedSubviews
               drawDistance={360}
               extraData={listExtraData}
               style={styles.chatScroll}
