@@ -165,6 +165,15 @@ export default function PartnerChat() {
     keyboardLiftBehavior: 'whenAtEnd'
   })
 
+  const maintainVisibleContentPosition = useMemo(
+    () => ({
+      autoscrollToBottomThreshold: 0.2,
+      animateAutoScrollToBottom: false,
+      startRenderingFromBottom: true
+    }),
+    []
+  )
+
   const listContentStyle = useMemo(
     () => ({
       paddingHorizontal: 15,
@@ -400,6 +409,10 @@ export default function PartnerChat() {
     [partnerAvatar, userInfo?.avatar]
   )
 
+  const getItemType = useCallback((item: PartnerMessage) => {
+    return item.sender === 'me' ? 'outgoing' : 'incoming'
+  }, [])
+
   const renderNoPartner = () => (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <AppKeyboardAvoidingView
@@ -471,9 +484,11 @@ export default function PartnerChat() {
         ref={listRef}
         data={messages}
         keyExtractor={item => item.id}
+        getItemType={getItemType}
         renderItem={renderMessageItem}
         renderScrollComponent={renderChatScrollComponent}
         contentContainerStyle={listContentStyle}
+        maintainVisibleContentPosition={maintainVisibleContentPosition}
         onScroll={handleScroll}
         onContentSizeChange={handleContentSizeChange}
         onLoad={handleListLoad}

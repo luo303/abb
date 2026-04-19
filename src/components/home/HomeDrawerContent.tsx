@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react'
 import {
   ActivityIndicator,
+  Alert,
+  InteractionManager,
   Platform,
   ScrollView,
   StyleSheet,
@@ -47,6 +49,15 @@ const QUICK_LINKS = [
     target: 'VaccineRecord',
     icon: ({ size, color }: { size: number; color: string }) => (
       <MaterialCommunityIcons name="needle" size={size} color={color} />
+    )
+  },
+  {
+    key: 'growthCurve',
+    label: '成长曲线',
+    scope: 'root' as ShortcutScope,
+    target: 'GrowthCurve',
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
     )
   },
   {
@@ -99,14 +110,28 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
     props.navigation.navigate(target as never)
   }
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     props.navigation.closeDrawer()
-    await dispatch(logoutAndClearAll() as any)
 
-    const rootNavigation = props.navigation.getParent()?.getParent() as any
-    rootNavigation?.reset({
-      index: 0,
-      routes: [{ name: 'Login' }]
+    InteractionManager.runAfterInteractions(() => {
+      Alert.alert(
+        '退出登录',
+        '确定要退出登录吗？',
+        [
+          {
+            text: '取消',
+            style: 'cancel'
+          },
+          {
+            text: '确定',
+            style: 'destructive',
+            onPress: () => {
+              dispatch(logoutAndClearAll() as any)
+            }
+          }
+        ],
+        { cancelable: true }
+      )
     })
   }
 

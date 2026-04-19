@@ -17,6 +17,7 @@ import ConversationListItem from '@/components/chat/ConversationListItem'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { NavigationProps } from '@/types/navigation'
 import {
+  ChatGroupMember,
   ChatGroupSummary,
   MessengerMessage,
   refreshGroupList,
@@ -56,6 +57,73 @@ const buildGroupSubtitle = (group: ChatGroupSummary) => {
   return `${group.memberCount}人 · ${group.description || '点击进入群聊'}`
 }
 
+const buildGroupSubtitleFromMessage = (
+  message: MessengerMessage,
+  senderName?: string
+) => {
+  if (message.type === 'image') {
+    return senderName ? `${senderName}：[图片]` : '[图片]'
+  }
+
+  return senderName ? `${senderName}：${message.content}` : message.content
+}
+
+const resolveLatestGroupMessage = (
+  group: ChatGroupSummary,
+  groupMessages?: MessengerMessage[]
+) => {
+  const latestLocalMessage =
+    groupMessages && groupMessages.length > 0
+      ? groupMessages[groupMessages.length - 1]
+      : undefined
+
+  if (!latestLocalMessage) {
+    return undefined
+  }
+
+  const summaryTime = group.lastMessageTime || 0
+  if (summaryTime > latestLocalMessage.ctime) {
+    return undefined
+  }
+
+  return latestLocalMessage
+}
+
+const resolveGroupSenderName = ({
+  currentUserId,
+  currentUserName,
+  group,
+  members,
+  message
+}: {
+  currentUserId?: string
+  currentUserName?: string
+  group: ChatGroupSummary
+  members?: ChatGroupMember[]
+  message: MessengerMessage
+}) => {
+  if (currentUserId && message.fromUserId === currentUserId) {
+    return currentUserName || '我'
+  }
+
+  const matchedMember = members?.find(
+    item => item.userId === message.fromUserId
+  )
+  if (matchedMember?.username) {
+    return matchedMember.username
+  }
+
+  const summaryMatchesLatestMessage =
+    group.lastMessageFromUserId === message.fromUserId &&
+    group.lastMessageTime === message.ctime
+
+  if (summaryMatchesLatestMessage && group.lastMessageFromName) {
+    return group.lastMessageFromName
+  }
+
+  return message.senderName
+}
+
 export default function ChatHome() {
   const dispatch = useAppDispatch()
   const navigation = useNavigation<NavigationProps>()
@@ -65,6 +133,17 @@ export default function ChatHome() {
 
   const partner = useAppSelector(state => state.messenger.partner)
   const groups = useAppSelector(state => state.messenger.groups.items)
+  const groupMessagesByGroupId = useAppSelector(
+    state => state.messenger.groups.messagesByGroupId
+  )
+  const groupMembersByGroupId = useAppSelector(
+    state => state.messenger.groups.membersByGroupId
+  )
+  const currentUserId = useAppSelector(state => state.user.userInfo?.user_id)
+  const currentUserName = useAppSelector(
+    state =>
+      state.user.userInfo?.username || state.user.userInfo?.account || '我'
+  )
   const hasPartnerBound = Boolean(partner.partnerId)
 
   useLayoutEffect(() => {
@@ -88,16 +167,43 @@ export default function ChatHome() {
   }, [navigation])
 
   const conversations = useMemo(() => {
-    const items: ConversationItem[] = groups.map(group => ({
-      key: `group-${group.groupId}`,
-      conversationType: 'group',
-      groupId: group.groupId,
-      title: group.name,
-      avatar: group.avatar,
-      subtitle: buildGroupSubtitle(group),
-      unreadCount: group.unreadCount,
-      time: group.lastMessageTime || group.utime || group.ctime
-    }))
+    const items: ConversationItem[] = groups.map(group => {
+      const latestGroupMessage = resolveLatestGroupMessage(
+        group,
+        groupMessagesByGroupId[group.groupId]
+      )
+      const latestGroupMessageSender = latestGroupMessage
+        ? resolveGroupSenderName({
+            currentUserId,
+            currentUserName,
+            group,
+            members: groupMembersByGroupId[group.groupId],
+            message: latestGroupMessage
+          })
+        : undefined
+      const subtitle = latestGroupMessage
+        ? buildGroupSubtitleFromMessage(
+            latestGroupMessage,
+            latestGroupMessageSender
+          )
+        : buildGroupSubtitle(group)
+      const time =
+        latestGroupMessage?.ctime ||
+        group.lastMessageTime ||
+        group.utime ||
+        group.ctime
+
+      return {
+        key: `group-${group.groupId}`,
+        conversationType: 'group',
+        groupId: group.groupId,
+        title: group.name,
+        avatar: group.avatar,
+        subtitle,
+        unreadCount: group.unreadCount,
+        time
+      }
+    })
 
     if (partner.partnerId) {
       const lastPartnerMessage = partner.messages[partner.messages.length - 1]
@@ -125,6 +231,10 @@ export default function ChatHome() {
 
     return filtered.sort((a, b) => (b.time || 0) - (a.time || 0))
   }, [
+    currentUserId,
+    currentUserName,
+    groupMembersByGroupId,
+    groupMessagesByGroupId,
     groups,
     keyword,
     partner.avatar,

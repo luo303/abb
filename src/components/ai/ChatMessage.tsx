@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useMappingHelper } from '@shopify/flash-list'
 import * as Clipboard from 'expo-clipboard'
 import Markdown from 'react-native-markdown-display'
 import ImageViewing from 'react-native-image-viewing'
@@ -33,6 +34,7 @@ function ChatMessage({
   onLayout
 }: ChatMessageProps) {
   const { showMessage } = useMessage()
+  const { getMappingKey } = useMappingHelper()
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -196,7 +198,7 @@ function ChatMessage({
           >
             {message.images.map((img, index) => (
               <TouchableOpacity
-                key={img}
+                key={getMappingKey(img, index)}
                 onPress={() => {
                   setCurrentImageIndex(index)
                   setIsPreviewVisible(true)

@@ -71,6 +71,15 @@ export default function GrowthAnalysis() {
     keyboardLiftBehavior: 'whenAtEnd'
   })
 
+  const maintainVisibleContentPosition = useMemo(
+    () => ({
+      autoscrollToBottomThreshold: 0.2,
+      animateAutoScrollToBottom: false,
+      startRenderingFromBottom: true
+    }),
+    []
+  )
+
   const updateSpeakingMessageId = useCallback((id: string | null) => {
     speakingMessageIdRef.current = id
     setSpeakingMessageId(id)
@@ -228,6 +237,17 @@ export default function GrowthAnalysis() {
 
   const keyExtractor = useCallback((item: AnalysisMessage) => item.id, [])
 
+  const getItemType = useCallback(
+    (item: AnalysisMessage) => {
+      if (isStreaming && item.id === 'growth-analysis-assistant') {
+        return 'assistant-streaming'
+      }
+
+      return item.role
+    },
+    [isStreaming]
+  )
+
   const renderMessageItem = useCallback(
     ({ item, index }: { item: AnalysisMessage; index: number }) => {
       return (
@@ -261,6 +281,7 @@ export default function GrowthAnalysis() {
             ref={listRef}
             data={messages}
             keyExtractor={keyExtractor}
+            getItemType={getItemType}
             renderItem={renderMessageItem}
             ItemSeparatorComponent={renderMessageSeparator}
             renderScrollComponent={renderChatScrollComponent}
@@ -270,10 +291,7 @@ export default function GrowthAnalysis() {
             onContentSizeChange={handleContentSizeChange}
             onLoad={handleListLoad}
             scrollEventThrottle={16}
-            maintainVisibleContentPosition={{
-              autoscrollToBottomThreshold: 0.2,
-              animateAutoScrollToBottom: false
-            }}
+            maintainVisibleContentPosition={maintainVisibleContentPosition}
             style={styles.flatList}
           />
 
