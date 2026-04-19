@@ -122,6 +122,16 @@ export default function DailyRecordScreen() {
 
   // 根据选中日期更新记录和统计
   useEffect(() => {
+    const normalizeInlineText = (value?: string) => {
+      if (!value) return ''
+      return value.replace(/\s+/g, ' ').trim()
+    }
+
+    const truncateText = (value: string, maxLength: number) => {
+      if (value.length <= maxLength) return value
+      return value.substring(0, maxLength) + '...'
+    }
+
     // 从 diaperList 中筛选出当前日期的记录
     const diaperRecords = diaperList
       .filter(item => {
@@ -134,7 +144,7 @@ export default function DailyRecordScreen() {
         if (item.diaper_type.id === 'dry') {
           // 如果是干爽类型，显示备注信息并适当省略，过滤掉换行符
           if (item.remark) {
-            const cleanRemark = item.remark.replace(/\n/g, ' ').trim()
+            const cleanRemark = normalizeInlineText(item.remark)
             description =
               cleanRemark.length > 10
                 ? cleanRemark.substring(0, 10) + '...'
@@ -199,47 +209,64 @@ export default function DailyRecordScreen() {
         return itemDate === selectedDate
       })
       .map(item => {
+        const feedType = item.feed_type as unknown as string
+
         // 根据喂养类型选择图标
         let icon = 'baby-bottle' // 默认图标
-        switch (item.feed_type) {
+        switch (feedType) {
           case 'formula':
             icon = 'baby-bottle' // 奶粉图标
             break
           case 'breast':
+          case 'breast_milk':
           case 'pump':
+          case 'pumped_milk':
             icon = 'water' // 母乳图标
             break
           case 'food':
+          case 'solid':
             icon = 'food' // 辅食图标
             break
         }
 
         // 将feed_type枚举值转换为中文名称
         let feedTypeName = '喂养'
-        switch (item.feed_type) {
+        switch (feedType) {
           case 'breast':
+          case 'breast_milk':
             feedTypeName = '母乳'
             break
           case 'pump':
+          case 'pumped_milk':
             feedTypeName = '泵奶'
             break
           case 'formula':
             feedTypeName = '奶粉'
             break
           case 'food':
+          case 'solid':
             feedTypeName = '辅食'
             break
         }
 
         // 构建副标题：喂养类型 + 时长或备注
-        let description = feedTypeName
-        if (item.duration) {
-          description += `  ${item.duration}分钟`
-        } else if (item.remark) {
-          description += `  ${item.remark.length > 10 ? item.remark.substring(0, 10) + '...' : item.remark}`
-        } else if (item.amount) {
-          description += `  ${item.amount}ml`
+        const normalizedRemark = normalizeInlineText(item.remark)
+        let extraText = ''
+        if (typeof item.amount === 'number' && !isNaN(item.amount)) {
+          extraText = `${item.amount}ml`
+        } else if (typeof item.duration === 'number' && !isNaN(item.duration)) {
+          extraText = `${item.duration}分钟`
+        } else if (normalizedRemark) {
+          extraText = normalizedRemark
         }
+
+        if ((feedType === 'food' || feedType === 'solid') && extraText) {
+          extraText = extraText.replace(/^#?\s*辅食\s*/i, '').trim()
+        }
+
+        const description = extraText
+          ? `${feedTypeName} · ${truncateText(extraText, 16)}`
+          : feedTypeName
 
         // 确保返回的对象包含所有必要字段
         return {
@@ -250,8 +277,7 @@ export default function DailyRecordScreen() {
           icon: icon,
           name: '喂养',
           title: '喂养',
-          description: description,
-          remark: item.remark // 添加备注字段，确保RecordCard组件能够显示
+          description: description
         }
       })
 

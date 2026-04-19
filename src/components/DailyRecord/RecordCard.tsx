@@ -77,11 +77,21 @@ export default function RecordCard({ item }: RecordCardProps) {
             </View>
             <View style={styles.recordTextInfo}>
               <Text style={styles.recordName}>{item.name || item.title}</Text>
-              <Text style={styles.recordDetails}>
+              <Text
+                style={styles.recordDetails}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {item.details || item.description}
               </Text>
               {item.remark && (
-                <Text style={styles.recordRemark}>{item.remark}</Text>
+                <Text
+                  style={styles.recordRemark}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.remark}
+                </Text>
               )}
             </View>
           </View>
@@ -156,18 +166,15 @@ const styles = StyleSheet.create({
   recordDetails: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4
+    marginTop: 4,
+    flexShrink: 1
   },
   recordRemark: {
     fontSize: 13,
     color: '#999',
     marginTop: 4,
     fontStyle: 'italic',
-    maxWidth: '100%',
-    overflow: 'hidden',
-    // @ts-ignore - textOverflow is a valid React Native style property
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    flexShrink: 1
   },
   recordTimeContainer: {
     flexDirection: 'row',
