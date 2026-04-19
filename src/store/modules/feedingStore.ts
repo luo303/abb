@@ -249,7 +249,7 @@ const feedingSlice = createSlice({
             side: action.meta.arg.data.side,
             duration: action.meta.arg.data.duration,
             remark: action.meta.arg.data.remark,
-            summary_text: action.meta.arg.data.summary_text
+            summary_text: action.meta.arg.data.remark
           }
         }
       })

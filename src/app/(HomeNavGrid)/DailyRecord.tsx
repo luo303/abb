@@ -30,7 +30,10 @@ import {
 } from '../../store/modules/diaperStore'
 import { fetchFeedingList } from '../../store/modules/feedingStore'
 import { fetchSleepList } from '../../store/modules/sleepStore'
-import { fetchDailyStatistics } from '../../store/modules/dailyStore'
+import {
+  fetchDailyStatistics,
+  setCurrentDate as setDailyCurrentDate
+} from '../../store/modules/dailyStore'
 import { RootState, AppDispatch } from '../../store'
 
 export default function DailyRecordScreen() {
@@ -71,6 +74,7 @@ export default function DailyRecordScreen() {
       const timer = setTimeout(() => {
         // 确保 diaper store 中的日期与 selectedDate 一致
         dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
+        dispatch(setDailyCurrentDate(selectedDate.replace(/-/g, '')))
         dispatch(fetchDiaperList({ babyId, date: selectedDate }))
         dispatch(fetchFeedingList({ babyId, date: selectedDate }))
         dispatch(fetchSleepList({ babyId, date: selectedDate }))
@@ -99,6 +103,7 @@ export default function DailyRecordScreen() {
         if (babyId) {
           // 确保 diaper store 中的日期与 selectedDate 一致
           dispatch(setCurrentDate(selectedDate.replace(/-/g, '')))
+          dispatch(setDailyCurrentDate(selectedDate.replace(/-/g, '')))
           // 只获取其他类型的记录，保留本地的喂养和睡眠记录
           // 不重新获取喂养记录，避免被mock数据覆盖
           // dispatch(fetchFeedingList({ babyId, date: selectedDate }))

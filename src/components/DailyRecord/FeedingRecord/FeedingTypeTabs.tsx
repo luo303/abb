@@ -1,6 +1,14 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform
+} from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Droplet, FoodTray } from '@zappicon/react-native'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface FeedingTypeTabsProps {
   selectedType: '奶粉' | '母乳' | '辅食'
@@ -11,106 +19,58 @@ export const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
   selectedType,
   onTypeChange
 }) => {
-  // 根据选中类型获取按钮颜色
-  const getButtonColor = (type: '奶粉' | '母乳' | '辅食'): string => {
-    switch (type) {
-      case '奶粉':
-        return '#f43f5e' // 亮红色（奶粉）
-      case '母乳':
-        return '#e11d48' // 深珊瑚粉
-      case '辅食':
-        return '#b91c1c' // 深红色（辅食）
-      default:
-        return '#333333'
+  const renderIcon = (type: '奶粉' | '母乳' | '辅食', active: boolean) => {
+    const color = active ? APP_COLORS.primary : APP_COLORS.textMuted
+    const size = 18
+
+    if (type === '母乳') {
+      return (
+        <Droplet
+          size={size}
+          color={color}
+          variant={active ? 'filled' : 'regular'}
+        />
+      )
     }
+
+    if (type === '辅食') {
+      return (
+        <FoodTray
+          size={size}
+          color={color}
+          variant={active ? 'filled' : 'regular'}
+        />
+      )
+    }
+
+    return <MaterialCommunityIcons name="baby-bottle" size={20} color={color} />
   }
 
-  // 获取当前选中类型的颜色
-  const currentColor = getButtonColor(selectedType)
+  const renderTab = (type: '奶粉' | '母乳' | '辅食') => {
+    const active = selectedType === type
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => onTypeChange(type)}
+        style={[styles.tab, active && styles.tabActive]}
+      >
+        <View style={styles.tabInner}>
+          {renderIcon(type, active)}
+          <Text
+            style={[styles.tabText, active && { color: APP_COLORS.primary }]}
+          >
+            {type}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    )
+  }
 
   return (
     <View style={styles.tabContainer}>
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          selectedType === '奶粉' && [
-            styles.activeTab,
-            { backgroundColor: currentColor, shadowColor: currentColor }
-          ]
-        ]}
-        onPress={() => onTypeChange('奶粉')}
-      >
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons
-            name="baby-bottle"
-            size={24}
-            color={selectedType === '奶粉' ? '#fff' : currentColor}
-          />
-        </View>
-        <Text
-          style={[
-            styles.tabText,
-            { color: currentColor },
-            selectedType === '奶粉' && [styles.activeTabText, { color: '#fff' }]
-          ]}
-        >
-          奶粉
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          selectedType === '母乳' && [
-            styles.activeTab,
-            { backgroundColor: currentColor, shadowColor: currentColor }
-          ]
-        ]}
-        onPress={() => onTypeChange('母乳')}
-      >
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons
-            name="water"
-            size={24}
-            color={selectedType === '母乳' ? '#fff' : currentColor}
-          />
-        </View>
-        <Text
-          style={[
-            styles.tabText,
-            { color: currentColor },
-            selectedType === '母乳' && [styles.activeTabText, { color: '#fff' }]
-          ]}
-        >
-          母乳
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          selectedType === '辅食' && [
-            styles.activeTab,
-            { backgroundColor: currentColor, shadowColor: currentColor }
-          ]
-        ]}
-        onPress={() => onTypeChange('辅食')}
-      >
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons
-            name="food"
-            size={24}
-            color={selectedType === '辅食' ? '#fff' : currentColor}
-          />
-        </View>
-        <Text
-          style={[
-            styles.tabText,
-            { color: currentColor },
-            selectedType === '辅食' && [styles.activeTabText, { color: '#fff' }]
-          ]}
-        >
-          辅食
-        </Text>
-      </TouchableOpacity>
+      {renderTab('辅食')}
+      {renderTab('母乳')}
+      {renderTab('奶粉')}
     </View>
   )
 }
@@ -118,48 +78,41 @@ export const FeedingTypeTabs: React.FC<FeedingTypeTabsProps> = ({
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderRadius: 24,
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4
+    backgroundColor: APP_COLORS.surfaceVariant,
+    padding: 4,
+    marginBottom: 8,
+    borderRadius: 16
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    borderRadius: 14,
+    minHeight: 44,
     alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    marginHorizontal: 4,
-    flexDirection: 'column',
     justifyContent: 'center'
   },
-  activeTab: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3
+  tabActive: {
+    backgroundColor: APP_COLORS.surface,
+    ...(Platform.select({
+      ios: {
+        shadowColor: APP_COLORS.shadow,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10
+      },
+      android: {
+        elevation: 2
+      }
+    }) as any)
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
   },
   tabText: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4
-  },
-  activeTabText: {
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-
-  iconContainer: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center'
+    color: APP_COLORS.textMuted,
+    fontWeight: '600'
   }
 })
 

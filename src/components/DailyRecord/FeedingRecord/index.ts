@@ -1,4 +1,6 @@
 export { default as FeedingTypeTabs } from './FeedingTypeTabs'
 export { default as AmountInput } from './AmountInput'
+export { default as DurationInput } from './DurationInput'
+export { default as FoodQuickOptions } from './FoodQuickOptions'
 export { default as TimePicker } from './TimePicker'
 export { default as RemarkInput } from './RemarkInput'

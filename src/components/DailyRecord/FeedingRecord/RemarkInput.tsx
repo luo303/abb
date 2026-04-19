@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView
 } from 'react-native'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface RemarkInputProps {
   value: string
@@ -31,46 +32,19 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
     { text: '睡着了' }
   ]
 
-  // 根据类型获取颜色
-  const getTagColor = () => {
-    switch (type) {
-      case '奶粉':
-        return '#f43f5e'
-      case '母乳':
-        return '#e11d48'
-      case '辅食':
-        return '#b91c1c'
-      default:
-        return '#e11d48'
-    }
-  }
-
-  // 根据类型获取背景颜色
-  const getBackgroundColor = () => {
-    switch (type) {
-      case '奶粉':
-        return '#fff0f0'
-      case '母乳':
-        return '#fdf3f5'
-      case '辅食':
-        return '#ffe6e6'
-      default:
-        return '#fdf3f5'
-    }
-  }
-
   // 处理贴纸点击
   const handleStickerPress = (stickerText: string) => {
     const newRemark = value ? `${value} ${stickerText}` : stickerText
     onChange(newRemark)
   }
 
-  const tagColor = getTagColor()
-  const backgroundColor = getBackgroundColor()
+  const tagColor = APP_COLORS.primary
 
   return (
     <View style={styles.remarkContainer}>
-      <Text style={styles.remarkLabel}>{label}</Text>
+      <Text style={[styles.remarkLabel, { color: APP_COLORS.text }]}>
+        {label}
+      </Text>
 
       {/* 标签行 */}
       <ScrollView
@@ -83,7 +57,10 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
             key={sticker.text}
             style={[
               styles.tag,
-              { borderColor: tagColor, backgroundColor: backgroundColor }
+              {
+                borderColor: tagColor,
+                backgroundColor: APP_COLORS.surfaceVariant
+              }
             ]}
             onPress={() => handleStickerPress(sticker.text)}
           >
@@ -97,13 +74,15 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
       <TextInput
         style={[
           styles.remarkInput,
-          { backgroundColor: backgroundColor, color: tagColor }
+          { backgroundColor: APP_COLORS.surfaceVariant, color: APP_COLORS.text }
         ]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
+        placeholderTextColor={APP_COLORS.textMuted}
         multiline
         textAlignVertical="top"
+        selectionColor={tagColor}
       />
     </View>
   )
@@ -111,14 +90,14 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
 
 const styles = StyleSheet.create({
   remarkContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: APP_COLORS.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0
   },
   remarkLabel: {
     fontSize: 14,
-    color: '#333',
+    color: APP_COLORS.text,
     marginBottom: 8
   },
   stickerContainer: {
@@ -130,7 +109,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: APP_COLORS.surfaceVariant,
     borderRadius: 20,
     borderWidth: 1
   },
@@ -139,12 +118,14 @@ const styles = StyleSheet.create({
   },
   remarkInput: {
     fontSize: 14,
-    color: '#333',
+    color: APP_COLORS.text,
     minHeight: 100,
     textAlignVertical: 'top',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: APP_COLORS.surfaceVariant,
     padding: 12,
-    borderRadius: 12
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant
   }
 })
 

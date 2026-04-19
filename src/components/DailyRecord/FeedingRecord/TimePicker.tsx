@@ -9,6 +9,7 @@ import {
 import DateTimePicker, {
   DateTimePickerAndroid
 } from '@react-native-community/datetimepicker'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface TimePickerProps {
   value: Date
@@ -23,36 +24,6 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   label,
   type = '母乳'
 }) => {
-  // 根据类型获取颜色
-  const getColor = (type: '奶粉' | '母乳' | '辅食') => {
-    switch (type) {
-      case '奶粉':
-        return '#f43f5e'
-      case '母乳':
-        return '#e11d48'
-      case '辅食':
-        return '#b91c1c'
-      default:
-        return '#e11d48'
-    }
-  }
-
-  // 根据类型获取背景颜色
-  const getBackgroundColor = (type: '奶粉' | '母乳' | '辅食') => {
-    switch (type) {
-      case '奶粉':
-        return '#fff0f0'
-      case '母乳':
-        return '#fdf3f5'
-      case '辅食':
-        return '#ffe6e6'
-      default:
-        return '#fdf3f5'
-    }
-  }
-
-  const color = getColor(type)
-  const backgroundColor = getBackgroundColor(type)
   // 确保 value 是一个有效的 Date 对象
   const validDate =
     value instanceof Date && !isNaN(value.getTime()) ? value : new Date()
@@ -92,18 +63,15 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.timeLabel, { color: color }]}>{label}</Text>
+      <Text style={styles.timeLabel}>{label}</Text>
       {Platform.OS === 'android' ? (
         <>
           <TouchableOpacity
-            style={[
-              styles.timeButton,
-              { borderColor: color, backgroundColor: backgroundColor }
-            ]}
+            style={styles.timeButton}
             onPress={openAndroidPicker}
             activeOpacity={0.8}
           >
-            <Text style={[styles.timeButtonText, { color: color }]}>
+            <Text style={styles.timeButtonText}>
               {validDate.toLocaleString()}
             </Text>
           </TouchableOpacity>
@@ -114,7 +82,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           mode="datetime"
           display="default"
           onChange={handleDateChange}
-          textColor={color}
+          textColor={APP_COLORS.text}
         />
       )}
     </View>
@@ -128,7 +96,7 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: 14,
-    color: '#333',
+    color: APP_COLORS.text,
     marginBottom: 8
   },
   timeButton: {
@@ -136,12 +104,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff'
+    borderColor: APP_COLORS.outlineVariant,
+    backgroundColor: APP_COLORS.surfaceVariant
   },
   timeButtonText: {
     fontSize: 14,
-    color: '#111827'
+    color: APP_COLORS.text,
+    fontWeight: '600'
   }
 })
 
