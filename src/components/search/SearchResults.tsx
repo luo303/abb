@@ -17,14 +17,14 @@ const getHashCode = (str: string): string => {
 
 interface SearchResultsProps {
   results: PostItem[]
-  loading: boolean
+  loadingMore: boolean
   hasMore: boolean
   onLoadMore: () => void
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
   results,
-  loading,
+  loadingMore,
   hasMore,
   onLoadMore
 }) => {
@@ -33,24 +33,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   }, [])
 
   const renderFooter = useCallback(() => {
-    if (!loading) return null
+    if (!loadingMore) return null
     return (
       <View style={styles.footer}>
         <ActivityIndicator size="small" color="#f43f5e" />
         <Text style={styles.footerText}>正在为您搜索相关内容...</Text>
       </View>
     )
-  }, [loading])
-
-  const renderEmpty = useCallback(() => {
-    if (loading) return null
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>未搜索到对应帖子</Text>
-        <Text style={styles.emptySubText}>试试其他关键词</Text>
-      </View>
-    )
-  }, [loading])
+  }, [loadingMore])
 
   const keyExtractor = useCallback((item: PostItem) => {
     if (item.post_id) return `post-${item.post_id}`
@@ -59,13 +49,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   }, [])
 
   const contentContainerStyle = useMemo(() => {
-    return results.length === 0 ? styles.emptyContainer : styles.list
-  }, [results.length])
+    return styles.list
+  }, [])
 
   const handleEndReached = useCallback(() => {
-    if (!hasMore) return
+    if (!hasMore || loadingMore) return
     onLoadMore()
-  }, [hasMore, onLoadMore])
+  }, [hasMore, loadingMore, onLoadMore])
 
   return (
     <FlashList
@@ -73,7 +63,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       contentContainerStyle={contentContainerStyle}
-      ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.1}
@@ -84,11 +73,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
   },
   item: {
     backgroundColor: '#fff',
@@ -139,22 +123,6 @@ const styles = StyleSheet.create({
   footerText: {
     marginLeft: 10,
     fontSize: 14,
-    color: '#999'
-  },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10
-  },
-  emptySubText: {
-    fontSize: 16,
     color: '#999'
   }
 })
