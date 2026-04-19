@@ -8,7 +8,14 @@ import {
   View
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import { Ionicons } from '@expo/vector-icons'
+import {
+  Plus,
+  Check,
+  Camera,
+  UserPlus,
+  AngleUpSmall,
+  AngleDownSmall
+} from '@zappicon/react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
@@ -188,7 +195,7 @@ export default function CreateGroup() {
             <ActivityIndicator color="#ffffff" size="small" />
           ) : (
             <>
-              <Ionicons name="add" size={15} color="#ffffff" />
+              <Plus size={15} color="#ffffff" variant="regular" />
               <Text style={styles.headerActionText}>创建</Text>
             </>
           )}
@@ -214,7 +221,7 @@ export default function CreateGroup() {
             {item.label}
           </Text>
           {selected ? (
-            <Ionicons name="checkmark" size={18} color="#111111" />
+            <Check size={18} color="#111111" variant="regular" />
           ) : null}
         </View>
       )
@@ -271,7 +278,7 @@ export default function CreateGroup() {
                       />
                     ) : (
                       <View style={styles.avatarEmptyState}>
-                        <Ionicons name="add" size={38} color="#111111" />
+                        <Plus size={38} color="#111111" variant="regular" />
                       </View>
                     )}
 
@@ -282,11 +289,7 @@ export default function CreateGroup() {
                     ) : null}
 
                     <View style={styles.avatarBadge}>
-                      <Ionicons
-                        name="camera-outline"
-                        size={18}
-                        color="#ffffff"
-                      />
+                      <Camera size={18} color="#ffffff" variant="regular" />
                     </View>
                   </View>
                 </View>
@@ -298,7 +301,7 @@ export default function CreateGroup() {
 
                 <View style={styles.previewMetaRow}>
                   <View style={styles.previewMetaChip}>
-                    <Ionicons name="people-outline" size={14} color="#4c4641" />
+                    <UserPlus size={14} color="#4c4641" variant="regular" />
                     <Text style={styles.previewMetaText}>
                       {memberLimit} 人上限
                     </Text>
@@ -390,21 +393,29 @@ export default function CreateGroup() {
                       renderItem={renderLimitItem}
                       renderLeftIcon={() => (
                         <View style={styles.dropdownLeft}>
-                          <Ionicons
+                          <UserPlus
                             color="#111111"
-                            name="people-outline"
                             size={18}
+                            variant="regular"
                           />
                           <Text style={styles.dropdownLeftText}>群规模</Text>
                         </View>
                       )}
-                      renderRightIcon={() => (
-                        <Ionicons
-                          color="#7d7670"
-                          name={limitFocused ? 'chevron-up' : 'chevron-down'}
-                          size={18}
-                        />
-                      )}
+                      renderRightIcon={() =>
+                        limitFocused ? (
+                          <AngleUpSmall
+                            color="#7d7670"
+                            size={18}
+                            variant="regular"
+                          />
+                        ) : (
+                          <AngleDownSmall
+                            color="#7d7670"
+                            size={18}
+                            variant="regular"
+                          />
+                        )
+                      }
                       selectedTextStyle={styles.dropdownSelectedText}
                       value={memberLimit}
                       valueField="value"

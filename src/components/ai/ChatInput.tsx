@@ -10,10 +10,16 @@ import {
   Text
 } from 'react-native'
 import { memo, useCallback, useMemo, useState } from 'react'
-import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import ImageViewing from 'react-native-image-viewing'
+import {
+  Plus,
+  ArrowUpSmall,
+  Xmark,
+  CheckCircle,
+  ExclamationCircle
+} from '@zappicon/react-native'
 
 import { uploadFile } from '../../api/upload'
 import { useMessage } from '../Message'
@@ -191,7 +197,11 @@ function ChatInput({
                   )}
                   {img.status === 'error' && (
                     <View style={styles.errorOverlay}>
-                      <Ionicons name="alert-circle" size={20} color="#ff4444" />
+                      <ExclamationCircle
+                        size={20}
+                        color="#ff4444"
+                        variant="filled"
+                      />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -200,11 +210,7 @@ function ChatInput({
                   onPress={() => handleRemoveImage(index)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color="rgba(0,0,0,0.6)"
-                  />
+                  <Xmark size={20} color="rgba(0,0,0,0.6)" variant="regular" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -230,10 +236,10 @@ function ChatInput({
             activeOpacity={0.85}
             disabled={!onTogglePrivateKb}
           >
-            <Ionicons
-              name="shield-checkmark-outline"
+            <CheckCircle
               size={18}
               color={privateKbEnabled ? '#1890ff' : '#111'}
+              variant={privateKbEnabled ? 'filled' : 'regular'}
             />
             <Text
               style={[
@@ -255,10 +261,10 @@ function ChatInput({
               activeOpacity={0.85}
               disabled={isPickDisabled}
             >
-              <Ionicons
-                name="add"
+              <Plus
                 size={28}
                 color={isPickDisabled ? '#CFD8DC' : '#111'}
+                variant="regular"
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -270,10 +276,10 @@ function ChatInput({
               disabled={isSendDisabled}
               activeOpacity={0.85}
             >
-              <Ionicons
-                name="arrow-up"
+              <ArrowUpSmall
                 size={20}
                 color={isSendDisabled ? '#CFD8DC' : '#fff'}
+                variant="regular"
               />
             </TouchableOpacity>
           </View>

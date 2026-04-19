@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react'
 import { View, Platform, Dimensions } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { FontAwesome, AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
 import { LinearGradient } from 'expo-linear-gradient'
+import { House, Message, AddressCard, ChartLine } from '@zappicon/react-native'
+import { AntDesign } from '@expo/vector-icons'
 
 import HomeScreen from './HomeDrawer'
 import GrowthRecordScreen from './growthRecord'
@@ -159,7 +160,7 @@ export default function TabsLayout() {
           title: '首页',
           headerTitle: '首页',
           tabBarIcon: ({ color }) => (
-            <FontAwesome name="home" size={24} color={color} />
+            <House size={24} color={color} variant="filled" />
           )
         }}
       />
@@ -170,7 +171,7 @@ export default function TabsLayout() {
           title: '成长记录',
           headerTitle: '成长记录',
           tabBarIcon: ({ color }) => (
-            <FontAwesome name="child" size={24} color={color} />
+            <ChartLine size={24} color={color} variant="filled" />
           )
         }}
       />
@@ -241,7 +242,7 @@ export default function TabsLayout() {
             color: '#fff'
           },
           tabBarIcon: ({ color }) => (
-            <AntDesign name="message" size={24} color={color} />
+            <Message size={24} color={color} variant="filled" />
           )
         }}
       />
@@ -252,7 +253,7 @@ export default function TabsLayout() {
           title: '我的',
           headerTitle: '我的',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="user" size={24} color={color} />
+            <AddressCard size={24} color={color} variant="filled" />
           )
         }}
       />

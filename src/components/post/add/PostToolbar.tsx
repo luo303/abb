@@ -8,9 +8,16 @@ import {
   ScrollView,
   ActivityIndicator
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Switch, TouchableRipple } from 'react-native-paper'
+import {
+  TagSimple,
+  AngleRightSmall,
+  Xmark,
+  Eye,
+  EyeSlash,
+  Sun
+} from '@zappicon/react-native'
 
 import { getPostTags } from '@/api/post'
 
@@ -137,7 +144,7 @@ export default function PostToolbar({
       >
         <>
           <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
-            <Ionicons name="pricetag" size={20} color="#f43f5e" />
+            <TagSimple size={20} color="#f43f5e" variant="regular" />
           </View>
           <Text style={styles.toolText}>添加话题</Text>
           <View style={styles.tagsContainer}>
@@ -154,10 +161,10 @@ export default function PostToolbar({
               <Text style={styles.tag}>+{selectedTagIds.length - 2}</Text>
             ) : null}
           </View>
-          <Ionicons
-            name="chevron-forward"
+          <AngleRightSmall
             size={16}
             color="#ccc"
+            variant="regular"
             style={styles.arrow}
           />
         </>
@@ -178,7 +185,7 @@ export default function PostToolbar({
                 onPress={() => setShowTagsModal(false)}
                 style={styles.iconButton}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Xmark size={24} color="#333" variant="regular" />
               </TouchableRipple>
             </View>
 
@@ -243,11 +250,11 @@ export default function PostToolbar({
       >
         <>
           <View style={[styles.iconBg, { backgroundColor: '#fff1f2' }]}>
-            <Ionicons
-              name={isPublic ? 'eye' : 'eye-off'}
-              size={20}
-              color="#f43f5e"
-            />
+            {isPublic ? (
+              <Eye size={20} color="#f43f5e" variant="regular" />
+            ) : (
+              <EyeSlash size={20} color="#f43f5e" variant="regular" />
+            )}
           </View>
           <Text style={styles.toolText}>可见范围</Text>
           <View style={styles.switchContainer}>
@@ -268,7 +275,7 @@ export default function PostToolbar({
 
       <View style={styles.tipsCard}>
         <View style={styles.tipsHeader}>
-          <Ionicons name="bulb-outline" size={18} color="#f59e0b" />
+          <Sun size={18} color="#f59e0b" variant="regular" />
           <Text style={styles.tipsTitle}>优质帖子小贴士</Text>
         </View>
         <Text style={styles.tipsContent}>

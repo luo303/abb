@@ -1,6 +1,6 @@
 import React from 'react'
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Feather, Octicons } from '@expo/vector-icons'
+import { ThumbtackSlanted, Trash } from '@zappicon/react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 interface Props {
   visible: boolean
@@ -50,10 +50,10 @@ export default function HistoryActionModal({
             activeOpacity={0.7}
             onPress={handlePinPress}
           >
-            <Octicons
-              name="pin"
+            <ThumbtackSlanted
               size={20}
               color={isPinned ? '#1890ff' : '#fff'}
+              variant={isPinned ? 'filled' : 'regular'}
               style={styles.icon}
             />
             <Text style={[styles.actionText, isPinned && { color: '#1890ff' }]}>
@@ -66,7 +66,12 @@ export default function HistoryActionModal({
             activeOpacity={0.7}
             onPress={handleDeletePress}
           >
-            <Feather name="trash-2" size={20} color="red" style={styles.icon} />
+            <Trash
+              size={20}
+              color="red"
+              variant="regular"
+              style={styles.icon}
+            />
             <Text style={[styles.actionText, { color: 'red' }]}>删除</Text>
           </TouchableOpacity>
 

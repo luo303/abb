@@ -1,11 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import {
-  MaterialCommunityIcons,
-  MaterialIcons,
-  Ionicons
-} from '@expo/vector-icons'
+import { ChartLine, Pen, Flask, BookSimple } from '@zappicon/react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NavigationProps } from '../../types/navigation'
 
@@ -20,30 +16,26 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
       style={styles.navContainer}
     >
       <NavItem
-        icon="chart-line"
+        icon="ChartLine"
         label="成长曲线"
-        library="MaterialCommunityIcons"
-        color="#FF8A65" // 暖橙色
+        color="#FF8A65"
         onPress={() => navigation.navigate('GrowthCurve')}
       />
       <NavItem
-        icon="pencil"
+        icon="Pen"
         label="日常记录"
-        library="MaterialCommunityIcons"
-        color="#4FC3F7" // 浅蓝色
+        color="#4FC3F7"
         onPress={() => navigation.navigate('DailyRecord')}
       />
       <NavItem
-        icon="needle"
+        icon="Flask"
         label="疫苗接种"
-        library="MaterialCommunityIcons"
-        color="#81C784" // 浅绿色
+        color="#81C784"
         onPress={() => navigation.navigate('VaccineRecord')}
       />
       <NavItem
-        icon="book-outline"
+        icon="BookSimple"
         label="大事记"
-        library="Ionicons"
         color="#F59E0B"
         onPress={() => navigation.navigate('AddMilestone')}
       />
@@ -53,22 +45,34 @@ const HomeNavGrid = React.memo(function HomeNavGrid() {
 
 export default HomeNavGrid
 
-const NavItem = ({ icon, label, library, color, onPress }: any) => {
-  const IconComponent =
-    library === 'MaterialIcons'
-      ? MaterialIcons
-      : library === 'Ionicons'
-        ? Ionicons
-        : MaterialCommunityIcons
+const NavItem = ({ icon, label, color, onPress }: any) => {
+  const renderIcon = () => {
+    const iconProps = {
+      size: 26,
+      color: '#f43f5e',
+      variant: 'regular' as const
+    }
+    switch (icon) {
+      case 'ChartLine':
+        return <ChartLine {...iconProps} />
+      case 'Pen':
+        return <Pen {...iconProps} />
+      case 'Flask':
+        return <Flask {...iconProps} />
+      case 'BookSimple':
+        return <BookSimple {...iconProps} />
+      default:
+        return null
+    }
+  }
+
   return (
     <TouchableOpacity
       style={styles.navItem}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={styles.iconCircle}>
-        <IconComponent name={icon} size={26} color="#f43f5e" />
-      </View>
+      <View style={styles.iconCircle}>{renderIcon()}</View>
       <Text style={styles.navLabel}>{label}</Text>
     </TouchableOpacity>
   )

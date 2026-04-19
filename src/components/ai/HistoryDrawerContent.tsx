@@ -3,8 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
-import { AntDesign, Ionicons, SimpleLineIcons } from '@expo/vector-icons'
 import { useSelector, useDispatch } from 'react-redux'
+import {
+  Message,
+  ThumbtackSlanted,
+  Plus,
+  CloudArrowUp
+} from '@zappicon/react-native'
 import HistoryActionModal from './HistoryActionModal'
 import { RootState } from '../../store'
 import {
@@ -95,16 +100,16 @@ export default function HistoryDrawerContent(
           onPress={() => handleItemPress(item)}
         >
           <View style={styles.iconContainer}>
-            <AntDesign
-              name="message"
+            <Message
               size={16}
               color={isActive ? '#1890ff' : '#666'}
+              variant={isActive ? 'filled' : 'regular'}
             />
             {item.isPinned && (
-              <AntDesign
-                name="pushpin"
+              <ThumbtackSlanted
                 size={12}
                 color="#1890ff"
+                variant="filled"
                 style={styles.pinIcon}
               />
             )}
@@ -135,7 +140,7 @@ export default function HistoryDrawerContent(
           onPress={handleNewChat}
         >
           <View style={styles.actionIconContainer}>
-            <SimpleLineIcons name="magnifier-add" size={16} color="black" />
+            <Plus size={16} color="black" variant="regular" />
           </View>
           <Text style={styles.actionText}>新建会话</Text>
         </TouchableOpacity>
@@ -148,7 +153,7 @@ export default function HistoryDrawerContent(
           }}
         >
           <View style={styles.actionIconContainer}>
-            <Ionicons name="cloud-upload-outline" size={16} color="black" />
+            <CloudArrowUp size={16} color="black" variant="regular" />
           </View>
           <Text style={styles.actionText}>上传知识库</Text>
         </TouchableOpacity>

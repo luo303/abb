@@ -1,6 +1,6 @@
 import React from 'react'
 import { Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Droplet, CheckCircle } from '@zappicon/react-native'
 import { DiaperType, Option } from '../../../types/diaper'
 
 interface DiaperTypeSelectorProps {
@@ -16,22 +16,22 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
     {
       type: { id: DiaperType.PEE, name: '嘘嘘' },
       label: '嘘嘘',
-      icon: 'water'
+      IconComponent: Droplet
     },
     {
       type: { id: DiaperType.POOP, name: '便便' },
       label: '便便',
-      icon: 'emoticon-poop'
+      IconComponent: Droplet
     },
     {
       type: { id: DiaperType.BOTH, name: '嘘嘘+便便' },
       label: '嘘嘘+便便',
-      icon: 'opacity'
+      IconComponent: Droplet
     },
     {
       type: { id: DiaperType.DRY, name: '干爽' },
       label: '干爽',
-      icon: 'shield-check-outline'
+      IconComponent: CheckCircle
     }
   ]
 
@@ -41,31 +41,28 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {types.map(item => (
-        <TouchableOpacity
-          key={item.type.id}
-          style={[
-            styles.typeButton,
-            selectedType.id === item.type.id && styles.selectedTypeButton
-          ]}
-          onPress={() => onSelectType(item.type)}
-        >
-          <MaterialCommunityIcons
-            name={item.icon as any}
-            size={24}
-            color={selectedType.id === item.type.id ? '#fff' : '#f43f5e'}
-            style={styles.typeIcon}
-          />
-          <Text
-            style={[
-              styles.typeLabel,
-              selectedType.id === item.type.id && styles.selectedTypeLabel
-            ]}
+      {types.map(item => {
+        const isSelected = selectedType.id === item.type.id
+        return (
+          <TouchableOpacity
+            key={item.type.id}
+            style={[styles.typeButton, isSelected && styles.selectedTypeButton]}
+            onPress={() => onSelectType(item.type)}
           >
-            {item.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <item.IconComponent
+              size={24}
+              color={isSelected ? '#fff' : '#f43f5e'}
+              variant={isSelected ? 'filled' : 'regular'}
+              style={styles.typeIcon}
+            />
+            <Text
+              style={[styles.typeLabel, isSelected && styles.selectedTypeLabel]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
     </ScrollView>
   )
 }

@@ -15,7 +15,7 @@ import {
   TextInput,
   View
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { Search } from '@zappicon/react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { v4 as uuidv4 } from 'uuid'
@@ -241,7 +241,7 @@ export default function JoinGroup() {
     return (
       <View style={styles.headerContent}>
         <View style={styles.searchWrap}>
-          <Ionicons name="search-outline" size={18} color="#8C8C8C" />
+          <Search size={18} color="#8C8C8C" variant="regular" />
           <TextInput
             autoCapitalize="none"
             autoCorrect={false}

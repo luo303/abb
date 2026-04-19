@@ -9,6 +9,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import dayjs from 'dayjs'
+import { AngleRightSmall } from '@zappicon/react-native'
 import { RecordItem } from '../../types/recordTypes'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -86,11 +87,7 @@ export default function RecordCard({ item }: RecordCardProps) {
           </View>
           <View style={styles.recordTimeContainer}>
             <Text style={styles.recordTimeText}>{formatTime(item.time)}</Text>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color="#f43f5e"
-            />
+            <AngleRightSmall size={20} color="#f43f5e" variant="regular" />
           </View>
         </View>
       </LinearGradient>
