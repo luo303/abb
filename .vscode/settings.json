@@ -58,5 +58,6 @@
   "commitlint.enable": true,
   "commitlint.configPath": "./commitlint.config.js",
   "npm.packageManager": "pnpm",
-  "Codegeex.RepoIndex": true
+  "Codegeex.RepoIndex": true,
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

@@ -4,7 +4,7 @@
     "slug": "Love-Baby",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/icon.png",
+    "icon": "./src/assets/app_icon.png",
     "userInterfaceStyle": "light",
     "scheme": "abb",
     "splash": {
@@ -26,8 +26,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/icon.png",
-        "backgroundColor": "#ff3131"
+        "foregroundImage": "./src/assets/icon_new.png",
+        "backgroundImage": "./src/assets/bg_new.png",
+        "monochromeImage": "./src/assets/monochrome_new.png"
       },
       "splash": {
         "image": "./src/assets/icon.png",
@@ -45,7 +46,7 @@
       "package": "com.lovebaby.app"
     },
     "web": {
-      "favicon": "./src/assets/icon.png"
+      "favicon": "./src/assets/app_icon.png"
     },
     "plugins": [
       "expo-router",
