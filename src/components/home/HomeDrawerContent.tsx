@@ -50,6 +50,15 @@ const QUICK_LINKS = [
     )
   },
   {
+    key: 'growthCurve',
+    label: '成长曲线',
+    scope: 'root' as ShortcutScope,
+    target: 'GrowthCurve',
+    icon: ({ size, color }: { size: number; color: string }) => (
+      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
+    )
+  },
+  {
     key: 'milestone',
     label: '大事记',
     scope: 'root' as ShortcutScope,
