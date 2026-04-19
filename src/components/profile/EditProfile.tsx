@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { Button } from 'react-native-paper'
 import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
+import GenderRadioRow, { GenderValue } from '../common/GenderRadioRow'
 
 import {
   updateProfileReq,
@@ -45,7 +46,7 @@ export default function EditProfile() {
   const [phone, setPhone] = useState('')
   const [province, setProvince] = useState('')
   const [city, setCity] = useState('')
-  const [gender, setGender] = useState<'male' | 'female'>('female')
+  const [gender, setGender] = useState<GenderValue>('female')
   const [birthday, setBirthday] = useState<Date | null>(null)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -230,45 +231,11 @@ export default function EditProfile() {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>性别</Text>
-          <View style={styles.genderContainer}>
-            <Button
-              mode={gender === 'male' ? 'contained' : 'outlined'}
-              style={[
-                styles.genderButton,
-                gender === 'male' && styles.genderButtonActive
-              ]}
-              contentStyle={styles.genderButtonContent}
-              labelStyle={[
-                styles.genderButtonLabel,
-                gender === 'male' && styles.genderTextActive
-              ]}
-              onPress={() => setGender('male')}
-              buttonColor="#87CEEB"
-              textColor={gender === 'male' ? '#fff' : '#666'}
-              uppercase={false}
-            >
-              男
-            </Button>
-
-            <Button
-              mode={gender === 'female' ? 'contained' : 'outlined'}
-              style={[
-                styles.genderButton,
-                gender === 'female' && styles.genderButtonActiveFemale
-              ]}
-              contentStyle={styles.genderButtonContent}
-              labelStyle={[
-                styles.genderButtonLabel,
-                gender === 'female' && styles.genderTextActive
-              ]}
-              onPress={() => setGender('female')}
-              buttonColor="#FF69B4"
-              textColor={gender === 'female' ? '#fff' : '#666'}
-              uppercase={false}
-            >
-              女
-            </Button>
-          </View>
+          <GenderRadioRow
+            disabled={loading}
+            onChange={setGender}
+            value={gender}
+          />
         </View>
 
         <Button
@@ -335,31 +302,6 @@ const styles = StyleSheet.create({
   dateButtonLabel: {
     fontSize: 14,
     color: '#333'
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    gap: 16
-  },
-  genderButton: {
-    flex: 1,
-    borderRadius: 8
-  },
-  genderButtonContent: {
-    minHeight: 48
-  },
-  genderButtonLabel: {
-    fontSize: 14,
-    color: '#666'
-  },
-  genderButtonActive: {
-    backgroundColor: '#87CEEB'
-  },
-  genderButtonActiveFemale: {
-    backgroundColor: '#FF69B4'
-  },
-  genderTextActive: {
-    color: '#fff',
-    fontWeight: '600'
   },
   submitButtonContainer: {
     marginTop: 20,

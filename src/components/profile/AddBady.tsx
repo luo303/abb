@@ -23,6 +23,7 @@ import {
 import { RootState } from '../../store'
 import { useMessage } from '../Message'
 import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
+import GenderRadioRow, { GenderValue } from '../common/GenderRadioRow'
 import PaperAvatar from '../common/PaperAvatar'
 
 export default function AddBabyScreen() {
@@ -32,7 +33,7 @@ export default function AddBabyScreen() {
   const { loading } = useSelector((state: RootState) => state.baby)
 
   const [name, setName] = useState('')
-  const [gender, setGender] = useState('female')
+  const [gender, setGender] = useState<GenderValue>('female')
   const [birthday, setBirthday] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [avatar, setAvatar] = useState('')
@@ -154,44 +155,15 @@ export default function AddBabyScreen() {
           <Text style={styles.label}>
             性别 <Text style={styles.required}>*</Text>
           </Text>
-          <View style={styles.genderContainer}>
-            <Button
-              mode={gender === 'male' ? 'contained' : 'outlined'}
-              onPress={() => setGender('male')}
-              style={[
-                styles.genderButton,
-                gender === 'male' && styles.genderButtonActive
-              ]}
-              contentStyle={styles.genderButtonContent}
-              labelStyle={[
-                styles.genderButtonLabel,
-                gender === 'male' && styles.genderTextActive
-              ]}
-              buttonColor="#87CEEB"
-              textColor={gender === 'male' ? '#fff' : '#666'}
-              uppercase={false}
-            >
-              男宝宝
-            </Button>
-            <Button
-              mode={gender === 'female' ? 'contained' : 'outlined'}
-              onPress={() => setGender('female')}
-              style={[
-                styles.genderButton,
-                gender === 'female' && styles.genderButtonActiveFemale
-              ]}
-              contentStyle={styles.genderButtonContent}
-              labelStyle={[
-                styles.genderButtonLabel,
-                gender === 'female' && styles.genderTextActive
-              ]}
-              buttonColor="#FF69B4"
-              textColor={gender === 'female' ? '#fff' : '#666'}
-              uppercase={false}
-            >
-              女宝宝
-            </Button>
-          </View>
+          <GenderRadioRow
+            disabled={loading}
+            onChange={setGender}
+            options={[
+              { label: '男宝宝', value: 'male' },
+              { label: '女宝宝', value: 'female' }
+            ]}
+            value={gender}
+          />
         </View>
 
         <View style={styles.formGroup}>
@@ -361,31 +333,6 @@ const styles = StyleSheet.create({
   },
   textArea: {
     height: 80
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    gap: 16
-  },
-  genderButton: {
-    flex: 1,
-    borderRadius: 8
-  },
-  genderButtonContent: {
-    minHeight: 48
-  },
-  genderButtonLabel: {
-    fontSize: 14,
-    color: '#666'
-  },
-  genderButtonActive: {
-    backgroundColor: '#87CEEB'
-  },
-  genderButtonActiveFemale: {
-    backgroundColor: '#FF69B4'
-  },
-  genderTextActive: {
-    color: '#fff',
-    fontWeight: '600'
   },
   dateButton: {
     borderRadius: 8,

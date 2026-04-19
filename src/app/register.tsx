@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import AuthBackground from '../components/common/AuthBackground'
 import AppKeyboardAvoidingView from '../components/common/AppKeyboardAvoidingView'
+import GenderRadioRow from '../components/common/GenderRadioRow'
 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
@@ -265,50 +266,13 @@ export default function RegisterScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>性别</Text>
-                <View style={styles.genderContainer}>
-                  <Button
-                    mode={formData.gender === 'male' ? 'contained' : 'outlined'}
-                    style={[
-                      styles.genderButton,
-                      formData.gender === 'male' && styles.genderButtonActive
-                    ]}
-                    contentStyle={styles.genderButtonContent}
-                    labelStyle={[
-                      styles.genderButtonLabel,
-                      formData.gender === 'male' && styles.genderTextActive
-                    ]}
-                    onPress={() => handleInputChange('gender', 'male')}
-                    disabled={isLoading}
-                    buttonColor={THEME_PRIMARY}
-                    textColor={formData.gender === 'male' ? '#fff' : '#666'}
-                    uppercase={false}
-                  >
-                    男
-                  </Button>
-
-                  <Button
-                    mode={
-                      formData.gender === 'female' ? 'contained' : 'outlined'
-                    }
-                    style={[
-                      styles.genderButton,
-                      formData.gender === 'female' &&
-                        styles.genderButtonActiveFemale
-                    ]}
-                    contentStyle={styles.genderButtonContent}
-                    labelStyle={[
-                      styles.genderButtonLabel,
-                      formData.gender === 'female' && styles.genderTextActive
-                    ]}
-                    onPress={() => handleInputChange('gender', 'female')}
-                    disabled={isLoading}
-                    buttonColor={THEME_PRIMARY_DARK}
-                    textColor={formData.gender === 'female' ? '#fff' : '#666'}
-                    uppercase={false}
-                  >
-                    女
-                  </Button>
-                </View>
+                <GenderRadioRow
+                  disabled={isLoading}
+                  onChange={selectedGender =>
+                    handleInputChange('gender', selectedGender)
+                  }
+                  value={formData.gender}
+                />
               </View>
 
               <View style={styles.inputGroup}>
@@ -564,31 +528,6 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: THEME_PRIMARY
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  genderButton: {
-    flex: 1,
-    borderRadius: 25
-  },
-  genderButtonContent: {
-    minHeight: 48
-  },
-  genderButtonLabel: {
-    fontSize: 14,
-    color: '#666'
-  },
-  genderButtonActive: {
-    backgroundColor: THEME_PRIMARY
-  },
-  genderButtonActiveFemale: {
-    backgroundColor: THEME_PRIMARY_DARK
-  },
-  genderTextActive: {
-    color: '#fff',
-    fontWeight: '600'
   },
   footer: {
     alignItems: 'center',
