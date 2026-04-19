@@ -56,7 +56,6 @@ export const {
 
 export const logoutAndClearAll = () => async (dispatch: any) => {
   await dispatch(shutdownMessenger())
-  dispatch(clearToken())
   dispatch(clearUserInfo())
   dispatch(resetPostState())
   dispatch(resetFollowState())
@@ -64,5 +63,6 @@ export const logoutAndClearAll = () => async (dispatch: any) => {
   dispatch(clearAllBabyData())
   await dispatch(clearMessengerState())
   dispatch(removePartner())
+  dispatch(clearToken())
 }
 export default userSlice.reducer
