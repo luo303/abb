@@ -8,8 +8,8 @@ import {
   ActivityIndicator,
   Dimensions
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Camera, Xmark, ArrowsRotate } from '@zappicon/react-native'
 
 const { width } = Dimensions.get('window')
 const GAP = 10
@@ -78,7 +78,7 @@ export default function ImageUploader({
               >
                 <Image source={{ uri: img.uri }} style={styles.image} />
                 <View style={styles.errorOverlay}>
-                  <Ionicons name="refresh" size={18} color="#fff" />
+                  <ArrowsRotate size={18} color="#fff" variant="regular" />
                   <Text style={styles.errorText}>点此重试</Text>
                 </View>
               </TouchableOpacity>
@@ -87,7 +87,7 @@ export default function ImageUploader({
                 onPress={() => onRemovePendingImage?.(img.uri)}
                 activeOpacity={0.8}
               >
-                <Ionicons name="close" size={14} color="#fff" />
+                <Xmark size={14} color="#fff" variant="regular" />
               </TouchableOpacity>
             </View>
           ))}
@@ -100,7 +100,7 @@ export default function ImageUploader({
               onPress={() => onRemoveImage(index)}
               activeOpacity={0.8}
             >
-              <Ionicons name="close" size={14} color="#fff" />
+              <Xmark size={14} color="#fff" variant="regular" />
             </TouchableOpacity>
           </View>
         ))}
@@ -111,7 +111,7 @@ export default function ImageUploader({
               colors={['#fff1f2', '#ffe4e6']}
               style={styles.addButton}
             >
-              <Ionicons name="camera-outline" size={32} color="#f43f5e" />
+              <Camera size={32} color="#f43f5e" variant="regular" />
               <Text style={styles.addText}>添加照片</Text>
             </LinearGradient>
           </TouchableOpacity>

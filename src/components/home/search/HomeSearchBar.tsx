@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   TextInput
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { List, Search, Plus } from '@zappicon/react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NavigationProps } from '../../../types/navigation'
 import { HOME_PINK_THEME, HomeTone } from '../homePalette'
@@ -49,19 +49,19 @@ export default function HomeSearchBar({
         activeOpacity={0.85}
         onPress={onMenuPress}
       >
-        <Ionicons
-          name="menu-outline"
+        <List
           size={24}
           color={isPinkTone ? HOME_PINK_THEME.text : '#111827'}
+          variant="regular"
         />
       </TouchableOpacity>
 
       {onSearch ? (
         <View style={[styles.searchBox, isPinkTone && styles.searchBoxPink]}>
-          <Ionicons
-            name="search-outline"
+          <Search
             size={18}
             color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
+            variant="regular"
             style={styles.searchIcon}
           />
           <TextInput
@@ -81,10 +81,10 @@ export default function HomeSearchBar({
           activeOpacity={0.85}
           onPress={handleOpenSearch}
         >
-          <Ionicons
-            name="search-outline"
+          <Search
             size={18}
             color={isPinkTone ? HOME_PINK_THEME.iconMuted : '#9ca3af'}
+            variant="regular"
             style={styles.searchIcon}
           />
           <Text
@@ -100,10 +100,10 @@ export default function HomeSearchBar({
         activeOpacity={0.85}
         onPress={handleAddPost}
       >
-        <Ionicons
-          name="add"
+        <Plus
           size={22}
           color={isPinkTone ? HOME_PINK_THEME.text : '#111827'}
+          variant="regular"
         />
       </TouchableOpacity>
     </View>

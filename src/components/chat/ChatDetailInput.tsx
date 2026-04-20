@@ -16,9 +16,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
+import { Plus } from '@zappicon/react-native'
 
 import { useMessage } from '@/components/Message'
 
@@ -198,7 +198,7 @@ function ChatDetailInput({
                 disabled={isBusy}
                 activeOpacity={0.85}
               >
-                <Ionicons name="add" size={24} color="#5A5A5A" />
+                <Plus size={24} color="#5A5A5A" variant="regular" />
               </TouchableOpacity>
             </Animated.View>
 

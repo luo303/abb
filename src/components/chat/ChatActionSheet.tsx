@@ -1,6 +1,11 @@
 import React from 'react'
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import {
+  HeartCircle,
+  Users,
+  UserPlus,
+  AngleRightSmall
+} from '@zappicon/react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { chatCardShadow, chatPalette } from '@/components/chat/chatTheme'
@@ -28,10 +33,10 @@ export default function ChatActionSheet({
           {
             key: 'partner',
             icon: (
-              <Feather
-                name="heart"
-                size={19}
+              <HeartCircle
+                size={22}
                 color={chatPalette.accentStrong}
+                variant="filled"
               />
             ),
             title: '绑定另一半',
@@ -44,11 +49,7 @@ export default function ChatActionSheet({
     {
       key: 'create',
       icon: (
-        <Ionicons
-          name="people-outline"
-          size={20}
-          color={chatPalette.textStrong}
-        />
+        <UserPlus size={22} color={chatPalette.textStrong} variant="regular" />
       ),
       title: '创建群聊',
       description: '上传群头像，建立新的家庭群或育儿群',
@@ -58,11 +59,7 @@ export default function ChatActionSheet({
     {
       key: 'join',
       icon: (
-        <MaterialCommunityIcons
-          name="account-group-outline"
-          size={21}
-          color={chatPalette.textStrong}
-        />
+        <Users size={22} color={chatPalette.textStrong} variant="regular" />
       ),
       title: '加入群聊',
       description: '从群广场里挑一个你想加入的群',
@@ -108,10 +105,10 @@ export default function ChatActionSheet({
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.description}>{item.description}</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
+              <AngleRightSmall
                 size={18}
                 color={chatPalette.textMuted}
+                variant="regular"
               />
             </TouchableOpacity>
           ))}

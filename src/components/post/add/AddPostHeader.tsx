@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Xmark } from '@zappicon/react-native'
 
 export default function AddPostHeader({
   title = '发布帖子',
@@ -22,7 +22,7 @@ export default function AddPostHeader({
         onPress={() => navigation.goBack()}
         style={styles.cancelButton}
       >
-        <Ionicons name="close-outline" size={28} color="#333" />
+        <Xmark size={28} color="#333" variant="regular" />
       </TouchableOpacity>
       <Text style={styles.title}>{title}</Text>
       {rightText && onRightPress ? (

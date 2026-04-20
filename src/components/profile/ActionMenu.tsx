@@ -1,14 +1,24 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import {
+  HeartSimple,
+  Comment,
+  FileText,
+  ArrowsRotate
+} from '@zappicon/react-native'
+
+type IconVariant = 'light' | 'regular' | 'filled' | 'duotone' | 'duotone-line'
 
 interface ActionItemProps {
-  icon: string
   label: string
   color: string
   onPress?: () => void
-  IconComponent?: any
+  IconComponent: React.ComponentType<{
+    size: number
+    color: string
+    variant?: IconVariant
+  }>
 }
 
 export default function ActionMenu({
@@ -32,29 +42,28 @@ export default function ActionMenu({
       >
         <View style={styles.grid}>
           <ActionItem
-            icon="heart-outline"
             label="收藏"
             color="#ec4899"
             onPress={onMyFavorites}
+            IconComponent={HeartSimple}
           />
           <ActionItem
-            icon="comment-text-outline"
             label="我的帖子"
             color="#f97316"
             onPress={onMyPosts}
+            IconComponent={Comment}
           />
           <ActionItem
-            icon="file-document-outline"
             label="草稿箱"
             color="#3b82f6"
             onPress={onMyDrafts}
+            IconComponent={FileText}
           />
           <ActionItem
-            icon="user-switch"
-            IconComponent={AntDesign}
             label="切换账号"
             color="#94a3b8"
             onPress={onLogout}
+            IconComponent={ArrowsRotate}
           />
         </View>
       </LinearGradient>
@@ -63,15 +72,14 @@ export default function ActionMenu({
 }
 
 const ActionItem = ({
-  icon,
   label,
   color,
   onPress,
-  IconComponent = MaterialCommunityIcons
+  IconComponent
 }: ActionItemProps) => (
   <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
     <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
-      <IconComponent name={icon} size={26} color={color} />
+      <IconComponent size={26} color={color} variant="regular" />
     </View>
     <Text style={styles.label}>{label}</Text>
   </TouchableOpacity>

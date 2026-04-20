@@ -12,8 +12,15 @@ import {
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Button } from 'react-native-paper'
+import {
+  ChartLine,
+  Pen,
+  Flask,
+  BookSimple,
+  LogoutBracket,
+  Bolt
+} from '@zappicon/react-native'
 
 import PaperAvatar from '@/components/common/PaperAvatar'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
@@ -30,7 +37,7 @@ const QUICK_LINKS = [
     scope: 'root' as ShortcutScope,
     target: 'GrowthReport',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <Ionicons name="sparkles-outline" size={size} color={color} />
+      <Bolt size={size} color={color} variant="regular" />
     )
   },
   {
@@ -39,7 +46,7 @@ const QUICK_LINKS = [
     scope: 'root' as ShortcutScope,
     target: 'DailyRecord',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <MaterialCommunityIcons name="pencil-outline" size={size} color={color} />
+      <Pen size={size} color={color} variant="regular" />
     )
   },
   {
@@ -48,7 +55,7 @@ const QUICK_LINKS = [
     scope: 'root' as ShortcutScope,
     target: 'VaccineRecord',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <MaterialCommunityIcons name="needle" size={size} color={color} />
+      <Flask size={size} color={color} variant="regular" />
     )
   },
   {
@@ -57,7 +64,7 @@ const QUICK_LINKS = [
     scope: 'root' as ShortcutScope,
     target: 'GrowthCurve',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <MaterialCommunityIcons name="chart-line" size={size} color={color} />
+      <ChartLine size={size} color={color} variant="regular" />
     )
   },
   {
@@ -66,7 +73,7 @@ const QUICK_LINKS = [
     scope: 'root' as ShortcutScope,
     target: 'MilestoneList',
     icon: ({ size, color }: { size: number; color: string }) => (
-      <Ionicons name="book-outline" size={size} color={color} />
+      <BookSimple size={size} color={color} variant="regular" />
     )
   }
 ]
@@ -208,10 +215,10 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
             onPress={handleLogout}
             style={styles.logoutButton}
           >
-            <Ionicons
-              name="log-out-outline"
+            <LogoutBracket
               size={20}
               color={APP_COLORS.primaryStrong}
+              variant="regular"
             />
             <Text style={styles.logoutText}>退出登录</Text>
           </TouchableOpacity>

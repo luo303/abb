@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Platform
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { Search, Xmark, AngleRightSmall } from '@zappicon/react-native'
 import { APP_COLORS } from '@/theme/paperTheme'
 
 interface SearchHeaderProps {
@@ -34,10 +34,10 @@ export default function SearchHeader({
   return (
     <View style={styles.header}>
       <View style={styles.searchBox}>
-        <Ionicons
-          name="search-outline"
+        <Search
           size={18}
           color={APP_COLORS.iconMuted}
+          variant="regular"
           style={styles.leadingIcon}
         />
         <TextInput
@@ -59,11 +59,7 @@ export default function SearchHeader({
             onPress={onClear}
             style={styles.clearButton}
           >
-            <Ionicons
-              name="close-circle"
-              size={18}
-              color={APP_COLORS.textMuted}
-            />
+            <Xmark size={18} color={APP_COLORS.textMuted} variant="regular" />
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity
@@ -72,7 +68,11 @@ export default function SearchHeader({
           onPress={onSubmit}
           style={styles.submitIconButton}
         >
-          <Ionicons name="arrow-forward" size={17} color={APP_COLORS.white} />
+          <AngleRightSmall
+            size={17}
+            color={APP_COLORS.white}
+            variant="regular"
+          />
         </TouchableOpacity>
       </View>
       <TouchableOpacity

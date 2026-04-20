@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { ExclamationCircle, Xmark, PlusCircle } from '@zappicon/react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import ImageViewing from 'react-native-image-viewing'
@@ -196,7 +196,11 @@ function ChatComposer({
                   ) : null}
                   {item.status === 'error' ? (
                     <View style={styles.overlay}>
-                      <Ionicons name="alert-circle" size={20} color="#fff" />
+                      <ExclamationCircle
+                        size={20}
+                        color="#fff"
+                        variant="filled"
+                      />
                     </View>
                   ) : null}
                 </TouchableOpacity>
@@ -205,7 +209,7 @@ function ChatComposer({
                   onPress={() => handleRemoveImage(item.uri)}
                   style={styles.removeButton}
                 >
-                  <Ionicons name="close-circle" size={20} color="#333" />
+                  <Xmark size={20} color="#333" variant="regular" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -219,7 +223,7 @@ function ChatComposer({
             onPress={pickImages}
             style={styles.actionButton}
           >
-            <Ionicons name="add-circle-outline" size={22} color="#2F8F5B" />
+            <PlusCircle size={22} color="#2F8F5B" variant="regular" />
           </TouchableOpacity>
 
           <TextInput

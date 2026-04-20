@@ -1,7 +1,11 @@
 import React, { useLayoutEffect, useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import {
+  HeartCircle,
+  UserCircle,
+  KeySimpleSquare
+} from '@zappicon/react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '@react-navigation/native'
@@ -97,22 +101,17 @@ export default function BindPartner() {
           renderItem={() => (
             <>
               <LinearGradient
-                colors={chatGradients.hero}
+                colors={['#fff1f2', '#ffe4e6', '#ffd6d9']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.hero}
               >
-                <LinearGradient
-                  colors={chatGradients.accent}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.heroIcon}
-                >
-                  <Feather name="heart" size={26} color="#fff" />
-                </LinearGradient>
-                <Text style={styles.heroTitle}>把另一半拉进聊天</Text>
+                <View style={styles.heroIcon}>
+                  <HeartCircle size={32} color="#f43f5e" variant="filled" />
+                </View>
+                <Text style={styles.heroTitle}>共享宝宝数据</Text>
                 <Text style={styles.heroText}>
-                  绑定完成后，你们会像普通聊天工具一样拥有一个长期保留的私聊入口。
+                  绑定完成后，可实时聊天并共享、同步宝宝数据。
                 </Text>
                 <View style={styles.heroTags}>
                   <View style={styles.heroTag}>
@@ -130,10 +129,10 @@ export default function BindPartner() {
 
                 <Text style={styles.label}>另一半账号</Text>
                 <View style={styles.inputWrap}>
-                  <Ionicons
-                    name="person-outline"
-                    size={18}
+                  <UserCircle
+                    size={20}
                     color={chatPalette.textMuted}
+                    variant="regular"
                   />
                   <TextInput
                     autoCapitalize="none"
@@ -147,10 +146,10 @@ export default function BindPartner() {
 
                 <Text style={styles.label}>登录密码</Text>
                 <View style={styles.inputWrap}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={18}
+                  <KeySimpleSquare
+                    size={20}
                     color={chatPalette.textMuted}
+                    variant="regular"
                   />
                   <TextInput
                     secureTextEntry
@@ -207,12 +206,13 @@ const styles = StyleSheet.create({
     ...chatCardShadow
   },
   heroIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 22,
+    width: 64,
+    height: 64,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 16,
+    backgroundColor: '#ffffff'
   },
   heroTitle: {
     fontSize: 24,

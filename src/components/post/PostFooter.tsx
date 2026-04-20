@@ -7,8 +7,8 @@ import {
   View,
   ViewProps
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { Button } from 'react-native-paper'
+import { HeartSimple, Star, Chat } from '@zappicon/react-native'
 
 import {
   composerFieldFocusShadow,
@@ -18,6 +18,8 @@ import {
   composerTheme
 } from '../common/composerTheme'
 import { POST_ACTION_COLORS } from './postActionColors'
+
+type IconVariant = 'light' | 'regular' | 'filled' | 'duotone' | 'duotone-line'
 
 interface PostFooterProps {
   onInputPress?: () => void
@@ -70,7 +72,11 @@ export default function PostFooter({
   const sendDisabled = !inputValue.trim() || !onSend
 
   const renderActionButton = (
-    name: React.ComponentProps<typeof Ionicons>['name'],
+    IconComponent: React.ComponentType<{
+      size: number
+      color: string
+      variant?: IconVariant
+    }>,
     count: number,
     onPress?: () => void,
     active?: boolean,
@@ -82,7 +88,11 @@ export default function PostFooter({
 
     return (
       <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
-        <Ionicons name={name} size={20} color={tint} />
+        <IconComponent
+          size={20}
+          color={tint}
+          variant={active ? 'filled' : 'regular'}
+        />
         <Text style={[styles.actionText, active && { color: tint }]}>
           {count}
         </Text>
@@ -93,27 +103,27 @@ export default function PostFooter({
   const actionButtons = (
     <View style={styles.actions}>
       {renderActionButton(
-        isLiked ? 'heart' : 'heart-outline',
+        HeartSimple,
         likeCount,
         onLike,
         isLiked,
         POST_ACTION_COLORS.like
       )}
       {renderActionButton(
-        isDisliked ? 'heart-dislike' : 'heart-dislike-outline',
+        HeartSimple,
         dislikeCount || 0,
         onDislike,
         isDisliked,
         POST_ACTION_COLORS.dislike
       )}
       {renderActionButton(
-        isFavorited ? 'star' : 'star-outline',
+        Star,
         collectCount,
         onFavorite,
         isFavorited,
         POST_ACTION_COLORS.favorite
       )}
-      {renderActionButton('chatbubble-outline', commentCount)}
+      {renderActionButton(Chat, commentCount)}
     </View>
   )
 
