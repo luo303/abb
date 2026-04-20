@@ -8,6 +8,8 @@ import {
   Animated
 } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import { AngleRightSmall, Clock } from '@zappicon/react-native'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface TimePickerProps {
   selectedTime: Date
@@ -67,8 +69,17 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.timeButton} onPress={togglePicker}>
-        <Text style={styles.timeText}>{formatTime(selectedTime)}</Text>
-        <Animated.Text style={[styles.arrowIcon, arrowStyle]}>›</Animated.Text>
+        <View style={styles.timeLeft}>
+          <Clock size={18} color={APP_COLORS.iconMuted} variant="regular" />
+          <Text style={styles.timeText}>{formatTime(selectedTime)}</Text>
+        </View>
+        <Animated.View style={arrowStyle}>
+          <AngleRightSmall
+            size={20}
+            color={APP_COLORS.iconMuted}
+            variant="regular"
+          />
+        </Animated.View>
       </TouchableOpacity>
 
       {showPicker && (
@@ -92,25 +103,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: APP_COLORS.surface,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: APP_COLORS.outlineVariant,
+    shadowColor: APP_COLORS.shadow,
     shadowOffset: {
       width: 0,
       height: 2
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 2
+  },
+  timeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
   },
   timeText: {
     fontSize: 16,
-    color: '#333',
+    color: APP_COLORS.text,
     fontWeight: '500'
-  },
-  arrowIcon: {
-    fontSize: 20,
-    color: '#999'
   }
 })

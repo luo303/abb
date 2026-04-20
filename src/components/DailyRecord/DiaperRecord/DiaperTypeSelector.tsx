@@ -1,6 +1,11 @@
 import React from 'react'
 import { Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
-import { Droplet, CheckCircle } from '@zappicon/react-native'
+import {
+  Droplet,
+  CheckCircle,
+  WavePulse,
+  ArrowsRotate
+} from '@zappicon/react-native'
 import { DiaperType, Option } from '../../../types/diaper'
 
 interface DiaperTypeSelectorProps {
@@ -21,12 +26,12 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
     {
       type: { id: DiaperType.POOP, name: '便便' },
       label: '便便',
-      IconComponent: Droplet
+      IconComponent: WavePulse
     },
     {
       type: { id: DiaperType.BOTH, name: '嘘嘘+便便' },
       label: '嘘嘘+便便',
-      IconComponent: Droplet
+      IconComponent: ArrowsRotate
     },
     {
       type: { id: DiaperType.DRY, name: '干爽' },

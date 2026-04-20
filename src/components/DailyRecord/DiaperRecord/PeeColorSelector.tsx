@@ -1,12 +1,14 @@
 import React from 'react'
 import {
-  View,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView
+  View
 } from 'react-native'
+import { CheckCircle } from '@zappicon/react-native'
 import { PeeColor, Option } from '../../../types/diaper'
+import { APP_COLORS } from '../../../theme/paperTheme'
 
 interface PeeColorSelectorProps {
   selectedColor: Option | undefined
@@ -21,32 +23,38 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
     {
       value: { id: PeeColor.MILKY_WHITE, name: '乳白色' },
       label: '乳白色',
-      color: '#FFF8DC'
+      color: '#FFF8DC',
+      hint: '偏淡'
     },
     {
       value: { id: PeeColor.PINK, name: '粉色' },
       label: '粉色',
-      color: '#FFC0CB'
+      color: '#FFC0CB',
+      hint: '轻粉色'
     },
     {
       value: { id: PeeColor.NORMAL, name: '正常' },
       label: '正常',
-      color: '#E6E6FA'
+      color: '#E6E6FA',
+      hint: '常见'
     },
     {
       value: { id: PeeColor.YELLOW, name: '黄色' },
       label: '黄色',
-      color: '#FFD700'
+      color: '#FFD700',
+      hint: '偏黄'
     },
     {
       value: { id: PeeColor.RED, name: '红色' },
       label: '红色',
-      color: '#FF6347'
+      color: '#FF6347',
+      hint: '关注'
     },
     {
       value: { id: PeeColor.DARK_TEA, name: '浓茶色' },
       label: '浓茶色',
-      color: '#8B4513'
+      color: '#8B4513',
+      hint: '偏深'
     }
   ]
 
@@ -56,69 +64,91 @@ export const PeeColorSelector: React.FC<PeeColorSelectorProps> = ({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {colors.map(item => (
-        <TouchableOpacity
-          key={item.value.id}
-          style={styles.colorButton}
-          onPress={() => onSelectColor(item.value)}
-        >
-          <View
+      {colors.map(item => {
+        const selected = selectedColor?.id === item.value.id
+        const isAlert = item.value.id === PeeColor.RED
+        return (
+          <TouchableOpacity
+            key={item.value.id}
             style={[
-              styles.colorCircle,
-              { backgroundColor: item.color },
-              selectedColor?.id === item.value.id && styles.selectedColorCircle
+              styles.colorCard,
+              selected && styles.colorCardSelected,
+              isAlert && styles.colorCardAlert
             ]}
+            onPress={() => onSelectColor(item.value)}
+            activeOpacity={0.86}
           >
-            {selectedColor?.id === item.value.id && (
-              <View style={styles.checkmark}>
-                <Text style={styles.checkmarkText}>✓</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.colorLabel}>{item.label}</Text>
-        </TouchableOpacity>
-      ))}
+            <View style={styles.colorTopRow}>
+              {selected ? (
+                <CheckCircle
+                  size={17}
+                  color={APP_COLORS.primary}
+                  variant="filled"
+                />
+              ) : null}
+            </View>
+            <View
+              style={[styles.colorSwatch, { backgroundColor: item.color }]}
+            />
+            <Text style={styles.colorLabel}>{item.label}</Text>
+            <Text style={[styles.colorHint, isAlert && styles.colorHintAlert]}>
+              {item.hint}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    gap: 16
+    paddingHorizontal: 12,
+    gap: 10
   },
-  colorButton: {
-    alignItems: 'center'
+  colorCard: {
+    width: 100,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: APP_COLORS.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: APP_COLORS.outlineVariant
   },
-  colorCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    marginBottom: 8,
+  colorCardSelected: {
+    borderColor: APP_COLORS.primary,
+    borderWidth: 1.5,
+    backgroundColor: APP_COLORS.surfaceSoft
+  },
+  colorCardAlert: {
+    borderColor: '#f8b4bf'
+  },
+  colorTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'flex-end',
+    minHeight: 18
   },
-  selectedColorCircle: {
-    borderColor: '#f43f5e',
-    borderWidth: 3
-  },
-  checkmark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#f43f5e',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  checkmarkText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold'
+  colorSwatch: {
+    marginTop: 8,
+    width: '100%',
+    height: 16,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(0,0,0,0.12)'
   },
   colorLabel: {
-    fontSize: 12,
-    color: '#666'
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    color: APP_COLORS.text
+  },
+  colorHint: {
+    marginTop: 4,
+    fontSize: 11,
+    color: APP_COLORS.textMuted
+  },
+  colorHintAlert: {
+    color: '#b45366'
   }
 })
