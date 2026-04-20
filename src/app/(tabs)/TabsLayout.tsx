@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react'
-import { View, Platform, Dimensions, Image } from 'react-native'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { View, Platform, Dimensions, Image, Pressable } from 'react-native'
+import {
+  createBottomTabNavigator,
+  type BottomTabBarButtonProps
+} from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
@@ -21,6 +24,8 @@ const AI_TAB_GLOW = '#f43f5e'
 const AI_ASSISTANT_ICON = require('../../assets/icon_new.png')
 const AI_TAB_ICON_SIZE = 44
 const AI_TAB_ICON_SCALE = 3.5
+const AI_TAB_TOUCH_WIDTH = 84
+const AI_TAB_TOUCH_HEIGHT = Platform.OS === 'ios' ? 92 : 104
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -88,6 +93,54 @@ const CustomTabBarBackground = () => {
     </View>
   )
 }
+
+const AIAssistantTabButton = ({
+  accessibilityLabel,
+  accessibilityState,
+  children,
+  onLongPress,
+  onPress,
+  testID
+}: BottomTabBarButtonProps) => (
+  <View
+    pointerEvents="box-none"
+    style={{
+      flex: 1,
+      alignItems: 'center'
+    }}
+  >
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      accessibilityState={accessibilityState}
+      hitSlop={{
+        top: 14,
+        bottom: 8,
+        left: 6,
+        right: 6
+      }}
+      onLongPress={onLongPress}
+      onPress={onPress}
+      pressRetentionOffset={{
+        top: 12,
+        bottom: 10,
+        left: 8,
+        right: 8
+      }}
+      style={{
+        width: AI_TAB_TOUCH_WIDTH,
+        height: AI_TAB_TOUCH_HEIGHT,
+        alignItems: 'center',
+        justifyContent: 'flex-start'
+      }}
+      testID={testID}
+    >
+      <View pointerEvents="none" style={{ alignItems: 'center' }}>
+        {children}
+      </View>
+    </Pressable>
+  </View>
+)
 
 export default function TabsLayout() {
   const navigation = useNavigation<NavigationProps>()
@@ -195,8 +248,10 @@ export default function TabsLayout() {
         }}
         options={{
           title: 'AI助手',
+          tabBarButton: props => <AIAssistantTabButton {...props} />,
           tabBarIcon: () => (
             <View
+              pointerEvents="none"
               style={{
                 width: 62,
                 height: 62,
