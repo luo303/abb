@@ -134,7 +134,7 @@ export default function MyDrafts() {
       <FlashList
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: 24 + insets.bottom }
+          { paddingBottom: 84 + insets.bottom }
         ]}
         data={posts}
         ItemSeparatorComponent={renderSeparator}

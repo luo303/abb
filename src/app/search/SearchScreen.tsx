@@ -66,7 +66,7 @@ const SearchScreen = () => {
   const requestTokenRef = useRef(0)
 
   const fallbackHotPosts = useAppSelector(state => state.post.hotPostList)
-  const fallbackRandomPosts = useAppSelector(state => state.post.postList)
+  const fallbackRecommendPosts = useAppSelector(state => state.post.postList)
   const fallbackLocalPosts = useAppSelector(
     state => state.post.localPublishedPosts
   )
@@ -278,7 +278,7 @@ const SearchScreen = () => {
     const merged = [
       ...fallbackLocalPosts,
       ...fallbackHotPosts,
-      ...fallbackRandomPosts
+      ...fallbackRecommendPosts
     ]
     const seen = new Set<string>()
     const unique: PostItem[] = []
@@ -302,7 +302,12 @@ const SearchScreen = () => {
       fetchPostList({ page: 1, pageSize: 10, strategy: 'hot', force: true })
     )
     void dispatch(
-      fetchPostList({ page: 1, pageSize: 10, strategy: 'random', force: true })
+      fetchPostList({
+        page: 1,
+        pageSize: 10,
+        strategy: 'recommend',
+        force: true
+      })
     )
   }, [dispatch, fallbackLoading, fallbackPosts.length, screenState])
 
