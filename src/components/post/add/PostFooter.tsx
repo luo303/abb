@@ -142,7 +142,9 @@ export default function PostFooter({
       }
 
       // Phase 4 选择“重新拉取列表”策略，避免本地乐观数据与详情不一致
-      void dispatch(fetchPostList({ page: 1, strategy: 'random', force: true }))
+      void dispatch(
+        fetchPostList({ page: 1, strategy: 'recommend', force: true })
+      )
       void dispatch(fetchPostList({ page: 1, strategy: 'hot', force: true }))
 
       // 触发成功回调

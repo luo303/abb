@@ -72,7 +72,7 @@ const initialState: PostState = {
   error: null,
   postList: [],
   postListFetched: false,
-  postListStrategy: 'random',
+  postListStrategy: 'recommend',
   hotPostList: [],
   hotPage: 1,
   hotHasMore: true,
@@ -468,7 +468,7 @@ const postSlice = createSlice({
       })
       .addCase(fetchPostList.fulfilled, (state: PostState, action: any) => {
         state.loading = false
-        const strategy = action.meta?.arg?.strategy || 'random'
+        const strategy = action.meta?.arg?.strategy || 'recommend'
         state.postListStrategy = strategy
         if (action.payload?.code === 0 || action.payload?.code === 200) {
           // 统一对 content 字段进行 JSON.parse 解析
@@ -495,7 +495,7 @@ const postSlice = createSlice({
       })
       .addCase(fetchPostList.rejected, (state: PostState, action: any) => {
         state.loading = false
-        const strategy = action.meta?.arg?.strategy || 'random'
+        const strategy = action.meta?.arg?.strategy || 'recommend'
         state.postListStrategy = strategy
         if (strategy === 'hot') {
           state.hotFetched = true
@@ -506,7 +506,7 @@ const postSlice = createSlice({
       })
       // 加载更多帖子
       .addCase(loadMorePosts.pending, (state: PostState, action: any) => {
-        const strategy = action.meta?.arg?.strategy || 'random'
+        const strategy = action.meta?.arg?.strategy || 'recommend'
         if (strategy === 'hot') {
           state.isHotLoadingMore = true
         } else {

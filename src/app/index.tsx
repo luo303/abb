@@ -101,7 +101,7 @@ function AppInitializer({ onReady }: { onReady?: () => void }) {
         if (babyId) {
           await dispatch(fetchBabyProfile(babyId))
         }
-        await dispatch(fetchPostList({ page: 1, strategy: 'random' }))
+        await dispatch(fetchPostList({ page: 1, strategy: 'recommend' }))
         await dispatch(fetchPostList({ page: 1, strategy: 'hot' }))
         await dispatch(fetchFollowingPosts({ page: 1 }))
       } finally {

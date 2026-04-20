@@ -13,7 +13,7 @@ import { HomeFeedTabKey, PostItem } from '../types/home'
 import { useMessage } from '@/components/Message'
 
 const DEFAULT_TAB: HomeFeedTabKey = 'hot'
-const RECOMMEND_STRATEGY = 'random'
+const RECOMMEND_STRATEGY = 'recommend'
 
 export const normalizeHomeTabKey = (tab?: string | null): HomeFeedTabKey => {
   switch (tab) {

@@ -175,10 +175,12 @@ export default function EditDraft() {
   )
   const isNotDraft = draft.status !== 'draft'
 
-  const refreshHomeLists = () => {
-    void dispatch(fetchPostList({ page: 1, strategy: 'random', force: true }))
+  const refreshHomeLists = useCallback(() => {
+    void dispatch(
+      fetchPostList({ page: 1, strategy: 'recommend', force: true })
+    )
     void dispatch(fetchPostList({ page: 1, strategy: 'hot', force: true }))
-  }
+  }, [dispatch])
 
   const handleSave = useCallback(async () => {
     if (saving || publishing || deleting) return

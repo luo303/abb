@@ -736,7 +736,9 @@ export default function PostDetail() {
   }
 
   const refreshHomeLists = useCallback(() => {
-    void dispatch(fetchPostList({ page: 1, strategy: 'random', force: true }))
+    void dispatch(
+      fetchPostList({ page: 1, strategy: 'recommend', force: true })
+    )
     void dispatch(fetchPostList({ page: 1, strategy: 'hot', force: true }))
     void dispatch(fetchFollowingPosts({ page: 1, force: true }))
   }, [dispatch])
