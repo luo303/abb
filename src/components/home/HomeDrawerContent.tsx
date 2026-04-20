@@ -85,7 +85,7 @@ export default function HomeDrawerContent(props: DrawerContentComponentProps) {
   const { followingCount, followerCount, loadingCounts } =
     useRelationshipCounts(userInfo?.user_id)
   const footerBottomPadding =
-    (Platform.OS === 'ios' ? 46 + insets.bottom : 56) + 16
+    (Platform.OS === 'ios' ? 46 + insets.bottom : 86) + 16
 
   const displayName = useMemo(
     () => userInfo?.username || userInfo?.account || 'Love Baby 用户',

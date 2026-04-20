@@ -1,12 +1,15 @@
 import React, { memo } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { AntDesign } from '@expo/vector-icons'
+import { View, Text, StyleSheet, Image } from 'react-native'
 
 function ChatEmptyState() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <AntDesign name="twitch" size={72} color="#1f99b0" />
+        <Image
+          source={require('../../assets/icon_new.png')}
+          style={styles.assistantImage}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>Hi！我是小稚~</Text>
         <Text style={styles.subtitle}>
           专业的育儿知识，贴心的陪伴建议，陪你轻松度过孕育每一天
@@ -28,6 +31,11 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     paddingHorizontal: 32
+  },
+  assistantImage: {
+    width: 80,
+    height: 80,
+    transform: [{ scale: 2.5 }]
   },
   title: {
     fontSize: 24,

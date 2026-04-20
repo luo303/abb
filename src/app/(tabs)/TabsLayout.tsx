@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react'
-import { View, Platform, Dimensions } from 'react-native'
+import { View, Platform, Dimensions, Image } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
-import { LinearGradient } from 'expo-linear-gradient'
 import { House, Message, AddressCard, ChartLine } from '@zappicon/react-native'
-import { AntDesign } from '@expo/vector-icons'
 
 import HomeScreen from './HomeDrawer'
 import GrowthRecordScreen from './growthRecord'
@@ -19,8 +17,10 @@ import { APP_COLORS } from '@/theme/paperTheme'
 
 const Tab = createBottomTabNavigator()
 const NullComponent = () => null
-const AI_TAB_GRADIENT = ['#ff9a9e', '#ff5f7a', '#f43f5e'] as const
 const AI_TAB_GLOW = '#f43f5e'
+const AI_ASSISTANT_ICON = require('../../assets/icon_new.png')
+const AI_TAB_ICON_SIZE = 44
+const AI_TAB_ICON_SCALE = 3.5
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -28,17 +28,26 @@ const CustomTabBarBackground = () => {
   const insets = useSafeAreaInsets()
   const tabBarHeight = Platform.OS === 'ios' ? 46 + insets.bottom : 56
 
-  const centerWidth = 100
-  const centerHeight = 28
+  const centerWidth = 120
+  const curveDepth = 24
+  const shoulderOffset = 32
+  const shoulderDepth = 8
+  const edgeControlOffset = 20
+  const shoulderControlOffset = 12
+  const centerControlOffset = 18
   const startX = (SCREEN_WIDTH - centerWidth) / 2
   const endX = (SCREEN_WIDTH + centerWidth) / 2
   const centerX = SCREEN_WIDTH / 2
+  const leftShoulderX = centerX - shoulderOffset
+  const rightShoulderX = centerX + shoulderOffset
 
   const path = `
     M0,0
     L${startX},0
-    C${startX + 35},0 ${centerX - 35},${centerHeight} ${centerX},${centerHeight}
-    C${centerX + 35},${centerHeight} ${endX - 35},0 ${endX},0
+    C${startX + edgeControlOffset},0 ${leftShoulderX - shoulderControlOffset},0 ${leftShoulderX},${shoulderDepth}
+    C${leftShoulderX + shoulderControlOffset},${shoulderDepth * 2} ${centerX - centerControlOffset},${curveDepth} ${centerX},${curveDepth}
+    C${centerX + centerControlOffset},${curveDepth} ${rightShoulderX - shoulderControlOffset},${shoulderDepth * 2} ${rightShoulderX},${shoulderDepth}
+    C${rightShoulderX + shoulderControlOffset},0 ${endX - edgeControlOffset},0 ${endX},0
     L${SCREEN_WIDTH},0
     L${SCREEN_WIDTH},${tabBarHeight + 50}
     L0,${tabBarHeight + 50}
@@ -187,30 +196,26 @@ export default function TabsLayout() {
         options={{
           title: 'AI助手',
           tabBarIcon: () => (
-            <LinearGradient
-              colors={AI_TAB_GRADIENT}
-              end={{ x: 1, y: 1 }}
-              start={{ x: 0, y: 0 }}
+            <View
               style={{
                 width: 62,
                 height: 62,
-                borderRadius: 31,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginBottom: Platform.OS === 'ios' ? 2 : 35,
-                marginTop: Platform.OS === 'ios' ? -40 : -2,
-                shadowColor: AI_TAB_GLOW,
-                shadowOffset: {
-                  width: 0,
-                  height: 14
-                },
-                shadowOpacity: 0.52,
-                shadowRadius: 24,
-                elevation: 20
+                marginBottom: Platform.OS === 'ios' ? 2 : 50,
+                marginTop: Platform.OS === 'ios' ? -40 : -2
               }}
             >
-              <AntDesign name="twitch" size={30} color="#fff" />
-            </LinearGradient>
+              <Image
+                source={AI_ASSISTANT_ICON}
+                style={{
+                  width: AI_TAB_ICON_SIZE,
+                  height: AI_TAB_ICON_SIZE,
+                  transform: [{ scale: AI_TAB_ICON_SCALE }]
+                }}
+                resizeMode="contain"
+              />
+            </View>
           ),
           tabBarLabelStyle: {
             marginTop: Platform.OS === 'ios' ? 2 : 35,
