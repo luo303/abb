@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import {
   View,
   StyleSheet,
   Platform,
   Text,
   Animated,
-  DeviceEventEmitter
+  DeviceEventEmitter,
+  TouchableOpacity
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { Stack } from 'expo-router'
@@ -16,6 +17,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Button } from 'react-native-paper'
 import { useNavigationHelper } from '../../utils/navigation'
 import ExportButton from '../../components/export/ExportButton'
+import { APP_COLORS } from '../../theme/paperTheme'
 
 // 导入日常记录组件
 import DashboardRing from '../../components/DailyRecord/DashboardRing'
@@ -58,6 +60,7 @@ export default function DailyRecordScreen() {
   )
   const [currentRecords, setCurrentRecords] = useState<RecordItem[]>([])
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [recordFilter, setRecordFilter] = useState<RecordType | 'all'>('all')
   const [statistics, setStatistics] = useState<Statistics>({
     feedingCount: 0,
     feedingVolume: 0,
@@ -65,7 +68,7 @@ export default function DailyRecordScreen() {
     sleepDuration: 0,
     diaperCount: 0
   })
-  const animatedBackgroundValue = useState(new Animated.Value(0))[0]
+  const scrollY = useRef(new Animated.Value(0)).current
 
   // 初始化数据 - 添加防抖处理
   useEffect(() => {
@@ -153,6 +156,17 @@ export default function DailyRecordScreen() {
       .map(item => {
         // 构建描述文本
         let description = ''
+        let primaryDetail = '尿布'
+        const tags: string[] = []
+
+        const diaperTypeLabelMap: Record<string, string> = {
+          pee: '嘘嘘',
+          poop: '便便',
+          both: '嘘嘘+便便',
+          dry: '干爽'
+        }
+        primaryDetail = diaperTypeLabelMap[item.diaper_type.id] || '尿布'
+
         if (item.diaper_type.id === 'dry') {
           // 如果是干爽类型，显示备注信息并适当省略，过滤掉换行符
           if (item.remark) {
@@ -166,45 +180,57 @@ export default function DailyRecordScreen() {
           // 其他类型显示颜色和性状信息
           if (item.poop_color || item.poop_consistency || item.pee_color) {
             const parts = []
+            const tagSet = new Set<string>()
+
             if (item.poop_color) {
               parts.push(item.poop_color.name)
+              tagSet.add(item.poop_color.name)
             }
             if (item.pee_color) {
               parts.push(item.pee_color.name)
+              tagSet.add(item.pee_color.name)
             }
             if (item.poop_consistency) {
               parts.push(item.poop_consistency.name)
+              tagSet.add(item.poop_consistency.name)
             }
+
+            // 将 Set 转换为数组，确保标签不重复
+            tags.push(...tagSet)
             description = parts.join(' ')
           }
         }
 
         // 根据尿布类型选择图标
-        let icon = 'baby-carriage' // 默认图标
+        let icon = 'diaper-dry'
         switch (item.diaper_type.id) {
           case 'pee':
-            icon = 'water' // 嘘嘘图标
+            icon = 'diaper-pee'
             break
           case 'poop':
-            icon = 'emoticon-poop' // 便便图标
+            icon = 'diaper-poop'
             break
           case 'both':
-            icon = 'opacity' // 两者都有图标
+            icon = 'diaper-both'
             break
           case 'dry':
-            icon = 'shield-check-outline' // 干爽图标
+            icon = 'diaper-dry'
             break
         }
 
         return {
-          id: `diaper_${item.diaper_id}`,
+          id: `diaper_${item.diaper_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
           type: 'diaper' as const,
           time: item.change_time,
           details: description,
           icon: icon,
           name: '尿布',
           title: '尿布',
-          description: description
+          description: description,
+          primaryDetail,
+          secondaryDetail: description || '暂无更多描述',
+          categoryLabel: '尿布',
+          tags: tags.slice(0, 2)
         }
       })
 
@@ -224,20 +250,20 @@ export default function DailyRecordScreen() {
         const feedType = item.feed_type as unknown as string
 
         // 根据喂养类型选择图标
-        let icon = 'baby-bottle' // 默认图标
+        let icon = 'feeding-milk'
         switch (feedType) {
           case 'formula':
-            icon = 'baby-bottle' // 奶粉图标
+            icon = 'feeding-milk'
             break
           case 'breast':
           case 'breast_milk':
           case 'pump':
           case 'pumped_milk':
-            icon = 'water' // 母乳图标
+            icon = 'feeding-milk'
             break
           case 'food':
           case 'solid':
-            icon = 'food' // 辅食图标
+            icon = 'feeding-food'
             break
         }
 
@@ -261,39 +287,55 @@ export default function DailyRecordScreen() {
             break
         }
 
-        // 构建副标题：喂养类型 + 时长或备注
+        // 构建结构化信息
         const normalizedRemark = normalizeInlineText(item.remark)
-        let extraText = ''
+        let amountText = ''
+        let secondaryText = ''
+
         if (typeof item.amount === 'number' && !isNaN(item.amount)) {
-          extraText =
+          amountText =
             feedType === 'food' || feedType === 'solid'
               ? `${item.amount}g`
               : `${item.amount}ml`
-        } else if (typeof item.duration === 'number' && !isNaN(item.duration)) {
-          extraText = `${item.duration}分钟`
+        }
+
+        if (typeof item.duration === 'number' && !isNaN(item.duration)) {
+          secondaryText = `${item.duration}分钟`
         } else if (normalizedRemark) {
-          extraText = normalizedRemark
+          secondaryText = normalizedRemark
         }
 
-        if (extraText) {
-          extraText = stripLeadingFeedTypeLabel(extraText)
-          extraText = normalizeUnitText(extraText)
+        if (amountText) {
+          amountText = stripLeadingFeedTypeLabel(amountText)
+          amountText = normalizeUnitText(amountText)
         }
 
-        const description = extraText
-          ? `${feedTypeName} · ${truncateText(extraText, 16)}`
+        if (secondaryText) {
+          secondaryText = stripLeadingFeedTypeLabel(secondaryText)
+          secondaryText = normalizeUnitText(secondaryText)
+        }
+
+        const primaryDetail = amountText
+          ? `${feedTypeName} · ${amountText}`
           : feedTypeName
+        const secondaryDetail = secondaryText
+          ? truncateText(secondaryText, 24)
+          : '暂无备注'
 
         // 确保返回的对象包含所有必要字段
         return {
           id: `feeding_${item.feeding_id}`,
           type: 'feeding' as const,
           time: item.feed_time,
-          details: description,
+          details: primaryDetail,
           icon: icon,
           name: '喂养',
           title: '喂养',
-          description: description
+          description: secondaryDetail,
+          primaryDetail,
+          secondaryDetail,
+          categoryLabel: feedTypeName,
+          tags: [feedTypeName]
         }
       })
 
@@ -341,21 +383,24 @@ export default function DailyRecordScreen() {
 
         durationText = `${formattedH}:${formattedM}:${formattedS}`
 
-        // 构建副标题
-        const description = `${startTime} - ${endTime}  ${durationText}`
+        const primaryDetail = `${startTime} - ${endTime}`
+        const secondaryDetail = `时长 ${durationText}${isManual ? ' · 手动记录' : ''}`
 
-        // 根据记录类型设置不同的 icon（使用 MaterialCommunityIcons 支持的图标）
-        const icon = isManual ? 'gesture-tap-hold' : 'clock-outline'
+        const icon = isManual ? 'sleep-manual' : 'sleep'
 
         return {
           id: `sleep_${item.session_id}`,
           type: 'sleep' as const,
           time: item.started_at,
-          details: description,
+          details: primaryDetail,
           icon: icon,
           name: '睡眠',
           title: '睡眠',
-          description: description,
+          description: secondaryDetail,
+          primaryDetail,
+          secondaryDetail,
+          categoryLabel: isManual ? '手动睡眠' : '自动睡眠',
+          tags: isManual ? ['手动'] : ['自动'],
           data: item // 添加原始数据，用于统计计算
         }
       })
@@ -427,39 +472,6 @@ export default function DailyRecordScreen() {
     })
   }, [selectedDate, diaperList, feedingList, sleepList, dailyStatistics])
 
-  // 计算整体进度并更新背景颜色
-  useEffect(() => {
-    // 目标值设置
-    const feedingTarget = 8 // 每日喂养目标8次
-    const sleepTarget = 12 // 每日睡眠目标12小时
-    const diaperTarget = 8 // 每日换尿布目标8次
-
-    // 计算各项目进度
-    const feedingProgress = Math.min(
-      (statistics.feedingCount / feedingTarget) * 100,
-      100
-    )
-    const sleepProgress = Math.min(
-      (statistics.sleepDuration / sleepTarget) * 100,
-      100
-    )
-    const diaperProgress = Math.min(
-      (statistics.diaperCount / diaperTarget) * 100,
-      100
-    )
-
-    // 计算平均进度
-    const averageProgress =
-      (feedingProgress + sleepProgress + diaperProgress) / 3
-
-    // 启动背景颜色动画
-    Animated.timing(animatedBackgroundValue, {
-      toValue: averageProgress,
-      duration: 1000,
-      useNativeDriver: false
-    }).start()
-  }, [statistics, animatedBackgroundValue])
-
   // 处理底部按钮点击
   const handleActionPress = useCallback(
     (type: RecordType) => {
@@ -500,6 +512,11 @@ export default function DailyRecordScreen() {
     100
   )
 
+  const overallPercent =
+    currentRecords.length > 0
+      ? Math.round((feedingPercent + sleepPercent + diaperPercent) / 3)
+      : 0
+
   // 处理无数据情况
   const getDisplayValue = (value: number, unit: string) => {
     // 对于睡眠时长，只显示整数小时
@@ -529,51 +546,35 @@ export default function DailyRecordScreen() {
     }
   }
 
-  // 动态计算背景颜色
-  const animatedBackgroundColor = animatedBackgroundValue.interpolate({
-    inputRange: [0, 25, 50, 75, 100],
-    outputRange: ['#ffffff', '#ffeeee', '#ffdddd', '#ffcccc', '#ffaaaa']
+  const filteredRecords = useMemo(() => {
+    if (recordFilter === 'all') return currentRecords
+    return currentRecords.filter(item => item.type === recordFilter)
+  }, [currentRecords, recordFilter])
+
+  const heroScale = scrollY.interpolate({
+    inputRange: [0, 90],
+    outputRange: [1, 0.96],
+    extrapolate: 'clamp'
+  })
+  const heroTranslateY = scrollY.interpolate({
+    inputRange: [0, 90],
+    outputRange: [0, -10],
+    extrapolate: 'clamp'
+  })
+  const heroOpacity = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [1, 0.92],
+    extrapolate: 'clamp'
   })
 
-  const ListHeaderComponent = useCallback(
-    () => (
-      <View style={styles.dashboardContainer}>
-        <LinearGradient
-          colors={['#ffffff', '#fef5f5']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.dashboardCard}
-        >
-          <DashboardRing
-            type="feeding"
-            value={getDisplayValue(statistics.feedingCount, '次')}
-            percent={currentRecords.length > 0 ? feedingPercent : 0}
-            onPress={() => handleActionPress('feeding')}
-          />
-          <DashboardRing
-            type="sleep"
-            value={getDisplayValue(statistics.sleepDuration, 'h')}
-            percent={currentRecords.length > 0 ? sleepPercent : 0}
-            onPress={() => handleActionPress('sleep')}
-          />
-          <DashboardRing
-            type="diaper"
-            value={getDisplayValue(statistics.diaperCount, '次')}
-            percent={currentRecords.length > 0 ? diaperPercent : 0}
-            onPress={() => handleActionPress('diaper')}
-          />
-        </LinearGradient>
+  const ListHeaderComponent = useCallback(() => {
+    return (
+      <View style={styles.listHeader}>
+        <Text style={styles.listHeaderTitle}>记录</Text>
+        <Text style={styles.listHeaderMeta}>{filteredRecords.length}条</Text>
       </View>
-    ),
-    [
-      statistics,
-      currentRecords.length,
-      feedingPercent,
-      sleepPercent,
-      diaperPercent,
-      handleActionPress
-    ]
-  )
+    )
+  }, [filteredRecords.length])
 
   const renderItem = useCallback(
     ({ item }: { item: RecordItem }) => (
@@ -592,11 +593,15 @@ export default function DailyRecordScreen() {
             <Text style={styles.loadingText}>加载中...</Text>
           </View>
         ) : (
-          <EmptyState />
+          <EmptyState
+            onAddFeeding={() => handleActionPress('feeding')}
+            onAddSleep={() => handleActionPress('sleep')}
+            onAddDiaper={() => handleActionPress('diaper')}
+          />
         )}
       </View>
     ),
-    [isLoading]
+    [handleActionPress, isLoading]
   )
 
   const ListFooterComponent = useCallback(() => {
@@ -607,17 +612,16 @@ export default function DailyRecordScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: '日常记录' }} />
 
-      {/* 动态背景颜色 */}
       <Animated.View
         style={[
-          styles.backgroundView,
-          { backgroundColor: animatedBackgroundColor }
+          styles.heroContainer,
+          {
+            transform: [{ translateY: heroTranslateY }, { scale: heroScale }],
+            opacity: heroOpacity
+          }
         ]}
-      />
-
-      {/* 1. 日历Header - 保持固定 */}
-      <View style={styles.calendarHeader}>
-        <View style={styles.headerContent}>
+      >
+        <View style={styles.heroHeaderRow}>
           <Button
             compact
             mode="text"
@@ -678,17 +682,86 @@ export default function DailyRecordScreen() {
             {' '}
           </Button>
         </View>
-      </View>
+
+        <View style={styles.overallProgressTrack}>
+          <LinearGradient
+            colors={[APP_COLORS.secondary, APP_COLORS.primaryStrong]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[
+              styles.overallProgressFill,
+              { width: `${overallPercent}%` }
+            ]}
+          />
+        </View>
+
+        <View style={styles.dashboardCard}>
+          <DashboardRing
+            type="feeding"
+            value={getDisplayValue(statistics.feedingCount, '次')}
+            percent={currentRecords.length > 0 ? feedingPercent : 0}
+            onPress={() => handleActionPress('feeding')}
+          />
+          <DashboardRing
+            type="sleep"
+            value={getDisplayValue(statistics.sleepDuration, 'h')}
+            percent={currentRecords.length > 0 ? sleepPercent : 0}
+            onPress={() => handleActionPress('sleep')}
+          />
+          <DashboardRing
+            type="diaper"
+            value={getDisplayValue(statistics.diaperCount, '次')}
+            percent={currentRecords.length > 0 ? diaperPercent : 0}
+            onPress={() => handleActionPress('diaper')}
+          />
+        </View>
+
+        <View style={styles.filterContainer}>
+          {(
+            [
+              { key: 'all', label: '全部' },
+              { key: 'feeding', label: '喂养' },
+              { key: 'sleep', label: '睡眠' },
+              { key: 'diaper', label: '尿布' }
+            ] as const
+          ).map(item => {
+            const active = recordFilter === item.key
+            return (
+              <TouchableOpacity
+                key={item.key}
+                activeOpacity={0.86}
+                onPress={() => setRecordFilter(item.key)}
+                style={[styles.segmentItem, active && styles.segmentItemActive]}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    active && styles.segmentLabelActive
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      </Animated.View>
 
       {/* 2. 主列表区域 */}
-      <FlashList
-        data={currentRecords}
+      <AnimatedFlashList
+        data={filteredRecords}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item: RecordItem) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       />
 
       {/* 导出按钮 */}
@@ -705,30 +778,24 @@ export default function DailyRecordScreen() {
   )
 }
 
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff' // 默认白色背景
+    backgroundColor: APP_COLORS.background
   },
-  backgroundView: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 0
-  },
-  calendarHeader: {
-    backgroundColor: 'transparent',
-    paddingVertical: 10,
+  heroContainer: {
+    paddingTop: 10,
     paddingHorizontal: 16,
-    zIndex: 10 // 确保在 iOS 上层级正确
+    paddingBottom: 12,
+    zIndex: 10
   },
-  headerContent: {
+  heroHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%'
+    marginBottom: 10
   },
   datePickerContainer: {
     flex: 1,
@@ -736,22 +803,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   dateTextContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 8,
-    shadowColor: '#f43f5e',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant,
+    shadowColor: APP_COLORS.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 4
   },
   dateButtonContent: {
     minHeight: 42,
-    paddingHorizontal: 4
+    paddingHorizontal: 10
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#f43f5e'
+    color: APP_COLORS.primary
   },
   navButton: {
     borderRadius: 20
@@ -763,39 +832,95 @@ const styles = StyleSheet.create({
   navButtonLabel: {
     marginHorizontal: 0
   },
-  dateNavigation: {
-    flexDirection: 'row',
-    gap: 12
+  overallProgressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: APP_COLORS.outlineVariant,
+    overflow: 'hidden',
+    marginBottom: 12
   },
-  navButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#f43f5e'
-  },
-  mainScroll: {
-    flex: 1,
-    zIndex: 1
-  },
-  dashboardContainer: {
-    padding: 16,
-    zIndex: 1
+  overallProgressFill: {
+    height: '100%',
+    borderRadius: 999
   },
   dashboardCard: {
     borderRadius: 20,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    backgroundColor: APP_COLORS.surface,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant,
     ...(Platform.select({
       ios: {
-        shadowColor: '#f43f5e',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8
+        shadowColor: APP_COLORS.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18
       },
       android: {
         elevation: 4
       }
     }) as any)
+  },
+  filterContainer: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+    padding: 4,
+    borderRadius: 16,
+    backgroundColor: APP_COLORS.surfaceVariant,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant
+  },
+  segmentItem: {
+    flex: 1,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  segmentItemActive: {
+    backgroundColor: APP_COLORS.surface,
+    ...(Platform.select({
+      ios: {
+        shadowColor: APP_COLORS.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18
+      },
+      android: {
+        elevation: 4
+      }
+    }) as any)
+  },
+  segmentLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: APP_COLORS.textMuted
+  },
+  segmentLabelActive: {
+    color: APP_COLORS.text
+  },
+  listHeader: {
+    paddingTop: 4,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  listHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: APP_COLORS.text
+  },
+  listHeaderMeta: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: APP_COLORS.textMuted
   },
   recordsListContainer: {
     paddingHorizontal: 16,
@@ -809,7 +934,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#f43f5e'
+    color: APP_COLORS.textMuted
   },
   listFooterSpacer: {
     height: 40

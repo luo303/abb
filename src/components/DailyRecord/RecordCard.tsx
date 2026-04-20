@@ -1,24 +1,30 @@
-import React from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
+  Animated,
   Platform,
-  TouchableOpacity
+  Pressable,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import dayjs from 'dayjs'
-import { AngleRightSmall } from '@zappicon/react-native'
-import { RecordItem } from '../../types/recordTypes'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import {
+  ArrowsRotate,
+  CheckCircle,
+  Clock,
+  Droplet,
+  FoodTray,
+  WavePulse
+} from '@zappicon/react-native'
+import { APP_COLORS } from '@/theme/paperTheme'
+import { RecordItem } from '../../types/recordTypes'
 
 interface RecordCardProps {
   item: RecordItem
 }
 
-// 定义导航类型
 type RootStackParamList = {
   DiaperForm: { diaper_id: string }
   FeedingRecord: { feeding_id: string }
@@ -29,114 +35,220 @@ type RecordCardNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export default function RecordCard({ item }: RecordCardProps) {
   const navigation = useNavigation<RecordCardNavigationProp>()
+  const pressScale = useRef(new Animated.Value(1)).current
+  const pressTranslateY = useRef(new Animated.Value(0)).current
 
-  const handlePress = () => {
-    if (item.id) {
-      // 移除类型前缀，获取原始id
-      const originalId = item.id.replace(/^\w+_/, '')
-
-      switch (item.type) {
-        case 'diaper':
-          navigation.navigate('DiaperForm', { diaper_id: originalId })
-          break
-        case 'feeding':
-          console.log('点击的喂养ID:', originalId)
-          navigation.navigate('FeedingRecord', { feeding_id: originalId })
-          break
-        case 'sleep':
-          navigation.navigate('SleepRecord', { session_id: originalId })
-          break
-      }
+  const typeTheme = useMemo(() => {
+    if (item.type === 'sleep') {
+      return { accent: APP_COLORS.secondaryStrong, badgeBg: '#f3e8ff' }
     }
-  }
+    if (item.type === 'diaper') {
+      return { accent: APP_COLORS.secondaryStrong, badgeBg: '#fff3e0' }
+    }
+    return { accent: APP_COLORS.primary, badgeBg: APP_COLORS.surfaceVariant }
+  }, [item.type])
 
-  // 处理时间显示
+  const handlePress = useCallback(() => {
+    if (!item.id) return
+    const originalId = item.id.replace(/^\w+_/, '')
+
+    if (item.type === 'diaper') {
+      navigation.navigate('DiaperForm', { diaper_id: originalId })
+      return
+    }
+    if (item.type === 'feeding') {
+      navigation.navigate('FeedingRecord', { feeding_id: originalId })
+      return
+    }
+    navigation.navigate('SleepRecord', { session_id: originalId })
+  }, [item.id, item.type, navigation])
+
   const formatTime = (time: string | number) => {
-    if (typeof time === 'number') {
-      return dayjs(time).format('HH:mm')
-    }
+    if (typeof time === 'number') return dayjs(time).format('HH:mm')
     return time
   }
 
+  const renderIcon = useMemo(() => {
+    const size = 22
+    const color = typeTheme.accent
+    const variant = 'filled' as const
+
+    switch (item.icon) {
+      case 'diaper-pee':
+        return <Droplet size={size} color={color} variant={variant} />
+      case 'diaper-poop':
+        return <WavePulse size={size} color={color} variant={variant} />
+      case 'diaper-both':
+        return <ArrowsRotate size={size} color={color} variant={variant} />
+      case 'diaper-dry':
+        return <CheckCircle size={size} color={color} variant={variant} />
+      case 'feeding-food':
+        return <FoodTray size={size} color={color} variant={variant} />
+      case 'sleep':
+        return <Clock size={size} color={color} variant={variant} />
+      case 'sleep-manual':
+        return <Clock size={size} color={color} variant="regular" />
+      default:
+        return <Droplet size={size} color={color} variant={variant} />
+    }
+  }, [item.icon, typeTheme.accent])
+
+  const handlePressIn = useCallback(() => {
+    Animated.parallel([
+      Animated.spring(pressScale, {
+        toValue: 0.98,
+        useNativeDriver: true,
+        speed: 24,
+        bounciness: 0
+      }),
+      Animated.spring(pressTranslateY, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 24,
+        bounciness: 0
+      })
+    ]).start()
+  }, [pressScale, pressTranslateY])
+
+  const handlePressOut = useCallback(() => {
+    Animated.parallel([
+      Animated.spring(pressScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 22,
+        bounciness: 6
+      }),
+      Animated.spring(pressTranslateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        speed: 22,
+        bounciness: 6
+      })
+    ]).start()
+  }, [pressScale, pressTranslateY])
+
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
-      <LinearGradient
-        colors={['#ffffff', '#fef5f5']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={styles.recordCard}
+    <Pressable
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View
+        style={[
+          styles.recordCard,
+          {
+            transform: [{ translateY: pressTranslateY }, { scale: pressScale }]
+          }
+        ]}
       >
+        <View
+          style={[styles.typeAccent, { backgroundColor: typeTheme.accent }]}
+        />
         <View style={styles.recordContent}>
           <View style={styles.recordInfo}>
-            <View style={styles.iconContainer}>
-              <MaterialCommunityIcons
-                name={(item.icon as any) || 'baby-carriage'}
-                size={32}
-                color="#f43f5e"
-              />
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: typeTheme.badgeBg }
+              ]}
+            >
+              {renderIcon}
             </View>
+
             <View style={styles.recordTextInfo}>
-              <Text
-                style={styles.recordName}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.name || item.title}
-              </Text>
-              <Text
-                style={styles.recordDetails}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.details || item.description}
-              </Text>
-              {item.remark && (
-                <Text
-                  style={styles.recordRemark}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {item.remark}
+              <View style={styles.titleRow}>
+                <Text style={styles.recordName} numberOfLines={1}>
+                  {item.name || item.title}
                 </Text>
-              )}
+                {item.categoryLabel ? (
+                  <View
+                    style={[
+                      styles.categoryBadge,
+                      { backgroundColor: typeTheme.badgeBg }
+                    ]}
+                  >
+                    <Text
+                      style={[styles.categoryText, { color: typeTheme.accent }]}
+                    >
+                      {item.categoryLabel}
+                    </Text>
+                  </View>
+                ) : null}
+                <Text style={styles.recordTimeText} numberOfLines={1}>
+                  {formatTime(item.time)}
+                </Text>
+              </View>
+
+              <View style={styles.detailsRow}>
+                <Text style={styles.recordDetails} numberOfLines={1}>
+                  {item.primaryDetail || item.details || item.description}
+                </Text>
+                {item.tags && item.tags.length > 0 ? (
+                  <View style={styles.tagsRow}>
+                    {item.tags.slice(0, 2).map(tag => (
+                      <View
+                        key={`${item.id}-${tag}`}
+                        style={[
+                          styles.tagChip,
+                          { backgroundColor: typeTheme.badgeBg }
+                        ]}
+                      >
+                        <Text
+                          style={[styles.tagText, { color: typeTheme.accent }]}
+                        >
+                          {tag}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
             </View>
-          </View>
-          <View style={styles.recordTimeContainer}>
-            <Text style={styles.recordTimeText}>{formatTime(item.time)}</Text>
-            <AngleRightSmall size={20} color="#f43f5e" variant="regular" />
           </View>
         </View>
-      </LinearGradient>
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
   recordCard: {
+    position: 'relative',
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    maxHeight: 80,
+    minHeight: 92,
+    backgroundColor: APP_COLORS.surface,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant,
+    overflow: 'hidden',
     ...(Platform.select({
       ios: {
-        shadowColor: '#f43f5e',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8
+        shadowColor: APP_COLORS.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18
       },
       android: {
         elevation: 4
       }
     }) as any)
   },
+  typeAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4
+  },
   recordContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'flex-start'
   },
   recordInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
     minWidth: 0
   },
@@ -144,54 +256,83 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#fff0f0',
     justifyContent: 'center',
     alignItems: 'center',
     ...(Platform.select({
       ios: {
-        shadowColor: '#f43f5e',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4
+        shadowColor: APP_COLORS.shadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10
       },
       android: {
-        elevation: 3
+        elevation: 1
       }
     }) as any)
   },
   recordTextInfo: {
     marginLeft: 12,
     flex: 1,
-    minWidth: 0,
-    maxHeight: 50,
-    overflow: 'hidden'
+    minWidth: 0
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8
   },
   recordName: {
     fontSize: 16,
-    color: '#333',
+    color: APP_COLORS.text,
     fontWeight: '600'
+  },
+  categoryBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: '700'
   },
   recordDetails: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-    flexShrink: 1
+    color: APP_COLORS.text,
+    flex: 1,
+    minWidth: 0
   },
-  recordRemark: {
+  recordSubDetails: {
     fontSize: 13,
-    color: '#999',
-    marginTop: 4,
-    fontStyle: 'italic',
-    flexShrink: 1
+    color: APP_COLORS.textMuted,
+    marginTop: 4
   },
-  recordTimeContainer: {
+  tagsRow: {
     flexDirection: 'row',
+    gap: 6,
+    flexShrink: 0
+  },
+  tagChip: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    height: 20,
     alignItems: 'center',
-    marginLeft: 16
+    justifyContent: 'center'
+  },
+  tagText: {
+    fontSize: 11,
+    fontWeight: '700'
   },
   recordTimeText: {
-    fontSize: 16,
-    color: '#f43f5e',
-    fontWeight: '600'
+    fontSize: 13,
+    color: APP_COLORS.primary,
+    fontWeight: '600',
+    marginLeft: 'auto'
   }
 })

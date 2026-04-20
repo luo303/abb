@@ -12,6 +12,10 @@ export interface RecordItem {
   title?: string
   description?: string
   remark?: string
+  primaryDetail?: string
+  secondaryDetail?: string
+  categoryLabel?: string
+  tags?: string[]
 }
 
 // 统计数据结构

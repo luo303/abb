@@ -1,8 +1,9 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { ArrowsRotate, Clock, Droplet } from '@zappicon/react-native'
 import BabyProgressRing from '../common/BabyProgressRing'
 import { RecordType } from '../../types/recordTypes'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface DashboardRingProps {
   type: RecordType
@@ -17,16 +18,33 @@ export default function DashboardRing({
   percent,
   onPress
 }: DashboardRingProps) {
-  const getIcon = () => {
+  const toneColor = (() => {
     switch (type) {
       case 'feeding':
-        return 'baby-bottle'
+        return APP_COLORS.primary
       case 'sleep':
-        return 'weather-night'
+        return APP_COLORS.secondaryStrong
       case 'diaper':
-        return 'baby-carriage'
+        return APP_COLORS.primaryStrong
       default:
-        return 'help-circle'
+        return APP_COLORS.primary
+    }
+  })()
+
+  const renderIcon = () => {
+    const size = 22
+    const color = toneColor
+    const variant = 'filled' as const
+
+    switch (type) {
+      case 'feeding':
+        return <Droplet size={size} color={color} variant={variant} />
+      case 'sleep':
+        return <Clock size={size} color={color} variant={variant} />
+      case 'diaper':
+        return <ArrowsRotate size={size} color={color} variant={variant} />
+      default:
+        return <Droplet size={size} color={color} variant={variant} />
     }
   }
 
@@ -52,18 +70,15 @@ export default function DashboardRing({
       <View style={styles.ringContainer}>
         <BabyProgressRing
           percent={percent}
-          color="#f43f5e"
+          color={toneColor}
+          progressGradient={[APP_COLORS.secondary, APP_COLORS.primaryStrong]}
           size={100}
           strokeWidth={8}
-          unfilledColor="#f0f0f0"
-          backgroundColor="#fff1f2"
+          unfilledColor={APP_COLORS.outlineVariant}
+          backgroundColor={APP_COLORS.surface}
           centerText={
             <View style={styles.progressContent}>
-              <MaterialCommunityIcons
-                name={getIcon() as any}
-                size={24}
-                color="#f43f5e"
-              />
+              {renderIcon()}
               <Text style={styles.ringValue}>{value}</Text>
             </View>
           }
@@ -94,11 +109,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 8,
-    color: '#f43f5e'
+    color: APP_COLORS.text
   },
   ringLabel: {
     fontSize: 14,
-    color: '#f43f5e',
+    color: APP_COLORS.textMuted,
     fontWeight: '600',
     marginTop: 4
   }

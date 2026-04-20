@@ -7,6 +7,7 @@ import {
   ArrowsRotate
 } from '@zappicon/react-native'
 import { DiaperType, Option } from '../../../types/diaper'
+import { APP_COLORS } from '@/theme/paperTheme'
 
 interface DiaperTypeSelectorProps {
   selectedType: Option
@@ -56,7 +57,7 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
           >
             <item.IconComponent
               size={24}
-              color={isSelected ? '#fff' : '#f43f5e'}
+              color={isSelected ? APP_COLORS.white : APP_COLORS.primary}
               variant={isSelected ? 'filled' : 'regular'}
               style={styles.typeIcon}
             />
@@ -81,20 +82,23 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: APP_COLORS.surface,
+    borderWidth: 1,
+    borderColor: APP_COLORS.outlineVariant,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: APP_COLORS.shadow,
     shadowOffset: {
       width: 0,
       height: 2
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 1
   },
   selectedTypeButton: {
-    backgroundColor: '#f43f5e',
+    backgroundColor: APP_COLORS.primary,
+    borderColor: APP_COLORS.primary,
     transform: [{ scale: 1.05 }]
   },
   typeIcon: {
@@ -103,10 +107,10 @@ const styles = StyleSheet.create({
   },
   typeLabel: {
     fontSize: 12,
-    color: '#333',
+    color: APP_COLORS.text,
     fontWeight: '500'
   },
   selectedTypeLabel: {
-    color: '#fff'
+    color: APP_COLORS.white
   }
 })

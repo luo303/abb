@@ -11,6 +11,7 @@ interface BabyProgressRingProps {
   unfilledColor?: string
   style?: ViewStyle
   backgroundColor?: string
+  progressGradient?: readonly [string, string]
 }
 
 export default function BabyProgressRing({
@@ -21,7 +22,8 @@ export default function BabyProgressRing({
   strokeWidth = 8,
   unfilledColor = '#f0f0f0',
   style,
-  backgroundColor = 'transparent'
+  backgroundColor = 'transparent',
+  progressGradient
 }: BabyProgressRingProps) {
   // 计算圆环参数
   const radius = (size - strokeWidth) / 2
@@ -59,44 +61,35 @@ export default function BabyProgressRing({
     ]
   })
 
-  // 动态计算背景颜色
-  const animatedBackgroundColor = animatedValue.interpolate({
-    inputRange: [0, 25, 50, 75, 100],
-    outputRange: ['#ffffff', '#ffeeee', '#ffdddd', '#ffcccc', '#ffaaaa']
-  })
-
   return (
     <View style={[styles.container, { width: size, height: size }, style]}>
       {/* 背景圆 */}
       {backgroundColor !== 'transparent' && (
-        <Animated.View
+        <View
           style={[
             styles.backgroundCircle,
             {
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: animatedBackgroundColor
+              backgroundColor
             }
           ]}
         />
       )}
       <Svg width={size} height={size}>
-        {/* 渐变色定义 */}
-        <LinearGradient
-          id="progressGradient"
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <Stop offset="0%" stopColor="#ffcccc" />
-          <Stop offset="20%" stopColor="#ff9999" />
-          <Stop offset="40%" stopColor="#ff6666" />
-          <Stop offset="60%" stopColor="#ff3333" />
-          <Stop offset="80%" stopColor="#cc0000" />
-          <Stop offset="100%" stopColor="#990000" />
-        </LinearGradient>
+        {progressGradient ? (
+          <LinearGradient
+            id="progressGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
+            <Stop offset="0%" stopColor={progressGradient[0]} />
+            <Stop offset="100%" stopColor={progressGradient[1]} />
+          </LinearGradient>
+        ) : null}
         <G rotation="-90" origin={`${center}, ${center}`}>
           {/* 背景圆环 */}
           <Circle
@@ -112,7 +105,7 @@ export default function BabyProgressRing({
             cx={center}
             cy={center}
             r={radius}
-            stroke="url(#progressGradient)"
+            stroke={progressGradient ? 'url(#progressGradient)' : color}
             strokeWidth={strokeWidth}
             fill="none"
             strokeDasharray={circumference}
