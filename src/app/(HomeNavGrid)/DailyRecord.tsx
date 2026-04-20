@@ -219,7 +219,7 @@ export default function DailyRecordScreen() {
         }
 
         return {
-          id: `diaper_${item.diaper_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          id: `diaper_${item.diaper_id}`,
           type: 'diaper' as const,
           time: item.change_time,
           details: description,
@@ -229,7 +229,7 @@ export default function DailyRecordScreen() {
           description: description,
           primaryDetail,
           secondaryDetail: description || '暂无更多描述',
-          categoryLabel: '尿布',
+          categoryLabel: primaryDetail,
           tags: tags.slice(0, 2)
         }
       })
@@ -257,9 +257,11 @@ export default function DailyRecordScreen() {
             break
           case 'breast':
           case 'breast_milk':
+            icon = 'feeding-breast'
+            break
           case 'pump':
           case 'pumped_milk':
-            icon = 'feeding-milk'
+            icon = 'feeding-pump'
             break
           case 'food':
           case 'solid':
@@ -290,7 +292,7 @@ export default function DailyRecordScreen() {
         // 构建结构化信息
         const normalizedRemark = normalizeInlineText(item.remark)
         let amountText = ''
-        let secondaryText = ''
+        const secondaryParts: string[] = []
 
         if (typeof item.amount === 'number' && !isNaN(item.amount)) {
           amountText =
@@ -299,10 +301,17 @@ export default function DailyRecordScreen() {
               : `${item.amount}ml`
         }
 
+        // 构建副标题：包含喂养量、喂养时长和备注
+        if (amountText) {
+          secondaryParts.push(amountText)
+        }
+
         if (typeof item.duration === 'number' && !isNaN(item.duration)) {
-          secondaryText = `${item.duration}分钟`
-        } else if (normalizedRemark) {
-          secondaryText = normalizedRemark
+          secondaryParts.push(`${item.duration}分钟`)
+        }
+
+        if (normalizedRemark) {
+          secondaryParts.push(normalizedRemark)
         }
 
         if (amountText) {
@@ -310,17 +319,13 @@ export default function DailyRecordScreen() {
           amountText = normalizeUnitText(amountText)
         }
 
-        if (secondaryText) {
-          secondaryText = stripLeadingFeedTypeLabel(secondaryText)
-          secondaryText = normalizeUnitText(secondaryText)
-        }
-
         const primaryDetail = amountText
           ? `${feedTypeName} · ${amountText}`
           : feedTypeName
-        const secondaryDetail = secondaryText
-          ? truncateText(secondaryText, 24)
-          : '暂无备注'
+        const secondaryDetail =
+          secondaryParts.length > 0
+            ? truncateText(secondaryParts.join(' · '), 30)
+            : '暂无备注'
 
         // 确保返回的对象包含所有必要字段
         return {

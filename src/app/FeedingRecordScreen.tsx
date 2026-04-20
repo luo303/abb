@@ -23,6 +23,7 @@ import {
   CalendarDay,
   Droplet,
   FoodTray,
+  HeartCircle,
   SparklesAi
 } from '@zappicon/react-native'
 import dayjs from 'dayjs'
@@ -682,7 +683,7 @@ const FeedingRecordScreen = () => {
               subtitle="记录时长"
               onPress={() => handleEntryPress('母乳')}
               icon={
-                <Droplet
+                <HeartCircle
                   size={20}
                   color={APP_COLORS.primary}
                   variant="filled"

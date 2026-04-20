@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { ExclamationCircle, Xmark, PlusCircle } from '@zappicon/react-native'
+import { ExclamationCircle, Xmark, Plus } from '@zappicon/react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import ImageViewing from 'react-native-image-viewing'
@@ -223,7 +223,7 @@ function ChatComposer({
             onPress={pickImages}
             style={styles.actionButton}
           >
-            <PlusCircle size={22} color="#2F8F5B" variant="regular" />
+            <Plus size={22} color="#2F8F5B" variant="regular" />
           </TouchableOpacity>
 
           <TextInput

@@ -4,7 +4,7 @@ import {
   Droplet,
   CheckCircle,
   WavePulse,
-  ArrowsRotate
+  PlusCircle
 } from '@zappicon/react-native'
 import { DiaperType, Option } from '../../../types/diaper'
 import { APP_COLORS } from '@/theme/paperTheme'
@@ -32,7 +32,7 @@ export const DiaperTypeSelector: React.FC<DiaperTypeSelectorProps> = ({
     {
       type: { id: DiaperType.BOTH, name: '嘘嘘+便便' },
       label: '嘘嘘+便便',
-      IconComponent: ArrowsRotate
+      IconComponent: PlusCircle
     },
     {
       type: { id: DiaperType.DRY, name: '干爽' },
