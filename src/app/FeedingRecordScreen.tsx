@@ -36,7 +36,6 @@ import { FeedingType } from '../types/feeding'
 import {
   AmountInput,
   DurationInput,
-  FoodQuickOptions,
   TimePicker,
   RemarkInput
 } from '../components/DailyRecord/FeedingRecord'
@@ -49,21 +48,97 @@ interface RouteParams {
 
 type FeedingUiType = '奶粉' | '母乳' | '辅食'
 
-type FoodQuickOption = '吃了几口' | '少量' | '正常' | '很多'
-
 type FeedingDraft = {
   feedingTimeMs: number
   note: string
   formulaMl: string
   milkDurationMin: string
   foodGrams: string
-  foodQuick?: FoodQuickOption
 }
 
 type ConfirmMode = 'closeEntry' | 'leaveScreen'
 
+const getFirstLine = (text: string) => {
+  const trimmed = text.trim()
+  if (!trimmed) return ''
+  return trimmed.split('\n')[0]?.trim() || ''
+}
+
+const stripDetailLineFromRemark = (text: string, type: FeedingUiType) => {
+  const trimmed = text.trim()
+  if (!trimmed) return ''
+  const lines = trimmed.split('\n')
+  const firstLine = (lines[0] || '').trim()
+  const hasMoreLines = lines.length > 1
+
+  const isLegacyTypedLine = /^#(奶粉|母乳|泵奶|辅食)\b/i.test(firstLine)
+  if (isLegacyTypedLine) {
+    return lines.slice(1).join('\n').trim()
+  }
+
+  if (type === '奶粉') {
+    if (
+      hasMoreLines
+        ? /^([0-9]+(?:\.[0-9]+)?)\s*ml\b/i.test(firstLine)
+        : /^([0-9]+(?:\.[0-9]+)?)\s*ml$/i.test(firstLine)
+    ) {
+      return lines.slice(1).join('\n').trim()
+    }
+  }
+
+  if (type === '母乳') {
+    if (
+      hasMoreLines
+        ? /^([0-9]+(?:\.[0-9]+)?)\s*(min|分钟)\b/i.test(firstLine) ||
+          /^([0-9]+(?:\.[0-9]+)?)\s*秒\b/i.test(firstLine)
+        : /^([0-9]+(?:\.[0-9]+)?)\s*(min|分钟)$/i.test(firstLine) ||
+          /^([0-9]+(?:\.[0-9]+)?)\s*秒$/i.test(firstLine)
+    ) {
+      return lines.slice(1).join('\n').trim()
+    }
+  }
+
+  if (type === '辅食') {
+    if (
+      hasMoreLines
+        ? /^([0-9]+(?:\.[0-9]+)?)\s*g\b/i.test(firstLine)
+        : /^([0-9]+(?:\.[0-9]+)?)\s*g$/i.test(firstLine)
+    ) {
+      return lines.slice(1).join('\n').trim()
+    }
+  }
+
+  return trimmed
+}
+
+const parseFormulaMlFromRemark = (text: string) => {
+  const firstLine = getFirstLine(text)
+  const legacyMatch = firstLine.match(/^#奶粉\s*([0-9]+(?:\.[0-9]+)?)\s*ml\b/i)
+  if (legacyMatch?.[1]) return legacyMatch[1]
+  const match = firstLine.match(/^([0-9]+(?:\.[0-9]+)?)\s*ml\b/i)
+  return match?.[1] || ''
+}
+
+const parseMilkDurationFromRemark = (text: string) => {
+  const firstLine = getFirstLine(text)
+  const legacyMatch = firstLine.match(
+    /^#母乳\s*([0-9]+(?:\.[0-9]+)?)\s*(min|分钟)\b/i
+  )
+  if (legacyMatch?.[1]) return legacyMatch[1]
+  const match = firstLine.match(/^([0-9]+(?:\.[0-9]+)?)\s*(min|分钟)\b/i)
+  return match?.[1] || ''
+}
+
+const parseFoodGramsFromRemark = (text: string) => {
+  const firstLine = getFirstLine(text)
+  const legacyMatch = firstLine.match(/^#辅食\s*([0-9]+(?:\.[0-9]+)?)\s*g\b/i)
+  if (legacyMatch?.[1]) return legacyMatch[1]
+  const match = firstLine.match(/^([0-9]+(?:\.[0-9]+)?)\s*g\b/i)
+  return match?.[1] || ''
+}
+
 const FeedingRecordScreen = () => {
-  const navigation = useNavigation()
+  const navigation = useNavigation<any>()
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>()
   const feedId = route.params?.feeding_id
   const dispatch = useDispatch<AppDispatch>()
@@ -90,9 +165,6 @@ const FeedingRecordScreen = () => {
   const [formulaMl, setFormulaMl] = useState('')
   const [milkDurationMin, setMilkDurationMin] = useState('')
   const [foodGrams, setFoodGrams] = useState('')
-  const [foodQuick, setFoodQuick] = useState<FoodQuickOption | undefined>(
-    undefined
-  )
   // 初始化feedingTime为当前选中日期的时间
   const [feedingTime, setFeedingTime] = useState(() => {
     // 解析currentDate (YYYYMMDD) 为日期对象
@@ -120,10 +192,9 @@ const FeedingRecordScreen = () => {
       note,
       formulaMl,
       milkDurationMin,
-      foodGrams,
-      foodQuick
+      foodGrams
     }
-  }, [feedingTime, note, formulaMl, milkDurationMin, foodGrams, foodQuick])
+  }, [feedingTime, note, formulaMl, milkDurationMin, foodGrams])
 
   const syncCurrentDraftToCache = useCallback(() => {
     draftByTypeRef.current.set(selectedType, getCurrentDraft())
@@ -135,8 +206,7 @@ const FeedingRecordScreen = () => {
       a.note === b.note &&
       a.formulaMl === b.formulaMl &&
       a.milkDurationMin === b.milkDurationMin &&
-      a.foodGrams === b.foodGrams &&
-      a.foodQuick === b.foodQuick
+      a.foodGrams === b.foodGrams
     )
   }, [])
 
@@ -168,47 +238,6 @@ const FeedingRecordScreen = () => {
     [isDraftEqual, syncCurrentDraftToCache]
   )
 
-  const stripStructuredPrefix = (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed) return ''
-    const lines = trimmed.split('\n')
-    const firstLine = (lines[0] || '').trim()
-    if (!/^#(奶粉|母乳|泵奶|辅食)\b/.test(firstLine)) {
-      return trimmed
-    }
-    return lines.slice(1).join('\n').trim()
-  }
-
-  const parseFormulaMlFromPrefix = (text: string) => {
-    const firstLine = text.trim().split('\n')[0]?.trim() || ''
-    const match = firstLine.match(/^#奶粉\s*([0-9]+(?:\.[0-9]+)?)ml\b/i)
-    return match?.[1] || ''
-  }
-
-  const parseMilkDurationFromPrefix = (text: string) => {
-    const firstLine = text.trim().split('\n')[0]?.trim() || ''
-    const match = firstLine.match(/^#母乳\s*([0-9]+(?:\.[0-9]+)?)min\b/i)
-    return match?.[1] || ''
-  }
-
-  const parseFoodQuickFromPrefix = (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed) return undefined
-    const firstLine = trimmed.split('\n')[0]?.trim() || ''
-    if (!firstLine.startsWith('#辅食')) return undefined
-    const rest = firstLine.replace(/^#辅食\s*/g, '').trim()
-    const options: FoodQuickOption[] = ['吃了几口', '少量', '正常', '很多']
-    return options.includes(rest as FoodQuickOption)
-      ? (rest as FoodQuickOption)
-      : undefined
-  }
-
-  const parseFoodGramsFromPrefix = (text: string) => {
-    const firstLine = text.trim().split('\n')[0]?.trim() || ''
-    const match = firstLine.match(/^#辅食\s*([0-9]+(?:\.[0-9]+)?)g\b/i)
-    return match?.[1] || ''
-  }
-
   // 当feedId存在时，从feedingList中找到对应的记录并回显数据
   useEffect(() => {
     if (!feedId) return
@@ -233,20 +262,33 @@ const FeedingRecordScreen = () => {
         break
     }
 
-    const parsedFormulaMl = parseFormulaMlFromPrefix(feedingRecord.remark || '')
-    const parsedMilkDuration = parseMilkDurationFromPrefix(
+    const parsedFormulaMl = parseFormulaMlFromRemark(feedingRecord.remark || '')
+    const parsedMilkDuration = parseMilkDurationFromRemark(
       feedingRecord.remark || ''
     )
-    const parsedFoodQuick = parseFoodQuickFromPrefix(feedingRecord.remark || '')
-    const parsedFoodGrams = parseFoodGramsFromPrefix(feedingRecord.remark || '')
+    const parsedFoodGrams = parseFoodGramsFromRemark(feedingRecord.remark || '')
 
     const nextDraft: FeedingDraft = {
       feedingTimeMs: feedingRecord.feed_time,
-      note: stripStructuredPrefix(feedingRecord.remark || ''),
-      formulaMl: uiType === '奶粉' ? parsedFormulaMl : '',
-      milkDurationMin: uiType === '母乳' ? parsedMilkDuration : '',
-      foodGrams: uiType === '辅食' ? parsedFoodGrams : '',
-      foodQuick: uiType === '辅食' ? parsedFoodQuick : undefined
+      note: stripDetailLineFromRemark(feedingRecord.remark || '', uiType),
+      formulaMl:
+        uiType === '奶粉'
+          ? typeof feedingRecord.amount === 'number'
+            ? String(feedingRecord.amount)
+            : parsedFormulaMl
+          : '',
+      milkDurationMin:
+        uiType === '母乳'
+          ? typeof feedingRecord.duration === 'number'
+            ? String(feedingRecord.duration)
+            : parsedMilkDuration
+          : '',
+      foodGrams:
+        uiType === '辅食'
+          ? typeof feedingRecord.amount === 'number'
+            ? String(feedingRecord.amount)
+            : parsedFoodGrams
+          : ''
     }
 
     draftByTypeRef.current.set(uiType, nextDraft)
@@ -255,7 +297,6 @@ const FeedingRecordScreen = () => {
     setFormulaMl(nextDraft.formulaMl)
     setMilkDurationMin(nextDraft.milkDurationMin)
     setFoodGrams(nextDraft.foodGrams)
-    setFoodQuick(nextDraft.foodQuick)
     setFeedingTime(new Date(nextDraft.feedingTimeMs))
     setNote(nextDraft.note)
     setActiveEntry(uiType)
@@ -273,7 +314,6 @@ const FeedingRecordScreen = () => {
     setFormulaMl(draft.formulaMl)
     setMilkDurationMin(draft.milkDurationMin)
     setFoodGrams(draft.foodGrams)
-    setFoodQuick(draft.foodQuick)
     setFeedingTime(new Date(draft.feedingTimeMs))
     setNote(draft.note)
   }
@@ -286,8 +326,7 @@ const FeedingRecordScreen = () => {
       note: '',
       formulaMl: '',
       milkDurationMin: '',
-      foodGrams: '',
-      foodQuick: undefined
+      foodGrams: ''
     }
     draftByTypeRef.current.set(type, nextDraft)
     if (!initialDraftByTypeRef.current.has(type)) {
@@ -307,8 +346,7 @@ const FeedingRecordScreen = () => {
       note,
       formulaMl,
       milkDurationMin,
-      foodGrams,
-      foodQuick
+      foodGrams
     }
 
     const hasInput =
@@ -316,7 +354,7 @@ const FeedingRecordScreen = () => {
         ? Boolean(formulaMl.trim() || note.trim())
         : selectedType === '母乳'
           ? Boolean(milkDurationMin.trim() || note.trim())
-          : Boolean(foodGrams.trim() || foodQuick || note.trim())
+          : Boolean(foodGrams.trim() || note.trim())
 
     const switchWithPolicy = (keepCurrentInput: boolean) => {
       if (keepCurrentInput) {
@@ -327,8 +365,7 @@ const FeedingRecordScreen = () => {
           note: '',
           formulaMl: '',
           milkDurationMin: '',
-          foodGrams: '',
-          foodQuick: undefined
+          foodGrams: ''
         })
       }
 
@@ -444,44 +481,15 @@ const FeedingRecordScreen = () => {
     const normalizedFormulaMl = normalizeNumber(formulaMl)
     const normalizedMilkDuration = normalizeNumber(milkDurationMin)
     const normalizedFoodGrams = normalizeNumber(foodGrams)
-
-    const buildStructuredLine = () => {
-      if (selectedType === '奶粉') {
-        if (normalizedFormulaMl === undefined) return '#奶粉'
-        return `#奶粉 ${normalizedFormulaMl}ml`
-      }
-
-      if (selectedType === '母乳') {
-        const label = '#母乳'
-        const durationLabel =
-          normalizedMilkDuration !== undefined
-            ? `${normalizedMilkDuration}min`
-            : ''
-        const parts = [label, durationLabel].filter(Boolean)
-        return parts.length > 1 ? parts.join(' ') : label
-      }
-
-      if (selectedType === '辅食') {
-        if (foodQuick) return `#辅食 ${foodQuick}`
-        if (normalizedFoodGrams === undefined) return '#辅食'
-        return `#辅食 ${normalizedFoodGrams}g`
-      }
-
-      return ''
-    }
-
-    const structuredLine = buildStructuredLine()
     const trimmedNote = note.trim()
-    const payloadRemark = structuredLine
-      ? trimmedNote
-        ? `${structuredLine}\n${trimmedNote}`
-        : structuredLine
-      : trimmedNote
 
     const record = {
       feed_type: feedType,
       start_time: feedingTime.getTime(),
-      remark: payloadRemark
+      amount: selectedType === '奶粉' ? normalizedFormulaMl : undefined,
+      duration: selectedType === '母乳' ? normalizedMilkDuration : undefined,
+      ...(selectedType === '辅食' ? { amount: normalizedFoodGrams } : {}),
+      remark: trimmedNote
     }
 
     // 调用Redux action保存数据
@@ -516,7 +524,6 @@ const FeedingRecordScreen = () => {
     formulaMl,
     milkDurationMin,
     foodGrams,
-    foodQuick,
     note,
     feedingTime,
     feedId,
@@ -536,14 +543,26 @@ const FeedingRecordScreen = () => {
     setConfirmMode('closeEntry')
   }, [activeEntry, isTypeDirty])
 
+  const goToDailyRecord = useCallback(() => {
+    allowLeaveRef.current = true
+    setTimeout(() => {
+      if (navigation.canGoBack?.()) {
+        navigation.goBack()
+      } else {
+        navigation.navigate('DailyRecord')
+      }
+    }, 0)
+  }, [navigation])
+
   const saveAndCloseActiveEntry = useCallback(async () => {
     const ok = await performSave()
     if (!ok) return
     setActiveEntry(null)
-  }, [performSave])
+    goToDailyRecord()
+  }, [performSave, goToDailyRecord])
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', event => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event: any) => {
       if (allowLeaveRef.current) return
       if (!isDirty()) return
 
@@ -648,7 +667,7 @@ const FeedingRecordScreen = () => {
           <View style={styles.entryButtons}>
             <EntryButton
               title="辅食"
-              subtitle="状态或克重"
+              subtitle="记录克重"
               onPress={() => handleEntryPress('辅食')}
               icon={
                 <FoodTray
@@ -762,22 +781,9 @@ const FeedingRecordScreen = () => {
                 {selectedType === '辅食' ? (
                   <>
                     <View style={styles.formItem}>
-                      <FoodQuickOptions
-                        value={foodQuick}
-                        onChange={value => {
-                          setFoodQuick(value)
-                          if (value) setFoodGrams('')
-                        }}
-                      />
-                    </View>
-
-                    <View style={styles.formItem}>
                       <AmountInput
                         value={foodGrams}
-                        onChange={text => {
-                          setFoodGrams(text)
-                          if (text.trim()) setFoodQuick(undefined)
-                        }}
+                        onChange={setFoodGrams}
                         type="辅食"
                         placeholder="例如 30"
                       />
@@ -799,7 +805,13 @@ const FeedingRecordScreen = () => {
                     value={note}
                     onChange={setNote}
                     label="备注"
-                    placeholder="可选，记录一下宝宝状态"
+                    placeholder={
+                      selectedType === '奶粉'
+                        ? '可选，例如：宝宝接受度、吐奶情况'
+                        : selectedType === '辅食'
+                          ? '可选，例如：吃了什么、过敏观察'
+                          : '可选，例如：宝宝状态、左右侧等'
+                    }
                     type={selectedType}
                   />
                 </View>
@@ -888,21 +900,10 @@ const FeedingRecordScreen = () => {
                 <Button
                   mode="contained"
                   onPress={async () => {
-                    const mode = confirmMode
                     const ok = await performSave()
                     if (!ok) return
                     setConfirmMode(null)
-                    if (mode === 'closeEntry') {
-                      setActiveEntry(null)
-                      return
-                    }
-                    allowLeaveRef.current = true
-                    const action = pendingNavActionRef.current
-                    if (action) {
-                      navigation.dispatch(action)
-                    } else {
-                      navigation.goBack()
-                    }
+                    goToDailyRecord()
                   }}
                   buttonColor={APP_COLORS.primary}
                   textColor="#ffffff"

@@ -75,7 +75,13 @@ export default function RecordCard({ item }: RecordCardProps) {
               />
             </View>
             <View style={styles.recordTextInfo}>
-              <Text style={styles.recordName}>{item.name || item.title}</Text>
+              <Text
+                style={styles.recordName}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.name || item.title}
+              </Text>
               <Text
                 style={styles.recordDetails}
                 numberOfLines={1}
@@ -134,7 +140,8 @@ const styles = StyleSheet.create({
   recordInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1
+    flex: 1,
+    minWidth: 0
   },
   iconContainer: {
     width: 48,
@@ -158,6 +165,7 @@ const styles = StyleSheet.create({
   recordTextInfo: {
     marginLeft: 12,
     flex: 1,
+    minWidth: 0,
     maxHeight: 50,
     overflow: 'hidden'
   },

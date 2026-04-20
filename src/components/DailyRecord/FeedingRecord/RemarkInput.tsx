@@ -24,13 +24,27 @@ export const RemarkInput: React.FC<RemarkInputProps> = ({
   placeholder,
   type = '母乳'
 }) => {
-  // 贴纸数据
-  const stickers = [
-    { text: '吐奶了' },
-    { text: '胃口好' },
-    { text: '喝得慢' },
-    { text: '睡着了' }
-  ]
+  const stickers =
+    type === '奶粉'
+      ? [
+          { text: '喝完了' },
+          { text: '不爱喝' },
+          { text: '吐奶了' },
+          { text: '胀气' }
+        ]
+      : type === '辅食'
+        ? [
+            { text: '吃得好' },
+            { text: '不爱吃' },
+            { text: '过敏观察' },
+            { text: '便便变化' }
+          ]
+        : [
+            { text: '吃饱了' },
+            { text: '喝得慢' },
+            { text: '睡着了' },
+            { text: '吐奶了' }
+          ]
 
   // 处理贴纸点击
   const handleStickerPress = (stickerText: string) => {

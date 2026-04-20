@@ -124,12 +124,24 @@ export default function DailyRecordScreen() {
   useEffect(() => {
     const normalizeInlineText = (value?: string) => {
       if (!value) return ''
-      return value.replace(/\s+/g, ' ').trim()
+      return value.replace(/#/g, ' ').replace(/\s+/g, ' ').trim()
     }
 
     const truncateText = (value: string, maxLength: number) => {
       if (value.length <= maxLength) return value
       return value.substring(0, maxLength) + '...'
+    }
+
+    const stripLeadingFeedTypeLabel = (value: string) => {
+      return value.replace(/^(奶粉|母乳|泵奶|辅食)\s*/i, '').trim()
+    }
+
+    const normalizeUnitText = (value: string) => {
+      return value
+        .replace(/(\d+(?:\.\d+)?)\s*min\b/gi, '$1分钟')
+        .replace(/(\d+(?:\.\d+)?)\s*g\b/gi, '$1g')
+        .replace(/(\d+(?:\.\d+)?)\s*ml\b/gi, '$1ml')
+        .trim()
     }
 
     // 从 diaperList 中筛选出当前日期的记录
@@ -253,15 +265,19 @@ export default function DailyRecordScreen() {
         const normalizedRemark = normalizeInlineText(item.remark)
         let extraText = ''
         if (typeof item.amount === 'number' && !isNaN(item.amount)) {
-          extraText = `${item.amount}ml`
+          extraText =
+            feedType === 'food' || feedType === 'solid'
+              ? `${item.amount}g`
+              : `${item.amount}ml`
         } else if (typeof item.duration === 'number' && !isNaN(item.duration)) {
           extraText = `${item.duration}分钟`
         } else if (normalizedRemark) {
           extraText = normalizedRemark
         }
 
-        if ((feedType === 'food' || feedType === 'solid') && extraText) {
-          extraText = extraText.replace(/^#?\s*辅食\s*/i, '').trim()
+        if (extraText) {
+          extraText = stripLeadingFeedTypeLabel(extraText)
+          extraText = normalizeUnitText(extraText)
         }
 
         const description = extraText
