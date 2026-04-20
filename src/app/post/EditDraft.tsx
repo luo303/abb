@@ -328,6 +328,9 @@ export default function EditDraft() {
   ])
 
   const disableActions = saving || publishing || deleting || isUploadingImages
+  const handleTagsChange = useCallback((tagIds: string[]) => {
+    setSelectedTags(tagIds)
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -377,9 +380,7 @@ export default function EditDraft() {
               <PostToolbar
                 initialTagIds={selectedTags}
                 initialIsPublic={isPublic}
-                onTagsChange={(tagIds, tagNames) => {
-                  setSelectedTags(tagIds)
-                }}
+                onTagsChange={handleTagsChange}
                 onPrivacyChange={setIsPublic}
               />
             </LinearGradient>
