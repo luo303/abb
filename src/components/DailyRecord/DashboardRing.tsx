@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { ArrowsRotate, Clock, Droplet } from '@zappicon/react-native'
+import { ArrowsRotate, Clock, Flask } from '@zappicon/react-native'
 import BabyProgressRing from '../common/BabyProgressRing'
 import { RecordType } from '../../types/recordTypes'
 import { APP_COLORS } from '@/theme/paperTheme'
@@ -38,13 +38,13 @@ export default function DashboardRing({
 
     switch (type) {
       case 'feeding':
-        return <Droplet size={size} color={color} variant={variant} />
+        return <Flask size={size} color={color} variant={variant} />
       case 'sleep':
         return <Clock size={size} color={color} variant={variant} />
       case 'diaper':
         return <ArrowsRotate size={size} color={color} variant={variant} />
       default:
-        return <Droplet size={size} color={color} variant={variant} />
+        return <Flask size={size} color={color} variant={variant} />
     }
   }
 

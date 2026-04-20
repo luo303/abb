@@ -16,8 +16,11 @@ import {
   Clock,
   Droplet,
   FoodTray,
+  HeartCircle,
+  PlusCircle,
   WavePulse
 } from '@zappicon/react-native'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { APP_COLORS } from '@/theme/paperTheme'
 import { RecordItem } from '../../types/recordTypes'
 
@@ -79,9 +82,21 @@ export default function RecordCard({ item }: RecordCardProps) {
       case 'diaper-poop':
         return <WavePulse size={size} color={color} variant={variant} />
       case 'diaper-both':
-        return <ArrowsRotate size={size} color={color} variant={variant} />
+        return <PlusCircle size={size} color={color} variant={variant} />
       case 'diaper-dry':
         return <CheckCircle size={size} color={color} variant={variant} />
+      case 'feeding-milk':
+        return (
+          <MaterialCommunityIcons
+            name="baby-bottle"
+            size={size}
+            color={color}
+          />
+        )
+      case 'feeding-breast':
+        return <HeartCircle size={size} color={color} variant={variant} />
+      case 'feeding-pump':
+        return <Droplet size={size} color={color} variant={variant} />
       case 'feeding-food':
         return <FoodTray size={size} color={color} variant={variant} />
       case 'sleep':
@@ -142,7 +157,7 @@ export default function RecordCard({ item }: RecordCardProps) {
         ]}
       >
         <View
-          style={[styles.typeAccent, { backgroundColor: typeTheme.accent }]}
+          style={[styles.typeAccent, { backgroundColor: typeTheme.badgeBg }]}
         />
         <View style={styles.recordContent}>
           <View style={styles.recordInfo}>
@@ -179,30 +194,42 @@ export default function RecordCard({ item }: RecordCardProps) {
                 </Text>
               </View>
 
-              <View style={styles.detailsRow}>
-                <Text style={styles.recordDetails} numberOfLines={1}>
-                  {item.primaryDetail || item.details || item.description}
+              {item.type === 'feeding' || item.type === 'diaper' ? (
+                <Text style={styles.recordSubDetails} numberOfLines={2}>
+                  {item.secondaryDetail ||
+                    item.description ||
+                    item.remark ||
+                    '暂无备注'}
                 </Text>
-                {item.tags && item.tags.length > 0 ? (
-                  <View style={styles.tagsRow}>
-                    {item.tags.slice(0, 2).map(tag => (
-                      <View
-                        key={`${item.id}-${tag}`}
-                        style={[
-                          styles.tagChip,
-                          { backgroundColor: typeTheme.badgeBg }
-                        ]}
-                      >
-                        <Text
-                          style={[styles.tagText, { color: typeTheme.accent }]}
+              ) : (
+                <View style={styles.detailsRow}>
+                  <Text style={styles.recordDetails} numberOfLines={1}>
+                    {item.primaryDetail || item.details || item.description}
+                  </Text>
+                  {item.tags && item.tags.length > 0 ? (
+                    <View style={styles.tagsRow}>
+                      {item.tags.slice(0, 1).map(tag => (
+                        <View
+                          key={`${item.id}-${tag}`}
+                          style={[
+                            styles.tagChip,
+                            { backgroundColor: typeTheme.badgeBg }
+                          ]}
                         >
-                          {tag}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
+                          <Text
+                            style={[
+                              styles.tagText,
+                              { color: typeTheme.accent }
+                            ]}
+                          >
+                            {tag}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              )}
             </View>
           </View>
         </View>
