@@ -47,9 +47,13 @@ export interface AiRequest {
   session_id: string //前端生成的uuid，不可重复
   message: string
   images?: string[] //图片链接集合
-  kb_config?: {
+  kb_config: {
     enable: boolean //是否启用知识库，默认不开启
     search_private: boolean //是否查询私人空间，默认不开启
     search_public: boolean //是否查询公开空间，默认不开启
+    top_k: number //知识库召回条数，默认3
   }
+  auto_context: boolean //开启私人知识库时为true，否则为false
+  baby_id: string //当前选中的宝宝ID，没有则传空字符串
+  context_days: number //上下文天数，默认30
 }

@@ -43,6 +43,8 @@ import { Message } from '../../types/AIchat'
 const MESSAGE_ITEM_SPACING = 10
 const LIST_BOTTOM_GAP = 12
 const AI_CHAT_INPUT_NATIVE_ID = 'ai-chat-input'
+const DEFAULT_KB_TOP_K = 3
+const DEFAULT_CONTEXT_DAYS = 30
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets()
@@ -54,6 +56,9 @@ export default function ChatScreen() {
   const hasHydrated = useSelector((state: RootState) => state.chat.hasHydrated)
   const searchPrivate = useSelector(
     (state: RootState) => state.chat.search_private
+  )
+  const currentBabyId = useSelector(
+    (state: RootState) => state.baby.currentBabyId
   )
 
   const dispatch = useDispatch()
@@ -371,8 +376,12 @@ export default function ChatScreen() {
             kb_config: {
               enable: true,
               search_private: searchPrivate,
-              search_public: true
-            }
+              search_public: true,
+              top_k: DEFAULT_KB_TOP_K
+            },
+            auto_context: searchPrivate,
+            baby_id: currentBabyId ?? '',
+            context_days: DEFAULT_CONTEXT_DAYS
           },
           chunk => {
             buffer += chunk
@@ -424,6 +433,7 @@ export default function ChatScreen() {
       resetStreamingState,
       scheduleStreamingMessage,
       searchPrivate,
+      currentBabyId,
       showMessage,
       syncScrollState
     ]
