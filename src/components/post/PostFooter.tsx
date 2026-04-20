@@ -8,7 +8,12 @@ import {
   ViewProps
 } from 'react-native'
 import { Button } from 'react-native-paper'
-import { HeartSimple, Star, Chat } from '@zappicon/react-native'
+import {
+  HeartSimple,
+  HeartSimpleSlash,
+  Star,
+  Chat
+} from '@zappicon/react-native'
 
 import {
   composerFieldFocusShadow,
@@ -110,7 +115,7 @@ export default function PostFooter({
         POST_ACTION_COLORS.like
       )}
       {renderActionButton(
-        HeartSimple,
+        HeartSimpleSlash,
         dislikeCount || 0,
         onDislike,
         isDisliked,

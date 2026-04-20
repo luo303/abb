@@ -174,7 +174,7 @@ export default function LoginScreen() {
       <AuthBackground />
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.titleSection}>
-          <Text style={styles.mainTitle}>稚慧云欢迎您</Text>
+          <Text style={styles.mainTitle}>稚慧灵欢迎您</Text>
           <Text style={styles.subTitle}>宝宝等你很久了！</Text>
         </View>
 

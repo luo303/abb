@@ -11,16 +11,17 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import * as ImagePicker from 'expo-image-picker'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Ionicons } from '@expo/vector-icons'
 import { Button } from 'react-native-paper'
 
 import {
   addBaby,
   fetchBabyProfile,
-  resetBabyState
+  refreshBabies,
+  resetBabyState,
+  setCurrentBabyIdPersist
 } from '../../store/modules/BabyStore'
-import { RootState } from '../../store'
 import { useMessage } from '../Message'
 import AppKeyboardAvoidingView from '../common/AppKeyboardAvoidingView'
 import GenderRadioRow, { GenderValue } from '../common/GenderRadioRow'
@@ -30,7 +31,6 @@ export default function AddBabyScreen() {
   const navigation = useNavigation()
   const dispatch = useDispatch<any>()
   const { showMessage } = useMessage()
-  const { loading } = useSelector((state: RootState) => state.baby)
 
   const [name, setName] = useState('')
   const [gender, setGender] = useState<GenderValue>('female')
@@ -41,6 +41,7 @@ export default function AddBabyScreen() {
   const [weight, setWeight] = useState('')
   const [headCircumference, setHeadCircumference] = useState('')
   const [remark, setRemark] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -63,6 +64,8 @@ export default function AddBabyScreen() {
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
+
     const trimmedName = name.trim()
 
     if (!trimmedName) {
@@ -88,14 +91,22 @@ export default function AddBabyScreen() {
       remark: remark || undefined
     }
 
+    let shouldResetSubmitting = true
+    setIsSubmitting(true)
+
     try {
       const resultAction = await dispatch(addBaby(babyData))
       if (addBaby.fulfilled.match(resultAction)) {
         if (resultAction.payload?.code === 0) {
-          if (resultAction.payload.data?.baby_id) {
-            await dispatch(fetchBabyProfile(resultAction.payload.data.baby_id))
+          const babyId = resultAction.payload.data?.baby_id
+
+          if (babyId) {
+            await dispatch(setCurrentBabyIdPersist(babyId))
+            await dispatch(refreshBabies())
+            await dispatch(fetchBabyProfile(babyId))
           }
           showMessage('宝宝创建成功')
+          shouldResetSubmitting = false
           setTimeout(() => {
             dispatch(resetBabyState())
             navigation.goBack()
@@ -109,6 +120,10 @@ export default function AddBabyScreen() {
     } catch (error) {
       console.error(error)
       showMessage('发生未知错误')
+    } finally {
+      if (shouldResetSubmitting) {
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -156,7 +171,7 @@ export default function AddBabyScreen() {
             性别 <Text style={styles.required}>*</Text>
           </Text>
           <GenderRadioRow
-            disabled={loading}
+            disabled={isSubmitting}
             onChange={setGender}
             options={[
               { label: '男宝宝', value: 'male' },
@@ -245,12 +260,12 @@ export default function AddBabyScreen() {
 
         <Button
           mode="contained"
-          disabled={loading}
+          disabled={isSubmitting}
           onPress={handleSubmit}
           style={styles.submitButtonContainer}
           contentStyle={styles.submitButton}
           labelStyle={styles.submitButtonText}
-          loading={loading}
+          loading={isSubmitting}
           buttonColor="#FF69B4"
           uppercase={false}
         >

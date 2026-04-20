@@ -108,6 +108,18 @@ export const fetchBabies = createAsyncThunk<
   }
 )
 
+export const refreshBabies = createAsyncThunk<
+  ApiResponse<FetchBabiesResponse>,
+  void
+>('baby/refreshBabies', async (_, { rejectWithValue }) => {
+  try {
+    const response = await fetchBabiesReq()
+    return response as unknown as ApiResponse<FetchBabiesResponse>
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || error.message)
+  }
+})
+
 export const fetchBabyProfile = createAsyncThunk<
   ApiResponse<BabyProfile>,
   string
@@ -218,6 +230,9 @@ const babySlice = createSlice({
         state.loading = false
         if (action.payload?.code === 0) {
           state.currentBabyId = action.payload.data!.baby_id
+          state.currentBabyDetail = null
+          state.babyProfileFetchedId = null
+          clearGrowthCurve(state)
         } else {
           state.error = action.payload?.message || '未知错误'
         }
@@ -245,6 +260,28 @@ const babySlice = createSlice({
         }
       })
       .addCase(fetchBabies.rejected, (state, action) => {
+        state.loading = false
+        state.babiesFetched = true
+        state.error = action.payload as string
+      })
+      // Refresh Babies
+      .addCase(refreshBabies.pending, state => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(refreshBabies.fulfilled, (state, action) => {
+        state.loading = false
+        state.babiesFetched = true
+        if (action.payload?.code === 0) {
+          state.babiesList = action.payload.data?.babies || []
+          if (!state.currentBabyId && state.babiesList.length > 0) {
+            state.currentBabyId = state.babiesList[0].baby_id
+          }
+        } else {
+          state.error = action.payload?.message || '未知错误'
+        }
+      })
+      .addCase(refreshBabies.rejected, (state, action) => {
         state.loading = false
         state.babiesFetched = true
         state.error = action.payload as string
