@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -131,6 +131,14 @@ export default function AddPostScreen() {
     img => img.status === 'uploading'
   )
 
+  const handleTagsChange = useCallback(
+    (tagIds: string[], tagNames: string[]) => {
+      setSelectedTags(tagIds)
+      setSelectedTagNames(tagNames)
+    },
+    []
+  )
+
   return (
     <View style={styles.container}>
       <AddPostHeader
@@ -182,10 +190,7 @@ export default function AddPostScreen() {
               style={styles.cardGradient}
             >
               <PostToolbar
-                onTagsChange={(tagIds, tagNames) => {
-                  setSelectedTags(tagIds)
-                  setSelectedTagNames(tagNames)
-                }}
+                onTagsChange={handleTagsChange}
                 onPrivacyChange={setIsPublic}
               />
             </LinearGradient>

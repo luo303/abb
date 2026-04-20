@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -33,6 +33,11 @@ interface PostToolbarProps {
   initialIsPublic?: boolean
 }
 
+const areTagIdsEqual = (left: string[], right: string[]) => {
+  if (left.length !== right.length) return false
+  return left.every((item, index) => item === right[index])
+}
+
 export default function PostToolbar({
   onTagsChange,
   onPrivacyChange,
@@ -44,15 +49,26 @@ export default function PostToolbar({
   const [isTagsLoading, setIsTagsLoading] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
+  const onTagsChangeRef = useRef(onTagsChange)
+  const lastReportedTagsRef = useRef<{ ids: string[]; names: string[] } | null>(
+    null
+  )
 
   useEffect(() => {
-    if (initialTagIds && initialTagIds.length > 0) {
-      setSelectedTagIds(initialTagIds)
-    }
-    if (typeof initialIsPublic === 'boolean') {
-      setIsPublic(initialIsPublic)
-    }
-  }, [initialIsPublic, initialTagIds])
+    onTagsChangeRef.current = onTagsChange
+  }, [onTagsChange])
+
+  useEffect(() => {
+    const nextTagIds = Array.isArray(initialTagIds) ? initialTagIds : []
+    setSelectedTagIds(prev =>
+      areTagIdsEqual(prev, nextTagIds) ? prev : nextTagIds
+    )
+  }, [initialTagIds])
+
+  useEffect(() => {
+    if (typeof initialIsPublic !== 'boolean') return
+    setIsPublic(prev => (prev === initialIsPublic ? prev : initialIsPublic))
+  }, [initialIsPublic])
 
   useEffect(() => {
     let cancelled = false
@@ -100,29 +116,33 @@ export default function PostToolbar({
     }
   }, [])
 
-  const getTagName = (tagId: string): string => {
-    const tag = tags.find(item => item.id === tagId)
-    return tag ? tag.name : ''
-  }
+  const getTagName = useCallback(
+    (tagId: string): string => {
+      const tag = tags.find(item => item.id === tagId)
+      return tag ? tag.name : ''
+    },
+    [tags]
+  )
 
   useEffect(() => {
-    if (!onTagsChange) return
-    if (selectedTagIds.length === 0) return
     const names = selectedTagIds.map(id => getTagName(id)).filter(Boolean)
-    onTagsChange(selectedTagIds, names)
-  }, [onTagsChange, selectedTagIds, tags])
+    const lastReported = lastReportedTagsRef.current
+
+    if (
+      lastReported &&
+      areTagIdsEqual(lastReported.ids, selectedTagIds) &&
+      areTagIdsEqual(lastReported.names, names)
+    ) {
+      return
+    }
+
+    lastReportedTagsRef.current = { ids: selectedTagIds, names }
+    onTagsChangeRef.current?.(selectedTagIds, names)
+  }, [getTagName, selectedTagIds])
 
   const toggleTag = (tagId: string) => {
-    let newTagIds: string[]
-    if (selectedTagIds.includes(tagId)) {
-      newTagIds = selectedTagIds.filter(id => id !== tagId)
-    } else {
-      newTagIds = [...selectedTagIds, tagId]
-    }
-    setSelectedTagIds(newTagIds)
-    onTagsChange?.(
-      newTagIds,
-      newTagIds.map(id => getTagName(id)).filter(Boolean)
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
     )
   }
 
